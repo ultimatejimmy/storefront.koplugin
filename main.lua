@@ -4372,7 +4372,10 @@ local function detectPluginFromArchive(reader, repo)
     local meta_entry_path
 
     for entry in reader:iterate() do
-        if entry.mode == "file" and entry.path:match("%.koplugin/_meta%.lua$") then
+        if entry.mode == "file" and entry.path:match("^_meta%.lua$") then
+            meta_entry_path = entry.path
+            plugin_root = ""
+        elseif entry.mode == "file" and entry.path:match("%.koplugin/_meta%.lua$") then
             meta_entry_path = entry.path
             plugin_root = entry.path:match("(.+%.koplugin)/_meta%.lua$")
             if plugin_root then
@@ -4429,12 +4432,21 @@ detectPluginFromArchiveWithFallback = function(reader, repo, release, asset)
         return info, nil
     end
 
+    -- Rewind before the fallback pass because the iterator is exhausted after the first scan.
+    if reader and reader.rewind then
+        reader:rewind()
+    end
+
     local meta_entry_path
     local root_candidate
     local shallow_meta_entry
     for entry in reader:iterate() do
         if entry.mode == "file" then
-            if entry.path:match("/_meta%.lua$") then
+            if entry.path:match("^_meta%.lua$") then
+                meta_entry_path = entry.path
+                root_candidate = ""
+                shallow_meta_entry = shallow_meta_entry or entry.path
+            elseif entry.path:match("/_meta%.lua$") then
                 meta_entry_path = entry.path
                 root_candidate = entry.path:match("(.+)/_meta%.lua$")
                 shallow_meta_entry = shallow_meta_entry or entry.path
