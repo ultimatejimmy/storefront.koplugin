@@ -946,12 +946,20 @@ document.addEventListener('keydown', e => {
       filterBanner.style.top = (hH + controls.offsetHeight) + 'px';
     }
   };
+  const SPEED_THRESHOLD = 30;
   const onScroll = () => {
     if (ticking) return;
     ticking = true;
     requestAnimationFrame(() => {
       const y = window.scrollY;
-      updatePositions(y > lastY && y > 120);
+      const delta = lastY - y;
+      if (y <= 120) {
+        updatePositions(false);
+      } else if (y > lastY) {
+        updatePositions(true);
+      } else if (delta > SPEED_THRESHOLD) {
+        updatePositions(false);
+      }
       lastY = y;
       ticking = false;
     });
