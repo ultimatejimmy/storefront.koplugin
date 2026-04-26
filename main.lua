@@ -2674,7 +2674,50 @@ ensureCacheDir = function()
     return cache_dir
 end
 
-function AppStore:promptPluginInstallOptions(repo)
+-- Format the published date of a GitHub release for display next to its tag.
+-- Falls back to created_at when published_at is missing.
+local function formatReleaseDate(release)
+    if not release then
+        return nil
+    end
+    local raw = release.published_at or release.created_at
+    if type(raw) ~= "string" or raw == "" then
+        return nil
+    end
+    local ts = parseGitHubTimestamp(raw)
+    if not ts or ts <= 0 then
+        return nil
+    end
+    return os.date("%Y-%m-%d", ts)
+end
+
+local function getReleaseLabel(release)
+    if not release then
+        return nil
+    end
+    local tag = release.tag_name
+    if not tag or tag == "" then
+        tag = release.name
+    end
+    if not tag or tag == "" then
+        return nil
+    end
+    return tostring(tag)
+end
+
+local function buildDownloadOptionsTitle(release)
+    local label = getReleaseLabel(release)
+    if not label then
+        return _("Download options")
+    end
+    local date = formatReleaseDate(release)
+    if date then
+        return string.format(_("Download options — %s (%s)"), label, date)
+    end
+    return string.format(_("Download options — %s"), label)
+end
+
+function AppStore:promptPluginInstallOptions(repo, release_override)
     if not repo then
         return
     end
@@ -2686,13 +2729,16 @@ function AppStore:promptPluginInstallOptions(repo)
     end
 
     NetworkMgr:runWhenOnline(function()
-        local progress = InfoMessage:new{ text = _("Fetching release info…"), timeout = 0 }
-        UIManager:show(progress)
-        UIManager:forceRePaint()
-
-        local release, release_err = GitHub.fetchLatestRelease(owner, repo.name)
-
-        UIManager:close(progress)
+        local release, release_err
+        if release_override then
+            release = release_override
+        else
+            local progress = InfoMessage:new{ text = _("Fetching release info…"), timeout = 0 }
+            UIManager:show(progress)
+            UIManager:forceRePaint()
+            release, release_err = GitHub.fetchLatestRelease(owner, repo.name)
+            UIManager:close(progress)
+        end
 
         local dialog
         local buttons = {}
@@ -2740,9 +2786,22 @@ function AppStore:promptPluginInstallOptions(repo)
             })
         end
 
-        if release_err and #buttons == 1 then
+        -- Always offer a way to switch to a different release; the release
+        -- list itself handles the case where no releases are available.
+        table.insert(buttons, {
+            text = _("Other releases…"),
+            callback = function()
+                UIManager:close(dialog)
+                self:showReleaseListDialog(repo, release)
+            end,
+        })
+
+        -- `buttons` always contains at least direct download + other releases
+        -- so we now compare against 2 (was 1 before "Other releases" was added)
+        -- to decide whether the user effectively has nothing release-related.
+        if release_err and #buttons == 2 and not release_override then
             UIManager:show(InfoMessage:new{ text = _("Could not fetch latest release. You can still use direct repo download."), timeout = 6 })
-        elseif #buttons == 1 then
+        elseif #buttons == 2 and not release_override then
             UIManager:show(InfoMessage:new{ text = _("No release assets found. You can still use direct repo download."), timeout = 5 })
         end
 
@@ -2752,13 +2811,149 @@ function AppStore:promptPluginInstallOptions(repo)
         end
 
         dialog = ConfirmBox:new{
-            text = _("Download options"),
+            text = buildDownloadOptionsTitle(release),
             cancel_text = _("Cancel"),
             no_ok_button = true,
             other_buttons = button_rows,
         }
         UIManager:show(dialog)
     end)
+end
+
+local RELEASES_PAGE_SIZE = 10
+
+-- Display a paginated list of every release published by `repo`. Selecting a
+-- release closes this dialog and reopens the Download options popup for that
+-- release; this avoids stacking popups on top of each other.
+function AppStore:showReleaseListDialog(repo, current_release)
+    if not repo then
+        return
+    end
+    local owner = repo.owner or (repo.data and repo.data.owner and repo.data.owner.login)
+    if not owner or not repo.name then
+        UIManager:show(InfoMessage:new{ text = _("Missing repository metadata for releases."), timeout = 4 })
+        return
+    end
+
+    NetworkMgr:runWhenOnline(function()
+        local progress = InfoMessage:new{ text = _("Fetching releases…"), timeout = 0 }
+        UIManager:show(progress)
+        UIManager:forceRePaint()
+
+        local releases, err = GitHub.fetchReleases(owner, repo.name)
+
+        UIManager:close(progress)
+
+        if not releases or #releases == 0 then
+            local message
+            if err then
+                message = _("Could not fetch releases for this repository.")
+            else
+                message = _("No releases found for this repository.")
+            end
+            UIManager:show(InfoMessage:new{ text = message, timeout = 4 })
+            return
+        end
+
+        self:renderReleaseListPage(repo, releases, 1, current_release)
+    end)
+end
+
+local RELEASES_PAGE_SIZE = 10
+
+function AppStore:renderReleaseListPage(repo, releases, page, current_release)
+    page = page or 1
+    local total = #releases
+    local total_pages = math.max(1, math.ceil(total / RELEASES_PAGE_SIZE))
+    if page < 1 then page = 1 end
+    if page > total_pages then page = total_pages end
+
+    local current_tag = getReleaseLabel(current_release)
+
+    local dialog
+    local button_rows = {}
+    local first = (page - 1) * RELEASES_PAGE_SIZE + 1
+    local last = math.min(first + RELEASES_PAGE_SIZE - 1, total)
+    for i = first, last do
+        local release = releases[i]
+        local label = getReleaseLabel(release) or _("Unnamed release")
+        local date = formatReleaseDate(release)
+        local prefix = ""
+        if current_tag and getReleaseLabel(release) == current_tag then
+            prefix = "\xE2\x80\xA2 " -- bullet to mark currently shown release
+        end
+        local text
+        if date then
+            text = string.format("%s%s (%s)", prefix, label, date)
+        else
+            text = string.format("%s%s", prefix, label)
+        end
+        if release.prerelease then
+            text = text .. " " .. _("[pre]")
+        elseif release.draft then
+            text = text .. " " .. _("[draft]")
+        end
+        table.insert(button_rows, {
+            {
+                text = text,
+                background = Blitbuffer.COLOR_WHITE,
+                callback = function()
+                    UIManager:close(dialog)
+                    -- Close the release list, then reopen Download options for
+                    -- the chosen release.
+                    self:promptPluginInstallOptions(repo, release)
+                end,
+            },
+        })
+    end
+
+    if total_pages > 1 then
+        local nav_row = {}
+        if page > 1 then
+            table.insert(nav_row, {
+                text = "◀  " .. _("Prev"),
+                background = Blitbuffer.COLOR_WHITE,
+                callback = function()
+                    UIManager:close(dialog)
+                    self:renderReleaseListPage(repo, releases, page - 1, current_release)
+                end,
+            })
+        end
+        table.insert(nav_row, {
+            text = string.format(_("Page %d/%d"), page, total_pages),
+            background = Blitbuffer.COLOR_WHITE,
+            callback = function() end,
+        })
+        if page < total_pages then
+            table.insert(nav_row, {
+                text = _("Next") .. "  ▶",
+                background = Blitbuffer.COLOR_WHITE,
+                callback = function()
+                    UIManager:close(dialog)
+                    self:renderReleaseListPage(repo, releases, page + 1, current_release)
+                end,
+            })
+        end
+        table.insert(button_rows, nav_row)
+    end
+
+    table.insert(button_rows, {
+        {
+            text = _("Cancel"),
+            background = Blitbuffer.COLOR_WHITE,
+            callback = function()
+                UIManager:close(dialog)
+            end,
+        },
+    })
+
+    local title_label = repo.full_name or repo.name or _("Releases")
+    dialog = ButtonDialog:new{
+        title = string.format(_("Releases — %s"), title_label),
+        title_align = "center",
+        buttons = button_rows,
+    }
+    UIManager:show(dialog)
 end
 
 function AppStore:installPluginFromReleaseAsset(repo, release, asset)
@@ -4254,6 +4449,16 @@ function AppStore:showAppStoreSettingsDialog()
         },
         {
             {
+                text = _("Clear cached README files"),
+                background = Blitbuffer.COLOR_WHITE,
+                callback = function()
+                    UIManager:close(dialog)
+                    self:clearCachedReadmeFiles()
+                end,
+            },
+        },
+        {
+            {
                 text = _("Close"),
                 background = Blitbuffer.COLOR_WHITE,
                 callback = function()
@@ -4268,6 +4473,34 @@ function AppStore:showAppStoreSettingsDialog()
         buttons = buttons,
     }
     UIManager:show(dialog)
+end
+
+-- Triggered from the AppStore settings dialog. Confirms with the user, then
+-- removes every cached README markdown file produced by previous
+-- "View README" actions. The cached files are regenerated on demand the next
+-- time a README is opened, so deletion is non-destructive.
+function AppStore:clearCachedReadmeFiles()
+    local confirm
+    confirm = ConfirmBox:new{
+        text = _("Delete all cached README files? They will be re-downloaded on demand."),
+        ok_text = _("Delete"),
+        cancel_text = _("Cancel"),
+        ok_callback = function()
+            local result = RepoContent.clearReadmeCache()
+            local removed = (result and result.removed) or 0
+            local errors = (result and result.errors) or {}
+            local msg
+            if removed == 0 and #errors == 0 then
+                msg = _("No cached README files to delete.")
+            elseif #errors == 0 then
+                msg = string.format(_("Deleted %d cached README file(s)."), removed)
+            else
+                msg = string.format(_("Deleted %d cached README file(s); %d failed."), removed, #errors)
+            end
+            UIManager:show(InfoMessage:new{ text = msg, timeout = 4 })
+        end,
+    }
+    UIManager:show(confirm)
 end
 
 function AppStore:getStatusLines()

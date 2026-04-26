@@ -199,5 +199,48 @@ function GitHubClient.fetchLatestRelease(owner, repo)
     return parsed, nil
 end
 
+-- Fetch all releases of a repository (sorted from newest to oldest by GitHub).
+-- Pagination is performed transparently up to `max_pages` to avoid hammering
+-- the API for repositories with hundreds of releases.
+function GitHubClient.fetchReleases(owner, repo, opts)
+    if not owner or not repo then
+        return nil, "missing owner/repo"
+    end
+    opts = opts or {}
+    local per_page = tonumber(opts.per_page) or 100
+    local max_pages = tonumber(opts.max_pages) or 5
+    local results = {}
+    for page = 1, max_pages do
+        local path = string.format("/repos/%s/%s/releases", owner, repo)
+        local query = string.format("per_page=%d&page=%d", per_page, page)
+        local code, body = request(path, query)
+        if code ~= 200 then
+            logger.warn("GitHub fetch releases error", owner .. "/" .. repo, code, body)
+            if #results > 0 then
+                return results, nil
+            end
+            return nil, { code = code, body = body }
+        end
+        local ok, parsed = pcall(json.decode, body)
+        if not ok or type(parsed) ~= "table" then
+            logger.warn("GitHub fetch releases decode error", parsed)
+            if #results > 0 then
+                return results, nil
+            end
+            return nil, "decode"
+        end
+        if #parsed == 0 then
+            break
+        end
+        for _, rel in ipairs(parsed) do
+            table.insert(results, rel)
+        end
+        if #parsed < per_page then
+            break
+        end
+    end
+    return results, nil
+end
+
 return GitHubClient
 
