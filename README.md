@@ -82,6 +82,30 @@ The UI is built around four dedicated dialogs.
 - When cached data is older than 7 days, the banner reminds you to trigger **Refresh cache**.
 - README files, download archives, and installed SHAs are cached so subsequent operations reuse existing data whenever possible.
 
+## Managing Installed Plugins and Patches
+
+The AppStore plugin provides built-in tools to **disable** and **delete** installed plugins and patches directly from the update dialogs.
+
+### Disable/Enable
+
+- **Plugins**: Uses KOReader's native disable mechanism. Disabled plugins appear with a `[DISABLED]` label and sync with the Tools → Plugin management screen.
+- **Patches**: Renames the file with a `.disabled` suffix (e.g., `2-patch.lua` → `2-patch.lua.disabled`). Disabled patches are shown with a `[DISABLED]` label.
+
+### Delete (Uninstall)
+
+- **Linked items** (matched with a repository): Can always be deleted.
+- **Unlinked items** (not matched): Can only be deleted if the "Allow delete unlinked plugins/patches" setting is enabled.
+
+### Accessing Management Options
+
+1. Open **Check plugin updates** or **Check patch updates**.
+2. Tap any installed item to open its action dialog.
+3. Use **Disable/Enable** buttons to toggle the item's state.
+4. Use **Delete** button to permanently remove the item (confirmation required).
+5. Access the **gear icon** (⚙️) to enable deletion of unlinked items.
+
+**Note**: All disable/enable/delete operations require a KOReader restart to take effect.
+
 ## Include 0-Star Forks Setting
 
 By default, the AppStore plugin **excludes** repositories that are forks with zero stars from search results.

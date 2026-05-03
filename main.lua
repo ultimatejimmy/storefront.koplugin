@@ -51,6 +51,9 @@ local logger = require("logger")
 local SETTINGS_PATH = DataStorage:getSettingsDir() .. "/appstore.lua"
 local AppStoreSettings = LuaSettings:open(SETTINGS_PATH)
 
+local ALLOW_DELETE_UNLINKED_PLUGINS_KEY = "allow_delete_unlinked_plugins"
+local ALLOW_DELETE_UNLINKED_PATCHES_KEY = "allow_delete_unlinked_patches"
+
 local STALE_WARNING_SECONDS = 7 * 24 * 3600
 local BROWSER_PAGE_SIZE = 14
 local PLUGIN_TOPICS = { "koreader-plugin" }
@@ -451,22 +454,76 @@ local function computeFileSha1(path)
     return sha2.sha1(header .. "\0" .. content)
 end
 
+local function isPluginDisabled(dirname)
+    if not dirname or dirname == "" then
+        return false
+    end
+    local plugins_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
+    local plugin_name = dirname:gsub("%.koplugin$", "")
+    return plugins_disabled[plugin_name] == true
+end
+
+local function isPatchDisabled(filename)
+    if not filename or filename == "" then
+        return false
+    end
+    return filename:match("%.disabled$") ~= nil
+end
+
+local function deleteDirectoryRecursive(path)
+    if not path or path == "" then
+        return false, "Invalid path"
+    end
+    local attr = lfs.attributes(path)
+    if not attr then
+        return false, "Path does not exist"
+    end
+    if attr.mode ~= "directory" then
+        return os.remove(path), "Not a directory"
+    end
+    for entry in lfs.dir(path) do
+        if entry ~= "." and entry ~= ".." then
+            local full_path = path .. "/" .. entry
+            local entry_attr = lfs.attributes(full_path)
+            if entry_attr then
+                if entry_attr.mode == "directory" then
+                    local ok, err = deleteDirectoryRecursive(full_path)
+                    if not ok then
+                        return false, err
+                    end
+                else
+                    local ok, err = os.remove(full_path)
+                    if not ok then
+                        return false, err
+                    end
+                end
+            end
+        end
+    end
+    return lfs.rmdir(path)
+end
+
 function listInstalledPatches()
     local patches = {}
     if lfs.attributes(PATCHES_ROOT, "mode") ~= "directory" then
         return patches
     end
     for entry in lfs.dir(PATCHES_ROOT) do
-        if entry ~= "." and entry ~= ".." and entry:match("%.lua$") then
-            local fullpath = PATCHES_ROOT .. "/" .. entry
-            local attr = lfs.attributes(fullpath)
-            if attr and attr.mode == "file" then
-                table.insert(patches, {
-                    filename = entry,
-                    path = fullpath,
-                    size = attr.size,
-                    latest_mtime = attr.modification,
-                })
+        if entry ~= "." and entry ~= ".." then
+            local is_lua = entry:match("%.lua$")
+            local is_disabled = entry:match("%.lua%.disabled$")
+            if is_lua or is_disabled then
+                local fullpath = PATCHES_ROOT .. "/" .. entry
+                local attr = lfs.attributes(fullpath)
+                if attr and attr.mode == "file" then
+                    table.insert(patches, {
+                        filename = entry,
+                        path = fullpath,
+                        size = attr.size,
+                        latest_mtime = attr.modification,
+                        disabled = is_disabled,
+                    })
+                end
             end
         end
     end
@@ -560,8 +617,9 @@ function AppStore:buildPatchUpdateItems(summary)
             local patch = patch_item.patch
             local record = patch_item.record
             local remote_entry = patch_item.remote_entry
+            local disabled_label = (patch.disabled or isPatchDisabled(patch.filename)) and "[DISABLED] " or ""
             local lines = {
-                string.format("• %s", patch.filename or patch.path or _("patch")),
+                string.format("• %s%s", disabled_label, patch.filename or patch.path or _("patch")),
             }
             if record and record.owner and record.repo then
                 table.insert(lines, string.format(_("Repo: %s/%s"), record.owner, record.repo))
@@ -1048,8 +1106,9 @@ function AppStore:buildUpdateItems(summary)
             local plugin = item.plugin
             local record = item.record
             local remote = item.remote
+            local disabled_label = isPluginDisabled(plugin.dirname) and "[DISABLED] " or ""
             local lines = {
-                string.format("• %s (%s)", plugin.name or plugin.dirname, plugin.dirname),
+                string.format("• %s%s (%s)", disabled_label, plugin.name or plugin.dirname, plugin.dirname),
             }
 
             local local_line = string.format(_("Local: %s"), plugin.version or _("unknown"))
@@ -1239,6 +1298,38 @@ function AppStore:closePatchUpdatesDialog(skip_scroll_save)
     end
 end
 
+function AppStore:showPluginUpdatesSettings()
+    local allow_delete_unlinked = AppStoreSettings:readSetting(ALLOW_DELETE_UNLINKED_PLUGINS_KEY) or false
+    local checkbox_text = allow_delete_unlinked and "☑ " or "☐ "
+    local button_dialog
+    local buttons = {
+        {
+            {
+                text = checkbox_text .. _("Allow delete unlinked plugins"),
+                background = Blitbuffer.COLOR_WHITE,
+                callback = function()
+                    local new_value = not (AppStoreSettings:readSetting(ALLOW_DELETE_UNLINKED_PLUGINS_KEY) or false)
+                    AppStoreSettings:saveSetting(ALLOW_DELETE_UNLINKED_PLUGINS_KEY, new_value)
+                    AppStoreSettings:flush()
+                    UIManager:close(button_dialog)
+                    UIManager:show(InfoMessage:new{
+                        text = new_value and _("Unlinked plugins can now be deleted") or _("Unlinked plugins cannot be deleted"),
+                        timeout = 2,
+                    })
+                    UIManager:nextTick(function()
+                        self:showPluginUpdatesSettings()
+                    end)
+                end,
+            },
+        },
+    }
+    button_dialog = ButtonDialog:new{
+        title = _("Plugin Updates Settings"),
+        buttons = buttons,
+    }
+    UIManager:show(button_dialog)
+end
+
 function AppStore:showUpdatesDialog()
     self:ensureUpdatesState()
     local summary = self:collectUpdateSummary()
@@ -1249,6 +1340,9 @@ function AppStore:showUpdatesDialog()
         appstore = self,
         page = 1,
         total_pages = 1,
+        on_settings_tap = function()
+            self:showPluginUpdatesSettings()
+        end,
         on_dismiss = function(scroll_offset)
             self.updates_menu = nil
             self:ensureUpdatesState()
@@ -1260,6 +1354,38 @@ function AppStore:showUpdatesDialog()
     if self.updates_state.scroll_offset then
         dialog:setScrollOffset(self.updates_state.scroll_offset)
     end
+end
+
+function AppStore:showPatchUpdatesSettings()
+    local allow_delete_unlinked = AppStoreSettings:readSetting(ALLOW_DELETE_UNLINKED_PATCHES_KEY) or false
+    local checkbox_text = allow_delete_unlinked and "☑ " or "☐ "
+    local button_dialog
+    local buttons = {
+        {
+            {
+                text = checkbox_text .. _("Allow delete unlinked patches"),
+                background = Blitbuffer.COLOR_WHITE,
+                callback = function()
+                    local new_value = not (AppStoreSettings:readSetting(ALLOW_DELETE_UNLINKED_PATCHES_KEY) or false)
+                    AppStoreSettings:saveSetting(ALLOW_DELETE_UNLINKED_PATCHES_KEY, new_value)
+                    AppStoreSettings:flush()
+                    UIManager:close(button_dialog)
+                    UIManager:show(InfoMessage:new{
+                        text = new_value and _("Unlinked patches can now be deleted") or _("Unlinked patches cannot be deleted"),
+                        timeout = 2,
+                    })
+                    UIManager:nextTick(function()
+                        self:showPatchUpdatesSettings()
+                    end)
+                end,
+            },
+        },
+    }
+    button_dialog = ButtonDialog:new{
+        title = _("Patch Updates Settings"),
+        buttons = buttons,
+    }
+    UIManager:show(button_dialog)
 end
 
 function AppStore:showPatchUpdatesDialog()
@@ -1278,6 +1404,9 @@ function AppStore:showPatchUpdatesDialog()
         appstore = self,
         page = 1,
         total_pages = 1,
+        on_settings_tap = function()
+            self:showPatchUpdatesSettings()
+        end,
         on_dismiss = function(scroll_offset)
             self.patch_updates_menu = nil
             self:ensurePatchUpdatesState()
@@ -1704,9 +1833,12 @@ function AppStore:promptUpdateAction(plugin, record)
     end
     local info_box
     local other_buttons = {}
+    local other_buttons_row2 = {}
+    
     if record and record.owner and record.repo then
         table.insert(other_buttons, {
             text = _("Check this plugin"),
+            background = Blitbuffer.COLOR_WHITE,
             callback = function()
                 UIManager:close(info_box)
                 self:checkSinglePlugin(record)
@@ -1714,6 +1846,7 @@ function AppStore:promptUpdateAction(plugin, record)
         })
         table.insert(other_buttons, {
             text = _("Update plugin"),
+            background = Blitbuffer.COLOR_WHITE,
             callback = function()
                 UIManager:close(info_box)
                 self:updatePluginFromRecord(record)
@@ -1721,6 +1854,7 @@ function AppStore:promptUpdateAction(plugin, record)
         })
         table.insert(other_buttons, {
             text = _("Rematch with repo"),
+            background = Blitbuffer.COLOR_WHITE,
             callback = function()
                 UIManager:close(info_box)
                 self:startMatchFlowForPlugin(plugin)
@@ -1729,19 +1863,64 @@ function AppStore:promptUpdateAction(plugin, record)
     else
         table.insert(other_buttons, {
             text = _("Match with repo"),
+            background = Blitbuffer.COLOR_WHITE,
             callback = function()
                 UIManager:close(info_box)
                 self:startMatchFlowForPlugin(plugin)
             end,
         })
     end
+    
+    local is_disabled = isPluginDisabled(plugin.dirname)
+    if is_disabled then
+        table.insert(other_buttons_row2, {
+            text = _("Enable plugin"),
+            background = Blitbuffer.COLOR_WHITE,
+            callback = function()
+                UIManager:close(info_box)
+                self:enablePlugin(plugin.dirname)
+                UIManager:show(InfoMessage:new{
+                    text = string.format(_("Plugin '%s' enabled. Restart to apply changes."), plugin.name or plugin.dirname),
+                    timeout = 4,
+                })
+                if self.updates_menu then
+                    self:updateUpdatesDialog()
+                end
+            end,
+        })
+    else
+        table.insert(other_buttons_row2, {
+            text = _("Disable plugin"),
+            background = Blitbuffer.COLOR_WHITE,
+            callback = function()
+                UIManager:close(info_box)
+                self:disablePlugin(plugin.dirname)
+                UIManager:show(InfoMessage:new{
+                    text = string.format(_("Plugin '%s' disabled. Restart to apply changes."), plugin.name or plugin.dirname),
+                    timeout = 4,
+                })
+                if self.updates_menu then
+                    self:updateUpdatesDialog()
+                end
+            end,
+        })
+    end
+    
+    table.insert(other_buttons_row2, {
+        text = _("Delete plugin"),
+        background = Blitbuffer.COLOR_WHITE,
+        callback = function()
+            UIManager:close(info_box)
+            self:deletePlugin(plugin.dirname, record)
+        end,
+    })
 
     info_box = ConfirmBox:new{
         text = plugin.name or plugin.dirname,
         cancel_text = _("Close"),
         no_ok_button = true,
         custom_content = makeTextBox(table.concat(lines, "\n")),
-        other_buttons = { other_buttons },
+        other_buttons = { other_buttons, other_buttons_row2 },
     }
     UIManager:show(info_box)
 end
@@ -1781,9 +1960,12 @@ function AppStore:promptPatchUpdateAction(patch_item)
 
     local info_box
     local other_buttons = {}
+    local other_buttons_row2 = {}
+    
     if record and record.owner and record.repo and record.path then
         table.insert(other_buttons, {
             text = _("Check this patch"),
+            background = Blitbuffer.COLOR_WHITE,
             callback = function()
                 UIManager:close(info_box)
                 self:checkSinglePatch(record)
@@ -1791,6 +1973,7 @@ function AppStore:promptPatchUpdateAction(patch_item)
         })
         table.insert(other_buttons, {
             text = _("Update patch"),
+            background = Blitbuffer.COLOR_WHITE,
             callback = function()
                 UIManager:close(info_box)
                 self:updatePatchFromRecord(record)
@@ -1798,6 +1981,7 @@ function AppStore:promptPatchUpdateAction(patch_item)
         })
         table.insert(other_buttons, {
             text = _("Rematch with repo"),
+            background = Blitbuffer.COLOR_WHITE,
             callback = function()
                 UIManager:close(info_box)
                 self:startPatchMatchFlow(patch)
@@ -1806,21 +1990,229 @@ function AppStore:promptPatchUpdateAction(patch_item)
     else
         table.insert(other_buttons, {
             text = _("Match with repo"),
+            background = Blitbuffer.COLOR_WHITE,
             callback = function()
                 UIManager:close(info_box)
                 self:startPatchMatchFlow(patch)
             end,
         })
     end
+    
+    local is_disabled = patch.disabled or isPatchDisabled(patch.filename)
+    if is_disabled then
+        table.insert(other_buttons_row2, {
+            text = _("Enable patch"),
+            background = Blitbuffer.COLOR_WHITE,
+            callback = function()
+                UIManager:close(info_box)
+                local ok = self:enablePatch(patch.filename)
+                if ok then
+                    UIManager:show(InfoMessage:new{
+                        text = string.format(_("Patch '%s' enabled. Restart to apply changes."), patch.filename),
+                        timeout = 4,
+                    })
+                    if self.patch_updates_menu then
+                        self:updatePatchUpdatesDialog()
+                    end
+                else
+                    UIManager:show(InfoMessage:new{
+                        text = string.format(_("Failed to enable patch '%s'."), patch.filename),
+                        timeout = 4,
+                    })
+                end
+            end,
+        })
+    else
+        table.insert(other_buttons_row2, {
+            text = _("Disable patch"),
+            background = Blitbuffer.COLOR_WHITE,
+            callback = function()
+                UIManager:close(info_box)
+                local ok = self:disablePatch(patch.filename)
+                if ok then
+                    UIManager:show(InfoMessage:new{
+                        text = string.format(_("Patch '%s' disabled. Restart to apply changes."), patch.filename),
+                        timeout = 4,
+                    })
+                    if self.patch_updates_menu then
+                        self:updatePatchUpdatesDialog()
+                    end
+                else
+                    UIManager:show(InfoMessage:new{
+                        text = string.format(_("Failed to disable patch '%s'."), patch.filename),
+                        timeout = 4,
+                    })
+                end
+            end,
+        })
+    end
+    
+    table.insert(other_buttons_row2, {
+        text = _("Delete patch"),
+        background = Blitbuffer.COLOR_WHITE,
+        callback = function()
+            UIManager:close(info_box)
+            self:deletePatch(patch.filename, record)
+        end,
+    })
 
     info_box = ConfirmBox:new{
         text = patch.filename or patch.path or _("Patch"),
         cancel_text = _("Close"),
         no_ok_button = true,
         custom_content = makeTextBox(table.concat(lines, "\n")),
-        other_buttons = { other_buttons },
+        other_buttons = { other_buttons, other_buttons_row2 },
     }
     UIManager:show(info_box)
+end
+
+function AppStore:disablePlugin(dirname)
+    if not dirname or dirname == "" then
+        return false
+    end
+    local plugins_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
+    local plugin_name = dirname:gsub("%.koplugin$", "")
+    plugins_disabled[plugin_name] = true
+    G_reader_settings:saveSetting("plugins_disabled", plugins_disabled)
+    return true
+end
+
+function AppStore:enablePlugin(dirname)
+    if not dirname or dirname == "" then
+        return false
+    end
+    local plugins_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
+    local plugin_name = dirname:gsub("%.koplugin$", "")
+    plugins_disabled[plugin_name] = nil
+    G_reader_settings:saveSetting("plugins_disabled", plugins_disabled)
+    return true
+end
+
+function AppStore:deletePlugin(dirname, record)
+    if not dirname or dirname == "" then
+        return
+    end
+    local plugin = findInstalledPlugin(dirname)
+    local display_name = plugin and (plugin.name or plugin.dirname) or dirname
+    local is_linked = record and record.owner and record.repo
+    local allow_delete_unlinked = AppStoreSettings:readSetting(ALLOW_DELETE_UNLINKED_PLUGINS_KEY) or false
+    
+    if not is_linked and not allow_delete_unlinked then
+        UIManager:show(InfoMessage:new{
+            text = _("Cannot delete unlinked plugins. Enable 'Allow delete unlinked plugins' in settings."),
+            timeout = 4,
+        })
+        return
+    end
+    
+    local confirm_box
+    confirm_box = ConfirmBox:new{
+        text = string.format(_("Delete plugin '%s'?\n\nThis action cannot be undone.\n\nChanges will take effect after restart."), display_name),
+        ok_text = _("Delete"),
+        ok_callback = function()
+            local plugin_path = PLUGINS_ROOT .. "/" .. dirname
+            local ok, err = deleteDirectoryRecursive(plugin_path)
+            if ok then
+                if record then
+                    InstallStore.remove(dirname)
+                end
+                UIManager:show(InfoMessage:new{
+                    text = string.format(_("Plugin '%s' deleted. Restart to apply changes."), display_name),
+                    timeout = 5,
+                })
+                if self.updates_menu then
+                    self:updateUpdatesDialog()
+                end
+            else
+                UIManager:show(InfoMessage:new{
+                    text = string.format(_("Failed to delete plugin: %s"), tostring(err)),
+                    timeout = 5,
+                })
+            end
+        end,
+        cancel_text = _("Cancel"),
+    }
+    UIManager:show(confirm_box)
+end
+
+function AppStore:disablePatch(filename)
+    if not filename or filename == "" then
+        return false
+    end
+    if filename:match("%.disabled$") then
+        return true
+    end
+    local old_path = PATCHES_ROOT .. "/" .. filename
+    local new_path = old_path .. ".disabled"
+    local ok, err = os.rename(old_path, new_path)
+    if not ok then
+        logger.warn("Failed to disable patch:", filename, err)
+        return false
+    end
+    return true
+end
+
+function AppStore:enablePatch(filename)
+    if not filename or filename == "" then
+        return false
+    end
+    if not filename:match("%.disabled$") then
+        return true
+    end
+    local old_path = PATCHES_ROOT .. "/" .. filename
+    local new_path = old_path:gsub("%.disabled$", "")
+    local ok, err = os.rename(old_path, new_path)
+    if not ok then
+        logger.warn("Failed to enable patch:", filename, err)
+        return false
+    end
+    return true
+end
+
+function AppStore:deletePatch(filename, record)
+    if not filename or filename == "" then
+        return
+    end
+    local display_name = filename
+    local is_linked = record and record.owner and record.repo
+    local allow_delete_unlinked = AppStoreSettings:readSetting(ALLOW_DELETE_UNLINKED_PATCHES_KEY) or false
+    
+    if not is_linked and not allow_delete_unlinked then
+        UIManager:show(InfoMessage:new{
+            text = _("Cannot delete unlinked patches. Enable 'Allow delete unlinked patches' in settings."),
+            timeout = 4,
+        })
+        return
+    end
+    
+    local confirm_box
+    confirm_box = ConfirmBox:new{
+        text = string.format(_("Delete patch '%s'?\n\nThis action cannot be undone.\n\nChanges will take effect after restart."), display_name),
+        ok_text = _("Delete"),
+        ok_callback = function()
+            local patch_path = PATCHES_ROOT .. "/" .. filename
+            local ok, err = os.remove(patch_path)
+            if ok then
+                if record then
+                    InstallStore.removePatch(filename)
+                end
+                UIManager:show(InfoMessage:new{
+                    text = string.format(_("Patch '%s' deleted. Restart to apply changes."), display_name),
+                    timeout = 5,
+                })
+                if self.patch_updates_menu then
+                    self:updatePatchUpdatesDialog()
+                end
+            else
+                UIManager:show(InfoMessage:new{
+                    text = string.format(_("Failed to delete patch: %s"), tostring(err)),
+                    timeout = 5,
+                })
+            end
+        end,
+        cancel_text = _("Cancel"),
+    }
+    UIManager:show(confirm_box)
 end
 
 function AppStore:checkSinglePlugin(record)
