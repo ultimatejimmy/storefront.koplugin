@@ -1785,6 +1785,13 @@ function AppStore:startMatchFlowForPlugin(plugin)
     self.browser_state.kind = "plugin"
     self.browser_state.page = 1
     self.browser_state.scroll_offset = nil
+    
+    local search_text = plugin.dirname or ""
+    if search_text ~= "" then
+        search_text = search_text:gsub("%.koplugin$", "")
+        self.browser_state.search_text = search_text
+    end
+    
     self:saveBrowserState()
     self:closeUpdatesDialog()
     UIManager:setDirty(nil, "ui")
@@ -1822,6 +1829,98 @@ function AppStore:matchPluginWithRepo(plugin, repo)
     end
 end
 
+function AppStore:promptManualMatchForPlugin(plugin)
+    if not plugin then
+        return
+    end
+    local dialog
+    dialog = MultiInputDialog:new{
+        title = _("Match plugin with GitHub repository"),
+        fields = {
+            {
+                description = _("Repository owner"),
+                text = "",
+                hint = _("e.g., koreader"),
+            },
+            {
+                description = _("Repository name"),
+                text = "",
+                hint = _("e.g., koreader"),
+            },
+        },
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    background = Blitbuffer.COLOR_WHITE,
+                    callback = function()
+                        UIManager:close(dialog)
+                    end,
+                },
+                {
+                    text = _("Match"),
+                    background = Blitbuffer.COLOR_WHITE,
+                    is_enter_default = true,
+                    callback = function()
+                        local fields = dialog:getFields()
+                        local owner = util.trim(fields[1] or "")
+                        local repo_name = util.trim(fields[2] or "")
+                        if owner == "" or repo_name == "" then
+                            UIManager:show(InfoMessage:new{
+                                text = _("Both owner and repository name are required."),
+                                timeout = 3,
+                            })
+                            return
+                        end
+                        UIManager:close(dialog)
+                        self:verifyAndMatchPluginWithManualRepo(plugin, owner, repo_name)
+                    end,
+                },
+            },
+        },
+    }
+    UIManager:show(dialog)
+end
+
+function AppStore:verifyAndMatchPluginWithManualRepo(plugin, owner, repo_name)
+    if not plugin or not owner or not repo_name then
+        return
+    end
+    local progress = InfoMessage:new{
+        text = string.format(_("Verifying repository %s/%s..."), owner, repo_name),
+        timeout = 0,
+    }
+    UIManager:show(progress)
+    UIManager:forceRePaint()
+    
+    NetworkMgr:runWhenOnline(function()
+        local full_name = owner .. "/" .. repo_name
+        local repo_data, err = GitHub.fetchRepoMetadata(owner, repo_name)
+        UIManager:close(progress)
+        
+        if not repo_data or not repo_data.id then
+            UIManager:show(InfoMessage:new{
+                text = string.format(_("Repository %s not found on GitHub."), full_name),
+                timeout = 4,
+            })
+            return
+        end
+        
+        local repo = {
+            kind = "plugin",
+            name = repo_name,
+            owner = owner,
+            full_name = full_name,
+            id = repo_data.id,
+            repo_id = repo_data.id,
+            description = repo_data.description,
+            data = repo_data,
+        }
+        
+        self:matchPluginWithRepo(plugin, repo)
+    end)
+end
+
 function AppStore:promptUpdateAction(plugin, record)
     local lines = {
         string.format("%s (%s)", plugin.name or plugin.dirname, plugin.dirname),
@@ -1854,20 +1953,36 @@ function AppStore:promptUpdateAction(plugin, record)
             end,
         })
         table.insert(other_buttons, {
-            text = _("Rematch with repo"),
+            text = _("Unlink the repo"),
+            background = Blitbuffer.COLOR_WHITE,
+            callback = function()
+                UIManager:close(info_box)
+                InstallStore.remove(plugin.dirname)
+                UIManager:show(InfoMessage:new{
+                    text = string.format(_("Unlinked %s from repository."), plugin.name or plugin.dirname),
+                    timeout = 3,
+                })
+                if self.updates_menu then
+                    self:updateUpdatesDialog()
+                end
+                self:promptUpdateAction(plugin, nil)
+            end,
+        })
+    else
+        table.insert(other_buttons, {
+            text = _("Match from List"),
             background = Blitbuffer.COLOR_WHITE,
             callback = function()
                 UIManager:close(info_box)
                 self:startMatchFlowForPlugin(plugin)
             end,
         })
-    else
         table.insert(other_buttons, {
-            text = _("Match with repo"),
+            text = _("Match with URL"),
             background = Blitbuffer.COLOR_WHITE,
             callback = function()
                 UIManager:close(info_box)
-                self:startMatchFlowForPlugin(plugin)
+                self:promptManualMatchForPlugin(plugin)
             end,
         })
     end
@@ -1981,20 +2096,36 @@ function AppStore:promptPatchUpdateAction(patch_item)
             end,
         })
         table.insert(other_buttons, {
-            text = _("Rematch with repo"),
+            text = _("Unlink the repo"),
+            background = Blitbuffer.COLOR_WHITE,
+            callback = function()
+                UIManager:close(info_box)
+                InstallStore.removePatch(patch.filename)
+                UIManager:show(InfoMessage:new{
+                    text = string.format(_("Unlinked %s from repository."), patch.filename),
+                    timeout = 3,
+                })
+                if self.patch_updates_menu then
+                    self:updatePatchUpdatesDialog()
+                end
+                self:promptPatchUpdateAction({ patch = patch, record = nil, remote_entry = nil, needs_update = false })
+            end,
+        })
+    else
+        table.insert(other_buttons, {
+            text = _("Match from List"),
             background = Blitbuffer.COLOR_WHITE,
             callback = function()
                 UIManager:close(info_box)
                 self:startPatchMatchFlow(patch)
             end,
         })
-    else
         table.insert(other_buttons, {
-            text = _("Match with repo"),
+            text = _("Match with URL"),
             background = Blitbuffer.COLOR_WHITE,
             callback = function()
                 UIManager:close(info_box)
-                self:startPatchMatchFlow(patch)
+                self:promptManualMatchForPatch(patch)
             end,
         })
     end
@@ -2396,6 +2527,150 @@ function AppStore:matchPatchWithRepo(patch, repo, patch_entry)
     if from_patch_updates then
         self:showPatchUpdatesDialog()
     end
+end
+
+function AppStore:promptManualMatchForPatch(patch)
+    if type(patch) == "string" then
+        patch = findInstalledPatch(patch)
+    end
+    if not patch then
+        return
+    end
+    local dialog
+    dialog = MultiInputDialog:new{
+        title = _("Match patch with GitHub repository"),
+        fields = {
+            {
+                description = _("Repository owner"),
+                text = "",
+                hint = _("e.g., koreader"),
+            },
+            {
+                description = _("Repository name"),
+                text = "",
+                hint = _("e.g., koreader"),
+            },
+        },
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    background = Blitbuffer.COLOR_WHITE,
+                    callback = function()
+                        UIManager:close(dialog)
+                    end,
+                },
+                {
+                    text = _("Match"),
+                    background = Blitbuffer.COLOR_WHITE,
+                    is_enter_default = true,
+                    callback = function()
+                        local fields = dialog:getFields()
+                        local owner = util.trim(fields[1] or "")
+                        local repo_name = util.trim(fields[2] or "")
+                        if owner == "" or repo_name == "" then
+                            UIManager:show(InfoMessage:new{
+                                text = _("Both owner and repository name are required."),
+                                timeout = 3,
+                            })
+                            return
+                        end
+                        UIManager:close(dialog)
+                        self:verifyAndMatchPatchWithManualRepo(patch, owner, repo_name)
+                    end,
+                },
+            },
+        },
+    }
+    UIManager:show(dialog)
+end
+
+function AppStore:verifyAndMatchPatchWithManualRepo(patch, owner, repo_name)
+    if type(patch) == "string" then
+        patch = findInstalledPatch(patch)
+    end
+    if not patch or not owner or not repo_name then
+        return
+    end
+    local progress = InfoMessage:new{
+        text = string.format(_("Verifying repository %s/%s..."), owner, repo_name),
+        timeout = 0,
+    }
+    UIManager:show(progress)
+    UIManager:forceRePaint()
+    
+    NetworkMgr:runWhenOnline(function()
+        local full_name = owner .. "/" .. repo_name
+        local repo_data, err = GitHub.fetchRepoMetadata(owner, repo_name)
+        
+        if not repo_data or not repo_data.id then
+            UIManager:close(progress)
+            UIManager:show(InfoMessage:new{
+                text = string.format(_("Repository %s not found on GitHub."), full_name),
+                timeout = 4,
+            })
+            return
+        end
+        
+        local repo = {
+            kind = "patch",
+            name = repo_name,
+            owner = owner,
+            full_name = full_name,
+            id = repo_data.id,
+            repo_id = repo_data.id,
+            description = repo_data.description,
+            data = repo_data,
+        }
+        
+        local entries = self:fetchPatchEntriesFromGitHub(repo)
+        UIManager:close(progress)
+        
+        if not entries or #entries == 0 then
+            UIManager:show(InfoMessage:new{
+                text = string.format(_("No patch files found in repository %s."), full_name),
+                timeout = 4,
+            })
+            return
+        end
+        
+        self.match_context = { kind = "patch", patch = patch, from_patch_updates = self.patch_updates_menu ~= nil }
+        self:showPatchSelectionDialog(patch, repo, entries)
+    end)
+end
+
+function AppStore:showPatchSelectionDialog(patch, repo, entries)
+    if not patch or not repo or not entries or #entries == 0 then
+        return
+    end
+    
+    local buttons = {}
+    for idx, entry in ipairs(entries) do
+        table.insert(buttons, {
+            {
+                text = entry.path or entry.display_path or _("patch"),
+                background = Blitbuffer.COLOR_WHITE,
+                callback = function()
+                    self:matchPatchWithRepo(patch, repo, entry)
+                end,
+            },
+        })
+    end
+    
+    table.insert(buttons, {
+        {
+            text = _("Cancel"),
+            background = Blitbuffer.COLOR_WHITE,
+            callback = function()
+                self.match_context = nil
+            end,
+        },
+    })
+    
+    UIManager:show(ButtonDialog:new{
+        title = string.format(_("Select patch file from %s"), repo.full_name or repo.name),
+        buttons = buttons,
+    })
 end
 
 local function getRecordedInstall(dirname)
