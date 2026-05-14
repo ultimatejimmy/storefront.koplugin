@@ -2644,6 +2644,7 @@ function AppStore:showPatchSelectionDialog(patch, repo, entries)
         return
     end
     
+    local dialog
     local buttons = {}
     for idx, entry in ipairs(entries) do
         table.insert(buttons, {
@@ -2651,6 +2652,7 @@ function AppStore:showPatchSelectionDialog(patch, repo, entries)
                 text = entry.path or entry.display_path or _("patch"),
                 background = Blitbuffer.COLOR_WHITE,
                 callback = function()
+                    UIManager:close(dialog)
                     self:matchPatchWithRepo(patch, repo, entry)
                 end,
             },
@@ -2662,15 +2664,20 @@ function AppStore:showPatchSelectionDialog(patch, repo, entries)
             text = _("Cancel"),
             background = Blitbuffer.COLOR_WHITE,
             callback = function()
+                UIManager:close(dialog)
                 self.match_context = nil
             end,
         },
     })
     
-    UIManager:show(ButtonDialog:new{
+    dialog = ButtonDialog:new{
         title = string.format(_("Select patch file from %s"), repo.full_name or repo.name),
         buttons = buttons,
-    })
+        tap_close_callback = function()
+            self.match_context = nil
+        end,
+    }
+    UIManager:show(dialog)
 end
 
 local function getRecordedInstall(dirname)
