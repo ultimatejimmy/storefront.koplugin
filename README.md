@@ -2,6 +2,16 @@
 
 Discover, install, and update community-created KOReader plugins and user patches without leaving your device. The AppStore plugin searches both GitHub topics (`koreader-plugin`, `koreader-user-patch`) and repositories whose names follow patterns like `"KOReader.patches"` or `"[NAME].plugins"`. The plugin supports standard owner/topic/description filters, surfacing curated lists with filtering, sorting, and hands-on install flows that feel native on e-ink hardware.
 
+## Installation
+
+1. Download the latest release from the [releases page](https://github.com/omer-faruq/appstore.koplugin/releases) or clone this repository.
+2. Copy the `appstore.koplugin` folder to your KOReader's `plugins` directory:
+   - **Kobo/Kindle**: `koreader/plugins/`
+   - **Android**: `/sdcard/koreader/plugins/`
+   - **Desktop**: `~/.config/koreader/plugins/` (Linux) or `%APPDATA%/koreader/plugins/` (Windows)
+3. Restart KOReader.
+4. Access via **Tools** → **App Store**.
+
 ## Key Capabilities
 
 - **Unified browser** for both plugins and user patches with persistent filters and paging.
@@ -84,7 +94,7 @@ The UI is built around four dedicated dialogs.
 
 ## Managing Installed Plugins and Patches
 
-The AppStore plugin provides built-in tools to **disable** and **delete** installed plugins and patches directly from the update dialogs.
+The AppStore plugin provides built-in tools to **disable**, **delete**, and **match with repositories** for installed plugins and patches directly from the update dialogs.
 
 ### Disable/Enable
 
@@ -96,13 +106,23 @@ The AppStore plugin provides built-in tools to **disable** and **delete** instal
 - **Linked items** (matched with a repository): Can always be deleted.
 - **Unlinked items** (not matched): Can only be deleted if the "Allow delete unlinked plugins/patches" setting is enabled.
 
+### Repository Matching
+
+Link installed plugins/patches with GitHub repositories to enable update tracking:
+
+- **Match from List**: Opens the repository browser with automatic filtering by plugin/patch name for quick matching.
+- **Match with URL**: Manually enter GitHub owner and repository name to link items not found in search results.
+- **Unlink the repo**: Remove repository association from linked items to return them to unlinked state.
+
 ### Accessing Management Options
 
 1. Open **Check plugin updates** or **Check patch updates**.
 2. Tap any installed item to open its action dialog.
 3. Use **Disable/Enable** buttons to toggle the item's state.
 4. Use **Delete** button to permanently remove the item (confirmation required).
-5. Access the **gear icon** (⚙️) to enable deletion of unlinked items.
+5. Use **Match from List** or **Match with URL** for unlinked items to enable update tracking.
+6. Use **Unlink the repo** for linked items to remove repository association.
+7. Access the **gear icon** (⚙️) to enable deletion of unlinked items.
 
 **Note**: All disable/enable/delete operations require a KOReader restart to take effect.
 
