@@ -1474,9 +1474,19 @@ function AppStore:showPluginUpdatesSettings()
                 end,
             },
         },
+        {
+            {
+                text = _("Close"),
+                background = Blitbuffer.COLOR_WHITE,
+                callback = function()
+                    UIManager:close(button_dialog)
+                end,
+            },
+        },
     }
+     
     button_dialog = ButtonDialog:new{
-        title = _("Plugin Updates Settings"),
+        title = _("Installed Plugins Settings"),
         buttons = buttons,
     }
     UIManager:show(button_dialog)
@@ -1487,7 +1497,7 @@ function AppStore:showUpdatesDialog()
     local summary = self:collectUpdateSummary()
     local entries = self:buildUpdateBrowserItems(summary)
     local dialog = AppStoreBrowserDialog:new{
-        title = _("App Store · Plugin updates"),
+        title = _("App Store · Installed plugins"),
         items = entries,
         appstore = self,
         page = 1,
@@ -1532,9 +1542,19 @@ function AppStore:showPatchUpdatesSettings()
                 end,
             },
         },
+        {
+            {
+                text = _("Close"),
+                background = Blitbuffer.COLOR_WHITE,
+                callback = function()
+                    UIManager:close(button_dialog)
+                end,
+            },
+        },
     }
+    
     button_dialog = ButtonDialog:new{
-        title = _("Patch Updates Settings"),
+        title = _("Installed Patches Settings"),
         buttons = buttons,
     }
     UIManager:show(button_dialog)
@@ -1551,7 +1571,7 @@ function AppStore:showPatchUpdatesDialog()
     local summary = self:collectPatchUpdateSummary()
     local entries = self:buildPatchUpdateBrowserItems(summary)
     local dialog = AppStoreBrowserDialog:new{
-        title = _("App Store · Patch updates"),
+        title = _("App Store · Installed patches"),
         items = entries,
         appstore = self,
         page = 1,
@@ -5289,7 +5309,7 @@ function AppStore:buildBrowserEntries()
 
     if kind == "plugin" then
         table.insert(items, {
-            text = _("Check plugin updates"),
+            text = _("Manage installed plugins"),
             callback = function()
                 self:closeBrowserMenu()
                 self:showUpdatesDialog()
@@ -5298,7 +5318,7 @@ function AppStore:buildBrowserEntries()
         items[#items].separator = true
     else
         table.insert(items, {
-            text = _("Check patch updates"),
+            text = _("Manage installed patches"),
             callback = function()
                 self:closeBrowserMenu()
                 self:showPatchUpdatesDialog()
