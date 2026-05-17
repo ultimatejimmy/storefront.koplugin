@@ -2673,6 +2673,45 @@ function AppStore:enablePlugin(dirname)
     return true
 end
 
+function AppStore:performPluginDeletion(dirname, record, plugin_instance_for_settings)
+    local plugin = findInstalledPlugin(dirname)
+    local display_name = plugin and (plugin.name or plugin.dirname) or dirname
+    
+    local plugin_path = PLUGINS_ROOT .. "/" .. dirname
+    local ok, err = deleteDirectoryRecursive(plugin_path)
+    if ok then
+        if plugin_instance_for_settings then
+            if type(plugin_instance_for_settings.deletePluginSettings) == "function" then
+                pcall(plugin_instance_for_settings.deletePluginSettings, plugin_instance_for_settings)
+            end
+            
+            if plugin_instance_for_settings.settings_file then
+                os.remove(plugin_instance_for_settings.settings_file)
+                os.remove(plugin_instance_for_settings.settings_file .. ".old")
+            end
+            
+            if plugin_instance_for_settings.settings_key then
+                G_reader_settings:delSetting(plugin_instance_for_settings.settings_key)
+            end
+            
+            G_reader_settings:flush()
+        end
+        
+        if record then
+            InstallStore.remove(dirname)
+        end
+        showRestartConfirmation(string.format(_("Plugin '%s' deleted."), display_name))
+        if self.updates_menu then
+            self:updateUpdatesDialog()
+        end
+    else
+        UIManager:show(InfoMessage:new{
+            text = string.format(_("Failed to delete plugin: %s"), tostring(err)),
+            timeout = 5,
+        })
+    end
+end
+
 function AppStore:deletePlugin(dirname, record)
     if not dirname or dirname == "" then
         return
@@ -2691,12 +2730,8 @@ function AppStore:deletePlugin(dirname, record)
     end
     
     local PluginLoader = require("pluginloader")
-    local plugin_instance = PluginLoader:getPluginInstance(dirname)
-    local can_delete_settings = plugin_instance and (
-        type(plugin_instance.deletePluginSettings) == "function"
-        or plugin_instance.settings_file
-        or plugin_instance.settings_key
-    )
+    local plugin_name = dirname:gsub("%.koplugin$", "")
+    local plugin_instance = PluginLoader:getPluginInstance(plugin_name)
     
     local delete_settings = false
     local confirm_box
@@ -2704,54 +2739,33 @@ function AppStore:deletePlugin(dirname, record)
         text = string.format(_("Delete plugin '%s'?\n\nThis action cannot be undone.\n\nChanges will take effect after restart."), display_name),
         ok_text = _("Delete"),
         ok_callback = function()
-            local plugin_path = PLUGINS_ROOT .. "/" .. dirname
-            local ok, err = deleteDirectoryRecursive(plugin_path)
-            if ok then
-                if delete_settings and plugin_instance then
-                    if type(plugin_instance.deletePluginSettings) == "function" then
-                        pcall(plugin_instance.deletePluginSettings, plugin_instance)
-                    end
-                    
-                    if plugin_instance.settings_file then
-                        os.remove(plugin_instance.settings_file)
-                        os.remove(plugin_instance.settings_file .. ".old")
-                    end
-                    
-                    if plugin_instance.settings_key then
-                        G_reader_settings:delSetting(plugin_instance.settings_key)
-                    end
-                    
-                    G_reader_settings:flush()
-                end
-                
-                if record then
-                    InstallStore.remove(dirname)
-                end
-                showRestartConfirmation(string.format(_("Plugin '%s' deleted."), display_name))
-                if self.updates_menu then
-                    self:updateUpdatesDialog()
-                end
-            else
-                UIManager:show(InfoMessage:new{
-                    text = string.format(_("Failed to delete plugin: %s"), tostring(err)),
-                    timeout = 5,
-                })
-            end
+            self:performPluginDeletion(dirname, record, delete_settings and plugin_instance)
         end,
         cancel_text = _("Cancel"),
     }
     
-    if can_delete_settings then
-        local check_button = CheckButton:new{
-            text = _("Also delete plugin settings"),
-            checked = false,
-            parent = confirm_box,
-            callback = function()
-                delete_settings = not delete_settings
-            end,
-        }
-        confirm_box:addWidget(check_button)
-    end
+    local check_button = CheckButton:new{
+        text = _("Also delete plugin settings"),
+        checked = false,
+        parent = confirm_box,
+        callback = function()
+            delete_settings = not delete_settings
+            if delete_settings and not plugin_instance then
+                local is_filemanager = self.ui and self.ui.file_chooser
+                local message
+                if is_filemanager then
+                    message = _("Plugin is not currently loaded, so settings cannot be deleted.\n\nThis plugin may only be available in Reader mode. Try deleting from a document if you want to delete settings.")
+                else
+                    message = _("Plugin is not currently loaded, so settings cannot be deleted.")
+                end
+                UIManager:show(InfoMessage:new{
+                    text = message,
+                    timeout = 8,
+                })
+            end
+        end,
+    }
+    confirm_box:addWidget(check_button)
     
     UIManager:show(confirm_box)
 end
