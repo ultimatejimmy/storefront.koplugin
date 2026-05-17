@@ -23,6 +23,7 @@ local TextBoxWidget = require("ui/widget/textboxwidget")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local CheckButton = require("ui/widget/checkbutton")
 local ButtonDialog = require("ui/widget/buttondialog")
+local SpinWidget = require("ui/widget/spinwidget")
 local Font = require("ui/font")
 local Dispatcher = require("dispatcher")
 local InputDialog = require("ui/widget/inputdialog")
@@ -3728,8 +3729,21 @@ function AppStoreBrowserDialog:init()
     }
     self._list_group = list_group
 
+    local first_button = Button:new{
+        text = "◀◀",
+        menu_style = true,
+        bordersize = 0,
+        background = Blitbuffer.COLOR_WHITE,
+        callback = function()
+            if self.on_first_page then
+                self.on_first_page()
+            end
+        end,
+    }
+    first_button:enableDisable(self.page > 1)
+
     local prev_button = Button:new{
-        text = _("Previous"),
+        text = "◀",
         menu_style = true,
         bordersize = 0,
         background = Blitbuffer.COLOR_WHITE,
@@ -3741,8 +3755,30 @@ function AppStoreBrowserDialog:init()
     }
     prev_button:enableDisable(self.page > 1)
 
+    local page_button = Button:new{
+        text = string.format(_("Page %d / %d"), self.page, math.max(1, self.total_pages)),
+        menu_style = true,
+        bordersize = 0,
+        background = Blitbuffer.COLOR_WHITE,
+        callback = function()
+            if self.total_pages <= 1 then return end
+            UIManager:show(SpinWidget:new{
+                title_text = _("Go to page"),
+                value = self.page,
+                value_min = 1,
+                value_max = self.total_pages,
+                ok_text = _("Go"),
+                callback = function(spin)
+                    if self.on_goto_page then
+                        self.on_goto_page(spin.value)
+                    end
+                end,
+            })
+        end,
+    }
+
     local next_button = Button:new{
-        text = _("Next"),
+        text = "▶",
         menu_style = true,
         bordersize = 0,
         background = Blitbuffer.COLOR_WHITE,
@@ -3754,13 +3790,21 @@ function AppStoreBrowserDialog:init()
     }
     next_button:enableDisable(self.page < self.total_pages)
 
-    local page_label = TextWidget:new{
-        text = string.format(_("Page %d / %d"), self.page, math.max(1, self.total_pages)),
-        face = Font:getFace("smallinfofont"),
+    local last_button = Button:new{
+        text = "▶▶",
+        menu_style = true,
+        bordersize = 0,
+        background = Blitbuffer.COLOR_WHITE,
+        callback = function()
+            if self.on_last_page then
+                self.on_last_page()
+            end
+        end,
     }
+    last_button:enableDisable(self.page < self.total_pages)
 
     local title_height = self.title_bar:getHeight()
-    local footer_height = math.max(prev_button:getSize().h, next_button:getSize().h)
+    local footer_height = math.max(first_button:getSize().h, prev_button:getSize().h, page_button:getSize().h, next_button:getSize().h, last_button:getSize().h)
     local vertical_padding = 3 * Size.span.vertical_default
     local body_height = self.screen_h - title_height - footer_height - vertical_padding
     if body_height < math.floor(self.screen_h * 0.5) then
@@ -3775,11 +3819,15 @@ function AppStoreBrowserDialog:init()
     self.cropping_widget = self.list_scroller
 
     self.footer = HorizontalGroup:new{
+        first_button,
+        HorizontalSpan:new{ width = Size.span.horizontal_default },
         prev_button,
         HorizontalSpan:new{ width = Size.span.horizontal_default },
-        page_label,
+        page_button,
         HorizontalSpan:new{ width = Size.span.horizontal_default },
         next_button,
+        HorizontalSpan:new{ width = Size.span.horizontal_default },
+        last_button,
     }
 
     self.content = VerticalGroup:new{
@@ -3799,8 +3847,11 @@ function AppStoreBrowserDialog:init()
     }
 
     -- Cache pagination buttons for layout / page change reflection.
+    self._first_button = first_button
     self._prev_button = prev_button
+    self._page_button = page_button
     self._next_button = next_button
+    self._last_button = last_button
 
     -- Compute cumulative Y offsets of every list_group child relative to the
     -- inner top of list_container. We rely on widgets reporting a stable size
@@ -3836,10 +3887,15 @@ function AppStoreBrowserDialog:init()
     end
     local footer_row = {}
     if self.page > 1 then
+        table.insert(footer_row, first_button)
         table.insert(footer_row, prev_button)
+    end
+    if self.total_pages > 1 then
+        table.insert(footer_row, page_button)
     end
     if self.page < self.total_pages then
         table.insert(footer_row, next_button)
+        table.insert(footer_row, last_button)
     end
     if #footer_row > 0 then
         table.insert(self.layout, footer_row)
@@ -5668,6 +5724,15 @@ function AppStore:showBrowser(kind)
         on_settings_tap = function()
             self:showAppStoreSettingsDialog()
         end,
+        on_first_page = function()
+            if self.browser_state.page > 1 then
+                self:resetBrowserScrollState()
+                self.browser_state.page = 1
+                self.browser_state.scroll_offset = nil
+                self:saveBrowserState()
+                self:reopenBrowser()
+            end
+        end,
         on_prev_page = function()
             if self.browser_state.page > 1 then
                 self:resetBrowserScrollState()
@@ -5682,6 +5747,26 @@ function AppStore:showBrowser(kind)
             if self.browser_state.page < total_pages then
                 self:resetBrowserScrollState()
                 self.browser_state.page = self.browser_state.page + 1
+                self.browser_state.scroll_offset = nil
+                self:saveBrowserState()
+                self:reopenBrowser()
+            end
+        end,
+        on_last_page = function()
+            local total_pages = self._last_total_kind == (self.browser_state.kind or "plugin") and (self._last_total_pages or 1) or 1
+            if self.browser_state.page < total_pages then
+                self:resetBrowserScrollState()
+                self.browser_state.page = total_pages
+                self.browser_state.scroll_offset = nil
+                self:saveBrowserState()
+                self:reopenBrowser()
+            end
+        end,
+        on_goto_page = function(page_num)
+            local total_pages = self._last_total_kind == (self.browser_state.kind or "plugin") and (self._last_total_pages or 1) or 1
+            if page_num >= 1 and page_num <= total_pages and page_num ~= self.browser_state.page then
+                self:resetBrowserScrollState()
+                self.browser_state.page = page_num
                 self.browser_state.scroll_offset = nil
                 self:saveBrowserState()
                 self:reopenBrowser()
