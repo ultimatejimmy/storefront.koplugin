@@ -8,7 +8,7 @@ Discover, install, and update community-created KOReader plugins and user patche
 2. Copy the `appstore.koplugin` folder to your KOReader's `plugins` directory:
    - **Kobo/Kindle**: `koreader/plugins/`
    - **Android**: `/sdcard/koreader/plugins/`
-   - **Desktop**: `~/.config/koreader/plugins/` (Linux) or `%APPDATA%/koreader/plugins/` (Windows)
+   - **Desktop (Linux)**: `~/.config/koreader/plugins/`
 3. Restart KOReader.
 4. Access via **Tools** → **App Store**.
 
@@ -59,23 +59,26 @@ The UI is built around four dedicated dialogs.
 1. ### Plugins Browser (`App Store · Plugins`)
    - Lists repositories tagged as KOReader plugins.
    - Actions per entry: **Install / Update / Remove**, **View README**, open detail dialogs with description, stars, last updated timestamp, and repo owner.
-   - Toolbar actions: switch to patches tab, refresh cache, adjust filters (`search text`, `owner`, `minimum stars`), change sorting (stars desc/asc, updated, name), and jump into the plugin update summary.
+   - Toolbar actions: switch to patches tab, refresh cache, adjust filters (`search text`, `owner`, `minimum stars`), change sorting (stars desc/asc, updated, name), and jump into the installed plugins page.
    - **Gear icon (⚙️)**: Access settings including **Install plugin from URL** to manually install plugins by entering GitHub owner/repo.
 
 2. ### Patches Browser (`App Store · Patches`)
    - Lists repositories tagged as KOReader user patches and enumerates files matching `^[number]-*.lua`.
    - Actions per patch: **Install patch**, retry downloads, or open the repo README for full instructions.
-   - Toolbar actions: mirror the plugin tab plus shortcuts to the patch update summary and a "matching patch" banner when reconciling installed files with remote entries.
+   - Toolbar actions: mirror the plugin tab plus shortcuts to the installed patches page and a "matching patch" banner when reconciling installed files with remote entries.
    - **Gear icon (⚙️)**: Access settings including **Install patch from URL** to manually install patches by entering GitHub owner/repo.
 
-3. ### Plugin Updates Dialog
-   - Summarizes every installed plugin tracked by the AppStore cache.
-   - Actions: **Check all updates**, toggle between “Only outdated” and “Show all plugins,” and jump straight back to the Plugins browser.
-   - Each row shows the local version, cached remote version/SHA, last checked timestamp, and provides **Update** or **Reinstall** buttons when differences are detected.
+3. ### Installed Plugins (`Check plugin updates`)
+   - Summarizes every installed plugin, both linked (matched with a repository) and unlinked.
+   - Actions: **Check all updates**, toggle between "Only outdated" and "Show all plugins," and jump straight back to the Plugins browser.
+   - Each row shows the local version, cached remote version/SHA (for linked plugins), last checked timestamp, and provides **Update** or **Reinstall** buttons when differences are detected.
+   - Per-plugin actions: **Disable/Enable**, **Delete**, **Match from List** or **Match with URL** (for unlinked plugins), **Unlink the repo** (for linked plugins).
 
-4. ### Patch Updates Dialog
-   - Works just like the plugin updates view but focuses on numbered patch files under `data/patches`.
-   - Actions: **Refresh patch summary**, toggle filters, return to the Patches browser, or drill into individual patch entries to reinstall/overwrite when the remote SHA changes.
+4. ### Installed Patches (`Check patch updates`)
+   - Works just like the installed plugins page but focuses on numbered patch files under `data/patches`.
+   - Actions: **Check all updates**, toggle between "Only outdated" and "Show all patches," and jump straight back to the Patches browser.
+   - Each row shows the patch filename, cached remote version/SHA (for linked patches), last checked timestamp, and provides **Update** or **Reinstall** buttons when differences are detected.
+   - Per-patch actions: **Disable/Enable** (renames with `.disabled` suffix), **Delete**, **Match from List** or **Match with URL** (for unlinked patches), **Unlink the repo** (for linked patches).
 
 ## Typical Workflow
 
