@@ -378,19 +378,12 @@ function AppStore:_refreshPatchUpdatesInternal(records)
         message = string.format(_("Checked %d patches: %d need updates, %d up to date."), processed_count, processed_updates, processed_up_to_date)
     end
 
-    UIManager:show(InfoMessage:new{ text = message, timeout = 5 })
-
-    if processed_all and self.patch_updates_menu then
-        self:showPatchUpdatesDialog()
-    elseif single_context and records and records[1] and records[1].filename == single_context then
-        if self.patch_updates_menu then
-            local scroll = self.patch_updates_menu:getScrollOffset() and self.patch_updates_menu:getScrollOffset()
-            self:showPatchUpdatesDialog()
-            if scroll then
-                self.patch_updates_menu:setScrollOffset(scroll)
-            end
-        end
+    if self.patch_updates_menu then
+        self:updatePatchUpdatesDialog()
     end
+
+    UIManager:show(InfoMessage:new{ text = message, timeout = 5 })
+    UIManager:setDirty(nil, "full")
 end
 
 local function formatPatchRemoteStatus(remote_entry)
