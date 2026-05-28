@@ -600,11 +600,23 @@ local function buildPatchSummary(remote_info)
         local remote_entry = remote_info and remote_info[installed_patch.filename]
         local remote_sha = (remote_entry and remote_entry.remote_sha)
             or (record and record.sha)
+        -- installed_sha: the SHA recorded at install/update time.
+        -- Comparing remote_sha against this (not local_sha) means user edits to
+        -- the local file do NOT trigger a false "update available" — only a real
+        -- server-side change will flip needs_update to true.
+        local installed_sha = record and record.sha
         local needs_update = false
-        if record and remote_sha and local_sha then
-            needs_update = remote_sha ~= local_sha
-        elseif record and remote_sha and not local_sha then
-            needs_update = true
+        if record and remote_sha then
+            if installed_sha then
+                -- Normal path: server current SHA vs SHA at install time.
+                needs_update = remote_sha ~= installed_sha
+            elseif local_sha then
+                -- Fallback for old records that pre-date SHA storage: compare
+                -- against the local file so we don't silently miss updates.
+                needs_update = remote_sha ~= local_sha
+            else
+                needs_update = true
+            end
         end
         if needs_update then
             summary.updates = summary.updates + 1
@@ -3369,6 +3381,9 @@ function AppStore:matchPatchWithRepo(patch, repo, patch_entry)
         return
     end
     InstallStore.upsertPatch(patch.filename, record)
+    -- Keep the in-memory remote_info cache consistent so the patch updates
+    -- dialog reflects the newly matched SHA immediately, without a full refresh.
+    self:updateSinglePatchStatus(patch.filename, record)
     self.match_context = nil
     self:closeBrowserMenu()
     UIManager:setDirty(nil, "ui")
@@ -3945,7 +3960,16 @@ function AppStore:_installPatchFromRepoInternal(repo, patch)
         UIManager:show(InfoMessage:new{ text = _("Failed to install patch: ") .. tostring(rename_err), timeout = 6 })
         return
     end
-    local stored_record = self:rememberPatchInstall(patch.filename, repo, patch)
+    -- Compute the actual SHA of the downloaded file so record.sha always reflects
+    -- the real installed content, even when updating from a stale record.sha.
+    local actual_sha = computeFileSha1(target_path)
+    local patch_for_record = patch
+    if actual_sha and actual_sha ~= patch.sha then
+        patch_for_record = {}
+        for k, v in pairs(patch) do patch_for_record[k] = v end
+        patch_for_record.sha = actual_sha
+    end
+    local stored_record = self:rememberPatchInstall(patch.filename, repo, patch_for_record)
     if self.pending_patch_install then
         local context = self.pending_patch_install
         self.pending_patch_install = nil
