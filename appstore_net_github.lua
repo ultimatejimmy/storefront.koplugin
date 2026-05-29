@@ -242,5 +242,26 @@ function GitHubClient.fetchReleases(owner, repo, opts)
     return results, nil
 end
 
+-- Fetch the list of commits between two refs (tags, branches, SHAs).
+-- Uses the GitHub compare endpoint: /repos/{owner}/{repo}/compare/{base}...{head}
+-- Returns the parsed JSON table (contains `commits`, `total_commits`, etc.) or nil + err.
+function GitHubClient.fetchCompareCommits(owner, repo, base, head)
+    if not owner or not repo or not base or not head then
+        return nil, "missing parameters"
+    end
+    local path = string.format("/repos/%s/%s/compare/%s...%s", owner, repo, base, head)
+    local code, body = request(path)
+    if code ~= 200 then
+        logger.warn("GitHub compare error", owner .. "/" .. repo, base .. "..." .. head, code, body)
+        return nil, { code = code, body = body }
+    end
+    local ok, parsed = pcall(json.decode, body)
+    if not ok then
+        logger.warn("GitHub compare decode error", parsed)
+        return nil, "decode"
+    end
+    return parsed, nil
+end
+
 return GitHubClient
 

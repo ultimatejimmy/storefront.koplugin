@@ -18,6 +18,7 @@ local Size = require("ui/size")
 local Blitbuffer = require("ffi/blitbuffer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local InfoMessage = require("ui/widget/infomessage")
+local TextViewer = require("ui/widget/textviewer")
 local TextWidget = require("ui/widget/textwidget")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
@@ -4516,6 +4517,180 @@ local function getReleaseLabel(release)
     return tostring(tag)
 end
 
+-- Fetch commits between two tags via the GitHub compare API and show them
+-- in a scrollable dialog.  Called from inside the Full changelog dialog.
+function AppStore:showCommitCompare(owner, repo_desc, base_tag, head_tag)
+    NetworkMgr:runWhenOnline(function()
+        local progress = InfoMessage:new{ text = _("Fetching commits…"), timeout = 0 }
+        UIManager:show(progress)
+        UIManager:forceRePaint()
+
+        local result, err = GitHub.fetchCompareCommits(owner, repo_desc.name, base_tag, head_tag)
+        UIManager:close(progress)
+
+        if not result then
+            local msg = (type(err) == "table" and err.code == 404)
+                and string.format(_("Tag not found on GitHub (%s or %s)."), base_tag, head_tag)
+                or  _("Could not fetch commit comparison.")
+            UIManager:show(InfoMessage:new{ text = msg, timeout = 5 })
+            return
+        end
+
+        local commits = result.commits or {}
+        local total   = result.total_commits or #commits
+        local repo_name = repo_desc.full_name or repo_desc.name or owner
+
+        local lines = {
+            string.format(_("Commit diff: %s → %s"), base_tag, head_tag),
+            string.format(_("Repository: %s"), repo_name),
+            string.format(_("Total commits: %d"), total),
+            "",
+        }
+
+        if #commits == 0 then
+            table.insert(lines, _("No commits found in this range."))
+        else
+            -- GitHub returns oldest-first in the commits array; keep that order
+            -- (chronological = natural reading order for a changelog).
+            for _, commit in ipairs(commits) do
+                local msg   = commit.commit and commit.commit.message or ""
+                local title = msg:match("^([^\n\r]+)") or msg
+                title = util.trim(title)
+                title = softWrapLongTokens(title, 55)
+                local sha   = commit.sha and commit.sha:sub(1, 7) or "???????"
+                table.insert(lines, string.format("\xE2\x80\xA2 %s  [%s]", title, sha))
+            end
+            if total > #commits then
+                table.insert(lines, "")
+                table.insert(lines, string.format(
+                    _("(showing %d of %d commits)"), #commits, total))
+            end
+        end
+
+        local text = table.concat(lines, "\n")
+        UIManager:show(TextViewer:new{
+            title = string.format(_("Commits: %s \xE2\x86\x92 %s"), base_tag, head_tag),
+            text  = text,
+            add_default_buttons = true,
+        })
+    end)
+end
+
+-- Show a scrollable dialog with all release notes between the installed
+-- version and `target_release`, fetched from the GitHub releases list.
+-- Only shown when the target release is strictly newer than what is installed.
+function AppStore:showFullChangelog(owner, repo_desc, installed_version, target_release)
+    NetworkMgr:runWhenOnline(function()
+        local progress = InfoMessage:new{ text = _("Fetching changelog…"), timeout = 0 }
+        UIManager:show(progress)
+        UIManager:forceRePaint()
+
+        local releases, err = GitHub.fetchReleases(owner, repo_desc.name)
+        UIManager:close(progress)
+
+        if not releases or #releases == 0 then
+            UIManager:show(InfoMessage:new{
+                text = err
+                    and _("Could not fetch releases for changelog.")
+                    or  _("No releases found for this repository."),
+                timeout = 4,
+            })
+            return
+        end
+
+        -- GitHub returns releases newest-first.
+        -- Collect every release that is strictly newer than `installed_version`,
+        -- starting from `target_release` and walking downwards.
+        -- Also track `base_tag`: the first release that is NOT newer (i.e. the
+        -- currently installed one), used for the commit-compare button.
+        local target_tag  = target_release and target_release.tag_name
+        local sections    = {}
+        local base_tag    = nil
+        local collecting  = (target_tag == nil) -- no specific target → include everything newer
+
+        for _, rel in ipairs(releases) do
+            local rel_tag = rel.tag_name
+            -- Start collecting once we reach the target release tag.
+            if not collecting and rel_tag == target_tag then
+                collecting = true
+            end
+            if collecting then
+                -- Stop once we reach a version that is no longer newer than installed.
+                local rel_version = parseVersionFromTag(rel_tag)
+                if rel_version and not isVersionNewer(rel_version, installed_version) then
+                    base_tag = rel_tag  -- this is the installed version's release tag
+                    break
+                end
+
+                local label  = getReleaseLabel(rel) or rel_tag or _("Release")
+                local date   = formatReleaseDate(rel)
+                local header = date
+                    and string.format("=== %s (%s) ===", label, date)
+                    or  string.format("=== %s ===", label)
+                local body = rel.body
+                if not body or body == json.null or body == "" then
+                    body = _("No release notes.")
+                else
+                    body = softWrapLongTokens(tostring(body), 60)
+                end
+                table.insert(sections, header .. "\n\n" .. body)
+            end
+        end
+
+        -- Fallback: construct a likely tag from the installed version string
+        -- (e.g. "1.2.0" → "v1.2.0") in case the releases list was truncated.
+        if not base_tag and installed_version then
+            base_tag = "v" .. installed_version
+        end
+
+        -- Reverse so oldest release appears first (chronological reading order).
+        local reversed = {}
+        for i = #sections, 1, -1 do
+            reversed[#reversed + 1] = sections[i]
+        end
+
+        local text
+        if #sections == 0 then
+            text = string.format(
+                _("No changelog entries found between %s and %s."),
+                installed_version or _("installed version"),
+                target_tag        or _("latest")
+            )
+        else
+            local repo_name = repo_desc.full_name or repo_desc.name or owner
+            text = string.format(
+                _("Changelog for %s\n%s \xE2\x86\x92 %s"),
+                repo_name,
+                installed_version or _("?"),
+                target_tag        or _("latest")
+            ) .. "\n\n" .. table.concat(reversed, "\n\n")
+        end
+
+        -- "View commits" button: only available when we have both tag bounds.
+        local buttons_table = nil
+        if base_tag and target_tag then
+            local self_ref = self
+            buttons_table = {
+                {
+                    {
+                        text = string.format(_("View commits (%s \xE2\x86\x92 %s)"), base_tag, target_tag),
+                        callback = function()
+                            self_ref:showCommitCompare(owner, repo_desc, base_tag, target_tag)
+                        end,
+                    },
+                },
+            }
+        end
+
+        UIManager:show(TextViewer:new{
+            title               = string.format(_("Changelog: %s"), repo_desc.full_name or repo_desc.name or owner),
+            text                = text,
+            buttons_table       = buttons_table,
+            add_default_buttons = true,
+        })
+    end)
+end
+
 local function buildDownloadOptionsTitle(release)
     local tag = release and release.tag_name and release.tag_name ~= "" and release.tag_name or nil
     local title = release and release.name and release.name ~= "" and release.name or nil
@@ -4624,6 +4799,37 @@ function AppStore:promptPluginInstallOptions(repo, release_override)
                     UIManager:show(notes_dialog)
                 end,
             })
+        end
+
+        -- Add a "Full changelog" button only when the fetched release is
+        -- strictly newer than the currently installed version of this plugin.
+        -- We search install records to find a match even when not in update mode.
+        do
+            local installed_ver = nil
+            local ctx_plugin = self.pending_install_context and self.pending_install_context.plugin
+            if ctx_plugin then
+                installed_ver = ctx_plugin.version
+            else
+                local all_records = InstallStore.list()
+                for dirname, rec in pairs(all_records) do
+                    if type(rec) == "table" and rec.owner == owner and rec.repo == repo.name then
+                        local p = findInstalledPlugin(dirname)
+                        installed_ver = (p and p.version) or rec.installed_version
+                        break
+                    end
+                end
+            end
+
+            local release_ver = release and parseVersionFromTag(release.tag_name)
+            if installed_ver and release_ver and isVersionNewer(release_ver, installed_ver) then
+                table.insert(buttons, {
+                    text = _("Full changelog"),
+                    callback = function()
+                        UIManager:close(dialog)
+                        self:showFullChangelog(owner, repo, installed_ver, release)
+                    end,
+                })
+            end
         end
 
         -- Always offer a way to switch to a different release; the release
