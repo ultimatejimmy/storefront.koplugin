@@ -4795,6 +4795,8 @@ function AppStore:showFullChangelog(owner, repo_desc, installed_version, target_
     end)
 end
 
+local ASSETS_PAGE_SIZE = 8
+
 local function buildDownloadOptionsTitle(release, owner, repo_name)
     local tag = release and release.tag_name and release.tag_name ~= "" and release.tag_name or nil
     local title = release and release.name and release.name ~= "" and release.name or nil
@@ -4822,6 +4824,83 @@ local function buildDownloadOptionsTitle(release, owner, repo_name)
     end
     
     return result
+end
+
+-- Display a paginated list of release assets. `on_select` is called with the
+-- chosen asset table when the user taps an entry.
+function AppStore:renderAssetListPage(repo, release, assets, page, on_select)
+    page = page or 1
+    local total = #assets
+    local total_pages = math.max(1, math.ceil(total / ASSETS_PAGE_SIZE))
+    if page < 1 then page = 1 end
+    if page > total_pages then page = total_pages end
+
+    local dialog
+    local button_rows = {}
+
+    local first = (page - 1) * ASSETS_PAGE_SIZE + 1
+    local last = math.min(first + ASSETS_PAGE_SIZE - 1, total)
+    for i = first, last do
+        local asset = assets[i]
+        table.insert(button_rows, {
+            {
+                text = asset.name,
+                background = Blitbuffer.COLOR_WHITE,
+                callback = function()
+                    UIManager:close(dialog)
+                    on_select(asset)
+                end,
+            },
+        })
+    end
+
+    if total_pages > 1 then
+        local nav_row = {}
+        if page > 1 then
+            table.insert(nav_row, {
+                text = "\xE2\x97\x80  " .. _("Prev"),
+                background = Blitbuffer.COLOR_WHITE,
+                callback = function()
+                    UIManager:close(dialog)
+                    self:renderAssetListPage(repo, release, assets, page - 1, on_select)
+                end,
+            })
+        end
+        table.insert(nav_row, {
+            text = string.format(_("Page %d/%d"), page, total_pages),
+            background = Blitbuffer.COLOR_WHITE,
+            callback = function() end,
+        })
+        if page < total_pages then
+            table.insert(nav_row, {
+                text = _("Next") .. "  \xE2\x96\xB6",
+                background = Blitbuffer.COLOR_WHITE,
+                callback = function()
+                    UIManager:close(dialog)
+                    self:renderAssetListPage(repo, release, assets, page + 1, on_select)
+                end,
+            })
+        end
+        table.insert(button_rows, nav_row)
+    end
+
+    table.insert(button_rows, {
+        {
+            text = _("Cancel"),
+            background = Blitbuffer.COLOR_WHITE,
+            callback = function()
+                UIManager:close(dialog)
+            end,
+        },
+    })
+
+    local tag_label = release and (release.tag_name or release.name) or (repo.full_name or repo.name or "")
+    dialog = ButtonDialog:new{
+        title = string.format(_("Assets — %s"), tag_label),
+        title_align = "center",
+        buttons = button_rows,
+    }
+    UIManager:show(dialog)
 end
 
 function AppStore:promptPluginInstallOptions(repo, release_override)
@@ -4872,14 +4951,27 @@ function AppStore:promptPluginInstallOptions(repo, release_override)
         end
         
         if #custom_assets > 0 then
-            for _, asset in ipairs(custom_assets) do
+            if #custom_assets > ASSETS_PAGE_SIZE then
+                -- Too many assets to list inline — open a separate paginated picker.
                 table.insert(buttons, {
-                    text = asset.name,
+                    text = string.format(_("Choose asset… (%d available)"), #custom_assets),
                     callback = function()
                         UIManager:close(dialog)
-                        self:installPluginFromReleaseAsset(repo, release, asset)
+                        self:renderAssetListPage(repo, release, custom_assets, 1, function(asset)
+                            self:installPluginFromReleaseAsset(repo, release, asset)
+                        end)
                     end,
                 })
+            else
+                for _, asset in ipairs(custom_assets) do
+                    table.insert(buttons, {
+                        text = asset.name,
+                        callback = function()
+                            UIManager:close(dialog)
+                            self:installPluginFromReleaseAsset(repo, release, asset)
+                        end,
+                    })
+                end
             end
         elseif release and release.zipball_url then
             local tag_name = release.tag_name or "latest"
