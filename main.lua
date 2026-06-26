@@ -31,6 +31,8 @@ local InputDialog = require("ui/widget/inputdialog")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
+local RightContainer = require("ui/widget/container/rightcontainer")
+local OverlapGroup = require("ui/widget/overlapgroup")
 local _ = require("gettext")
 
 local Input = Device.input
@@ -59,12 +61,15 @@ local ALLOW_DELETE_UNLINKED_PATCHES_KEY = "allow_delete_unlinked_patches"
 local IGNORED_RELEASES_KEY = "ignored_releases"
 
 local STALE_WARNING_SECONDS = 7 * 24 * 3600
-local BROWSER_PAGE_SIZE = 14
+local DEFAULT_BROWSER_PAGE_SIZE = 14
+local MIN_BROWSER_PAGE_SIZE = 4
+local MAX_BROWSER_PAGE_SIZE = 100
 local PLUGIN_TOPICS = { "koreader-plugin" }
 local PATCH_TOPICS = { "koreader-user-patch" }
 local PLUGIN_NAME_QUERIES = { 'in:name ".koplugin"' }
 local PATCH_NAME_QUERIES = { 'in:name "KOReader.patches"' }
 local BROWSER_STATE_KEY = "browser_state"
+local BROWSER_PAGE_SIZE_KEY = "browser_page_size"
 local INCLUDE_ZERO_STAR_FORKS_KEY = "include_zero_star_forks"
 local PATCH_CACHE_TTL = 10 * 60
 local DEFAULT_SORT_MODE = "stars_desc"
@@ -88,6 +93,14 @@ local AppStore = WidgetContainer:extend{
     pending_patch_install = nil,
     readme_filter = nil,
 }
+
+local function getBrowserPageSize()
+    local v = AppStoreSettings:readSetting(BROWSER_PAGE_SIZE_KEY)
+    if type(v) == "number" and v >= MIN_BROWSER_PAGE_SIZE then
+        return math.min(math.floor(v), MAX_BROWSER_PAGE_SIZE)
+    end
+    return DEFAULT_BROWSER_PAGE_SIZE
+end
 
 local function showRestartConfirmation(message)
     UIManager:show(ConfirmBox:new{
@@ -3925,10 +3938,30 @@ function AppStoreListItem:init()
         height_overflow_show_ellipsis = true,
         height_adjust = true,
     }
+    -- "Installed" mark: a large checkmark in the right margin (normally empty),
+    -- overlaid on the row so it stays visible at a glance.
+    local row_widget = text_box
+    if entry.installed then
+        local row_w = content_width - 2 * Size.padding.default
+        local row_h = text_box:getSize().h
+        local check = TextWidget:new{
+            text = "✓",
+            face = Font:getFace("smallinfofont", math.floor((face.size or 18) * 2)),
+            fgcolor = text_color,
+        }
+        row_widget = OverlapGroup:new{
+            dimen = Geom:new{ w = row_w, h = row_h },
+            text_box,
+            RightContainer:new{
+                dimen = Geom:new{ w = row_w, h = row_h },
+                check,
+            },
+        }
+    end
     self.frame = FrameContainer:new{
         padding = Size.padding.default,
         bordersize = 0,
-        text_box,
+        row_widget,
     }
     self[1] = self.frame
     self.dimen = self.frame:getSize()
@@ -4197,6 +4230,16 @@ function AppStoreBrowserDialog:init()
         end
         self.key_events.NextPage = { { Input.group.PgFwd } }
         self.key_events.PrevPage = { { Input.group.PgBack } }
+        -- Menu key opens the gear menu (all actions) from any scroll position —
+        -- the non-touch equivalent of tapping the gear icon.
+        self.key_events.ShowMenu = { { "Menu" } }
+    end
+    if Device:hasKeyboard() then
+        -- Hardware-keyboard hotkeys for the most frequent actions.
+        self.key_events.HotkeyRefresh = { { "R" } }
+        self.key_events.HotkeyFilter = { { "F" } }
+        self.key_events.HotkeySort = { { "S" } }
+        self.key_events.HotkeySwitchTab = { { "T" } }
     end
 
     self.title_bar = TitleBar:new{
@@ -4223,6 +4266,15 @@ function AppStoreBrowserDialog:init()
 
     local list_group = VerticalGroup:new{}
     local entry_width = self:getListEntryWidth()
+    -- Building each row's TextBoxWidget is the dominant cost on a long
+    -- single-list page (hundreds of entries, ~seconds on slow e-ink). When this
+    -- runs inside a Trapper coroutine, show a real "N / total" progress message.
+    local Trapper = require("ui/trapper")
+    local total_items = self.items and #self.items or 0
+    local show_progress = total_items > 30 and Trapper:isWrapped()
+    -- ~10 updates total: each Trapper:info yields so UIManager repaints the
+    -- counter, and on slow e-ink every repaint is costly, so keep them few.
+    local progress_step = math.max(1, math.floor(total_items / 10))
     if self.items then
         for idx, entry in ipairs(self.items) do
             local item_widget = AppStoreListItem:new{
@@ -4234,6 +4286,9 @@ function AppStoreBrowserDialog:init()
             list_group[#list_group + 1] = item_widget
             if item_widget:isFocusable() then
                 self._focusable_items[#self._focusable_items + 1] = item_widget
+            end
+            if show_progress and idx % progress_step == 0 then
+                Trapper:info(string.format(_("Building list… %d / %d"), idx, total_items), false, true)
             end
             if entry.separator and idx < #self.items then
                 list_group[#list_group + 1] = LineWidget:new{
@@ -4335,9 +4390,15 @@ function AppStoreBrowserDialog:init()
         body_height = math.floor(self.screen_h * 0.5)
     end
 
+    -- In paginated mode let PgBack/PgFwd reach the dialog's onPrevPage/onNextPage
+    -- so the device's side keys flip logical pages. In single-list mode (one
+    -- page) keep those keys for the scroller so they scroll the long list.
+    local scroller_ignore_events = self.total_pages > 1
+        and { "key_pg_back", "key_pg_fwd" } or nil
     self.list_scroller = ScrollableContainer:new{
         dimen = Geom:new{ w = self.width, h = body_height },
         show_parent = self,
+        ignore_events = scroller_ignore_events,
         self.list_container,
     }
     self.cropping_widget = self.list_scroller
@@ -4494,6 +4555,32 @@ function AppStoreBrowserDialog:onPrevPage()
     if self.page > 1 and self.on_prev_page then
         self.on_prev_page()
     end
+    return true
+end
+
+-- Gear menu and hotkeys: reach the actions from any scroll position / page.
+function AppStoreBrowserDialog:onShowMenu()
+    if self.on_settings_tap then self.on_settings_tap() end
+    return true
+end
+
+function AppStoreBrowserDialog:onHotkeyRefresh()
+    if self.on_refresh then self.on_refresh() end
+    return true
+end
+
+function AppStoreBrowserDialog:onHotkeyFilter()
+    if self.on_filter then self.on_filter() end
+    return true
+end
+
+function AppStoreBrowserDialog:onHotkeySort()
+    if self.on_sort then self.on_sort() end
+    return true
+end
+
+function AppStoreBrowserDialog:onHotkeySwitchTab()
+    if self.on_switch_tab then self.on_switch_tab() end
     return true
 end
 
@@ -6427,9 +6514,18 @@ function AppStore:collectPatchEntries(repos)
     return self:sortPatchEntries(aggregated)
 end
 
-function AppStore:makeRepoMenuItem(repo)
+function AppStore:makeRepoMenuItem(repo, installed_lookup)
+    local is_installed = false
+    if installed_lookup then
+        if repo.full_name and installed_lookup[repo.full_name] then
+            is_installed = true
+        elseif repo.id and installed_lookup["id:" .. tostring(repo.id)] then
+            is_installed = true
+        end
+    end
     return {
         text = formatRepoEntry(repo),
+        installed = is_installed,
         keep_menu_open = true,
         callback = function()
             self:promptRepoAction(repo)
@@ -6469,7 +6565,6 @@ function AppStore:buildBrowserEntries()
     self:ensureBrowserState()
     local kind = self.browser_state.kind or "plugin"
     local items = {}
-    local other_kind = kind == "plugin" and "patch" or "plugin"
 
     if self.match_context then
         if self.match_context.kind == "plugin" and self.match_context.plugin then
@@ -6499,84 +6594,17 @@ function AppStore:buildBrowserEntries()
         end
     end
 
-    table.insert(items, {
-        text = other_kind == "plugin" and "↔ " .. _("Switch to plugins tab") or "↔ " .. _("Switch to patches tab"),
-        callback = function()
-            self.browser_state.kind = other_kind
-            self.browser_state.page = 1
-            self.browser_state.scroll_offset = nil
-            self:resetFiltersForRefresh()
-            self:saveBrowserState()
-            self:closeBrowserMenu()
-            self:showBrowser()
-        end,
-    })
-
-    table.insert(items, {
-        text = _("Refresh cache"),
-        callback = function()
-            self:resetBrowserScrollState()
-            self:resetFiltersForRefresh()
-            self:closeBrowserMenu()
-            NetworkMgr:runWhenOnline(function()
-                UIManager:nextTick(function()
-                    local start_notice = InfoMessage:new{
-                        text = _("Caching started, please wait…"),
-                        timeout = 5,
-                    }
-                    UIManager:show(start_notice)
-                    UIManager:nextTick(function()
-                        self:refreshCache(kind)
-                        UIManager:nextTick(function()
-                            self:showBrowser(kind)
-                            UIManager:nextTick(function()
-                                if self.browser_menu then
-                                    UIManager:setDirty(self.browser_menu)
-                                end
-                            end)
-                        end)
-                    end)
-                end)
-            end)
-        end,
-    })
-    items[#items].separator = true
-
-    if kind == "plugin" then
-        table.insert(items, {
-            text = _("Manage installed plugins"),
-            callback = function()
-                self:closeBrowserMenu()
-                self:showUpdatesDialog()
-            end,
-        })
-        items[#items].separator = true
-    else
-        table.insert(items, {
-            text = _("Manage installed patches"),
-            callback = function()
-                self:closeBrowserMenu()
-                self:showPatchUpdatesDialog()
-            end,
-        })
-        items[#items].separator = true
-    end
-
+    -- Action items (switch tab / refresh / manage / filter / sort) live in the
+    -- gear menu (Menu key, gear icon, r/f/s/t hotkeys), not in the list body, so
+    -- they stay reachable from any scroll position. The list body holds only the
+    -- current filter/sort summary (informational) and the entries themselves.
     table.insert(items, {
         text = self:getFilterSummary(),
-        callback = function()
-            self:showFilterDialog()
-        end,
-        keep_menu_open = true,
+        select_enabled = false,
     })
-    items[#items].separator = true
-
     table.insert(items, {
         text = self:getSortSummary(),
-        callback = function()
-            self:advanceSortMode()
-        end,
-        keep_menu_open = true,
+        select_enabled = false,
     })
     items[#items].separator = true
 
@@ -6609,15 +6637,35 @@ function AppStore:buildBrowserEntries()
     })
     items[#items].separator = true
 
-    local total_pages = math.max(1, math.ceil(display_total / BROWSER_PAGE_SIZE))
+    local page_size = getBrowserPageSize()
+    local total_pages = math.max(1, math.ceil(display_total / page_size))
     local page = math.min(math.max(self.browser_state.page or 1, 1), total_pages)
     if self.browser_state.page ~= page then
         self.browser_state.page = page
         self:saveBrowserState()
     end
 
-    local start_index = (page - 1) * BROWSER_PAGE_SIZE + 1
-    local end_index = math.min(display_total, start_index + BROWSER_PAGE_SIZE - 1)
+    local start_index = (page - 1) * page_size + 1
+    local end_index = math.min(display_total, start_index + page_size - 1)
+
+    -- Set of repos already installed (by full name and repo id), so the
+    -- available list can mark them. Built once per page from install records.
+    local installed_lookup
+    if kind == "plugin" then
+        installed_lookup = {}
+        for _, rec in pairs(getInstallRecordsMap()) do
+            local full_name = rec.repo_full_name
+            if not full_name and rec.owner and rec.repo then
+                full_name = rec.owner .. "/" .. rec.repo
+            end
+            if full_name then
+                installed_lookup[full_name] = true
+            end
+            if rec.repo_id then
+                installed_lookup["id:" .. tostring(rec.repo_id)] = true
+            end
+        end
+    end
 
     if display_total == 0 then
         local empty_text = kind == "patch" and _("No patches found in matching repositories.") or _("No entries match current filters.")
@@ -6630,7 +6678,7 @@ function AppStore:buildBrowserEntries()
             if kind == "patch" then
                 table.insert(items, self:makePatchMenuItem(patch_display_entries[i].repo, patch_display_entries[i].patch))
             else
-                table.insert(items, self:makeRepoMenuItem(filtered[i]))
+                table.insert(items, self:makeRepoMenuItem(filtered[i], installed_lookup))
             end
             items[#items].separator = true
         end
@@ -6663,6 +6711,69 @@ function AppStore:reopenBrowser(kind)
     UIManager:nextTick(function()
         self:showBrowser(kind)
     end)
+end
+
+-- Browser actions, shared by the gear menu, the Menu hardware key and the
+-- r/f/s/t hotkeys. Kept out of the list body so they are reachable from any
+-- scroll position / page without scrolling back to the top.
+function AppStore:browserSwitchTab()
+    self:ensureBrowserState()
+    local kind = self.browser_state.kind or "plugin"
+    local other_kind = kind == "plugin" and "patch" or "plugin"
+    self.browser_state.kind = other_kind
+    self.browser_state.page = 1
+    self.browser_state.scroll_offset = nil
+    self:resetFiltersForRefresh()
+    self:saveBrowserState()
+    self:closeBrowserMenu()
+    self:showBrowser()
+end
+
+function AppStore:browserRefresh()
+    self:ensureBrowserState()
+    local kind = self.browser_state.kind or "plugin"
+    self:resetBrowserScrollState()
+    self:resetFiltersForRefresh()
+    self:closeBrowserMenu()
+    NetworkMgr:runWhenOnline(function()
+        UIManager:nextTick(function()
+            local start_notice = InfoMessage:new{
+                text = _("Caching started, please wait…"),
+                timeout = 5,
+            }
+            UIManager:show(start_notice)
+            UIManager:nextTick(function()
+                self:refreshCache(kind)
+                UIManager:nextTick(function()
+                    self:showBrowser(kind)
+                    UIManager:nextTick(function()
+                        if self.browser_menu then
+                            UIManager:setDirty(self.browser_menu)
+                        end
+                    end)
+                end)
+            end)
+        end)
+    end)
+end
+
+function AppStore:browserManageInstalled()
+    self:ensureBrowserState()
+    local kind = self.browser_state.kind or "plugin"
+    self:closeBrowserMenu()
+    if kind == "plugin" then
+        self:showUpdatesDialog()
+    else
+        self:showPatchUpdatesDialog()
+    end
+end
+
+function AppStore:browserOpenFilter()
+    self:showFilterDialog()
+end
+
+function AppStore:browserAdvanceSort()
+    self:advanceSortMode()
 end
 
 function AppStore:showBrowser(kind)
@@ -6702,6 +6813,11 @@ function AppStore:showBrowser(kind)
         end
     end
     local title = self.browser_state.kind == "plugin" and _("App Store · Plugins") or _("App Store · Patches")
+    -- Wrap in Trapper so buildBrowserEntries can show a dismissable progress
+    -- message while building a long single-list page. For short paginated pages
+    -- no Trapper:info is emitted and the coroutine runs straight through.
+    local Trapper = require("ui/trapper")
+    Trapper:wrap(function()
     local items, total_pages = self:buildBrowserEntries()
     local dialog = AppStoreBrowserDialog:new{
         title = title,
@@ -6712,6 +6828,10 @@ function AppStore:showBrowser(kind)
         on_settings_tap = function()
             self:showAppStoreSettingsDialog()
         end,
+        on_refresh = function() self:browserRefresh() end,
+        on_filter = function() self:browserOpenFilter() end,
+        on_sort = function() self:browserAdvanceSort() end,
+        on_switch_tab = function() self:browserSwitchTab() end,
         on_first_page = function()
             if self.browser_state.page > 1 then
                 self:resetBrowserScrollState()
@@ -6771,8 +6891,10 @@ function AppStore:showBrowser(kind)
             self.browser_menu = nil
         end,
     }
+    Trapper:reset()
     self.browser_menu = dialog
     UIManager:show(dialog)
+    end)
 end
 
 function AppStore:showFilterDialog()
@@ -6893,27 +7015,106 @@ function AppStore:showAppStoreSettingsDialog()
     -- Keep the toggle list minimal; additional settings can be added below as
     -- the plugin grows. The first entry is the Include 0-star forks toggle,
     -- which controls whether `fork:only stars:0` is queried on refresh.
-    local include_zero = AppStoreSettings:readSetting(INCLUDE_ZERO_STAR_FORKS_KEY) == true
-    local mark = include_zero and "\xE2\x98\x91" or "\xE2\x98\x90" -- 
     local current_kind = (self.browser_state and self.browser_state.kind) or "plugin"
     local dialog
+
+    -- Frequent navigation actions, moved out of the list body so they are
+    -- reachable from any scroll position (also bound to the Menu key and r/f/s/t).
     local buttons = {
         {
             {
-                text = string.format("%s  %s", mark, _("Include 0-star forks")),
+                text = current_kind == "plugin" and _("Switch to patches tab") or _("Switch to plugins tab"),
                 background = Blitbuffer.COLOR_WHITE,
                 callback = function()
-                    AppStoreSettings:saveSetting(INCLUDE_ZERO_STAR_FORKS_KEY, not include_zero)
-                    AppStoreSettings:flush()
                     UIManager:close(dialog)
-                    -- Reopen with the updated state so the user can see the
-                    -- toggle take effect without leaving the settings view.
-                    self:showAppStoreSettingsDialog()
+                    self:browserSwitchTab()
+                end,
+            },
+        },
+        {
+            {
+                text = _("Refresh cache"),
+                background = Blitbuffer.COLOR_WHITE,
+                callback = function()
+                    UIManager:close(dialog)
+                    self:browserRefresh()
+                end,
+            },
+        },
+        {
+            {
+                text = self:getFilterSummary(),
+                background = Blitbuffer.COLOR_WHITE,
+                callback = function()
+                    UIManager:close(dialog)
+                    self:browserOpenFilter()
+                end,
+            },
+        },
+        {
+            {
+                text = self:getSortSummary(),
+                background = Blitbuffer.COLOR_WHITE,
+                callback = function()
+                    UIManager:close(dialog)
+                    self:browserAdvanceSort()
+                end,
+            },
+        },
+        {
+            {
+                text = current_kind == "plugin" and _("Manage installed plugins") or _("Manage installed patches"),
+                background = Blitbuffer.COLOR_WHITE,
+                callback = function()
+                    UIManager:close(dialog)
+                    self:browserManageInstalled()
                 end,
             },
         },
     }
-    
+
+    -- Settings.
+    local include_zero = AppStoreSettings:readSetting(INCLUDE_ZERO_STAR_FORKS_KEY) == true
+    local mark = include_zero and "\xE2\x98\x91" or "\xE2\x98\x90"
+    table.insert(buttons, {
+        {
+            text = string.format("%s  %s", mark, _("Include 0-star forks")),
+            background = Blitbuffer.COLOR_WHITE,
+            callback = function()
+                AppStoreSettings:saveSetting(INCLUDE_ZERO_STAR_FORKS_KEY, not include_zero)
+                AppStoreSettings:flush()
+                UIManager:close(dialog)
+                self:showAppStoreSettingsDialog()
+            end,
+        },
+    })
+
+    local page_size = getBrowserPageSize()
+    table.insert(buttons, {
+        {
+            text = string.format(_("Items per page: %d"), page_size),
+            background = Blitbuffer.COLOR_WHITE,
+            callback = function()
+                UIManager:close(dialog)
+                UIManager:show(SpinWidget:new{
+                    title_text = _("Items per page"),
+                    value = page_size,
+                    value_min = MIN_BROWSER_PAGE_SIZE,
+                    value_max = MAX_BROWSER_PAGE_SIZE,
+                    ok_text = _("Set"),
+                    callback = function(spin)
+                        AppStoreSettings:saveSetting(BROWSER_PAGE_SIZE_KEY, spin.value)
+                        AppStoreSettings:flush()
+                        self.browser_state.page = 1
+                        self.browser_state.scroll_offset = nil
+                        self:saveBrowserState()
+                        self:reopenBrowser()
+                    end,
+                })
+            end,
+        },
+    })
+
     if current_kind == "plugin" then
         table.insert(buttons, {
             {
@@ -7351,6 +7552,15 @@ end
 
 
 function AppStore:getRepoDescriptors(kind)
+    -- Cache the built descriptor list in memory: rebuilding it reads the whole
+    -- repo cache from disk and allocates a table per repo (hundreds of them),
+    -- which is the dominant cost when flipping pages. Invalidate when the cache's
+    -- last-fetched stamp changes (refresh) — see refreshCache resetting it too.
+    local fetched = Cache.getLastFetched and Cache.getLastFetched(kind)
+    local cache = self._repo_descriptors_cache
+    if cache and cache[kind] and cache[kind].fetched == fetched then
+        return cache[kind].descriptors
+    end
     local entries = Cache.listRepos(kind)
     local descriptors = {}
     for _, repo in ipairs(entries) do
@@ -7369,6 +7579,8 @@ function AppStore:getRepoDescriptors(kind)
         }
         table.insert(descriptors, descriptor)
     end
+    self._repo_descriptors_cache = self._repo_descriptors_cache or {}
+    self._repo_descriptors_cache[kind] = { fetched = fetched, descriptors = descriptors }
     return descriptors
 end
 
@@ -8275,6 +8487,7 @@ function AppStore:refreshCache(kind)
 
     self.is_refreshing = true
     self.patch_cache = {}
+    self._repo_descriptors_cache = nil
     local progress = InfoMessage:new{ text = _("Refreshing AppStore cache..."), timeout = 0 }
     UIManager:show(progress)
 
