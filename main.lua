@@ -6824,17 +6824,32 @@ function AppStore:buildBrowserEntries()
         end
     end
 
-    -- Frequent actions (switch tab / filter / sort) are tappable rows at the top
-    -- of the list, mirroring the installed-plugins/patches manager so navigation
-    -- is consistent across every screen. They are also bound to the gear menu
-    -- (gear icon / Menu key) and the r/f/s/t hotkeys, which is the no-scroll path
-    -- for non-touch devices; the in-list rows are the one-tap path for touch.
-    -- Less frequent actions (refresh / manage installed) stay in the gear menu.
+    -- Full set of on-page controls (switch tab / refresh / manage installed /
+    -- filter / sort) as tappable rows at the top of the list. These are the touch
+    -- path and also a visible indicator of the current tab / filter / sort state.
+    -- The same actions are mirrored in the gear menu (gear icon / Menu key) — the
+    -- discoverable one-tap path for non-touch devices, which avoids scrolling the
+    -- list to reach an action — and r/f/s/t are extra hotkeys on keyboard devices.
     table.insert(items, {
         text = kind == "plugin" and "↔ " .. _("Switch to patches tab")
             or "↔ " .. _("Switch to plugins tab"),
         callback = function()
             self:browserSwitchTab()
+        end,
+    })
+    items[#items].separator = true
+    table.insert(items, {
+        text = _("Refresh cache"),
+        callback = function()
+            self:browserRefresh()
+        end,
+    })
+    items[#items].separator = true
+    table.insert(items, {
+        text = kind == "plugin" and _("Manage installed plugins")
+            or _("Manage installed patches"),
+        callback = function()
+            self:browserManageInstalled()
         end,
     })
     items[#items].separator = true
