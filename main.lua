@@ -1435,6 +1435,16 @@ function AppStore:buildUpdateBrowserItems(summary)
     items[#items].separator = true
 
     items[#items + 1] = {
+        text = "↔ " .. _("Switch to installed patches"),
+        keep_menu_open = true,
+        callback = function()
+            self:closeUpdatesDialog(true)
+            self:showPatchUpdatesDialog()
+        end,
+    }
+    items[#items].separator = true
+
+    items[#items + 1] = {
         text = _("Check all updates"),
         keep_menu_open = true,
         callback = function()
@@ -1501,6 +1511,16 @@ function AppStore:buildPatchUpdateBrowserItems(summary)
         callback = function()
             self:closePatchUpdatesDialog(true)
             self:showBrowser("patch")
+        end,
+    }
+    items[#items].separator = true
+
+    items[#items + 1] = {
+        text = "↔ " .. _("Switch to installed plugins"),
+        keep_menu_open = true,
+        callback = function()
+            self:closePatchUpdatesDialog(true)
+            self:showUpdatesDialog()
         end,
     }
     items[#items].separator = true
