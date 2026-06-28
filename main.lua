@@ -5393,6 +5393,10 @@ function AppStore:installPluginFromReleaseAsset(repo, release, asset)
 
         UIManager:close(install_progress)
         
+        -- Some plugins' _meta.lua only set `fullname` (often wrapped in _()), so
+        -- plugin_name parsing can come back nil; fall back to the directory name
+        -- to avoid showing "nil" in the success message.
+        info.plugin_name = info.plugin_name or ((info.plugin_dirname or "plugin"):gsub("%.koplugin$", ""))
         local msg
         if self.pending_install_context and self.pending_install_context.mode == "update" then
             if info.plugin_version and info.plugin_version ~= "" then
@@ -7837,6 +7841,9 @@ function AppStore:_installPluginFromRepoInternal(repo)
         return
     end
 
+    -- Fall back to the directory name if plugin_name came back nil (e.g. a
+    -- _meta.lua that only sets fullname), so we never show "nil".
+    info.plugin_name = info.plugin_name or ((info.plugin_dirname or "plugin"):gsub("%.koplugin$", ""))
     local msg
     if self.pending_install_context and self.pending_install_context.mode == "update" then
         if info.plugin_version and info.plugin_version ~= "" then
