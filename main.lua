@@ -8391,6 +8391,11 @@ extractPluginToUserDir = function(reader, info, dest_root)
     return true, target_dir
 end
 
+-- TEMPORARY until Task 5: forwards straight to the default root.
+function AppStore:resolveNewInstallDestination(callback)
+    callback(PluginPaths.getDefaultPluginsRoot())
+end
+
 function AppStore:promptRepoAction(repo)
     local dialog
     local buttons_row = {}
@@ -8601,11 +8606,6 @@ function AppStore:_installPluginFromRepoInternal(repo)
     else
         self:resolveNewInstallDestination(proceedWithInstall)
     end
-end
-
--- TEMPORARY until Task 5: forwards straight to the default root.
-function AppStore:resolveNewInstallDestination(callback)
-    callback(PluginPaths.getDefaultPluginsRoot())
 end
 
 function AppStore:handlePostInstall(info, repo)
