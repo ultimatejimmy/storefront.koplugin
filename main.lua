@@ -79,7 +79,7 @@ local INCLUDE_ZERO_STAR_FORKS_KEY = "include_zero_star_forks"
 local PATCH_CACHE_TTL = 10 * 60
 local DEFAULT_SORT_MODE = "stars_desc"
 
-local PLUGINS_ROOT = DataStorage:getDataDir() .. "/plugins"
+local PluginPaths = require("appstore_plugin_paths")
 local PATCHES_ROOT = DataStorage:getDataDir() .. "/patches"
 
 local AppStore = WidgetContainer:extend{
@@ -1053,15 +1053,15 @@ local function buildInstallRecordFields(dirname, plugin_name, installed_version,
     return record
 end
 
-local function getPluginMetaPath(dirname)
+local function getPluginMetaPath(root, dirname)
     if not dirname or dirname == "" then
         return nil
     end
-    return string.format("%s/%s/_meta.lua", PLUGINS_ROOT, dirname)
+    return string.format("%s/%s/_meta.lua", root, dirname)
 end
 
-local function loadPluginMeta(dirname)
-    local meta_path = getPluginMetaPath(dirname)
+local function loadPluginMeta(root, dirname)
+    local meta_path = getPluginMetaPath(root, dirname)
     if not meta_path or lfs.attributes(meta_path, "mode") ~= "file" then
         return nil
     end
@@ -1107,22 +1107,24 @@ end
 
 local function listInstalledPlugins()
     local plugins = {}
-    if lfs.attributes(PLUGINS_ROOT, "mode") ~= "directory" then
-        return plugins
-    end
-    for entry in lfs.dir(PLUGINS_ROOT) do
-        if entry ~= "." and entry ~= ".." and entry:match("%.koplugin$") then
-            local meta = loadPluginMeta(entry)
-            local plugin = {
-                dirname = entry,
-                meta = meta,
-                name = getPluginDisplayName(meta, entry),
-                version = meta and meta.version or nil,
-                path = PLUGINS_ROOT .. "/" .. entry,
-                meta_path_hint = entry .. "/_meta.lua",
-            }
-            plugin.latest_mtime = getLatestModificationTimestamp(plugin.path)
-            table.insert(plugins, plugin)
+    for _, root in ipairs(PluginPaths.getLookupPaths()) do
+        if lfs.attributes(root, "mode") == "directory" then
+            for entry in lfs.dir(root) do
+                if entry ~= "." and entry ~= ".." and entry:match("%.koplugin$") then
+                    local meta = loadPluginMeta(root, entry)
+                    local plugin = {
+                        dirname = entry,
+                        meta = meta,
+                        name = getPluginDisplayName(meta, entry),
+                        version = meta and meta.version or nil,
+                        root = root,
+                        path = root .. "/" .. entry,
+                        meta_path_hint = entry .. "/_meta.lua",
+                    }
+                    plugin.latest_mtime = getLatestModificationTimestamp(plugin.path)
+                    table.insert(plugins, plugin)
+                end
+            end
         end
     end
     table.sort(plugins, function(a, b)
