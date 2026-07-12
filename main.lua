@@ -1715,6 +1715,8 @@ function AppStore:showManagePluginPathsDialog()
             background = Blitbuffer.COLOR_WHITE,
             callback = function()
                 UIManager:close(button_dialog)
+                self:closeUpdatesDialog(true)
+                self:showUpdatesDialog()
             end,
         },
     })
@@ -1723,6 +1725,14 @@ function AppStore:showManagePluginPathsDialog()
         title = _("Manage plugin paths\n\nHiding a path only affects what AppStore shows/manages here. KOReader will still load plugins from it."),
         title_align = "center",
         buttons = buttons,
+        -- Back-key / tap-outside dismissal doesn't go through the "Close"
+        -- button's callback above, so refresh here too -- otherwise the
+        -- installed-plugins list behind this dialog can look unchanged
+        -- even though hide/show state was just toggled.
+        tap_close_callback = function()
+            self:closeUpdatesDialog(true)
+            self:showUpdatesDialog()
+        end,
     }
     UIManager:show(button_dialog)
 end
