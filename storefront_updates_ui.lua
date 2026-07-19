@@ -201,7 +201,22 @@ function StorefrontUpdatesUi:init(StorefrontClass)
         if self._updates_checked_this_session then
             return
         end
+        
+        self:ensureUpdatesState()
+        local last_check = self.updates_state.last_auto_check or 0
+        if os.time() - last_check < 86400 then
+            self._updates_checked_this_session = true
+            return
+        end
+
+        if not NetworkMgr:isWifiOn() then
+            -- Skip if wifi is off to avoid annoying prompts
+            return
+        end
+
         self._updates_checked_this_session = true
+        self.updates_state.last_auto_check = os.time()
+        self:saveUpdatesState()
 
         UIManager:nextTick(function()
             local progress = InfoMessage:new{ text = _("Checking updates…"), timeout = 0 }
@@ -233,7 +248,7 @@ function StorefrontUpdatesUi:init(StorefrontClass)
 
                 -- Run the checks
                 pcall(function()
-                    self:_refreshUpdatesInternal(plugin_repos)
+                    self:_checkAllUpdatesInternal(plugin_repos)
                 end)
                 pcall(function()
                     self:_refreshPatchUpdatesInternal(patch_repos)

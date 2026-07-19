@@ -452,7 +452,6 @@ function Storefront:_refreshPatchUpdatesInternal(records)
     end
     self:savePatchUpdatesState()
 
-    UIManager:show(InfoMessage:new{ text = message, timeout = 5 })
     UIManager:setDirty(nil, "full")
 end
 
@@ -663,7 +662,7 @@ local function buildPatchSummary(remote_info)
         end
         local local_sha = computeFileSha1(installed_patch.path)
         local remote_entry = remote_info and remote_info[installed_patch.filename]
-        if not remote_entry and record and record.owner and record.repo then
+        if (not remote_entry or remote_entry.error) and record and record.owner and record.repo then
             local repo, file_map = Cache.findPatchRepoAndFile(installed_patch.filename)
             if file_map then
                 remote_entry = {
@@ -1343,7 +1342,7 @@ function Storefront:collectUpdateSummary()
         end
 
         local remote = remote_info[plugin.dirname]
-        if not remote and tracked then
+        if (not remote or remote.error) and tracked then
             local cached_repo
             if record.repo_id then
                 cached_repo = Cache.getRepo(record.repo_id)
@@ -2509,31 +2508,22 @@ function Storefront:checkAllUpdates()
         end
 
         if type(remote_info_result) ~= "table" then
-            UIManager:show(InfoMessage:new{
-                text = _("Update check failed."),
-                timeout = 4,
-            })
             return
         end
 
         self:ensureUpdatesState()
         local remote_info = self.updates_state.remote_info or {}
         for dirname, data in pairs(remote_info_result) do
-            remote_info[dirname] = data
+            if not data.error or not remote_info[dirname] then
+                remote_info[dirname] = data
+            elseif remote_info[dirname] then
+                remote_info[dirname].error = data.error
+            end
         end
         self.updates_state.remote_info = remote_info
         self.updates_state.last_checked = os.time()
         self:updateUpdatesDialog()
         self:saveUpdatesState()
-
-        local summary = self:collectUpdateSummary()
-        local tracked_count = summary.tracked or #tracked
-        local needs_update = summary.updates or 0
-        local up_to_date = math.max(tracked_count - needs_update, 0)
-        UIManager:show(InfoMessage:new{
-            text = string.format(_("Checked %d plugins: %d need updates, %d up to date."), tracked_count, needs_update, up_to_date),
-            timeout = 5,
-        })
         UIManager:setDirty(nil, "full")
     end)
 end
@@ -2558,15 +2548,6 @@ function Storefront:_checkAllUpdatesInternal(records)
     self.updates_state.last_checked = os.time()
     self:updateUpdatesDialog()
     self:saveUpdatesState()
-
-    local summary = self:collectUpdateSummary()
-    local tracked = summary.tracked or #records
-    local needs_update = summary.updates or 0
-    local up_to_date = math.max(tracked - needs_update, 0)
-    UIManager:show(InfoMessage:new{
-        text = string.format(_("Checked %d plugins: %d need updates, %d up to date."), tracked, needs_update, up_to_date),
-        timeout = 5,
-    })
     UIManager:setDirty(nil, "full")
 end
 
@@ -6666,20 +6647,38 @@ function Storefront:showBrowser(kind)
         self:closeBrowserMenu()
     end
     local current_tab = self.browser_state.tab or "Plugins"
-    if current_tab == "Updates" then
-        self:maybeAutoCheckUpdates()
-    end
+    self:maybeAutoCheckUpdates()
 
     local Cache = require("storefront_cache")
     local check_kind = (current_tab == "Patches") and "patch" or "plugin"
     local last_fetched = Cache.getLastFetched(check_kind)
-    if not last_fetched or last_fetched == 0 then
-        self.auto_refreshed = self.auto_refreshed or {}
-        if not self.auto_refreshed[check_kind] then
+    self.auto_refreshed = self.auto_refreshed or {}
+    
+    if not self.auto_refreshed[check_kind] then
+        if not last_fetched or last_fetched == 0 then
             self.auto_refreshed[check_kind] = true
-            logger.info("Storefront: Cache is empty, auto-refreshing")
-            self:browserRefresh()
-            return
+            UIManager:nextTick(function()
+                UIManager:show(ConfirmBox:new{
+                    text = _("The Storefront cache is empty. Would you like to download the plugin list from GitHub now?"),
+                    ok_text = _("Yes"),
+                    cancel_text = _("No"),
+                    ok_callback = function()
+                        self:browserRefresh()
+                    end,
+                })
+            end)
+        elseif os.time() - last_fetched > 604800 then
+            self.auto_refreshed[check_kind] = true
+            UIManager:nextTick(function()
+                UIManager:show(ConfirmBox:new{
+                    text = _("The Storefront cache is over a week old. Would you like to update the plugin list from GitHub?"),
+                    ok_text = _("Yes"),
+                    cancel_text = _("No"),
+                    ok_callback = function()
+                        self:browserRefresh()
+                    end,
+                })
+            end)
         end
     end
 
@@ -6734,7 +6733,13 @@ function Storefront:showBrowser(kind)
         on_settings_tap = function()
             self:showStorefrontSettingsDialog()
         end,
-        on_refresh = function() self:browserRefresh() end,
+        on_refresh = function()
+            if self.browser_state.tab == "Updates" then
+                self:checkAllUpdates()
+            else
+                self:browserRefresh()
+            end
+        end,
         on_filter = function() self:browserOpenFilter() end,
         on_sort = function() self:browserAdvanceSort() end,
         on_switch_tab = function() self:browserSwitchTab() end,
