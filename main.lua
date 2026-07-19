@@ -6366,7 +6366,10 @@ function Storefront:buildBrowserEntries()
     self:ensureBrowserState()
     local tab = self.browser_state.tab or "Plugins"
     if tab == "Updates" then
-        return self:buildUpdatesEntries(), 1
+        local items, total_pages = self:buildUpdatesEntries()
+        self._last_total_pages = total_pages
+        self._last_total_kind = self.browser_state.kind or "plugin"
+        return items, total_pages
     end
     local kind = tab == "Plugins" and "plugin" or "patch"
     self.browser_state.kind = kind
@@ -6429,7 +6432,7 @@ function Storefront:buildBrowserEntries()
     -- })
     -- items[#items].separator = true
 
-    local page_size = getBrowserPageSize()
+    local page_size = (kind == "patch") and 6 or getBrowserPageSize()
     local total_pages = math.max(1, math.ceil(display_total / page_size))
     local page = math.min(math.max(self.browser_state.page or 1, 1), total_pages)
     if self.browser_state.page ~= page then
@@ -6515,7 +6518,6 @@ function Storefront:reopenBrowser(kind)
     if self.browser_state and self.browser_state.scroll_offset == nil then
         self:resetBrowserScrollState()
     end
-    self:closeBrowserMenu()
     UIManager:nextTick(function()
         self:showBrowser(kind)
     end)
@@ -6649,6 +6651,15 @@ function Storefront:showBrowser(kind)
         toolbar_buttons = toolbar_buttons,
         current_tab = current_tab,
         updates_count = updates_count,
+        updates_filter_only_outdated = self.updates_state.filter_only_outdated,
+        on_updates_filter = function(outdated_only)
+            self.updates_state.filter_only_outdated = outdated_only
+            self.patch_updates_state.filter_only_outdated = outdated_only
+            self.browser_state.page = 1
+            self.browser_state.scroll_offset = nil
+            self:saveBrowserState()
+            self:reopenBrowser()
+        end,
         on_tab_switch = function(tab_name)
             self.browser_state.tab = tab_name
             self.browser_state.kind = (tab_name == "Patches" and "patch" or "plugin")
@@ -8246,6 +8257,7 @@ Storefront.listInstalledPlugins = listInstalledPlugins
 Storefront.listInstalledPatches = listInstalledPatches
 Storefront.getInstallRecordsMap = getInstallRecordsMap
 Storefront.getPatchRecordsMap = getPatchRecordsMap
+Storefront.getBrowserPageSize = getBrowserPageSize
 
 return Storefront
 

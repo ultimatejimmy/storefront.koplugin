@@ -137,7 +137,10 @@ function StorefrontBrowserDialog:buildTabBar()
 
     local tab_bar_group = HorizontalGroup:new(tab_widgets)
     return FrameContainer:new{
-        padding = sc(12),
+        padding_top = sc(12),
+        padding_left = sc(12),
+        padding_right = sc(12),
+        padding_bottom = 0,
         bordersize = 0,
         tab_bar_group,
     }
@@ -170,9 +173,16 @@ function StorefrontBrowserDialog:init()
     local storefront_theme = require("storefront_theme")
     local sc = function(val) return Device.screen:scaleBySize(val) end
 
+    local zap_icon = IconWidget:new{
+        icon = "../plugins/storefront.koplugin/assets/zap",
+        width = sc(24),
+        height = sc(24),
+    }
+
     local title_label = TextWidget:new{
         text = self.title or _("Storefront"),
-        face = Font:getFace("infofont", 20),
+        face = Font:getFace("NotoSerif-Bold.ttf", 22),
+        bold = true,
         fgcolor = Blitbuffer.COLOR_BLACK,
     }
 
@@ -203,15 +213,18 @@ function StorefrontBrowserDialog:init()
         end,
     }
 
-
-
     local padding_h = sc(12) * 2
-    local gap_w = sc(8)
-    local total_btns_w = btn_w * 2 + gap_w
+    local title_margin_left = sc(12)
+    local logo_w = zap_icon:getSize().w
+    local logo_gap = sc(8)
+    local total_btns_w = btn_w * 2 + sc(8)
     local title_w = title_label:getSize().w
-    local spacer_w = math.max(sc(8), self.width - padding_h - title_w - total_btns_w)
+    local spacer_w = math.max(sc(8), self.width - padding_h - title_margin_left - logo_w - logo_gap - title_w - total_btns_w)
 
     local header_group = HorizontalGroup:new{
+        HorizontalSpan:new{ width = title_margin_left },
+        zap_icon,
+        HorizontalSpan:new{ width = logo_gap },
         title_label,
         HorizontalSpan:new{ width = spacer_w },
         filter_btn,
@@ -365,7 +378,93 @@ function StorefrontBrowserDialog:init()
     }
 
     local toolbar_height = 0
-    if self.toolbar_buttons and #self.toolbar_buttons > 0 then
+    if self.current_tab == "Updates" then
+        local outdated_active = self.updates_filter_only_outdated
+        
+        -- Outdated only button
+        local outdated_btn = Button:new{
+            text = _("Outdated only"),
+            text_font_size = 14,
+            padding = sc(8),
+            radius = sc(16),
+            bordersize = outdated_active and 0 or sc(1),
+            background = outdated_active and Blitbuffer.COLOR_BLACK or nil,
+            callback = function()
+                if self.on_updates_filter then
+                    self.on_updates_filter(true)
+                end
+            end,
+            show_parent = self,
+        }
+        if outdated_active then
+            outdated_btn.label_widget.fgcolor = Blitbuffer.COLOR_WHITE
+        end
+
+        -- All installed button
+        local all_active = not outdated_active
+        local all_btn = Button:new{
+            text = _("All installed"),
+            text_font_size = 14,
+            padding = sc(8),
+            radius = sc(16),
+            bordersize = all_active and 0 or sc(1),
+            background = all_active and Blitbuffer.COLOR_BLACK or nil,
+            callback = function()
+                if self.on_updates_filter then
+                    self.on_updates_filter(false)
+                end
+            end,
+            show_parent = self,
+        }
+        if all_active then
+            all_btn.label_widget.fgcolor = Blitbuffer.COLOR_WHITE
+        end
+
+        local check_btn = Button:new{
+            text = _("Check all"),
+            icon = "../plugins/storefront.koplugin/assets/rotate-cw",
+            icon_width = sc(16),
+            icon_height = sc(16),
+            text_font_size = 14,
+            padding = sc(8),
+            radius = sc(16),
+            bordersize = 0,
+            background = Blitbuffer.COLOR_BLACK,
+            callback = function()
+                if self.on_refresh then
+                    self.on_refresh()
+                end
+            end,
+            show_parent = self,
+        }
+        check_btn.label_widget.fgcolor = Blitbuffer.COLOR_WHITE
+
+        self._updates_outdated_btn = outdated_btn
+        self._updates_all_btn = all_btn
+        self._updates_check_btn = check_btn
+
+        -- Spacer in the middle
+        local left_w = outdated_btn:getSize().w + sc(8) + all_btn:getSize().w
+        local right_w = check_btn:getSize().w
+        local pad_w = self.width - sc(24) -- left and right margin/padding
+        local spacer_w = math.max(sc(8), pad_w - left_w - right_w)
+
+        local updates_toolbar = HorizontalGroup:new{
+            outdated_btn,
+            HorizontalSpan:new{ width = sc(8) },
+            all_btn,
+            HorizontalSpan:new{ width = spacer_w },
+            check_btn,
+        }
+
+        self.toolbar = FrameContainer:new{
+            padding_left = sc(12),
+            padding_right = sc(12),
+            bordersize = 0,
+            updates_toolbar,
+        }
+        toolbar_height = self.toolbar:getSize().h + Size.span.vertical_default
+    elseif self.toolbar_buttons and #self.toolbar_buttons > 0 then
         local tb = HorizontalGroup:new{}
         self._toolbar_widgets = {}
         self._toolbar_ids = {}
@@ -452,7 +551,10 @@ function StorefrontBrowserDialog:init()
 
     self.layout = {}
     table.insert(self.layout, { filter_btn, settings_btn })
-    if self._toolbar_widgets and #self._toolbar_widgets > 0 then
+    if self.current_tab == "Updates" then
+        table.insert(self.layout, { self._updates_outdated_btn, self._updates_all_btn, self._updates_check_btn })
+        self._toolbar_row_index = #self.layout
+    elseif self._toolbar_widgets and #self._toolbar_widgets > 0 then
         table.insert(self.layout, self._toolbar_widgets)
         self._toolbar_row_index = #self.layout
     end

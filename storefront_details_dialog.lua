@@ -128,6 +128,29 @@ function StorefrontDetailsDialog:init()
     end
 
     local main_action_btn
+    local remove_btn_w = math.floor(action_btn_width * 0.23)
+    local primary_btn_w = action_btn_width - remove_btn_w - sc(12)
+
+    local function getInstallRecord()
+        if self.patch then
+            return self.Storefront.getPatchRecordsMap()[self.patch.filename]
+        else
+            local repo_name_lower = (self.repo.name or ""):lower()
+            return self.Storefront.getInstallRecordsMap()[repo_name_lower]
+        end
+    end
+
+    local function doRemove()
+        self:onClose()
+        local record = getInstallRecord()
+        if self.patch then
+            self.Storefront:deletePatch(self.patch.filename, record)
+        else
+            local dirname = record and record.dirname or self.repo.name
+            self.Storefront:deletePlugin(dirname, record)
+        end
+    end
+
     if has_update then
         main_action_btn = HorizontalGroup:new{
             Button:new{
@@ -137,7 +160,7 @@ function StorefrontDetailsDialog:init()
                 bordersize = 0,
                 padding = sc(11),
                 radius = sc(4),
-                width = (action_btn_width - sc(12)) / 2,
+                width = primary_btn_w,
                 show_parent = self,
                 callback = function()
                     self:onClose()
@@ -150,44 +173,50 @@ function StorefrontDetailsDialog:init()
             },
             HorizontalSpan:new{ width = sc(12) },
             Button:new{
-                text = _("Uninstall"),
+                text = _("Remove"),
                 text_font_size = 18,
-                background = Blitbuffer.COLOR_WHITE,
                 bordersize = sc(1),
                 padding = sc(11),
                 radius = sc(4),
-                width = (action_btn_width - sc(12)) / 2,
+                width = remove_btn_w,
                 show_parent = self,
-                callback = function()
-                    self:onClose()
-                    if self.patch then
-                        self.Storefront:uninstallPatch(self.repo, self.patch)
-                    else
-                        self.Storefront:uninstallPlugin(self.repo.name)
-                    end
-                end,
+                callback = doRemove,
             }
         }
         main_action_btn[1].label_widget.fgcolor = Blitbuffer.COLOR_WHITE
     elseif is_installed then
-        main_action_btn = Button:new{
-            text = _("Uninstall"),
-            text_font_size = 18,
-            background = Blitbuffer.COLOR_WHITE,
-            bordersize = sc(1),
-            padding = sc(11),
-            radius = sc(4),
-            width = action_btn_width,
-            show_parent = self,
-            callback = function()
-                self:onClose()
-                if self.patch then
-                    self.Storefront:uninstallPatch(self.repo, self.patch)
-                else
-                    self.Storefront:uninstallPlugin(self.repo.name)
-                end
-            end,
+        main_action_btn = HorizontalGroup:new{
+            Button:new{
+                text = _("Reinstall"),
+                text_font_size = 18,
+                background = Blitbuffer.COLOR_BLACK,
+                bordersize = 0,
+                padding = sc(11),
+                radius = sc(4),
+                width = primary_btn_w,
+                show_parent = self,
+                callback = function()
+                    self:onClose()
+                    if self.patch then
+                        self.Storefront:installPatchFromRepo(self.repo, self.patch)
+                    else
+                        self.Storefront:installPluginFromRepo(self.repo)
+                    end
+                end,
+            },
+            HorizontalSpan:new{ width = sc(12) },
+            Button:new{
+                text = _("Remove"),
+                text_font_size = 18,
+                bordersize = sc(1),
+                padding = sc(11),
+                radius = sc(4),
+                width = remove_btn_w,
+                show_parent = self,
+                callback = doRemove,
+            }
         }
+        main_action_btn[1].label_widget.fgcolor = Blitbuffer.COLOR_WHITE
     else
         main_action_btn = Button:new{
             text = self.patch and _("Install Patch") or _("Install"),
@@ -203,7 +232,7 @@ function StorefrontDetailsDialog:init()
                 if self.patch then
                     self.Storefront:installPatchFromRepo(self.repo, self.patch)
                 else
-                    self.Storefront:promptPluginInstallOptions(self.repo)
+                    self.Storefront:installPluginFromRepo(self.repo)
                 end
             end,
         }
@@ -239,11 +268,13 @@ function StorefrontDetailsDialog:init()
     local readme_h = self.screen_h - frame_padding - back_h - header_h - pager_h
     if readme_h < sc(80) then readme_h = sc(80) end
 
+    local readme_css = "body { margin: 0 !important; padding: 0 !important; } img { max-width: 100%; height: auto; }"
+
     local html_box = HtmlBoxWidget:new{
         dimen = Geom:new{ w = readme_w, h = readme_h },
         dialog = self,
     }
-    html_box:setContent("<p style='text-align:center;color:gray;'>" .. _("Loading README...") .. "</p>", nil, sc(18))
+    html_box:setContent("<p style='text-align:center;color:gray;'>" .. _("Loading README...") .. "</p>", readme_css, sc(18))
 
     -- -----------------------------------------------------------------------
     -- 5. Pagination controls
@@ -330,18 +361,18 @@ function StorefrontDetailsDialog:init()
             if ok and path then
                 local html_content = util.readFromFile(path)
                 if html_content and html_content ~= "" then
-                    html_box:setContent(html_content, nil, sc(18))
+                    html_box:setContent(html_content, readme_css, sc(18))
                     updatePagination()
                 else
-                    html_box:setContent("<p style='text-align:center;color:red;'>" .. _("Unable to read README.") .. "</p>", nil, sc(18))
+                    html_box:setContent("<p style='text-align:center;color:red;'>" .. _("Unable to read README.") .. "</p>", readme_css, sc(18))
                 end
             else
-                html_box:setContent("<p style='text-align:center;color:gray;'>" .. _("No README available.") .. "</p>", nil, sc(18))
+                html_box:setContent("<p style='text-align:center;color:gray;'>" .. _("No README available.") .. "</p>", readme_css, sc(18))
             end
             UIManager:setDirty(self, "ui")
         end)
     else
-        html_box:setContent("<p style='text-align:center;color:gray;'>" .. _("No README available.") .. "</p>", nil, sc(18))
+        html_box:setContent("<p style='text-align:center;color:gray;'>" .. _("No README available.") .. "</p>", readme_css, sc(18))
     end
 
     -- -----------------------------------------------------------------------

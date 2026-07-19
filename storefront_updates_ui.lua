@@ -12,21 +12,6 @@ function StorefrontUpdatesUi:init(StorefrontClass)
         self:ensureUpdatesState()
         self:ensurePatchUpdatesState()
 
-        local items = {}
-
-        -- Add filter chips at the top
-        local upd_only = self.updates_state.filter_only_outdated
-        table.insert(items, {
-            text = upd_only and _("Show: Outdated only (Tap to show all)") or _("Show: All installed (Tap to show outdated only)"),
-            focus_id = "updates_filter",
-            callback = function()
-                self.updates_state.filter_only_outdated = not upd_only
-                self.patch_updates_state.filter_only_outdated = not upd_only
-                self:reopenBrowser()
-            end,
-        })
-        items[#items].separator = true
-
         -- Merged list of updates
         local plugin_summary = self:collectUpdateSummary()
         local patch_summary = self:collectPatchUpdateSummary()
@@ -54,6 +39,8 @@ function StorefrontUpdatesUi:init(StorefrontClass)
                     badge = has_update and _("Update") or _("Installed"),
                     is_entry = true,
                     keep_menu_open = true,
+                    is_update_item = true,
+                    version_transition = local_ver .. " → " .. remote_ver,
                     callback = function()
                         self:promptUpdateAction(plugin, record)
                     end,
@@ -69,6 +56,11 @@ function StorefrontUpdatesUi:init(StorefrontClass)
             local has_update = item.needs_update
  
             if not self.patch_updates_state.filter_only_outdated or has_update then
+                local local_commit = (record and record.commit) or item.local_sha or ""
+                local remote_commit = (remote_entry and remote_entry.commit) or item.remote_sha or ""
+                local local_ver = local_commit ~= "" and ("sha " .. local_commit:sub(1, 5)) or _("unknown")
+                local remote_ver = remote_commit ~= "" and ("sha " .. remote_commit:sub(1, 5)) or _("unknown")
+
                 table.insert(merged, {
                     name = patch.filename or patch.path or _("patch"),
                     owner = record and record.owner or "",
@@ -79,6 +71,8 @@ function StorefrontUpdatesUi:init(StorefrontClass)
                     badge = has_update and _("Update") or _("Installed"),
                     is_entry = true,
                     keep_menu_open = true,
+                    is_update_item = true,
+                    version_transition = local_ver .. " → " .. remote_ver,
                     callback = function()
                         self:promptPatchUpdateAction(item)
                     end,
@@ -92,19 +86,34 @@ function StorefrontUpdatesUi:init(StorefrontClass)
             local bname = b.name or ""
             return aname:lower() < bname:lower()
         end)
- 
-        for idx, entry in ipairs(merged) do
-            table.insert(items, entry)
+
+        local display_total = #merged
+        local page_size = 7
+        local total_pages = math.max(1, math.ceil(display_total / page_size))
+        local page = math.min(math.max(self.browser_state.page or 1, 1), total_pages)
+        if self.browser_state.page ~= page then
+            self.browser_state.page = page
+            self:saveBrowserState()
         end
 
-        if #merged == 0 then
+        local start_index = (page - 1) * page_size + 1
+        local end_index = math.min(display_total, start_index + page_size - 1)
+
+        local items = {}
+        if display_total == 0 then
             table.insert(items, {
                 text = _("No items found."),
                 select_enabled = false,
             })
+        else
+            for i = start_index, end_index do
+                local entry = merged[i]
+                entry.separator = true
+                table.insert(items, entry)
+            end
         end
 
-        return items
+        return items, total_pages
     end
 
     function StorefrontClass:maybeAutoCheckUpdates()
