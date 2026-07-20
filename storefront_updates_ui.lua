@@ -169,7 +169,7 @@ function StorefrontUpdatesUi:init(StorefrontClass)
         end)
 
         local display_total = #merged
-        local page_size = 7
+        local page_size = self:calculateDynamicPageSize("Updates")
         local total_pages = math.max(1, math.ceil(display_total / page_size))
         local page = math.min(math.max(self.browser_state.page or 1, 1), total_pages)
         if self.browser_state.page ~= page then

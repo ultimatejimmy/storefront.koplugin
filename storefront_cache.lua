@@ -1,5 +1,4 @@
 local DataStorage = require("datastorage")
-local SQ3 = require("lua-ljsqlite3/init")
 local ffiUtil = require("ffi/util")
 local util = require("util")
 local json = require("json")
@@ -7,44 +6,18 @@ local logger = require("logger")
 
 local Cache = {}
 
-local DB_SCHEMA_VERSION = 20260426
 local DB_DIRECTORY = ffiUtil.joinPath(DataStorage:getDataDir(), "cache/Storefront")
-local DB_PATH = ffiUtil.joinPath(DB_DIRECTORY, "Storefront.sqlite3")
+local PLUGINS_FILE = ffiUtil.joinPath(DB_DIRECTORY, "storefront_plugins.json")
+local PATCHES_FILE = ffiUtil.joinPath(DB_DIRECTORY, "storefront_patches.json")
 
-local SCHEMA_STATEMENTS = {
-    [[CREATE TABLE IF NOT EXISTS repos (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        repo_id INTEGER NOT NULL,
-        kind TEXT NOT NULL,
-        name TEXT NOT NULL,
-        owner TEXT NOT NULL,
-        full_name TEXT NOT NULL,
-        description TEXT,
-        stars INTEGER NOT NULL DEFAULT 0,
-        language TEXT,
-        homepage TEXT,
-        fetched_at INTEGER NOT NULL,
-        data TEXT NOT NULL,
-        UNIQUE(repo_id, kind)
-    );]],
-    [[CREATE INDEX IF NOT EXISTS idx_repos_kind_stars ON repos(kind, stars DESC);]],
-    [[CREATE TABLE IF NOT EXISTS patch_files (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        repo_id INTEGER NOT NULL,
-        path TEXT NOT NULL,
-        filename TEXT NOT NULL,
-        branch TEXT,
-        sha TEXT,
-        size INTEGER,
-        download_url TEXT,
-        fetched_at INTEGER NOT NULL,
-        source_pushed_at TEXT,
-        UNIQUE(repo_id, path)
-    );]],
-    [[CREATE INDEX IF NOT EXISTS idx_patch_files_repo ON patch_files(repo_id);]],
+local _loaded = false
+local _data = {
+    plugin = { fetched_at = 0, repos = {} },
+    patch = { fetched_at = 0, repos = {} },
 }
 
-local initialized = false
+local _by_id = {}
+local _by_name = {}
 
 local function ensureDirectory()
     local ok, err = util.makePath(DB_DIRECTORY)
@@ -53,484 +26,334 @@ local function ensureDirectory()
     end
 end
 
-local function openConnection()
+local function writeJsonFile(filepath, data)
     ensureDirectory()
-    local conn = SQ3.open(DB_PATH)
-    conn:exec("PRAGMA journal_mode = WAL;")
-    conn:exec("PRAGMA synchronous = NORMAL;")
-    conn:exec("PRAGMA foreign_keys = ON;")
-    return conn
-end
-
-local function withConnection(fn)
-    Cache.init()
-    local conn = openConnection()
-    local ok, result = pcall(fn, conn)
-    conn:close()
+    local ok, serialized = pcall(json.encode, data)
     if not ok then
-        error(result)
+        logger.err("Storefront: failed to serialize cache", serialized)
+        return false
     end
-    return result
+    local temp_path = filepath .. ".tmp"
+    local file, err = io.open(temp_path, "w")
+    if not file then
+        logger.err("Storefront: failed to open temp cache file for writing", err)
+        return false
+    end
+    file:write(serialized)
+    file:close()
+    
+    local ok_rename, rename_err = os.rename(temp_path, filepath)
+    if not ok_rename then
+        logger.err("Storefront: failed to rename cache file", rename_err)
+        os.remove(temp_path)
+        return false
+    end
+    return true
 end
 
-local function normalizeString(value)
-    if value == nil or value == json.null then
-        return ""
-    end
-    return tostring(value)
-end
-
-local function normalizeNumber(value)
-    if value == nil or value == json.null then
-        return 0
-    end
-    return tonumber(value) or 0
-end
-
-function Cache.storePatchFiles(repo_id, entries, source_pushed_at)
-    repo_id = tonumber(repo_id)
-    if not repo_id then
-        return
-    end
-    local fetched_at = os.time()
-    local pushed_at_value = normalizeString(source_pushed_at)
-    withConnection(function(conn)
-        conn:exec("BEGIN;")
-        local delete_stmt = conn:prepare([[DELETE FROM patch_files WHERE repo_id = ?;]])
-        delete_stmt:bind(repo_id)
-        delete_stmt:step()
-        delete_stmt:close()
-        if entries and #entries > 0 then
-            local insert_sql = [[INSERT INTO patch_files (repo_id, path, filename, branch, sha, size, download_url, fetched_at, source_pushed_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);]]
-            local stmt = conn:prepare(insert_sql)
-            for _, entry in ipairs(entries) do
-                stmt:bind(
-                    repo_id,
-                    normalizeString(entry.path),
-                    normalizeString(entry.filename),
-                    normalizeString(entry.branch),
-                    normalizeString(entry.sha),
-                    normalizeNumber(entry.size),
-                    normalizeString(entry.download_url),
-                    fetched_at,
-                    pushed_at_value
-                )
-                stmt:step()
-                stmt:reset()
-            end
-            stmt:close()
-        end
-        conn:exec("COMMIT;")
-    end)
-end
-
--- Returns the source_pushed_at timestamp (string) stored when the patch tree
--- for this repo was last successfully fetched, or nil when there is no
--- recorded value. The column is populated by storePatchFiles.
-function Cache.getPatchFilePushedAt(repo_id)
-    repo_id = tonumber(repo_id)
-    if not repo_id then
+local function readJsonFile(filepath)
+    local file = io.open(filepath, "r")
+    if not file then
         return nil
     end
-    return withConnection(function(conn)
-        local stmt = conn:prepare([[SELECT source_pushed_at FROM patch_files
-            WHERE repo_id = ? AND source_pushed_at IS NOT NULL AND source_pushed_at <> ''
-            LIMIT 1;]])
-        stmt:bind(repo_id)
-        local row = stmt:step()
-        local value = row and row[1] or nil
-        stmt:close()
-        if value == nil or value == "" then
-            return nil
-        end
-        return tostring(value)
-    end)
-end
-
--- Count of rows stored for the given repo. Used by the incremental patch
--- refresh to decide whether a "no patch files" repo needs a re-fetch even
--- when pushed_at has not changed (i.e. we've never successfully stored any
--- rows for it before, typically because the previous attempt failed).
-function Cache.countPatchFiles(repo_id)
-    repo_id = tonumber(repo_id)
-    if not repo_id then
-        return 0
+    local content = file:read("*all")
+    file:close()
+    if not content or content == "" then
+        return nil
     end
-    return withConnection(function(conn)
-        local stmt = conn:prepare([[SELECT COUNT(1) FROM patch_files WHERE repo_id = ?;]])
-        stmt:bind(repo_id)
-        local row = stmt:step()
-        local value = row and row[1] or 0
-        stmt:close()
-        return tonumber(value) or 0
-    end)
-end
-
-function Cache.listPatchFiles(repo_id)
-    repo_id = tonumber(repo_id)
-    if not repo_id then
-        return {}
+    local ok, decoded = pcall(json.decode, content)
+    if not ok then
+        logger.err("Storefront: failed to decode cache file", decoded)
+        return nil
     end
-    return withConnection(function(conn)
-        local stmt = conn:prepare([[SELECT path, filename, branch, sha, size, download_url
-            FROM patch_files WHERE repo_id = ? ORDER BY filename COLLATE NOCASE;]])
-        stmt:bind(repo_id)
-        local dataset = stmt:resultset("hi")
-        stmt:close()
-        local result = {}
-        if not dataset then
-            return result
-        end
-        local headers = dataset[0]
-        if not headers then
-            return result
-        end
-        local first_column = dataset[1]
-        if type(first_column) ~= "table" then
-            return result
-        end
-        local row_count = #first_column
-        for row_index = 1, row_count do
-            local row = {}
-            for col_index, header in ipairs(headers) do
-                row[header] = dataset[col_index][row_index]
-            end
-            table.insert(result, row)
-        end
-        return result
-    end)
-end
-
--- Delete patch_files rows for any repo_id not present in `valid_repo_ids`.
--- Used by the incremental refresh to drop data for patch repositories that
--- were removed from the search results since the previous refresh (e.g. a
--- topic tag was removed or the repo no longer matches name filters). Without
--- this, the incremental path would leave stale rows behind because it no
--- longer wipes the whole table up-front.
-function Cache.pruneOrphanPatchFiles(valid_repo_ids)
-    valid_repo_ids = valid_repo_ids or {}
-    local lookup = {}
-    for _, repo_id in ipairs(valid_repo_ids) do
-        local numeric = tonumber(repo_id)
-        if numeric then
-            lookup[numeric] = true
-        end
-    end
-    withConnection(function(conn)
-        local existing_stmt = conn:prepare([[SELECT DISTINCT repo_id FROM patch_files;]])
-        local dataset = existing_stmt:resultset("hi")
-        existing_stmt:close()
-        local orphans = {}
-        if dataset and type(dataset[1]) == "table" then
-            for row_index = 1, #dataset[1] do
-                local repo_id = tonumber(dataset[1][row_index])
-                if repo_id and not lookup[repo_id] then
-                    table.insert(orphans, repo_id)
-                end
-            end
-        end
-        if #orphans == 0 then
-            return
-        end
-        conn:exec("BEGIN;")
-        local delete_stmt = conn:prepare([[DELETE FROM patch_files WHERE repo_id = ?;]])
-        for _, repo_id in ipairs(orphans) do
-            delete_stmt:bind(repo_id)
-            delete_stmt:step()
-            delete_stmt:reset()
-        end
-        delete_stmt:close()
-        conn:exec("COMMIT;")
-    end)
-end
-
-function Cache.clearPatchFiles(kind)
-    withConnection(function(conn)
-        if kind == "plugin" then
-            return -- no-op
-        end
-        if kind == "patch" or not kind then
-            conn:exec("DELETE FROM patch_files;")
-        end
-    end)
-end
-
-local function execStatements(conn, statements)
-    for _, statement in ipairs(statements) do
-        local trimmed = util.trim(statement)
-        if trimmed ~= "" then
-            local final_stmt = trimmed
-            if not final_stmt:find(";%s*$") then
-                final_stmt = final_stmt .. ";"
-            end
-            local ok, err = pcall(conn.exec, conn, final_stmt)
-            if not ok then
-                error(string.format("Storefront cache schema error: %s -- %s", final_stmt, err))
-            end
-        end
-    end
+    return decoded
 end
 
 function Cache.init()
-    if initialized then
+    if _loaded then
         return
     end
-    local conn = openConnection()
-    local current_version = tonumber(conn:rowexec("PRAGMA user_version;")) or 0
-    if current_version < DB_SCHEMA_VERSION then
-        conn:exec("PRAGMA writable_schema = ON;")
-        conn:exec("DELETE FROM sqlite_master WHERE type IN ('table','index','trigger');")
-        conn:exec("PRAGMA writable_schema = OFF;")
-        conn:exec("VACUUM;")
-        conn:exec("PRAGMA user_version = " .. DB_SCHEMA_VERSION .. ";")
+    ensureDirectory()
+    local plugins_data = readJsonFile(PLUGINS_FILE)
+    if plugins_data then
+        _data.plugin = plugins_data
     end
-    execStatements(conn, SCHEMA_STATEMENTS)
-    conn:close()
-    initialized = true
-end
-
-local function getOwnerLogin(owner)
-    if type(owner) == "table" and owner.login then
-        return tostring(owner.login)
+    local patches_data = readJsonFile(PATCHES_FILE)
+    if patches_data then
+        _data.patch = patches_data
     end
-    return ""
+    
+    _by_id = {}
+    _by_name = {}
+    
+    local function indexRepos(repos)
+        for _, repo in ipairs(repos) do
+            if repo.repo_id then
+                _by_id[repo.repo_id] = repo
+            end
+            if repo.owner and repo.name then
+                local key = string.format("%s/%s", repo.owner:lower(), repo.name:lower())
+                _by_name[key] = repo
+            end
+        end
+    end
+    
+    if _data.plugin and _data.plugin.repos then
+        indexRepos(_data.plugin.repos)
+    end
+    if _data.patch and _data.patch.repos then
+        indexRepos(_data.patch.repos)
+    end
+    
+    _loaded = true
 end
 
 function Cache.storeRepos(kind, repos)
-    if not kind or type(repos) ~= "table" then
-        return
-    end
+    if not kind or type(repos) ~= "table" then return end
+    Cache.init()
+    
     local fetched_at = os.time()
-    withConnection(function(conn)
-        conn:exec("BEGIN;")
-        local delete_stmt = conn:prepare([[DELETE FROM repos WHERE kind = ?;]])
-        delete_stmt:bind(kind)
-        delete_stmt:step()
-        delete_stmt:close()
-
-        local insert_sql = [[INSERT INTO repos (repo_id, kind, name, owner, full_name, description, stars, language, homepage, fetched_at, data)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);]]
-        local stmt = conn:prepare(insert_sql)
-        for _, repo in ipairs(repos) do
-            local owner_login = getOwnerLogin(repo.owner)
-            local ok, serialized = pcall(json.encode, repo)
-            local encoded = ""
-            if ok and type(serialized) == "string" then
-                encoded = serialized
-            else
-                logger.warn("Storefront cache encode error", serialized)
+    local list = {}
+    
+    local existing_patches = {}
+    if kind == "patch" and _data.patch and _data.patch.repos then
+        for _, r in ipairs(_data.patch.repos) do
+            if r.repo_id and r.patch_files then
+                existing_patches[r.repo_id] = r.patch_files
             end
-            stmt:bind(
-                normalizeNumber(repo.id),
-                kind,
-                normalizeString(repo.name),
-                owner_login,
-                normalizeString(repo.full_name),
-                normalizeString(repo.description),
-                normalizeNumber(repo.stargazers_count),
-                normalizeString(repo.language),
-                normalizeString(repo.homepage),
-                fetched_at,
-                encoded
-            )
-            stmt:step()
-            stmt:reset()
-        end
-        stmt:close()
-        conn:exec("COMMIT;")
-    end)
-end
-
-local function decodeRow(row)
-    local decoded
-    if row.data and row.data ~= "" then
-        local ok, parsed = pcall(json.decode, row.data)
-        if ok then
-            decoded = parsed
-        else
-            logger.warn("Storefront cache decode error", parsed)
         end
     end
-    return {
-        repo_id = tonumber(row.repo_id),
-        kind = row.kind,
-        name = row.name,
-        owner = row.owner,
-        full_name = row.full_name,
-        description = row.description,
-        stars = tonumber(row.stars) or 0,
-        language = row.language,
-        homepage = row.homepage,
-        fetched_at = tonumber(row.fetched_at) or 0,
-        data = decoded,
+    
+    local function getOwnerLogin(owner)
+        if type(owner) == "table" and owner.login then
+            return tostring(owner.login)
+        end
+        return ""
+    end
+    
+    for _, repo in ipairs(repos) do
+        local owner_login = getOwnerLogin(repo.owner)
+        local repo_id = tonumber(repo.id) or 0
+        local record = {
+            repo_id = repo_id,
+            kind = kind,
+            name = tostring(repo.name or ""),
+            owner = owner_login,
+            full_name = tostring(repo.full_name or ""),
+            description = repo.description ~= json.null and tostring(repo.description or "") or "",
+            stars = tonumber(repo.stargazers_count) or 0,
+            language = repo.language ~= json.null and tostring(repo.language or "") or "",
+            homepage = repo.homepage ~= json.null and tostring(repo.homepage or "") or "",
+            fetched_at = fetched_at,
+            data = repo,
+        }
+        if kind == "patch" then
+            record.patch_files = existing_patches[repo_id] or {}
+        end
+        table.insert(list, record)
+    end
+    
+    _data[kind] = {
+        fetched_at = fetched_at,
+        repos = list,
     }
-end
-
-local function fetchRows(kind)
-    return withConnection(function(conn)
-        local stmt = conn:prepare([[SELECT repo_id, kind, name, owner, full_name, description, stars, language, homepage, fetched_at, data
-            FROM repos WHERE kind = ? ORDER BY stars DESC, name COLLATE NOCASE;]])
-        stmt:bind(kind)
-        local dataset = stmt:resultset("hi")
-        stmt:close()
-        return dataset
-    end)
+    
+    local file_path = kind == "plugin" and PLUGINS_FILE or PATCHES_FILE
+    writeJsonFile(file_path, _data[kind])
+    
+    _loaded = false
+    Cache.init()
 end
 
 function Cache.listRepos(kind)
     kind = kind or "plugin"
-    local dataset = fetchRows(kind)
-    local result = {}
-    if not dataset then
-        return result
+    Cache.init()
+    local repos = _data[kind] and _data[kind].repos or {}
+    local copy = {}
+    for _, r in ipairs(repos) do
+        table.insert(copy, r)
     end
-    local headers = dataset[0]
-    if not headers then
-        return result
-    end
-    local first_column = dataset[1]
-    if type(first_column) ~= "table" then
-        return result
-    end
-    local row_count = #first_column
-    if row_count == 0 then
-        return result
-    end
-    for row_index = 1, row_count do
-        local row = {}
-        for col_index, header in ipairs(headers) do
-            row[header] = dataset[col_index][row_index]
+    table.sort(copy, function(a, b)
+        if (a.stars or 0) ~= (b.stars or 0) then
+            return (a.stars or 0) > (b.stars or 0)
         end
-        table.insert(result, decodeRow(row))
-    end
-    return result
-end
-
-function Cache.getLastFetched(kind)
-    kind = kind or "plugin"
-    return withConnection(function(conn)
-        local stmt = conn:prepare([[SELECT MAX(fetched_at) FROM repos WHERE kind = ?;]])
-        stmt:bind(kind)
-        local row = stmt:step()
-        local value = row and row[1] or nil
-        stmt:close()
-        return tonumber(value)
+        return tostring(a.name):lower() < tostring(b.name):lower()
     end)
-end
-
-function Cache.findPatchRepoAndFile(filename)
-    if not filename or filename == "" then
-        return nil, nil
-    end
-    return withConnection(function(conn)
-        local stmt = conn:prepare([[
-            SELECT r.repo_id, r.kind, r.name, r.owner, r.full_name, r.description, r.stars, r.language, r.homepage, r.fetched_at, r.data,
-                   p.path, p.branch, p.sha, p.download_url
-            FROM patch_files p
-            JOIN repos r ON p.repo_id = r.repo_id
-            WHERE p.filename = ? AND r.kind = 'patch'
-            ORDER BY r.stars DESC
-            LIMIT 1;
-        ]])
-        stmt:bind(filename)
-        local row = stmt:step()
-        if not row then
-            stmt:close()
-            return nil, nil
-        end
-        local row_map = {
-            repo_id = row[1],
-            kind = row[2],
-            name = row[3],
-            owner = row[4],
-            full_name = row[5],
-            description = row[6],
-            stars = row[7],
-            language = row[8],
-            homepage = row[9],
-            fetched_at = row[10],
-            data = row[11],
-        }
-        local file_map = {
-            path = row[12],
-            branch = row[13],
-            sha = row[14],
-            download_url = row[15],
-        }
-        stmt:close()
-        return decodeRow(row_map), file_map
-    end)
+    return copy
 end
 
 function Cache.getRepo(repo_id)
     repo_id = tonumber(repo_id)
-    if not repo_id then
-        return nil
-    end
-    return withConnection(function(conn)
-        local stmt = conn:prepare([[SELECT repo_id, kind, name, owner, full_name, description, stars, language, homepage, fetched_at, data
-            FROM repos WHERE repo_id = ? LIMIT 1;]])
-        stmt:bind(repo_id)
-        local row = stmt:step()
-        if not row then
-            stmt:close()
-            return nil
-        end
-        local row_map = {
-            repo_id = row[1],
-            kind = row[2],
-            name = row[3],
-            owner = row[4],
-            full_name = row[5],
-            description = row[6],
-            stars = row[7],
-            language = row[8],
-            homepage = row[9],
-            fetched_at = row[10],
-            data = row[11],
-        }
-        stmt:close()
-        return decodeRow(row_map)
-    end)
+    if not repo_id then return nil end
+    Cache.init()
+    return _by_id[repo_id]
 end
 
 function Cache.getRepoByName(owner, name)
-    if not owner or not name then
+    if not owner or not name then return nil end
+    Cache.init()
+    local key = string.format("%s/%s", owner:lower(), name:lower())
+    return _by_name[key]
+end
+
+function Cache.getLastFetched(kind)
+    kind = kind or "plugin"
+    Cache.init()
+    return _data[kind] and _data[kind].fetched_at or 0
+end
+
+function Cache.countRepos(kind)
+    kind = kind or "plugin"
+    Cache.init()
+    return _data[kind] and _data[kind].repos and #_data[kind].repos or 0
+end
+
+function Cache.storePatchFiles(repo_id, entries, source_pushed_at)
+    repo_id = tonumber(repo_id)
+    if not repo_id then return end
+    Cache.init()
+    
+    local repo = _by_id[repo_id]
+    if not repo then
+        return
+    end
+    
+    local fetched_at = os.time()
+    local patch_files = {}
+    if entries then
+        for _, entry in ipairs(entries) do
+            table.insert(patch_files, {
+                path = tostring(entry.path or ""),
+                filename = tostring(entry.filename or ""),
+                branch = tostring(entry.branch or ""),
+                sha = tostring(entry.sha or ""),
+                size = tonumber(entry.size) or 0,
+                download_url = tostring(entry.download_url or ""),
+                fetched_at = fetched_at,
+                source_pushed_at = tostring(source_pushed_at or ""),
+            })
+        end
+    end
+    repo.patch_files = patch_files
+    writeJsonFile(PATCHES_FILE, _data.patch)
+end
+
+function Cache.getPatchFilePushedAt(repo_id)
+    repo_id = tonumber(repo_id)
+    if not repo_id then return nil end
+    Cache.init()
+    local repo = _by_id[repo_id]
+    if not repo or not repo.patch_files or #repo.patch_files == 0 then
         return nil
     end
-    return withConnection(function(conn)
-        local stmt = conn:prepare([[SELECT repo_id, kind, name, owner, full_name, description, stars, language, homepage, fetched_at, data
-            FROM repos WHERE owner = ? AND name = ? LIMIT 1;]])
-        stmt:bind(owner, name)
-        local row = stmt:step()
-        if not row then
-            stmt:close()
-            return nil
-        end
-        local row_map = {
-            repo_id = row[1],
-            kind = row[2],
-            name = row[3],
-            owner = row[4],
-            full_name = row[5],
-            description = row[6],
-            stars = row[7],
-            language = row[8],
-            homepage = row[9],
-            fetched_at = row[10],
-            data = row[11],
-        }
-        stmt:close()
-        return decodeRow(row_map)
+    local val = repo.patch_files[1].source_pushed_at
+    if val == "" or val == nil then return nil end
+    return val
+end
+
+function Cache.countPatchFiles(repo_id)
+    repo_id = tonumber(repo_id)
+    if not repo_id then return 0 end
+    Cache.init()
+    local repo = _by_id[repo_id]
+    return repo and repo.patch_files and #repo.patch_files or 0
+end
+
+function Cache.listPatchFiles(repo_id)
+    repo_id = tonumber(repo_id)
+    if not repo_id then return {} end
+    Cache.init()
+    local repo = _by_id[repo_id]
+    if not repo or not repo.patch_files then
+        return {}
+    end
+    local copy = {}
+    for _, file in ipairs(repo.patch_files) do
+        table.insert(copy, file)
+    end
+    table.sort(copy, function(a, b)
+        return tostring(a.filename):lower() < tostring(b.filename):lower()
     end)
+    return copy
+end
+
+function Cache.pruneOrphanPatchFiles(valid_repo_ids)
+    valid_repo_ids = valid_repo_ids or {}
+    local lookup = {}
+    for _, id in ipairs(valid_repo_ids) do
+        local numeric = tonumber(id)
+        if numeric then
+            lookup[numeric] = true
+        end
+    end
+    Cache.init()
+    
+    local changed = false
+    for _, repo in ipairs(_data.patch.repos) do
+        if repo.repo_id and not lookup[repo.repo_id] then
+            if repo.patch_files and #repo.patch_files > 0 then
+                repo.patch_files = {}
+                changed = true
+            end
+        end
+    end
+    if changed then
+        writeJsonFile(PATCHES_FILE, _data.patch)
+    end
+end
+
+function Cache.clearPatchFiles(kind)
+    if kind == "plugin" then return end
+    Cache.init()
+    local changed = false
+    for _, repo in ipairs(_data.patch.repos) do
+        if repo.patch_files and #repo.patch_files > 0 then
+            repo.patch_files = {}
+            changed = true
+        end
+    end
+    if changed then
+        writeJsonFile(PATCHES_FILE, _data.patch)
+    end
+end
+
+function Cache.findPatchRepoAndFile(filename)
+    if not filename or filename == "" then return nil, nil end
+    Cache.init()
+    local best_repo, best_file
+    for _, repo in ipairs(_data.patch.repos) do
+        if repo.patch_files then
+            for _, file in ipairs(repo.patch_files) do
+                if file.filename == filename then
+                    if not best_repo or (repo.stars or 0) > (best_repo.stars or 0) then
+                        best_repo = repo
+                        best_file = file
+                    end
+                end
+            end
+        end
+    end
+    if best_repo then
+        local file_map = {
+            path = best_file.path,
+            branch = best_file.branch,
+            sha = best_file.sha,
+            download_url = best_file.download_url,
+        }
+        return best_repo, file_map
+    end
+    return nil, nil
 end
 
 function Cache.clear()
-    withConnection(function(conn)
-        conn:exec("DELETE FROM repos;")
-    end)
+    _data = {
+        plugin = { fetched_at = 0, repos = {} },
+        patch = { fetched_at = 0, repos = {} },
+    }
+    _by_id = {}
+    _by_name = {}
+    os.remove(PLUGINS_FILE)
+    os.remove(PATCHES_FILE)
 end
 
 return Cache
-

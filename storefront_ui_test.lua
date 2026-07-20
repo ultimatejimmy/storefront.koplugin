@@ -60,6 +60,7 @@ local widgets = {
     "ui/widget/textwidget",
     "ui/widget/titlebar",
     "ui/widget/iconwidget",
+    "ui/widget/iconbutton",
     "ui/renderimage",
     "ui/trapper",
     "storefront_list_item",

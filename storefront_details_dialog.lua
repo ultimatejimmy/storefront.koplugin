@@ -97,8 +97,8 @@ function StorefrontDetailsDialog:init()
     }
     local meta_label = TextWidget:new{
         text = meta_text,
-        face = Font:getFace("cfont", 14),
-        fgcolor = Blitbuffer.COLOR_DARK_GRAY,
+        face = Font:getFace("cfont", 16),
+        fgcolor = Blitbuffer.COLOR_BLACK,
     }
     local desc_label = TextBoxWidget:new{
         text = desc_text,
@@ -281,8 +281,8 @@ function StorefrontDetailsDialog:init()
     -- -----------------------------------------------------------------------
     local page_indicator = TextWidget:new{
         text = "1 / 1",
-        face = Font:getFace("cfont", 16),
-        fgcolor = Blitbuffer.COLOR_DARK_GRAY,
+        face = Font:getFace("cfont", 18),
+        fgcolor = Blitbuffer.COLOR_BLACK,
     }
 
     local prev_btn

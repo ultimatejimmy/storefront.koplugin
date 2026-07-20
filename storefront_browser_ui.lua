@@ -8,6 +8,7 @@ local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
+local IconButton = require("ui/widget/iconbutton")
 local IconWidget = require("ui/widget/iconwidget")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LineWidget = require("ui/widget/linewidget")
@@ -64,7 +65,7 @@ function StorefrontBrowserDialog:buildTabBar()
         local label = TextWidget:new{
             text = tab_name,
             face = font_face,
-            fgcolor = is_active and Blitbuffer.COLOR_BLACK or Blitbuffer.Color8(120),
+            fgcolor = is_active and Blitbuffer.COLOR_BLACK or Blitbuffer.Color8(80),
         }
 
         local tab_elements = { label }
@@ -213,11 +214,27 @@ function StorefrontBrowserDialog:init()
         end,
     }
 
+    -- Use IconButton with allow_flash=false: this is the required KOReader pattern
+    -- for any button that closes its container. With allow_flash=true (the default),
+    -- KOReader's flash_ui code does UIManager:setDirty and forceRePaint AFTER the
+    -- callback fires -- but if the callback already destroyed the widget, it crashes.
+    local close_btn = IconButton:new{
+        icon = "close",
+        width = sc(24),
+        height = sc(24),
+        padding = sc(12),
+        allow_flash = false,
+        show_parent = self,
+        callback = function()
+            self:onClose()
+        end,
+    }
+
     local padding_h = sc(12) * 2
     local title_margin_left = sc(12)
     local logo_w = zap_icon:getSize().w
     local logo_gap = sc(8)
-    local total_btns_w = btn_w * 2 + sc(8)
+    local total_btns_w = btn_w * 3 + sc(16)
     local title_w = title_label:getSize().w
     local spacer_w = math.max(sc(8), self.width - padding_h - title_margin_left - logo_w - logo_gap - title_w - total_btns_w)
 
@@ -230,6 +247,8 @@ function StorefrontBrowserDialog:init()
         filter_btn,
         HorizontalSpan:new{ width = sc(8) },
         settings_btn,
+        HorizontalSpan:new{ width = sc(8) },
+        close_btn,
     }
 
     self.header = FrameContainer:new{
@@ -287,12 +306,14 @@ function StorefrontBrowserDialog:init()
     }
     self._list_group = list_group
 
-    -- Redesigned slim footer < Page N of M >
     local prev_button = Button:new{
-        text = "<",
-        menu_style = true,
+        icon = "chevron.left",
+        icon_width = sc(24),
+        icon_height = sc(24),
+        width = sc(48),
+        height = sc(48),
         bordersize = 0,
-        background = Blitbuffer.COLOR_WHITE,
+        background = nil,
         callback = function()
             if self.on_prev_page then
                 self.on_prev_page()
@@ -344,10 +365,13 @@ function StorefrontBrowserDialog:init()
     end
 
     local next_button = Button:new{
-        text = ">",
-        menu_style = true,
+        icon = "chevron.right",
+        icon_width = sc(24),
+        icon_height = sc(24),
+        width = sc(48),
+        height = sc(48),
         bordersize = 0,
-        background = Blitbuffer.COLOR_WHITE,
+        background = nil,
         callback = function()
             if self.on_next_page then
                 self.on_next_page()
@@ -356,25 +380,23 @@ function StorefrontBrowserDialog:init()
     }
     next_button:enableDisable(self.page < self.total_pages)
 
-    local footer_w = self.width - 2 * Size.padding.default
-    local prev_w = prev_button:getSize().w
-    local next_w = next_button:getSize().w
-    local page_w = page_button:getSize().w
-    local spacer_w = (footer_w - prev_w - next_w - page_w) / 2
-
     local footer_group = HorizontalGroup:new{
         prev_button,
-        HorizontalSpan:new{ width = spacer_w },
+        HorizontalSpan:new{ width = sc(24) },
         page_button,
-        HorizontalSpan:new{ width = spacer_w },
+        HorizontalSpan:new{ width = sc(24) },
         next_button,
     }
 
+    local CenterContainer = require("ui/widget/container/centercontainer")
     self.footer = FrameContainer:new{
-        padding_left = Size.padding.default,
-        padding_right = Size.padding.default,
+        padding_top = sc(8),
+        padding_bottom = sc(8),
         bordersize = 0,
-        footer_group,
+        CenterContainer:new{
+            dimen = Geom:new{ w = self.width, h = sc(48) },
+            footer_group,
+        }
     }
 
     local toolbar_height = 0
@@ -549,7 +571,7 @@ function StorefrontBrowserDialog:init()
     end
 
     self.layout = {}
-    table.insert(self.layout, { filter_btn, settings_btn })
+    table.insert(self.layout, { filter_btn, settings_btn, close_btn })
     if self.current_tab == "Updates" then
         table.insert(self.layout, { self._updates_outdated_btn, self._updates_all_btn, self._updates_check_btn })
         self._toolbar_row_index = #self.layout
@@ -614,7 +636,7 @@ function StorefrontBrowserDialog:onCloseWidget()
 end
 
 function StorefrontBrowserDialog:onClose()
-    UIManager:close(self)
+    UIManager:close(self, "ui")
     return true
 end
 

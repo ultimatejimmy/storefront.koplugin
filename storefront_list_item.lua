@@ -145,11 +145,11 @@ function StorefrontListItem:init()
             meta_text = table.concat(meta_parts, "  ·  ")
         end
 
-        local meta_face = Font:getFace("cfont", 14)
+        local meta_face = Font:getFace("cfont", 16)
         local meta_w = TextWidget:new{
             text = meta_text,
             face = meta_face,
-            fgcolor = Blitbuffer.COLOR_DARK_GRAY,
+            fgcolor = Blitbuffer.COLOR_BLACK,
             max_width = text_w,
         }
 
@@ -162,19 +162,12 @@ function StorefrontListItem:init()
                 meta_w,
             }
         else
-            -- Line 3: Description
             local desc_face = Font:getFace("cfont", 14)
-            local desc_lh = math.floor(desc_face.size * 1.4)
-            local desc_w = TextBoxWidget:new{
+            local desc_w = TextWidget:new{
                 text = desc_text,
-                width = text_w,
                 face = desc_face,
                 fgcolor = Blitbuffer.COLOR_BLACK,
-                alignment = "left",
-                justified = false,
-                height = desc_lh * 2,
-                height_overflow_show_ellipsis = true,
-                height_adjust = true,
+                max_width = text_w,
             }
 
             group = VerticalGroup:new{
@@ -204,7 +197,10 @@ function StorefrontListItem:init()
                 }
             }
         else
-            row_widget = group
+            row_widget = LeftContainer:new{
+                dimen = Geom:new{ w = content_inner, h = item_h },
+                group,
+            }
         end
 
         self.frame = FrameContainer:new{

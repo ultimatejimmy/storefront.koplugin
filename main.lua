@@ -1300,9 +1300,23 @@ function Storefront:autoMatchInstalled()
 end
 
 function Storefront:collectPatchUpdateSummary()
+    local current_generation = InstallStore.getGeneration and InstallStore.getGeneration() or 0
+    local remote_info_key = self.patch_updates_state and self.patch_updates_state.remote_info
+    
+    if self._cached_patch_summary
+       and self._cached_patch_summary_gen == current_generation
+       and self._cached_patch_summary_remote == remote_info_key then
+        return self._cached_patch_summary
+    end
+
     self:autoMatchInstalled()
     self:ensurePatchUpdatesState()
-    return buildPatchSummary(self.patch_updates_state.remote_info)
+    local summary = buildPatchSummary(self.patch_updates_state.remote_info)
+    
+    self._cached_patch_summary = summary
+    self._cached_patch_summary_gen = current_generation
+    self._cached_patch_summary_remote = remote_info_key
+    return summary
 end
 
 function Storefront:getPatchUpdatesSummaryText(summary)
@@ -1319,6 +1333,15 @@ function Storefront:getPatchUpdatesSummaryText(summary)
 end
 
 function Storefront:collectUpdateSummary()
+    local current_generation = InstallStore.getGeneration and InstallStore.getGeneration() or 0
+    local remote_info_key = self.updates_state and self.updates_state.remote_info
+    
+    if self._cached_plugin_summary
+       and self._cached_plugin_summary_gen == current_generation
+       and self._cached_plugin_summary_remote == remote_info_key then
+        return self._cached_plugin_summary
+    end
+
     self:autoMatchInstalled()
     self:ensureUpdatesState()
     local records = getInstallRecordsMap()
@@ -1342,7 +1365,8 @@ function Storefront:collectUpdateSummary()
         end
 
         local remote = remote_info[plugin.dirname]
-        if (not remote or remote.error) and tracked then
+        local has_checked_info = remote and not remote.error
+        if not has_checked_info and tracked then
             local cached_repo
             if record.repo_id then
                 cached_repo = Cache.getRepo(record.repo_id)
@@ -1354,8 +1378,9 @@ function Storefront:collectUpdateSummary()
                 local pushed_at_str = cached_repo.data.pushed_at or cached_repo.data.updated_at
                 local remote_repo_ts = pushed_at_str and parseGitHubTimestamp(pushed_at_str) or 0
                 local remote_version = cached_repo.data.version
+                local prev_version = remote and (remote.release_tag_name or remote.remote_version)
                 remote = {
-                    remote_version = remote_version,
+                    remote_version = prev_version or remote_version,
                     remote_repo_ts = remote_repo_ts,
                     is_cached_fallback = true,
                 }
@@ -1423,6 +1448,10 @@ function Storefront:collectUpdateSummary()
 
     summary.data = data
     summary.records = records
+    
+    self._cached_plugin_summary = summary
+    self._cached_plugin_summary_gen = current_generation
+    self._cached_plugin_summary_remote = remote_info_key
     return summary
 end
 
@@ -2535,10 +2564,11 @@ function Storefront:_checkAllUpdatesInternal(records)
     local remote_info = self.updates_state.remote_info or {}
     for _, record in ipairs(records) do
         local remote_version, remote_repo_ts, err, release_tag_name = self:fetchRemoteVersionForRecord(record)
+        local prev = remote_info[record.dirname] or {}
         remote_info[record.dirname] = {
-            remote_version = remote_version,
-            remote_repo_ts = remote_repo_ts,
-            release_tag_name = release_tag_name,
+            remote_version = remote_version or prev.remote_version,
+            remote_repo_ts = remote_repo_ts or prev.remote_repo_ts or 0,
+            release_tag_name = release_tag_name or prev.release_tag_name,
             error = err,
             last_checked = os.time(),
         }
@@ -6406,6 +6436,41 @@ function Storefront:makePatchMenuItem(repo, patch)
     }
 end
 
+function Storefront:calculateDynamicPageSize(tab_name)
+    local screen_h = Device.screen:getHeight()
+    local sc = function(val) return Device.screen:scaleBySize(val) end
+    
+    local title_height = sc(48) + 24
+    local tab_bar_height = 24 + sc(19)
+    local footer_height = sc(48) + 24
+    
+    local toolbar_height = 0
+    if tab_name == "Updates" then
+        toolbar_height = sc(36) + 8
+    end
+    
+    local vertical_padding = Size.line.thin + 2 * Size.span.vertical_default
+    if tab_name == "Updates" then
+        vertical_padding = vertical_padding + Size.span.vertical_default
+    end
+    
+    local body_height = screen_h - title_height - tab_bar_height - footer_height - toolbar_height - vertical_padding - sc(24)
+    if body_height < math.floor(screen_h * 0.5) then
+        body_height = math.floor(screen_h * 0.5)
+    end
+    
+    local item_height
+    if tab_name == "Plugins" then
+        item_height = sc(105)
+    elseif tab_name == "Patches" then
+        item_height = sc(100)
+    else -- Updates
+        item_height = sc(70)
+    end
+    
+    return math.max(1, math.floor(body_height / item_height))
+end
+
 function Storefront:buildBrowserEntries()
     self:ensureBrowserState()
     local tab = self.browser_state.tab or "Plugins"
@@ -6476,7 +6541,7 @@ function Storefront:buildBrowserEntries()
     -- })
     -- items[#items].separator = true
 
-    local page_size = (kind == "patch") and 6 or getBrowserPageSize()
+    local page_size = self:calculateDynamicPageSize(tab)
     local total_pages = math.max(1, math.ceil(display_total / page_size))
     local page = math.min(math.max(self.browser_state.page or 1, 1), total_pages)
     if self.browser_state.page ~= page then
@@ -6696,12 +6761,25 @@ function Storefront:showBrowser(kind)
         }
     end
 
-    local updates_count = 0
-    pcall(function()
-        local p_sum = self:collectUpdateSummary()
-        local pt_sum = self:collectPatchUpdateSummary()
-        updates_count = (p_sum.updates or 0) + (pt_sum.updates or 0)
-    end)
+    local current_generation = InstallStore.getGeneration and InstallStore.getGeneration() or 0
+    local remote_info_key = self.updates_state and self.updates_state.remote_info
+    local patch_remote_info_key = self.patch_updates_state and self.patch_updates_state.remote_info
+    
+    if not self._cached_updates_count 
+       or self._cached_updates_gen ~= current_generation
+       or self._cached_remote_info ~= remote_info_key
+       or self._cached_patch_remote_info ~= patch_remote_info_key then
+       
+        pcall(function()
+            local p_sum = self:collectUpdateSummary()
+            local pt_sum = self:collectPatchUpdateSummary()
+            self._cached_updates_count = (p_sum.updates or 0) + (pt_sum.updates or 0)
+        end)
+        self._cached_updates_gen = current_generation
+        self._cached_remote_info = remote_info_key
+        self._cached_patch_remote_info = patch_remote_info_key
+    end
+    local updates_count = self._cached_updates_count or 0
 
     local dialog = StorefrontBrowserDialog:new{
         title = title,
@@ -6815,6 +6893,11 @@ function Storefront:showBrowser(kind)
     }
     if dialog._used_trapper_progress then
         Trapper:reset()
+    end
+    if self.browser_menu then
+        local old_dialog = self.browser_menu
+        self.browser_menu = nil
+        UIManager:close(old_dialog)
     end
     self.browser_menu = dialog
     UIManager:show(dialog)
