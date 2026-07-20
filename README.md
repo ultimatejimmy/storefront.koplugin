@@ -23,3 +23,10 @@ Detailed guides available on the wiki:
 * [3. Usage and Capabilities Guide](https://github.com/ultimatejimmy/storefront.koplugin/wiki/3.-Usage)
 * [4. Plugin and Patch Management Guide](https://github.com/ultimatejimmy/storefront.koplugin/wiki/4.-Management)
 * [5. Troubleshooting](https://github.com/ultimatejimmy/storefront.koplugin/wiki/5.-Troubleshooting)
+
+## Support me
+
+[liberapay](https://liberapay.com/ultimatejimmy) ![liberapay](https://img.shields.io/liberapay/patrons/ultimatejimmy.svg?logo=liberapay) 
+
+[Buy me a coffee](https://www.buymeacoffee.com/ultimatejimmy)
+
