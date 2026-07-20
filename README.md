@@ -4,6 +4,15 @@ Discover, install, and update community-created KOReader plugins and user patche
 
 Storefront surfaces a curated list of plugins and patches from GitHub with filtering, sorting, and install flows designed to feel native on e-ink hardware.
 
+## Key Capabilities
+
+- **Unified browser** for both plugins and user patches with persistent filters and paging.
+- **Offline-friendly cache** stored under `data/cache/Storefront` so existing results remain accessible when you lose connectivity.
+- **Per-entry README viewer** that fetches `README.md` directly from GitHub and displays it in the plugin.
+- **Install/update pipeline** that handles `.koplugin` archives, verifies metadata, and copies files to `data/plugins` or `data/patches` accordingly.
+- **Update tracking** for installed plugins and numbered patch files, complete with SHA comparisons and refreshable summaries.
+- **Optional authentication** through a GitHub Personal Access Token (PAT) to increase API rate limits.
+
 ## Documentation
 
 For full details on how to install, configure, and use the plugin, please visit the [Storefront Wiki](https://github.com/ultimatejimmy/storefront.koplugin/wiki).
