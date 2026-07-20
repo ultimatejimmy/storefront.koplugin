@@ -1,0 +1,39 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '**' # Matches any tag including those with slashes
+  workflow_dispatch: # Allows manual triggering from the Actions tab
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true # Opt-in to Node 24 to clear deprecation warnings
+
+jobs:
+  build:
+    name: Create Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history for all tags and branches
+
+      - name: Create Plugin Archive
+        run: |
+          # Package the plugin directory into a zip file
+          # Excluding hidden files and git metadata
+          zip -r storefront.koplugin.zip storefront.koplugin -x "*.git*" "*/.*"
+
+      - name: Create Draft Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: storefront.koplugin.zip
+          draft: true
+          prerelease: ${{ contains(github.ref_name, '-beta') }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
