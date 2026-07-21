@@ -52,7 +52,7 @@ function Run-Workflow {
     Write-Host "Syncing to WSL..." -NoNewline
     wsl mkdir -p (Split-Path $WSLDest -Parent)
     
-    wsl rsync -rv --delete --exclude=".git" --exclude="*.log" "./$PluginDir/" "$WSLDest/"
+    wsl rsync -rv --delete --exclude=".git" --exclude="*.log" --exclude="storefront_config.lua" --exclude="storefront_configuration.lua" "./$PluginDir/" "$WSLDest/"
     if ($LASTEXITCODE -ne 0) {
         Write-Host " FAILED" -ForegroundColor Red
         return $false
