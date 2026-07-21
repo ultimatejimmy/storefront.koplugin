@@ -127,6 +127,64 @@ def fetch_patch_files(owner, repo, default_branch="HEAD"):
             })
     return patch_files
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+def process_single_repo(repo_item, is_patch):
+    owner = repo_item.get("owner", {}).get("login", "")
+    repo_name = repo_item.get("name", "")
+    full_name = repo_item.get("full_name", f"{owner}/{repo_name}")
+    default_branch = repo_item.get("default_branch", "main")
+    stars = repo_item.get("stargazers_count", 0)
+    is_fork = repo_item.get("fork", False)
+    repo_id = repo_item.get("id", 0)
+    
+    # Prepare normalized record
+    record = {
+        "id": repo_id,
+        "repo_id": repo_id,
+        "name": repo_name,
+        "owner": owner,
+        "full_name": full_name,
+        "description": repo_item.get("description") or "",
+        "stars": stars,
+        "stargazers_count": stars,
+        "fork": is_fork,
+        "language": repo_item.get("language") or "",
+        "homepage": repo_item.get("homepage") or "",
+        "default_branch": default_branch,
+        "pushed_at": repo_item.get("pushed_at") or "",
+        "updated_at": repo_item.get("updated_at") or "",
+        "html_url": repo_item.get("html_url") or f"https://github.com/{full_name}",
+    }
+    
+    # Fetch latest release only for non-forks or starred forks
+    if not is_fork or stars > 0:
+        rel = get_latest_release(owner, repo_name)
+        if rel and type(rel) == dict and "tag_name" in rel:
+            tag_name = rel.get("tag_name", "")
+            assets = rel.get("assets", [])
+            download_url = None
+            for asset in assets:
+                asset_name = asset.get("name", "")
+                if asset_name.endswith(".zip"):
+                    download_url = asset.get("browser_download_url")
+                    break
+            if not download_url and "zipball_url" in rel:
+                download_url = rel.get("zipball_url")
+                
+            record["latest_release"] = {
+                "tag_name": tag_name,
+                "published_at": rel.get("published_at") or "",
+                "download_url": download_url,
+                "name": rel.get("name") or "",
+            }
+    
+    if is_patch and (not is_fork or stars > 0):
+        patch_files = fetch_patch_files(owner, repo_name, default_branch)
+        record["patch_files"] = patch_files
+        
+    return record
+
 def process_repos(queries, is_patch=False):
     repo_map = {}
     for q in queries:
@@ -136,66 +194,20 @@ def process_repos(queries, is_patch=False):
             if repo_id and repo_id not in repo_map:
                 repo_map[repo_id] = item
     
+    print(f"Fetching details for {len(repo_map)} repositories (parallel)...")
     processed = []
-    for repo_id, repo in repo_map.items():
-        owner = repo.get("owner", {}).get("login", "")
-        repo_name = repo.get("name", "")
-        full_name = repo.get("full_name", f"{owner}/{repo_name}")
-        default_branch = repo.get("default_branch", "main")
-        stars = repo.get("stargazers_count", 0)
-        is_fork = repo.get("fork", False)
-        
-        print(f"Processing repo: {full_name}")
-        
-        # Prepare normalized record
-        record = {
-            "id": repo_id,
-            "repo_id": repo_id,
-            "name": repo_name,
-            "owner": owner,
-            "full_name": full_name,
-            "description": repo.get("description") or "",
-            "stars": stars,
-            "stargazers_count": stars,
-            "fork": is_fork,
-            "language": repo.get("language") or "",
-            "homepage": repo.get("homepage") or "",
-            "default_branch": default_branch,
-            "pushed_at": repo.get("pushed_at") or "",
-            "updated_at": repo.get("updated_at") or "",
-            "html_url": repo.get("html_url") or f"https://github.com/{full_name}",
-        }
-        
-        # Fetch latest release only for non-forks or starred forks (0-star forks rarely have releases)
-        if not is_fork or stars > 0:
-            rel = get_latest_release(owner, repo_name)
-            if rel and type(rel) == dict and "tag_name" in rel:
-                tag_name = rel.get("tag_name", "")
-                assets = rel.get("assets", [])
-                download_url = None
-                for asset in assets:
-                    asset_name = asset.get("name", "")
-                    if asset_name.endswith(".zip"):
-                        download_url = asset.get("browser_download_url")
-                        break
-                if not download_url and "zipball_url" in rel:
-                    download_url = rel.get("zipball_url")
-                    
-                record["latest_release"] = {
-                    "tag_name": tag_name,
-                    "published_at": rel.get("published_at") or "",
-                    "download_url": download_url,
-                    "name": rel.get("name") or "",
-                }
-        
-        if is_patch and (not is_fork or stars > 0):
-            patch_files = fetch_patch_files(owner, repo_name, default_branch)
-            record["patch_files"] = patch_files
-            
-        processed.append(record)
-        
-    return processed
-        
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        futures = [executor.submit(process_single_repo, repo, is_patch) for repo in repo_map.values()]
+        for future in as_completed(futures):
+            try:
+                res = future.result()
+                if res:
+                    processed.append(res)
+            except Exception as e:
+                print(f"Error processing repo: {e}", file=sys.stderr)
+                
+    # Sort deterministically by stars desc, then name
+    processed.sort(key=lambda r: (-r.get("stars", 0), r.get("name", "").lower()))
     return processed
 
 def main():
