@@ -17,8 +17,11 @@ local MovableContainer = require("ui/widget/container/movablecontainer")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local ScrollableContainer = require("ui/widget/container/scrollablecontainer")
 local LineWidget = require("ui/widget/linewidget")
+local InputDialog = require("ui/widget/inputdialog")
+local InfoMessage = require("ui/widget/infomessage")
 local _ = require("gettext")
 local Cache = require("storefront_cache")
+local GitHubClient = require("storefront_net_github")
 local storefront_theme = require("storefront_theme")
 
 local StorefrontSettingsCard = {}
@@ -118,17 +121,26 @@ function StorefrontSettingsCard.show(Storefront)
             end
 
             local item = InputContainer:new{ frame }
+            local row_size = frame:getSize() or { w = dialog_w - sc(4), h = 0 }
             item.ges_events = {
                 Tap = {
                     GestureRange:new{
                         ges = "tap",
                         range = function()
-                            local dim = item.dimen or { x = 0, y = 0, w = 0, h = 0 }
+                            local dim = item.dimen
+                            if not dim then
+                                -- Not painted/positioned yet -- return a range
+                                -- that can never match a real tap, instead of
+                                -- falling back to (0,0), which could otherwise
+                                -- overlap a genuine tap outside this row (e.g.
+                                -- one meant to dismiss the whole card).
+                                return Geom:new{ x = -1, y = -1, w = 1, h = 1 }
+                            end
                             return Geom:new{
                                 x = dim.x or 0,
                                 y = dim.y or 0,
-                                w = dialog_w - sc(4),
-                                h = dim.h or 0
+                                w = row_size.w or (dialog_w - sc(4)),
+                                h = row_size.h or 0,
                             }
                         end
                     }
@@ -162,6 +174,21 @@ function StorefrontSettingsCard.show(Storefront)
             background = Blitbuffer.COLOR_DARK_GRAY,
         })
 
+        -- 1b. Clear README Cache Row -- frees the disk space used by cached
+        -- README HTML/images (storefront_repo_content.lua), separate from
+        -- the plugin/patch list refreshed above. Prompts for confirmation
+        -- itself (see Storefront:clearCachedReadmeFiles in main.lua).
+        table.insert(content_vg, create_setting_row(nil, _("Clear README cache"), nil, function()
+            UIManager:close(overlay, "ui")
+            Storefront:clearCachedReadmeFiles()
+        end))
+
+        -- Divider line
+        table.insert(content_vg, LineWidget:new{
+            dimen = Geom:new{ w = dialog_w - sc(4), h = sc(1) },
+            background = Blitbuffer.COLOR_DARK_GRAY,
+        })
+
         -- 2. Include 0-star forks Row
         local include_zero = Storefront.browser_state.include_zero_star_forks == true
         local fork_indicator = include_zero and "☑" or "☐"
@@ -178,22 +205,57 @@ function StorefrontSettingsCard.show(Storefront)
         })
 
         -- 3. GitHub Token Row
-        local ok_cfg, StorefrontConfig = pcall(require, "storefront_configuration")
-        local github_configured = false
-        if ok_cfg and StorefrontConfig and StorefrontConfig.auth and StorefrontConfig.auth.github then
-            local token = StorefrontConfig.auth.github.token
-            if token and token ~= "" and token ~= "your_github_token" then
-                github_configured = true
-            end
-        end
+        local github_configured = GitHubClient.hasAuthToken()
 
-        local token_status_text = github_configured and _("Configured ✓") or _("Not Found")
+        local token_status_text = github_configured and _("Configured ✓") or _("Not set")
         local token_widget = TextWidget:new{
             text = token_status_text,
             face = Font:getFace("cfont", ui_font_size - 1),
             fgcolor = storefront_theme.color_label_dim,
         }
-        table.insert(content_vg, create_setting_row(nil, _("GitHub token"), token_widget, nil))
+        table.insert(content_vg, create_setting_row(nil, _("GitHub token"), token_widget, function()
+            local token_dialog
+            token_dialog = InputDialog:new{
+                title = _("GitHub personal access token"),
+                description = _("Optional. Raises the GitHub API rate limit. Generate one (classic, 'public_repo' scope is enough) at github.com/settings/tokens, then paste it here."),
+                input = GitHubClient.getToken() or "",
+                input_hint = _("ghp_..."),
+                text_type = "password",
+                buttons = {
+                    {
+                        {
+                            text = _("Cancel"),
+                            callback = function()
+                                UIManager:close(token_dialog)
+                            end,
+                        },
+                        {
+                            text = _("Clear"),
+                            callback = function()
+                                GitHubClient.setToken(nil)
+                                UIManager:close(token_dialog)
+                                refresh()
+                            end,
+                        },
+                        {
+                            text = _("Save"),
+                            is_enter_default = true,
+                            callback = function()
+                                GitHubClient.setToken(token_dialog:getInputText())
+                                UIManager:close(token_dialog)
+                                UIManager:show(InfoMessage:new{
+                                    text = _("GitHub token saved."),
+                                    timeout = 2,
+                                })
+                                refresh()
+                            end,
+                        },
+                    },
+                },
+            }
+            UIManager:show(token_dialog)
+            token_dialog:onShowKeyboard()
+        end))
 
         -- Divider line
         table.insert(content_vg, LineWidget:new{
@@ -219,17 +281,21 @@ function StorefrontSettingsCard.show(Storefront)
             close_row_content,
         }
         local close_btn = InputContainer:new{ close_frame }
+        local close_size = close_frame:getSize() or { w = dialog_w - sc(4), h = 0 }
         close_btn.ges_events = {
             Tap = {
                 GestureRange:new{
                     ges = "tap",
                     range = function()
-                        local dim = close_btn.dimen or { x = 0, y = 0, w = 0, h = 0 }
+                        local dim = close_btn.dimen
+                        if not dim then
+                            return Geom:new{ x = -1, y = -1, w = 1, h = 1 }
+                        end
                         return Geom:new{
                             x = dim.x or 0,
                             y = dim.y or 0,
-                            w = dialog_w - sc(4),
-                            h = dim.h or 0
+                            w = close_size.w or (dialog_w - sc(4)),
+                            h = close_size.h or 0,
                         }
                     end
                 }
@@ -262,6 +328,11 @@ function StorefrontSettingsCard.show(Storefront)
             card
         }
 
+        -- Dismiss only via the explicit Close row (or the hardware Back key)
+        -- -- no tap-outside-to-dismiss. A full-screen tap catcher here made
+        -- it too easy for a background tap to be misattributed to whatever
+        -- row's hit-region happened to be under it (see the "Refresh cache"
+        -- mix-up), so requiring a deliberate action is both simpler and safer.
         overlay = InputContainer:new{
             align = "center",
             vertical_align = "center",
@@ -269,23 +340,8 @@ function StorefrontSettingsCard.show(Storefront)
             key_events = {
                 Close = { { "Back" } }
             },
-            ges_events = {
-                Tap = {
-                    GestureRange:new{
-                        ges = "tap",
-                        range = function()
-                            return Geom:new{ x = 0, y = 0, w = sw, h = sh }
-                        end
-                    }
-                }
-            },
             card_outer
         }
-
-        overlay.onTap = function()
-            UIManager:close(overlay, "ui")
-            return true
-        end
 
         overlay.onClose = function()
             UIManager:close(overlay, "ui")

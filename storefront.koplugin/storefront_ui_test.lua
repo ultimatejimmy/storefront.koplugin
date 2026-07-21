@@ -71,7 +71,7 @@ local widgets = {
     "ui/geometry",
     "ui/gesturerange",
     "ui/widget/htmlboxwidget",
-    "datastorage",
+    "ui/widget/inputdialog",
     "logger",
     "libs/libkoreader-lfs",
     "json",
@@ -95,6 +95,22 @@ package.loaded["util"] = {
 package.loaded["storefront_cache"] = {
     getLastFetched = function() return 1234567890 end,
     listRepos = function() return {} end,
+}
+
+package.loaded["datastorage"] = {
+    getSettingsDir = function(self) return "/tmp/koreader_test_settings" end,
+    getDataDir = function(self) return "/tmp/koreader_test_data" end,
+}
+
+package.loaded["luasettings"] = {
+    open = function(self, path)
+        local store = { data = {} }
+        function store:readSetting(key) return self.data[key] end
+        function store:saveSetting(key, val) self.data[key] = val; return true end
+        function store:delSetting(key) self.data[key] = nil end
+        function store:flush() return true end
+        return store
+    end,
 }
 
 package.loaded["gettext"] = function(str) return str end

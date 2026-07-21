@@ -10,6 +10,7 @@ local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local IconButton = require("ui/widget/iconbutton")
 local IconWidget = require("ui/widget/iconwidget")
+local ImageWidget = require("ui/widget/imagewidget")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
@@ -27,6 +28,19 @@ local _ = require("gettext")
 
 local Input = Device.input
 local StorefrontListItem = require("storefront_list_item")
+
+-- Resolves a file under this plugin's own assets/ directory, regardless of
+-- where the plugin was actually installed (bundled "plugins" dir vs a custom
+-- extra_plugin_paths location). IconWidget/Button's "icon" field can't do
+-- this itself -- it only resolves bare names against KOReader's built-in
+-- resources/icons directories, so a path like
+-- "../plugins/storefront.koplugin/assets/zap" silently falls back to
+-- KOReader's "icon not found" placeholder instead of raising an error.
+local function getAssetPath(filename)
+    local info = debug.getinfo(1, "S")
+    local dir = info.source:match("^@(.*[/\\])") or ""
+    return dir .. "assets/" .. filename
+end
 
 local StorefrontBrowserDialog = FocusManager:extend{
     covers_fullscreen = true,
@@ -174,10 +188,12 @@ function StorefrontBrowserDialog:init()
     local storefront_theme = require("storefront_theme")
     local sc = function(val) return Device.screen:scaleBySize(val) end
 
-    local zap_icon = IconWidget:new{
-        icon = "../plugins/storefront.koplugin/assets/zap",
+    local zap_icon = ImageWidget:new{
+        file = getAssetPath("zap.svg"),
         width = sc(24),
         height = sc(24),
+        scale_factor = 0,
+        alpha = true,
     }
 
     local title_label = TextWidget:new{
@@ -442,23 +458,54 @@ function StorefrontBrowserDialog:init()
             all_btn.label_widget.fgcolor = Blitbuffer.COLOR_WHITE
         end
 
-        local check_btn = Button:new{
-            icon = "../plugins/storefront.koplugin/assets/rotate-cw",
-            icon_width = sc(20),
-            icon_height = sc(20),
+        -- Built manually (not via Button's `icon` field, which can't load a
+        -- custom asset path -- see getAssetPath's comment above) so the
+        -- refresh icon actually renders instead of falling back to
+        -- KOReader's "icon not found" placeholder.
+        local check_btn_frame = FrameContainer:new{
             width = sc(36),
             height = sc(36),
-            radius = sc(18),
+            padding = 0,
             bordersize = 0,
-            menu_style = true,
-            background = nil,
-            callback = function()
-                if self.on_refresh then
-                    self.on_refresh()
-                end
-            end,
-            show_parent = self,
+            radius = sc(18),
+            CenterContainer:new{
+                dimen = Geom:new{ w = sc(36), h = sc(36) },
+                ImageWidget:new{
+                    file = getAssetPath("rotate-cw.svg"),
+                    width = sc(20),
+                    height = sc(20),
+                    scale_factor = 0,
+                    alpha = true,
+                },
+            },
         }
+        local check_btn = InputContainer:new{ check_btn_frame }
+        local check_btn_size = check_btn_frame:getSize() or { w = sc(36), h = sc(36) }
+        check_btn.ges_events = {
+            Tap = {
+                GestureRange:new{
+                    ges = "tap",
+                    range = function()
+                        local dim = check_btn.dimen
+                        if not dim then
+                            return Geom:new{ x = -1, y = -1, w = 1, h = 1 }
+                        end
+                        return Geom:new{
+                            x = dim.x or 0,
+                            y = dim.y or 0,
+                            w = check_btn_size.w or sc(36),
+                            h = check_btn_size.h or sc(36),
+                        }
+                    end,
+                }
+            }
+        }
+        check_btn.onTap = function()
+            if self.on_refresh then
+                self.on_refresh()
+            end
+            return true
+        end
 
         self._updates_outdated_btn = outdated_btn
         self._updates_all_btn = all_btn

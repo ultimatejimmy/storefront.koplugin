@@ -2,6 +2,8 @@ local http = require("socket.http")
 local json = require("json")
 local url = require("socket.url")
 local logger = require("logger")
+local DataStorage = require("datastorage")
+local LuaSettings = require("luasettings")
 
 local ok_cfg, StorefrontConfig = pcall(require, "storefront_configuration")
 if not ok_cfg then
@@ -12,6 +14,14 @@ local GitHubClient = {}
 
 local BASE_URL = "https://api.github.com"
 local USER_AGENT = "KOReader-Storefront"
+
+-- Token entered through the Settings UI (see storefront_settings_card.lua),
+-- stored separately from storefront_configuration.lua so users don't have to
+-- hand-edit a Lua file just to add a PAT. Kept in its own settings file (not
+-- StorefrontSettings in main.lua) so this module has no dependency on it.
+local AUTH_SETTINGS_PATH = DataStorage:getSettingsDir() .. "/Storefront_github.lua"
+local AuthSettings = LuaSettings:open(AUTH_SETTINGS_PATH)
+local TOKEN_KEY = "github_token"
 
 local function joinQueryParts(parts)
     if not parts or #parts == 0 then
@@ -29,16 +39,40 @@ local function newTableSink(target)
     end
 end
 
-local function getAuthHeaders()
+-- Returns the configured PAT, preferring the one saved via the Settings UI
+-- over the legacy storefront_configuration.lua file (kept for users who
+-- already set that up).
+function GitHubClient.getToken()
+    local saved = AuthSettings:readSetting(TOKEN_KEY)
+    if type(saved) == "string" and saved ~= "" then
+        return saved
+    end
     local auth = StorefrontConfig.auth and StorefrontConfig.auth.github
-    if not auth then
+    local token = auth and auth.token
+    if token and token ~= "" and token ~= "your_github_token" then
+        return token
+    end
+    return nil
+end
+
+-- Saves (or, when token is nil/empty, clears) the PAT entered via the
+-- Settings UI.
+function GitHubClient.setToken(token)
+    token = token and token:gsub("^%s+", ""):gsub("%s+$", "") or ""
+    if token == "" then
+        AuthSettings:delSetting(TOKEN_KEY)
+    else
+        AuthSettings:saveSetting(TOKEN_KEY, token)
+    end
+    AuthSettings:flush()
+end
+
+local function getAuthHeaders()
+    local token = GitHubClient.getToken()
+    if not token then
         return nil
     end
-    local token = auth.token
-    if not token or token == "" or token == "your_github_token" then
-        return nil
-    end
-    local scheme = auth.scheme or "token"
+    local scheme = (StorefrontConfig.auth and StorefrontConfig.auth.github and StorefrontConfig.auth.github.scheme) or "token"
     return {
         ["Authorization"] = string.format("%s %s", scheme, token),
     }
@@ -130,15 +164,7 @@ function GitHubClient.searchRepositories(opts)
 end
 
 function GitHubClient.hasAuthToken()
-    local auth = StorefrontConfig.auth and StorefrontConfig.auth.github
-    if not auth then
-        return false
-    end
-    local token = auth.token
-    if not token or token == "" or token =="your_github_token" then
-        return false
-    end
-    return true
+    return GitHubClient.getToken() ~= nil
 end
 
 function GitHubClient.searchByTopics(topics, opts)
