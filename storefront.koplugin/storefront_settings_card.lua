@@ -336,25 +336,10 @@ function StorefrontSettingsCard.show(Storefront)
             bordersize = sc(2),
             color = Blitbuffer.COLOR_BLACK,
             background = storefront_theme.color_bg,
-            width = dialog_w - sc(2),
+            width = dialog_w,
             content_vg
         }
 
-        local card_outer = FrameContainer:new{
-            bordersize = sc(1),
-            color = Blitbuffer.Color8(180),
-            padding = 0,
-            background = storefront_theme.color_bg,
-            radius = sc(12),
-            width = dialog_w,
-            card
-        }
-
-        -- Dismiss only via the explicit Close row (or the hardware Back key)
-        -- -- no tap-outside-to-dismiss. A full-screen tap catcher here made
-        -- it too easy for a background tap to be misattributed to whatever
-        -- row's hit-region happened to be under it (see the "Refresh cache"
-        -- mix-up), so requiring a deliberate action is both simpler and safer.
         overlay = InputContainer:new{
             align = "center",
             vertical_align = "center",
@@ -362,7 +347,7 @@ function StorefrontSettingsCard.show(Storefront)
             key_events = {
                 Close = { { "Back" } }
             },
-            card_outer
+            card
         }
 
         overlay.onClose = function()

@@ -19,7 +19,7 @@ Always reference design tokens from `storefront_theme` and `Screen:scaleBySize(v
 | `color_border` | `Blitbuffer.COLOR_BLACK` | Main high-contrast border color |
 | `color_label_dim` | `Blitbuffer.Color8(120)` | Faded/secondary text labels and subtitles |
 | `border_line_h` | `sc(1)` | Divider line thickness (`LineWidget`) |
-| `border_window` | `sc(2)` | Card inner window border thickness |
+| `border_window` | `sc(2)` | Card window border thickness |
 | `border_btn` | `sc(2)` | Selected option / button border thickness |
 | `radius_window` | `sc(12)` | Rounded corner radius for modals & cards |
 | `radius_btn` | `sc(18)` | Pill/button corner radius |
@@ -29,32 +29,19 @@ Always reference design tokens from `storefront_theme` and `Screen:scaleBySize(v
 
 ---
 
-## 2. Double-Border Modal Card Layout
+## 2. Modal Card Layout
 
-To prevent subpixel rendering gaps or anti-aliasing artifacts on high-DPI e-ink displays (Kindle, Kobo, Onyx Boox):
-- Nest an inner card (`bordersize = sc(2)`) inside an outer border wrapper (`bordersize = sc(1)`).
-- Hardcode the outer wrapper width to `width = dialog_w`.
-- Set the inner card width to `width = dialog_w - sc(2)` to account for the outer border calculation.
+Storefront uses a clean, single-border modal card container (`bordersize = sc(2)`) with rounded corners (`radius = sc(12)`):
 
 ```lua
 local card = FrameContainer:new{
     padding = 0,
     radius = storefront_theme.radius_window, -- sc(12)
-    bordersize = sc(2),
+    bordersize = storefront_theme.border_window, -- sc(2)
     color = Blitbuffer.COLOR_BLACK,
     background = storefront_theme.color_bg,
-    width = dialog_w - sc(2), -- Inner card width
+    width = dialog_w,
     content_vg
-}
-
-local card_outer = FrameContainer:new{
-    bordersize = sc(1),
-    color = Blitbuffer.Color8(180),
-    padding = 0,
-    background = storefront_theme.color_bg,
-    radius = storefront_theme.radius_window,
-    width = dialog_w, -- Outer card width
-    card
 }
 
 local overlay = InputContainer:new{
@@ -64,7 +51,7 @@ local overlay = InputContainer:new{
     key_events = {
         Close = { { "Back" } }
     },
-    card_outer
+    card
 }
 ```
 

@@ -306,18 +306,8 @@ function StorefrontAboutDialog.show(Storefront, on_close_cb)
             bordersize = sc(2),
             color = Blitbuffer.COLOR_BLACK,
             background = storefront_theme.color_bg,
-            width = dialog_w - sc(2),
-            content_vg
-        }
-
-        local card_outer = FrameContainer:new{
-            bordersize = sc(1),
-            color = Blitbuffer.Color8(180),
-            padding = 0,
-            background = storefront_theme.color_bg,
-            radius = sc(12),
             width = dialog_w,
-            card
+            content_vg
         }
 
         overlay = InputContainer:new{
@@ -327,7 +317,7 @@ function StorefrontAboutDialog.show(Storefront, on_close_cb)
             key_events = {
                 Close = { { "Back" } }
             },
-            card_outer
+            card
         }
 
         overlay.onClose = function()
