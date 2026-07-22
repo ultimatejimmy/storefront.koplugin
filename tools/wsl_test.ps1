@@ -57,25 +57,37 @@ function Run-Workflow {
         Write-Host " FAILED" -ForegroundColor Red
         return $false
     }
+    wsl rsync -rv --delete "./tests/" "$WSLDest/tests/"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host " FAILED" -ForegroundColor Red
+        return $false
+    }
     Write-Host " SUCCESS" -ForegroundColor Green
 
     # 2. Unit Tests
     Write-Host "Running unit tests (Bundled LuaJIT in WSL)..."
-    $TestCmd = "cd {0}/usr/lib/koreader && env SQUASHFS_ROOT={0} LUA_PATH='{1}/?.lua;./?.lua;./?/init.lua;frontend/?.lua;frontend/?/init.lua;libs/?.lua;common/?.lua;common/?/init.lua;;' ./luajit {1}/storefront_plugin_paths_test.lua" -f $SquashPath, $WSLDest
+    $TestCmd = "cd {0}/usr/lib/koreader && env SQUASHFS_ROOT={0} LUA_PATH='{1}/?.lua;./?.lua;./?/init.lua;frontend/?.lua;frontend/?/init.lua;libs/?.lua;common/?.lua;common/?/init.lua;;' ./luajit {1}/tests/storefront_plugin_paths_test.lua" -f $SquashPath, $WSLDest
     wsl bash -c `"$TestCmd`"
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Plugin Path Tests FAILED." -ForegroundColor Red
         return $false
     }
     Write-Host "Running README Markdown-to-HTML unit tests..."
-    $ReadmeTestCmd = "cd {0}/usr/lib/koreader && env SQUASHFS_ROOT={0} LUA_PATH='{1}/?.lua;./?.lua;./?/init.lua;frontend/?.lua;frontend/?/init.lua;libs/?.lua;common/?.lua;common/?/init.lua;;' ./luajit {1}/storefront_readme_test.lua" -f $SquashPath, $WSLDest
+    $ReadmeTestCmd = "cd {0}/usr/lib/koreader && env SQUASHFS_ROOT={0} LUA_PATH='{1}/?.lua;./?.lua;./?/init.lua;frontend/?.lua;frontend/?/init.lua;libs/?.lua;common/?.lua;common/?/init.lua;;' ./luajit {1}/tests/storefront_readme_test.lua" -f $SquashPath, $WSLDest
     wsl bash -c `"$ReadmeTestCmd`"
     if ($LASTEXITCODE -ne 0) {
         Write-Host "README Tests FAILED." -ForegroundColor Red
         return $false
     }
+    Write-Host "Running Release Notes unit tests..."
+    $ReleaseNotesTestCmd = "cd {0}/usr/lib/koreader && env SQUASHFS_ROOT={0} LUA_PATH='{1}/?.lua;./?.lua;./?/init.lua;frontend/?.lua;frontend/?/init.lua;libs/?.lua;common/?.lua;common/?/init.lua;;' ./luajit {1}/tests/storefront_release_notes_test.lua" -f $SquashPath, $WSLDest
+    wsl bash -c `"$ReleaseNotesTestCmd`"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Release Notes Tests FAILED." -ForegroundColor Red
+        return $false
+    }
     Write-Host "Running UI loading crash tests..."
-    $UiTestCmd = "cd {0}/usr/lib/koreader && env SQUASHFS_ROOT={0} LUA_PATH='{1}/?.lua;./?.lua;./?/init.lua;frontend/?.lua;frontend/?/init.lua;libs/?.lua;common/?.lua;common/?/init.lua;;' ./luajit {1}/storefront_ui_test.lua" -f $SquashPath, $WSLDest
+    $UiTestCmd = "cd {0}/usr/lib/koreader && env SQUASHFS_ROOT={0} LUA_PATH='{1}/?.lua;./?.lua;./?/init.lua;frontend/?.lua;frontend/?/init.lua;libs/?.lua;common/?.lua;common/?/init.lua;;' ./luajit {1}/tests/storefront_ui_test.lua" -f $SquashPath, $WSLDest
     wsl bash -c `"$UiTestCmd`"
     if ($LASTEXITCODE -ne 0) {
         Write-Host "UI Crash Tests FAILED." -ForegroundColor Red
@@ -103,9 +115,9 @@ function Run-Workflow {
 }
 
 if ($Watch) {
-    Write-Host "Watching for changes in $PluginDir..." -ForegroundColor Magenta
+    Write-Host "Watching for changes..." -ForegroundColor Magenta
     $watcher = New-Object System.IO.FileSystemWatcher
-    $watcher.Path = (Get-Item "./$PluginDir").FullName
+    $watcher.Path = (Get-Item ".").FullName
     $watcher.Filter = "*.lua"
     $watcher.IncludeSubdirectories = $true
     $watcher.EnableRaisingEvents = $true

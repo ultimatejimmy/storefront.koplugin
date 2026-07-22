@@ -1,6 +1,6 @@
 -- storefront_readme_test.lua
 -- Unit tests for Storefront README Markdown-to-HTML converter
-package.path = "plugins/storefront.koplugin/?.lua;" .. package.path
+package.path = "plugins/storefront.koplugin/?.lua;storefront.koplugin/?.lua;../?.lua;?.lua;" .. package.path
 
 local failures = 0
 local function check(label, condition)

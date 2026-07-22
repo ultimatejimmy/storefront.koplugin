@@ -1,6 +1,6 @@
 -- Storefront_plugin_paths_test.lua
--- Run with: cd <extracted-koreader-dir> && ./luajit plugins/storefront.koplugin/Storefront_plugin_paths_test.lua
-package.path = "plugins/storefront.koplugin/?.lua;" .. package.path
+-- Run with: cd <extracted-koreader-dir> && ./luajit plugins/storefront.koplugin/tests/storefront_plugin_paths_test.lua
+package.path = "plugins/storefront.koplugin/?.lua;storefront.koplugin/?.lua;../?.lua;?.lua;" .. package.path
 
 local scratch = "/tmp/Storefront_plugin_paths_test"
 os.execute("rm -rf " .. scratch .. " && mkdir -p " .. scratch .. "/custom_a " .. scratch .. "/custom_b")

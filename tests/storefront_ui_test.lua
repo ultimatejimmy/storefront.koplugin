@@ -1,6 +1,6 @@
 -- storefront_ui_test.lua
 -- Run with: cd <extracted-koreader-dir> && env SQUASHFS_ROOT=<dir> LUA_PATH='...' ./luajit <test_file>
-package.path = "plugins/storefront.koplugin/?.lua;" .. package.path
+package.path = "plugins/storefront.koplugin/?.lua;storefront.koplugin/?.lua;../?.lua;?.lua;" .. package.path
 
 local failures = 0
 local function check(label, got, expected)
@@ -74,7 +74,6 @@ local widgets = {
     "ui/widget/imageviewer",
     "ui/geometry",
     "ui/gesturerange",
-    "ui/widget/htmlboxwidget",
     "ui/widget/inputdialog",
     "libs/libkoreader-lfs",
     "json",
@@ -87,13 +86,43 @@ local widgets = {
     "ui/widget/checkbutton",
     "ui/widget/buttondialog",
     "storefront_repo_content",
-    "storefront_installs",
     "storefront_plugin_paths",
     "ffi/archiver",
     "ffi/sha2",
     "socketutil",
     "socket",
     "luasettings",
+}
+
+package.loaded["storefront_installs"] = {
+    getGeneration = function() return 1 end,
+    list = function() return {} end,
+    listPatches = function() return {} end,
+}
+
+package.loaded["ffi/util"] = {
+    realpath = function(path) return path end,
+    runInSubProcess = function() return 1, {} end,
+    writeToFD = function() end,
+    readAllFromFD = function() return "" end,
+    isSubProcessDone = function() return true end,
+    terminateSubProcess = function() end,
+}
+
+package.loaded["ui/network/manager"] = {
+    runWhenOnline = function(self, cb)
+        if type(self) == "function" then
+            cb = self
+        end
+        if cb then cb() end
+    end
+}
+
+package.loaded["ui/widget/htmlboxwidget"] = dummy_widget:extend{
+    setContent = function() end,
+    freeBb = function() end,
+    page_number = 1,
+    page_count = 1,
 }
 
 package.loaded["logger"] = {
@@ -227,6 +256,7 @@ package.loaded["ui/uimanager"] = {
     close = function() end,
     setDirty = function() end,
     nextTick = function(self, func) if type(self) == "function" then self() elseif func then func() end end,
+    scheduleIn = function(self, delay, func) if type(self) == "function" then delay() elseif func then func() end end,
 }
 
 -- Setup basic reader settings mock
@@ -325,8 +355,27 @@ if ok_browser then
                 repo = dummy_repo,
                 kind = "plugin",
             }
+            details:init()
         end)
         check("Details dialog loaded successfully", details_ok, true)
+        if not details_ok then
+            print("Details dialog init error was:", details_err)
+        end
+
+        local update_details_ok, update_details_err = pcall(function()
+            local details = StorefrontDetailsDialog:new{
+                Storefront = full_dummy_storefront,
+                repo = dummy_repo,
+                kind = "update",
+                default_tab = "release_notes",
+                update_item = { plugin = { dirname = "test-plugin" }, needs_update = true },
+            }
+            details:init()
+        end)
+        check("Update details dialog loaded successfully", update_details_ok, true)
+        if not update_details_ok then
+            print("Update details error was:", update_details_err)
+        end
     end
 
     do

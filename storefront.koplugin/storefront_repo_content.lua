@@ -312,5 +312,89 @@ function RepoContent.openReadme(path)
     })
 end
 
+function RepoContent.fetchReleaseNotesHtml(owner, repo)
+    if not owner or not repo or owner == "" or repo == "" then
+        return false, "missing owner/repo"
+    end
+
+    local clean_repo = repo:gsub("%.koplugin$", "")
+    local cache_dir = DataStorage:getDataDir() .. "/cache/Storefront/release_notes"
+    local ok_dir, err_dir = util.makePath(cache_dir)
+    if not ok_dir then
+        logger.warn("Storefront release notes cache dir failure", err_dir)
+    end
+
+    local safe_owner = owner:gsub("[^%w_-]", "_")
+    local safe_repo  = clean_repo:gsub("[^%w_-]", "_")
+    local path = string.format("%s/%s_%s_RELEASENOTES.html", cache_dir, safe_owner, safe_repo)
+
+    -- Extract release info from Cache if available
+    local repo_obj = nil
+    local ok_cache, Cache = pcall(require, "storefront_cache")
+    if ok_cache and Cache then
+        Cache.init()
+        repo_obj = Cache.getRepoByName(owner, repo) or Cache.getRepoByName(owner, clean_repo)
+    end
+
+    local rel_data = nil
+    if repo_obj then
+        if type(repo_obj.latest_release) == "table" then
+            rel_data = repo_obj.latest_release
+        elseif repo_obj.data and type(repo_obj.data.latest_release) == "table" then
+            rel_data = repo_obj.data.latest_release
+        end
+    end
+
+    local tag_name     = rel_data and (rel_data.tag_name or rel_data.release_tag_name or rel_data.version)
+    local rel_name     = rel_data and rel_data.name
+    local published_at = rel_data and (rel_data.published_at or rel_data.created_at)
+    local body         = rel_data and rel_data.body
+
+    -- If release notes body is missing from catalog/cache data, fetch live from GitHub API
+    if not body or body == "" then
+        local fetched_rel, err = GitHubClient.fetchLatestRelease(owner, repo)
+        if not fetched_rel and repo ~= clean_repo then
+            fetched_rel, err = GitHubClient.fetchLatestRelease(owner, clean_repo)
+        end
+        if fetched_rel and type(fetched_rel) == "table" then
+            tag_name     = tag_name or fetched_rel.tag_name or fetched_rel.name
+            rel_name     = rel_name or fetched_rel.name
+            published_at = published_at or fetched_rel.published_at or fetched_rel.created_at
+            body         = fetched_rel.body
+        end
+    end
+
+    local tag_fmt = (tag_name and tag_name ~= "") and (tag_name:sub(1, 1):lower() == "v" and tag_name or ("v" .. tag_name)) or ""
+    local header_title = tag_fmt ~= "" and tag_fmt or _("Latest Release")
+    if rel_name and rel_name ~= "" and rel_name ~= tag_fmt then
+        header_title = header_title .. " - " .. rel_name
+    end
+
+    local pub_str = (published_at and type(published_at) == "string") and published_at:sub(1, 10) or ""
+
+    local html_parts = {}
+    table.insert(html_parts, "<div class=\"markdown-body\">")
+    table.insert(html_parts, string.format("<h2>%s</h2>", header_title))
+    if pub_str ~= "" then
+        table.insert(html_parts, string.format("<p style=\"color:gray;margin-top:0.2em;\">" .. _("Published: %s") .. "</p>", pub_str))
+    end
+    table.insert(html_parts, "<hr style=\"margin-top:0.6em;margin-bottom:0.8em;\"/>")
+
+    if body and body:match("%S") then
+        local body_html = GitHubClient.markdownToHtml(body, owner, clean_repo)
+        table.insert(html_parts, body_html)
+    else
+        table.insert(html_parts, "<p style=\"color:gray;\">" .. _("No detailed release notes provided for this version.") .. "</p>")
+    end
+    table.insert(html_parts, "</div>")
+
+    local full_html = table.concat(html_parts, "\n")
+    local ok, write_err = util.writeToFile(full_html, path)
+    if not ok then
+        return false, write_err or "write error"
+    end
+    return true, path
+end
+
 return RepoContent
 

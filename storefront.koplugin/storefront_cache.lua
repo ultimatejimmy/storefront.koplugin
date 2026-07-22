@@ -201,8 +201,22 @@ end
 function Cache.getRepoByName(owner, name)
     if not owner or not name then return nil end
     Cache.init()
-    local key = string.format("%s/%s", owner:lower(), name:lower())
-    return _by_name[key]
+    local low_owner = owner:lower()
+    local low_name  = name:lower()
+    local key = string.format("%s/%s", low_owner, low_name)
+    if _by_name[key] then
+        return _by_name[key]
+    end
+    local clean_name = low_name:gsub("%.koplugin$", "")
+    local clean_key  = string.format("%s/%s", low_owner, clean_name)
+    if _by_name[clean_key] then
+        return _by_name[clean_key]
+    end
+    local plugin_key = string.format("%s/%s.koplugin", low_owner, clean_name)
+    if _by_name[plugin_key] then
+        return _by_name[plugin_key]
+    end
+    return nil
 end
 
 function Cache.getLastFetched(kind)

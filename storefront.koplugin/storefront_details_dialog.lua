@@ -21,6 +21,8 @@ local TextViewer = require("ui/widget/textviewer")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local HtmlBoxWidget = require("ui/widget/htmlboxwidget")
 local StorefrontImageModal = require("storefront_image_modal")
+local InstallStore = require("storefront_installs")
+local GestureRange = require("ui/gesturerange")
 local util = require("util")
 
 local Input = Device.input
@@ -67,10 +69,12 @@ function StorefrontDetailsDialog:init()
     -- -----------------------------------------------------------------------
     local function getInstallRecord()
         if self.patch then
-            return self.Storefront.getPatchRecordsMap()[self.patch.filename]
+            local patch_records = InstallStore.listPatches() or {}
+            return patch_records[self.patch.filename]
         else
             local repo_name_lower = (self.repo.name or ""):lower()
-            return self.Storefront.getInstallRecordsMap()[repo_name_lower]
+            local install_records = InstallStore.list() or {}
+            return install_records[repo_name_lower]
         end
     end
 
@@ -247,10 +251,10 @@ function StorefrontDetailsDialog:init()
     local has_update   = false
 
     if self.patch then
-        local patch_map = self.Storefront.getPatchRecordsMap()
+        local patch_map = InstallStore.listPatches() or {}
         is_installed = patch_map[self.patch.filename] ~= nil
     else
-        local installed_lookup = self.Storefront:getInstalledLookup()
+        local installed_lookup = self.Storefront and self.Storefront.getInstalledLookup and self.Storefront:getInstalledLookup()
         if installed_lookup then
             if self.repo.full_name and (installed_lookup[self.repo.full_name] or installed_lookup[self.repo.full_name:lower()]) then
                 is_installed = true
@@ -265,7 +269,7 @@ function StorefrontDetailsDialog:init()
             end
         end
         if not is_installed then
-            local install_map = self.Storefront.getInstallRecordsMap()
+            local install_map = InstallStore.list() or {}
             local repo_name_lower = (self.repo.name or ""):lower()
             local rec = install_map[repo_name_lower] or install_map[self.repo.name]
             if rec and not (rec.owner or rec.repo_full_name or rec.repo_id) then
@@ -286,16 +290,17 @@ function StorefrontDetailsDialog:init()
 
     local function getInstallRecord()
         if self.patch then
-            return self.Storefront.getPatchRecordsMap()[self.patch.filename]
+            local patch_map = InstallStore.listPatches() or {}
+            return patch_map[self.patch.filename]
         elseif self.update_item and self.update_item.record then
             return self.update_item.record
         else
-            local records = self.Storefront.getInstallRecordsMap()
+            local records = InstallStore.list() or {}
             local repo_name_lower = (self.repo.name or ""):lower()
             if records[repo_name_lower] then
                 return records[repo_name_lower]
             end
-            local owner = self.repo.owner or (self.repo.data and self.repo.data.owner and self.repo.data.owner.login)
+            local owner = self.repo.owner or (self.repo.data and self.repo.data.owner and (type(self.repo.data.owner) == "string" and self.repo.data.owner or self.repo.data.owner.login))
             for dirname, rec in pairs(records) do
                 if rec and rec.repo and rec.repo:lower() == repo_name_lower and (not owner or (rec.owner and rec.owner:lower() == owner:lower())) then
                     rec.dirname = dirname
@@ -325,25 +330,30 @@ function StorefrontDetailsDialog:init()
     end
 
     if has_update then
+        local primary_btn = Button:new{
+            text = _("Update"),
+            text_font_size = 18,
+            text_font_color = Blitbuffer.COLOR_WHITE,
+            background = Blitbuffer.COLOR_BLACK,
+            bordersize = 0,
+            padding = sc(11),
+            radius = sc(4),
+            width = primary_btn_w,
+            show_parent = self,
+            callback = function()
+                self:onClose()
+                if self.patch then
+                    self.Storefront:installPatchFromRepo(self.repo, self.patch)
+                else
+                    self.Storefront:installPluginFromRepo(self.repo)
+                end
+            end,
+        }
+        if primary_btn.label_widget then
+            primary_btn.label_widget.fgcolor = Blitbuffer.COLOR_WHITE
+        end
         main_action_btn = HorizontalGroup:new{
-            Button:new{
-                text = _("Update"),
-                text_font_size = 18,
-                background = Blitbuffer.COLOR_BLACK,
-                bordersize = 0,
-                padding = sc(11),
-                radius = sc(4),
-                width = primary_btn_w,
-                show_parent = self,
-                callback = function()
-                    self:onClose()
-                    if self.patch then
-                        self.Storefront:installPatchFromRepo(self.repo, self.patch)
-                    else
-                        self.Storefront:installPluginFromRepo(self.repo)
-                    end
-                end,
-            },
+            primary_btn,
             HorizontalSpan:new{ width = sc(12) },
             Button:new{
                 text = _("Remove"),
@@ -356,27 +366,31 @@ function StorefrontDetailsDialog:init()
                 callback = doRemove,
             }
         }
-        main_action_btn[1].label_widget.fgcolor = Blitbuffer.COLOR_WHITE
     elseif is_installed then
+        local primary_btn = Button:new{
+            text = _("Reinstall"),
+            text_font_size = 18,
+            text_font_color = Blitbuffer.COLOR_WHITE,
+            background = Blitbuffer.COLOR_BLACK,
+            bordersize = 0,
+            padding = sc(11),
+            radius = sc(4),
+            width = primary_btn_w,
+            show_parent = self,
+            callback = function()
+                self:onClose()
+                if self.patch then
+                    self.Storefront:installPatchFromRepo(self.repo, self.patch)
+                else
+                    self.Storefront:installPluginFromRepo(self.repo)
+                end
+            end,
+        }
+        if primary_btn.label_widget then
+            primary_btn.label_widget.fgcolor = Blitbuffer.COLOR_WHITE
+        end
         main_action_btn = HorizontalGroup:new{
-            Button:new{
-                text = _("Reinstall"),
-                text_font_size = 18,
-                background = Blitbuffer.COLOR_BLACK,
-                bordersize = 0,
-                padding = sc(11),
-                radius = sc(4),
-                width = primary_btn_w,
-                show_parent = self,
-                callback = function()
-                    self:onClose()
-                    if self.patch then
-                        self.Storefront:installPatchFromRepo(self.repo, self.patch)
-                    else
-                        self.Storefront:installPluginFromRepo(self.repo)
-                    end
-                end,
-            },
+            primary_btn,
             HorizontalSpan:new{ width = sc(12) },
             Button:new{
                 text = _("Remove"),
@@ -389,11 +403,11 @@ function StorefrontDetailsDialog:init()
                 callback = doRemove,
             }
         }
-        main_action_btn[1].label_widget.fgcolor = Blitbuffer.COLOR_WHITE
     else
         main_action_btn = Button:new{
             text = self.patch and _("Install Patch") or _("Install"),
             text_font_size = 18,
+            text_font_color = Blitbuffer.COLOR_WHITE,
             background = Blitbuffer.COLOR_BLACK,
             bordersize = 0,
             padding = sc(11),
@@ -409,14 +423,120 @@ function StorefrontDetailsDialog:init()
                 end
             end,
         }
-        main_action_btn.label_widget.fgcolor = Blitbuffer.COLOR_WHITE
+        if main_action_btn.label_widget then
+            main_action_btn.label_widget.fgcolor = Blitbuffer.COLOR_WHITE
+        end
     end
 
     -- -----------------------------------------------------------------------
-    -- 4. README inline display (using HtmlBoxWidget)
+    -- 4. README / Release Notes Section Tabs & HTML Display
     -- -----------------------------------------------------------------------
+    self.active_tab = self.default_tab or (self.kind == "update" and "release_notes" or "readme")
+
     local readme_w = self.screen_w - sc(24)
-    -- Measure header area heights to compute available readme space
+
+    local loadContent
+    local tab_bar_wrapper = HorizontalGroup:new{ align = "center" }
+
+    local function buildTabBar()
+        local is_readme = (self.active_tab == "readme")
+        local is_rel    = (self.active_tab == "release_notes")
+
+        local readme_label = TextWidget:new{
+            text = _("README"),
+            face = is_readme and Font:getFace("smallinfofontbold", 18) or Font:getFace("smallinfofont", 17),
+            fgcolor = is_readme and Blitbuffer.COLOR_BLACK or Blitbuffer.Color8(100),
+        }
+
+        local rel_label = TextWidget:new{
+            text = _("Release Notes"),
+            face = is_rel and Font:getFace("smallinfofontbold", 18) or Font:getFace("smallinfofont", 17),
+            fgcolor = is_rel and Blitbuffer.COLOR_BLACK or Blitbuffer.Color8(100),
+        }
+
+        local readme_underline = is_readme and LineWidget:new{
+            background = Blitbuffer.COLOR_BLACK,
+            dimen = Geom:new{ w = readme_label:getSize().w, h = sc(3) },
+        } or VerticalSpan:new{ width = sc(3) }
+
+        local rel_underline = is_rel and LineWidget:new{
+            background = Blitbuffer.COLOR_BLACK,
+            dimen = Geom:new{ w = rel_label:getSize().w, h = sc(3) },
+        } or VerticalSpan:new{ width = sc(3) }
+
+        local readme_group = VerticalGroup:new{
+            align = "center",
+            readme_label,
+            VerticalSpan:new{ width = sc(3) },
+            readme_underline,
+        }
+
+        local rel_group = VerticalGroup:new{
+            align = "center",
+            rel_label,
+            VerticalSpan:new{ width = sc(3) },
+            rel_underline,
+        }
+
+        local readme_btn = InputContainer:new{ readme_group }
+        local rel_btn    = InputContainer:new{ rel_group }
+
+        readme_btn.ges_events = {
+            Tap = {
+                GestureRange:new{
+                    ges = "tap",
+                    range = function()
+                        local dim = readme_btn.dimen or { x = 0, y = 0, w = 0, h = 0 }
+                        return Geom:new{ x = dim.x or 0, y = dim.y or 0, w = dim.w or 0, h = dim.h or 0 }
+                    end,
+                }
+            }
+        }
+        readme_btn.onTap = function()
+            if self.active_tab ~= "readme" then
+                self.active_tab = "readme"
+                tab_bar_wrapper[1] = buildTabBar()
+                UIManager:setDirty(self, "ui")
+                loadContent("readme")
+            end
+            return true
+        end
+
+        rel_btn.ges_events = {
+            Tap = {
+                GestureRange:new{
+                    ges = "tap",
+                    range = function()
+                        local dim = rel_btn.dimen or { x = 0, y = 0, w = 0, h = 0 }
+                        return Geom:new{ x = dim.x or 0, y = dim.y or 0, w = dim.w or 0, h = dim.h or 0 }
+                    end,
+                }
+            }
+        }
+        rel_btn.onTap = function()
+            if self.active_tab ~= "release_notes" then
+                self.active_tab = "release_notes"
+                tab_bar_wrapper[1] = buildTabBar()
+                UIManager:setDirty(self, "ui")
+                loadContent("release_notes")
+            end
+            return true
+        end
+
+        return HorizontalGroup:new{
+            align = "center",
+            readme_btn,
+            HorizontalSpan:new{ width = sc(36) },
+            rel_btn,
+        }
+    end
+
+    tab_bar_wrapper[1] = buildTabBar()
+
+    local tab_bar = tab_bar_wrapper
+    local tab_bar_h = sc(26)
+
+    -- Measure header area heights to compute available content box space
     local header_h = sc(8) + sc(1)   -- divider line gap
                    + sc(12)          -- gap above title
                    + title_label:getSize().h
@@ -429,12 +549,13 @@ function StorefrontDetailsDialog:init()
                    + (main_action_btn.getSize and main_action_btn:getSize().h or sc(44))
                    + sc(16)
                    + sc(1)           -- second divider
-                   + sc(12)
-    -- Back-button row height
-    local back_h   = back_btn:getSize().h + sc(8) -- back_btn + its top spacing
+                   + tab_bar_h
 
-    -- Pagination bar height (approx two-button row)
-    local pager_h  = sc(44) + sc(12) -- pagination bar + bottom gap
+    -- Back-button row height
+    local back_h   = back_btn:getSize().h + sc(8)
+
+    -- Pagination bar height
+    local pager_h  = sc(44) + sc(12)
 
     -- FrameContainer padding (top+bottom)
     local frame_padding = sc(12) * 2
@@ -484,7 +605,6 @@ img { max-width: 100%%; height: auto; display: block; margin-left: auto; margin-
             return self:onLinkTap(href)
         end,
     }
-    html_box:setContent("<p style='text-align:center;color:gray;'>" .. _("Loading README...") .. "</p>", readme_css, sc(18))
 
     -- -----------------------------------------------------------------------
     -- 5. Pagination controls
@@ -501,18 +621,16 @@ img { max-width: 100%%; height: auto; display: block; margin-left: auto; margin-
     local function updatePagination()
         local current = html_box.page_number or 1
         local total   = html_box.page_count  or 1
-        page_indicator:setText(string.format("%d / %d", current, total), readme_w / 3)
-        -- Free the cached bitmap so the widget re-renders the new page
-        html_box:freeBb()
-        if current <= 1 then
-            prev_btn:disable()
-        else
-            prev_btn:enable()
+        if page_indicator.setText then
+            page_indicator:setText(string.format("%d / %d", current, total), readme_w / 3)
         end
-        if current >= total then
-            next_btn:disable()
-        else
-            next_btn:enable()
+        if rawget(html_box, "_bb") then html_box._bb = nil end
+        if rawget(html_box, "bb") then html_box.bb = nil end
+        if prev_btn.enableDisable then
+            prev_btn:enableDisable(current > 1)
+        end
+        if next_btn.enableDisable then
+            next_btn:enableDisable(current < total)
         end
         UIManager:setDirty(self, "ui")
     end
@@ -526,7 +644,9 @@ img { max-width: 100%%; height: auto; display: block; margin-left: auto; margin-
         show_parent = self,
         callback = function()
             if html_box.page_number and html_box.page_number > 1 then
-                html_box:setPageNumber(html_box.page_number - 1)
+                html_box.page_number = html_box.page_number - 1
+                if rawget(html_box, "_bb") then html_box._bb = nil end
+                if rawget(html_box, "bb") then html_box.bb = nil end
                 updatePagination()
             end
         end,
@@ -542,14 +662,20 @@ img { max-width: 100%%; height: auto; display: block; margin-left: auto; margin-
         callback = function()
             local total = html_box.page_count or 1
             if html_box.page_number and html_box.page_number < total then
-                html_box:setPageNumber(html_box.page_number + 1)
+                html_box.page_number = html_box.page_number + 1
+                if rawget(html_box, "_bb") then html_box._bb = nil end
+                if rawget(html_box, "bb") then html_box.bb = nil end
                 updatePagination()
             end
         end,
     }
 
-    prev_btn:disable()
-    next_btn:disable()
+    if prev_btn.enableDisable then
+        prev_btn:enableDisable(false)
+    end
+    if next_btn.enableDisable then
+        next_btn:enableDisable(false)
+    end
 
     local pagination_bar = HorizontalGroup:new{
         align = "center",
@@ -561,15 +687,61 @@ img { max-width: 100%%; height: auto; display: block; margin-left: auto; margin-
     }
 
     -- -----------------------------------------------------------------------
-    -- 6. Trigger async README load
+    -- 6. Trigger async content load (README or Release Notes)
     -- -----------------------------------------------------------------------
-    local owner     = self.repo.owner or (self.repo.data and self.repo.data.owner and self.repo.data.owner.login)
+    local owner = self.repo.owner
+    if not owner or owner == "" then
+        if self.repo.data and self.repo.data.owner then
+            owner = type(self.repo.data.owner) == "string" and self.repo.data.owner or self.repo.data.owner.login
+        end
+    end
+    if not owner or owner == "" then
+        if self.update_item and self.update_item.record then
+            owner = self.update_item.record.owner
+        end
+    end
+
     local repo_name = self.repo.name
-    if owner and repo_name then
-        NetworkMgr:runWhenOnline(function()
+    if not repo_name or repo_name == "" then
+        if self.update_item and self.update_item.record then
+            repo_name = self.update_item.record.repo
+        end
+    end
+
+    loadContent = function(tab_name)
+        self.load_req_id = (self.load_req_id or 0) + 1
+        local current_req_id = self.load_req_id
+
+        if rawget(html_box, "_bb") then html_box._bb = nil end
+        if rawget(html_box, "bb") then html_box.bb = nil end
+
+        if tab_name == "release_notes" then
+            html_box:setContent("<p style='text-align:center;color:gray;'>" .. _("Loading Release Notes...") .. "</p>", readme_css, sc(18))
+        else
+            html_box:setContent("<p style='text-align:center;color:gray;'>" .. _("Loading README...") .. "</p>", readme_css, sc(18))
+        end
+        UIManager:setDirty(self, "ui")
+
+        if not owner or owner == "" or not repo_name or repo_name == "" then
+            local msg = (tab_name == "release_notes") and _("No Release Notes available.") or _("No README available.")
+            html_box:setContent("<p style='text-align:center;color:gray;'>" .. msg .. "</p>", readme_css, sc(18))
+            updatePagination()
+            return
+        end
+
+        local function executeLoad()
+            if self.is_closed or self.load_req_id ~= current_req_id or self.active_tab ~= tab_name then
+                return
+            end
+
             local ffiutil = require("ffi/util")
             local pid, parent_read_fd = ffiutil.runInSubProcess(function(pid, child_write_fd)
-                local ok, path = RepoContent.fetchReadmeHtml(owner, repo_name)
+                local ok, path
+                if tab_name == "release_notes" then
+                    ok, path = RepoContent.fetchReleaseNotesHtml(owner, repo_name)
+                else
+                    ok, path = RepoContent.fetchReadmeHtml(owner, repo_name)
+                end
                 local result = ""
                 if ok and path then
                     result = path
@@ -580,7 +752,7 @@ img { max-width: 100%%; height: auto; display: block; margin-left: auto; margin-
             if pid then
                 local check_func
                 check_func = function()
-                    if self.is_closed then
+                    if self.is_closed or self.load_req_id ~= current_req_id or self.active_tab ~= tab_name then
                         ffiutil.terminateSubProcess(pid)
                         if parent_read_fd then
                             ffiutil.readAllFromFD(parent_read_fd)
@@ -592,14 +764,20 @@ img { max-width: 100%%; height: auto; display: block; margin-left: auto; margin-
                         if path and path ~= "" then
                             local html_content = util.readFromFile(path)
                             if html_content and html_content ~= "" then
-                                local cache_dir = require("datastorage"):getDataDir() .. "/cache/Storefront/readme"
+                                local cache_dir = require("datastorage"):getDataDir() .. (tab_name == "release_notes" and "/cache/Storefront/release_notes" or "/cache/Storefront/readme")
                                 html_box:setContent(html_content, readme_css, sc(18), false, false, cache_dir)
+                                if rawget(html_box, "_bb") then html_box._bb = nil end
+                                if rawget(html_box, "bb") then html_box.bb = nil end
                                 updatePagination()
                             else
-                                html_box:setContent("<p style='text-align:center;color:red;'>" .. _("Unable to read README.") .. "</p>", readme_css, sc(18))
+                                local msg = (tab_name == "release_notes") and _("Unable to read Release Notes.") or _("Unable to read README.")
+                                html_box:setContent("<p style='text-align:center;color:red;'>" .. msg .. "</p>", readme_css, sc(18))
+                                updatePagination()
                             end
                         else
-                            html_box:setContent("<p style='text-align:center;color:gray;'>" .. _("No README available.") .. "</p>", readme_css, sc(18))
+                            local msg = (tab_name == "release_notes") and _("No Release Notes available.") or _("No README available.")
+                            html_box:setContent("<p style='text-align:center;color:gray;'>" .. msg .. "</p>", readme_css, sc(18))
+                            updatePagination()
                         end
                         UIManager:setDirty(self, "ui")
                     else
@@ -609,11 +787,19 @@ img { max-width: 100%%; height: auto; display: block; margin-left: auto; margin-
                 UIManager:scheduleIn(0.2, check_func)
             else
                 html_box:setContent("<p style='text-align:center;color:red;'>" .. _("Failed to start background process.") .. "</p>", readme_css, sc(18))
+                updatePagination()
             end
-        end)
-    else
-        html_box:setContent("<p style='text-align:center;color:gray;'>" .. _("No README available.") .. "</p>", readme_css, sc(18))
+        end
+
+        if NetworkMgr and type(NetworkMgr.runWhenOnline) == "function" then
+            NetworkMgr:runWhenOnline(executeLoad)
+        else
+            executeLoad()
+        end
     end
+
+    -- Initial load for default active tab
+    loadContent(self.active_tab)
 
     -- -----------------------------------------------------------------------
     -- 7. Full-screen layout
@@ -640,7 +826,9 @@ img { max-width: 100%%; height: auto; display: block; margin-left: auto; margin-
     table.insert(content_group_items, main_action_btn)
     table.insert(content_group_items, VerticalSpan:new{ width = sc(16) })
     table.insert(content_group_items, LineWidget:new{ background = Blitbuffer.COLOR_DARK_GRAY, dimen = Geom:new{ w = self.screen_w - sc(24), h = Size.line.thin } })
-    table.insert(content_group_items, VerticalSpan:new{ width = sc(12) })
+    table.insert(content_group_items, VerticalSpan:new{ width = sc(8) })
+    table.insert(content_group_items, tab_bar)
+    table.insert(content_group_items, VerticalSpan:new{ width = sc(8) })
     table.insert(content_group_items, html_box)
     table.insert(content_group_items, VerticalSpan:new{ width = sc(12) })
     table.insert(content_group_items, pagination_bar)

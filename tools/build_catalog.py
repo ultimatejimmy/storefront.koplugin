@@ -177,6 +177,7 @@ def process_single_repo(repo_item, is_patch):
                 "published_at": rel.get("published_at") or "",
                 "download_url": download_url,
                 "name": rel.get("name") or "",
+                "body": rel.get("body") or "",
             }
     
     if is_patch and (not is_fork or stars > 0):
