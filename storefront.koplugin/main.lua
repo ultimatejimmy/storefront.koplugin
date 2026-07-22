@@ -5814,7 +5814,72 @@ formatTimestamp = function(ts)
     if not ts or ts <= 0 then
         return _("Never")
     end
-    return os.date("%Y-%m-%d %H:%M", ts)
+
+    local is_12h = false
+    if G_reader_settings then
+        if type(G_reader_settings.isTrue) == "function" and G_reader_settings:isTrue("twelve_hour_clock") then
+            is_12h = true
+        end
+        if not is_12h and type(G_reader_settings.readSetting) == "function" then
+            local val = G_reader_settings:readSetting("twelve_hour_clock")
+            if val == true or val == "true" or val == "12h" or val == 1 then
+                is_12h = true
+            end
+        end
+    end
+    local ok_dt, datetime = pcall(require, "datetime")
+    if not ok_dt then ok_dt, datetime = pcall(require, "ui/datetime") end
+    if ok_dt and datetime then
+        if type(datetime.is12HourClock) == "function" and datetime.is12HourClock() then
+            is_12h = true
+        elseif type(datetime.has12HourClock) == "function" and datetime.has12HourClock() then
+            is_12h = true
+        elseif type(datetime.is12Hour) == "function" and datetime.is12Hour() then
+            is_12h = true
+        end
+    end
+
+    if not is_12h and G_reader_settings then
+        if type(G_reader_settings.isTrue) == "function" then
+            if G_reader_settings:isTrue("clock_12h")
+                or G_reader_settings:isTrue("clock_format_12h")
+                or G_reader_settings:isTrue("c_clock_12h")
+                or G_reader_settings:isTrue("c_time_12h")
+                or G_reader_settings:isTrue("time_12h")
+                or G_reader_settings:isTrue("12h_clock")
+                or G_reader_settings:isTrue("use_12h_clock")
+                or G_reader_settings:isTrue("is_12h_clock")
+                or G_reader_settings:isTrue("is_12h")
+                or G_reader_settings:isTrue("12_hour_clock")
+                or G_reader_settings:isTrue("c_12_hour_clock") then
+                is_12h = true
+            end
+        end
+
+        if not is_12h and type(G_reader_settings.readSetting) == "function" then
+            local keys = {
+                "c_time_format", "clock_format", "time_format", "c_clock_format",
+                "clock", "time_mode", "clock_mode", "time_display", "status_time_format"
+            }
+            for _, key in ipairs(keys) do
+                local val = G_reader_settings:readSetting(key)
+                if val ~= nil then
+                    local sval = tostring(val):lower()
+                    if sval:find("12") or sval == "true" then
+                        is_12h = true
+                        break
+                    end
+                end
+            end
+        end
+    end
+
+    if is_12h then
+        local formatted = os.date("%Y-%m-%d %I:%M%p", ts):lower()
+        return (formatted:gsub(" 0(%d:)", " %1"))
+    else
+        return os.date("%Y-%m-%d %H:%M", ts)
+    end
 end
 
 local function isPatchFilename(filename)
@@ -7188,32 +7253,37 @@ function Storefront:showBrowser(kind)
     local check_kind = (current_tab == "Patches") and "patch" or "plugin"
     local last_fetched = Cache.getLastFetched(check_kind)
     local now = os.time()
-    self.auto_refreshed = self.auto_refreshed or {}
     
-    if not self.auto_refreshed[check_kind] then
-        self.auto_refreshed[check_kind] = true
-        if not last_fetched or last_fetched == 0 then
-            UIManager:nextTick(function()
-                UIManager:show(ConfirmBox:new{
-                    text = _("The Storefront cache is empty. Would you like to download the plugin list from GitHub now?"),
-                    ok_text = _("Yes"),
-                    cancel_text = _("No"),
-                    ok_callback = function()
-                        self:browserRefresh()
-                    end,
-                })
+    -- Silent non-blocking catalog update check every 1 hour (3600s) when online
+    local CatalogClient = require("storefront_net_catalog")
+    local ok_nm, NetworkMgr = pcall(require, "ui/network/manager")
+    local online = ok_nm and NetworkMgr and (
+        (NetworkMgr.isOnline and NetworkMgr:isOnline()) or
+        (NetworkMgr.isWifiOn and NetworkMgr:isWifiOn()) or
+        (NetworkMgr.isConnected and NetworkMgr:isConnected())
+    )
+    if not GitHub.isDirectApiEnabled() and online then
+        local age = (last_fetched and last_fetched > 0) and (now - last_fetched) or 999999
+        if not last_fetched or last_fetched == 0 or age > 3600 then
+            local msg = string.format("Storefront: catalog cache is stale (%ds old > 3600s), triggering background fetch", age)
+            logger.info(msg)
+            StorefrontLogger.info(msg)
+            CatalogClient.fetchAndUpdateCacheAsync(nil, function(ok, err)
+                if ok then
+                    logger.info("Storefront: background catalog update finished")
+                    StorefrontLogger.info("Storefront: background catalog update finished")
+                    if self.browser_menu then
+                        self:reopenBrowser(kind)
+                    end
+                else
+                    logger.warn("Storefront: background catalog update failed: " .. tostring(err))
+                    StorefrontLogger.warn("Storefront: background catalog update failed: " .. tostring(err))
+                end
             end)
-        elseif os.time() - last_fetched > 604800 then
-            UIManager:nextTick(function()
-                UIManager:show(ConfirmBox:new{
-                    text = _("The Storefront cache is over a week old. Would you like to update the plugin list from GitHub?"),
-                    ok_text = _("Yes"),
-                    cancel_text = _("No"),
-                    ok_callback = function()
-                        self:browserRefresh()
-                    end,
-                })
-            end)
+        else
+            local msg = string.format("Storefront: catalog cache is fresh (%ds old <= 3600s), skipping background fetch", age)
+            logger.info(msg)
+            StorefrontLogger.info(msg)
         end
     end
 
@@ -8973,6 +9043,42 @@ function Storefront:init()
             os.remove(legacy_path)
         end
     end
+
+    -- Trigger non-blocking silent catalog update on startup if online and cache is older than 1 hour (3600s)
+    UIManager:nextTick(function()
+        local ok_nm, NetworkMgr = pcall(require, "ui/network/manager")
+        if ok_nm and NetworkMgr and NetworkMgr.runWhenOnline then
+            NetworkMgr:runWhenOnline(function()
+                local Cache = require("storefront_cache")
+                local plugin_fetched = Cache.getLastFetched("plugin") or 0
+                local patch_fetched = Cache.getLastFetched("patch") or 0
+                local last_fetched = (plugin_fetched > 0 and patch_fetched > 0) and math.min(plugin_fetched, patch_fetched) or 0
+                local age = (last_fetched > 0) and (os.time() - last_fetched) or 999999
+                if not GitHub.isDirectApiEnabled() and (last_fetched == 0 or age > 3600) then
+                    local msg = string.format("Storefront init: catalog cache is stale (%ds old > 3600s), triggering background fetch", age)
+                    logger.info(msg)
+                    StorefrontLogger.info(msg)
+                    local CatalogClient = require("storefront_net_catalog")
+                    CatalogClient.fetchAndUpdateCacheAsync(nil, function(ok, err)
+                        if ok then
+                            logger.info("Storefront init: background catalog update finished")
+                            StorefrontLogger.info("Storefront init: background catalog update finished")
+                            if Storefront.instance and Storefront.instance.browser_menu then
+                                Storefront.instance:reopenBrowser()
+                            end
+                        else
+                            logger.warn("Storefront init: background catalog update failed: " .. tostring(err))
+                            StorefrontLogger.warn("Storefront init: background catalog update failed: " .. tostring(err))
+                        end
+                    end)
+                else
+                    local msg = string.format("Storefront init: catalog cache is fresh (%ds old <= 3600s), skipping background fetch", age)
+                    logger.info(msg)
+                    StorefrontLogger.info(msg)
+                end
+            end)
+        end
+    end)
 end
 
 

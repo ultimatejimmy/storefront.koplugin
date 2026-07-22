@@ -4,6 +4,8 @@ local logger = require("logger")
 local Cache = require("storefront_cache")
 local DataStorage = require("datastorage")
 local LuaSettings = require("luasettings")
+local ok_log, StorefrontLogger = pcall(require, "storefront_logger")
+if not ok_log then StorefrontLogger = nil end
 
 local ok_cfg, StorefrontConfig = pcall(require, "storefront_config")
 if not ok_cfg then
@@ -112,7 +114,161 @@ function CatalogClient.updateCacheFromCatalog(catalog_data)
     return true, nil
 end
 
+function CatalogClient.fetchCatalogToFile(url_to_fetch, dest_path)
+    local target_url = url_to_fetch or CatalogClient.getCatalogUrl()
+    logger.info("Storefront: fetching catalog to file from", target_url)
+
+    local file, err = io.open(dest_path, "w")
+    if not file then
+        logger.err("Storefront: failed to open dest_path for writing", err)
+        return false, "failed to open dest_path"
+    end
+
+    local sink = function(chunk, err_chunk)
+        if chunk then
+            file:write(chunk)
+        end
+        return 1, err_chunk
+    end
+
+    local headers = {
+        ["Accept"] = "application/json",
+        ["User-Agent"] = USER_AGENT,
+    }
+
+    local _, code = http.request{
+        url = target_url,
+        headers = headers,
+        sink = sink,
+    }
+    file:close()
+
+    code = tonumber(code) or 0
+    if code ~= 200 then
+        os.remove(dest_path)
+        logger.warn("Storefront catalog fetch to file error", target_url, code)
+        return false, "HTTP " .. tostring(code)
+    end
+    return true, nil
+end
+
+function CatalogClient.cancelAsyncFetch()
+    if CatalogClient._async_pid then
+        local ok_ffi, ffiutil = pcall(require, "ffi/util")
+        if not ok_ffi then ok_ffi, ffiutil = pcall(require, "ffiutil") end
+        if ok_ffi and ffiutil and ffiutil.terminateSubProcess then
+            ffiutil.terminateSubProcess(CatalogClient._async_pid)
+        end
+        CatalogClient._async_pid = nil
+    end
+end
+
+function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback)
+    local GitHub = require("storefront_net_github")
+    if GitHub and GitHub.isDirectApiEnabled and GitHub.isDirectApiEnabled() then
+        logger.info("Storefront: skipping background catalog update because Direct API mode is active")
+        if callback then callback(false, "Direct API mode active") end
+        return
+    end
+
+    if CatalogClient._async_pid then
+        logger.info("Storefront: catalog async fetch already in progress")
+        if callback then callback(false, "already in progress") end
+        return
+    end
+
+    local UIManager = require("ui/uimanager")
+    local util = require("util")
+    local ok_ffi, ffiutil = pcall(require, "ffi/util")
+    if not ok_ffi then ok_ffi, ffiutil = pcall(require, "ffiutil") end
+
+    local target_url = url_to_fetch or CatalogClient.getCatalogUrl()
+    logger.info("Storefront: starting background catalog fetch from", target_url)
+    if StorefrontLogger then StorefrontLogger.info("Storefront: starting background catalog fetch from " .. tostring(target_url)) end
+
+    local cache_dir = DataStorage:getDataDir() .. "/cache/Storefront"
+    util.makePath(cache_dir)
+    local tmp_file = cache_dir .. "/catalog_download.json.tmp"
+
+    os.remove(tmp_file)
+
+    if not (ok_ffi and ffiutil and ffiutil.runInSubProcess) then
+        logger.warn("Storefront: ffiutil.runInSubProcess unavailable, falling back to sync fetch")
+        local ok, err = CatalogClient.fetchAndUpdateCache(target_url)
+        if callback then callback(ok, err) end
+        return
+    end
+
+    local pid = ffiutil.runInSubProcess(function(pid, child_write_fd)
+        local ok, fetch_err = CatalogClient.fetchCatalogToFile(target_url, tmp_file)
+        if child_write_fd then
+            ffiutil.writeToFD(child_write_fd, ok and "OK" or (fetch_err or "ERR"), true)
+        end
+    end, true)
+
+    if not pid then
+        logger.warn("Storefront: failed to launch background process for catalog fetch")
+        if callback then callback(false, "subprocess launch failed") end
+        return
+    end
+
+    CatalogClient._async_pid = pid
+
+    local poll_func
+    poll_func = function()
+        if CatalogClient._async_pid ~= pid then
+            -- Fetch was cancelled or superseded
+            return
+        end
+
+        if ffiutil.isSubProcessDone(pid) then
+            CatalogClient._async_pid = nil
+            local file = io.open(tmp_file, "r")
+            if not file then
+                logger.warn("Storefront catalog async fetch failed: temp file missing")
+                if callback then callback(false, "temp file missing") end
+                return
+            end
+            local body = file:read("*all")
+            file:close()
+            os.remove(tmp_file)
+
+            if not body or body == "" then
+                logger.warn("Storefront catalog async fetch failed: empty response")
+                if callback then callback(false, "empty response") end
+                return
+            end
+
+            local ok_dec, parsed = pcall(json.decode, body)
+            if not ok_dec or type(parsed) ~= "table" then
+                logger.warn("Storefront catalog async fetch JSON decode failed", parsed)
+                if callback then callback(false, "JSON decode error") end
+                return
+            end
+
+            local ok_upd, upd_err = CatalogClient.updateCacheFromCatalog(parsed)
+            if not ok_upd then
+                logger.warn("Storefront catalog cache update failed", upd_err)
+                if callback then callback(false, upd_err) end
+                return
+            end
+
+            logger.info("Storefront: catalog async fetch and update completed successfully")
+            if callback then callback(true, nil) end
+        else
+            UIManager:scheduleIn(1.0, poll_func)
+        end
+    end
+
+    UIManager:scheduleIn(1.0, poll_func)
+end
+
 function CatalogClient.fetchAndUpdateCache(url_to_fetch)
+    local GitHub = require("storefront_net_github")
+    if GitHub and GitHub.isDirectApiEnabled and GitHub.isDirectApiEnabled() then
+        logger.info("Storefront: catalog fetch skipped in Direct API mode")
+        return false, "Direct API mode active"
+    end
     local catalog, err = CatalogClient.fetchCatalog(url_to_fetch)
     if not catalog then
         return false, err
@@ -125,3 +281,4 @@ function CatalogClient.fetchAndUpdateCache(url_to_fetch)
 end
 
 return CatalogClient
+
