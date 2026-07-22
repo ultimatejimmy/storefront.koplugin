@@ -8956,7 +8956,25 @@ function Storefront:init()
     StorefrontSettings:writeSetting(BROWSER_PAGE_SIZE_KEY, 5)
     StorefrontSettings:writeSetting(MANAGE_PAGE_SIZE_KEY, 5)
     StorefrontSettings:flush()
+
+    -- Cleanup legacy test files from plugin directory if updating from an older version
+    local plugin_dir = self.path or (PluginPaths.getDefaultPluginsRoot() .. "/storefront.koplugin")
+    local legacy_test_files = {
+        "storefront_plugin_paths_test.lua",
+        "storefront_readme_test.lua",
+        "storefront_release_notes_test.lua",
+        "storefront_ui_test.lua",
+    }
+    local lfs_mod = require("libs/libkoreader-lfs")
+    for _, legacy_file in ipairs(legacy_test_files) do
+        local legacy_path = plugin_dir .. "/" .. legacy_file
+        local ok_attr, attr = pcall(lfs_mod.attributes, legacy_path, "mode")
+        if ok_attr and attr == "file" then
+            os.remove(legacy_path)
+        end
+    end
 end
+
 
 local function injectStorefrontIntoToolsMenu()
     local menu_orders = {
