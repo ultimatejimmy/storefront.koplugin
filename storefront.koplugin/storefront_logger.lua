@@ -64,6 +64,22 @@ function Logger.err(msg)
     writeLog("ERROR", msg)
 end
 
+function Logger.startSession()
+    pcall(function()
+        local path = getLogFilePath()
+        local f = io.open(path, "a")
+        if f then
+            f:write("\n" .. string.rep("=", 40) .. "\n")
+            f:write("--- Storefront Session Started: " .. os.date("%Y-%m-%d %H:%M:%S") .. " ---\n")
+            f:close()
+        end
+    end)
+end
+
+function Logger.reset()
+    Logger.startSession()
+end
+
 function Logger.clear()
     pcall(function()
         local path = getLogFilePath()
@@ -71,7 +87,5 @@ function Logger.clear()
         os.remove(path .. ".old")
     end)
 end
-
-Logger.reset = Logger.clear
 
 return Logger

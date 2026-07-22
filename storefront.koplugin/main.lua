@@ -1344,7 +1344,7 @@ function Storefront:autoMatchInstalled()
                     is_auto_matched = true,
                 }
                 InstallStore.upsert(plugin.dirname, record)
-                logger.info("Storefront: auto-matched plugin", plugin.dirname, "to", repo.full_name)
+                StorefrontLogger.action(string.format("AUTO-MATCHED plugin %s -> %s", tostring(plugin.dirname), tostring(repo.full_name or repo.name)))
             end
         end
     end
@@ -1374,7 +1374,7 @@ function Storefront:autoMatchInstalled()
                     is_auto_matched = true,
                 }
                 InstallStore.upsertPatch(patch.filename, record)
-                logger.info("Storefront: auto-matched patch", patch.filename, "to", repo.full_name, file_map.path)
+                StorefrontLogger.action(string.format("AUTO-MATCHED patch %s -> %s (%s)", tostring(patch.filename), tostring(repo.full_name or repo.name), tostring(file_map.path or "")))
             end
         end
     end
@@ -3709,6 +3709,7 @@ function Storefront:enablePlugin(dirname)
 end
 
 function Storefront:performPluginDeletion(dirname, record, plugin_instance_for_settings)
+    StorefrontLogger.action(string.format("DELETE starting: plugin %s", tostring(dirname)))
     local plugin = findInstalledPlugin(dirname)
     local display_name = plugin and (plugin.name or plugin.dirname) or dirname
 
@@ -3735,11 +3736,13 @@ function Storefront:performPluginDeletion(dirname, record, plugin_instance_for_s
         if record then
             InstallStore.remove(dirname)
         end
+        StorefrontLogger.action(string.format("DELETED plugin %s from disk (%s)", tostring(dirname), plugin_path))
         showRestartConfirmation(string.format(_("Plugin '%s' deleted."), display_name))
         if self.updates_menu then
             self:updateUpdatesDialog()
         end
     else
+        StorefrontLogger.err(string.format("DELETE failed for plugin %s: %s", tostring(dirname), tostring(err)))
         UIManager:show(InfoMessage:new{
             text = string.format(_("Failed to delete plugin: %s"), tostring(err)),
             timeout = 5,
@@ -6999,7 +7002,6 @@ end
 
 function Storefront:showBrowser(kind)
     logger.info("Storefront: showBrowser called")
-    StorefrontLogger.log("showBrowser() called (kind=" .. tostring(kind) .. ")")
     self:ensureBrowserState()
     if self.browser_menu then
         self:closeBrowserMenu()
@@ -8780,7 +8782,6 @@ local function injectStorefrontIntoToolsMenu()
 end
 
 function Storefront:addToMainMenu(menu_items)
-    StorefrontLogger.log("Storefront:addToMainMenu() called")
     injectStorefrontIntoToolsMenu()
     menu_items.Storefront = {
         sorting_hint = "tools",

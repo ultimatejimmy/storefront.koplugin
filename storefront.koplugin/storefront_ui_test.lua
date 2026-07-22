@@ -106,6 +106,7 @@ package.loaded["storefront_logger"] = {
     err = function() end,
     clear = function() end,
     reset = function() end,
+    startSession = function() end,
 }
 
 package.loaded["storefront_net_github"] = {
