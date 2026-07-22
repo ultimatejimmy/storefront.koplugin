@@ -1,8 +1,6 @@
 name: Build and Deploy Catalog
 
 on:
-  schedule:
-    - cron: '0 * * * *' # Run hourly
   workflow_dispatch: # Allows manual triggering from Actions tab
 
 permissions:
