@@ -172,6 +172,35 @@ dest, prompt, candidates, all_hidden = M.resolveInstallDestination(nil, nil, { "
 check("no custom paths at all -> unaffected by hidden_paths", dest, M.getDefaultPluginsRoot())
 check("no custom paths at all -> not all_hidden", all_hidden, false)
 
+-- Scenario 18: derivePluginRepoPath nested ZIP structure handling.
+local function derivePluginRepoPath(plugin_root)
+    if not plugin_root or plugin_root == "" then
+        return nil
+    end
+    local plugins_match = plugin_root:match("(plugins/.*)")
+    if plugins_match and plugins_match ~= "" then
+        return plugins_match
+    end
+    local koplugin_match = plugin_root:match("(%w[%w_%-%.]*%.koplugin.*)") or plugin_root:match("([^/]+%.koplugin.*)")
+    if koplugin_match and koplugin_match ~= "" then
+        return koplugin_match
+    end
+    local without_root = plugin_root
+    local slash = without_root:find("/")
+    if slash then
+        without_root = without_root:sub(slash + 1)
+    end
+    if without_root and without_root ~= "" then
+        return without_root
+    end
+    return plugin_root
+end
+
+check("derivePluginRepoPath: single wrapper", derivePluginRepoPath("neo_quicksetting-1.10/plugins/neo_quicksetting.koplugin"), "plugins/neo_quicksetting.koplugin")
+check("derivePluginRepoPath: double wrapper with plugins", derivePluginRepoPath("folder1/folder2/plugins/neo_quicksetting.koplugin"), "plugins/neo_quicksetting.koplugin")
+check("derivePluginRepoPath: double wrapper without plugins", derivePluginRepoPath("folder1/folder2/neo_quicksetting.koplugin"), "neo_quicksetting.koplugin")
+check("derivePluginRepoPath: simple koplugin dir", derivePluginRepoPath("owner-repo-sha/neo_quicksetting.koplugin"), "neo_quicksetting.koplugin")
+
 os.execute("rm -rf " .. scratch)
 
 if failures == 0 then

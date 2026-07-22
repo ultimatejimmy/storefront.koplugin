@@ -824,11 +824,17 @@ local function buildMetaPathCandidates(record)
     end
 
     add(record.meta_path)
+    if record.meta_path and derivePluginRepoPath then
+        add(derivePluginRepoPath(record.meta_path))
+    end
     add(record.meta_path_hint)
 
     if record.meta_path then
         local trimmed = record.meta_path:gsub("%.koplugin/_meta%.lua$", "/_meta.lua")
         add(trimmed)
+        if derivePluginRepoPath then
+            add(derivePluginRepoPath(trimmed))
+        end
     end
     if record.meta_path_hint then
         local trimmed = record.meta_path_hint:gsub("%.koplugin/_meta%.lua$", "/_meta.lua")
@@ -836,13 +842,16 @@ local function buildMetaPathCandidates(record)
     end
 
     if record.dirname and record.dirname ~= "" then
+        add("plugins/" .. record.dirname .. "/_meta.lua")
         add(record.dirname .. "/_meta.lua")
         if record.dirname:match("%.koplugin$") then
             local without_suffix = record.dirname:gsub("%.koplugin$", "")
+            add("plugins/" .. without_suffix .. "/_meta.lua")
             add(without_suffix .. "/_meta.lua")
         end
     end
 
+    add("plugins/_meta.lua")
     add("_meta.lua")
 
     return candidates
@@ -1436,9 +1445,47 @@ function Storefront:collectUpdateSummary()
         updates = 0,
     }
 
+    local repo_map = {}
+
     for _, plugin in ipairs(installed) do
         local record = records[plugin.dirname]
         local tracked = record and record.owner and record.repo
+        local repo_key = tracked and (record.owner:lower() .. "/" .. record.repo:lower()) or nil
+
+        if repo_key then
+            if repo_map[repo_key] then
+                local existing_index = repo_map[repo_key]
+                local existing_item = data[existing_index]
+                local existing_plugin = existing_item.plugin
+
+                local current_matches_repo = (plugin.dirname:lower() == (record.repo:lower() .. ".koplugin"))
+                local existing_matches_repo = (existing_plugin.dirname:lower() == (existing_item.record.repo:lower() .. ".koplugin"))
+
+                local current_is_primary = false
+                if current_matches_repo and not existing_matches_repo then
+                    current_is_primary = true
+                elseif not current_matches_repo and existing_matches_repo then
+                    current_is_primary = false
+                else
+                    current_is_primary = (plugin.latest_mtime or 0) > (existing_plugin.latest_mtime or 0)
+                end
+
+                summary.total = summary.total - 1
+                if current_is_primary then
+                    existing_item.duplicates = existing_item.duplicates or {}
+                    table.insert(existing_item.duplicates, existing_plugin)
+
+                    existing_item.plugin = plugin
+                    existing_item.record = record
+                    existing_item.remote = remote_info[plugin.dirname]
+                else
+                    existing_item.duplicates = existing_item.duplicates or {}
+                    table.insert(existing_item.duplicates, plugin)
+                    goto continue_plugin
+                end
+            end
+        end
+
         if tracked then
             summary.tracked = summary.tracked + 1
         else
@@ -1537,6 +1584,11 @@ function Storefront:collectUpdateSummary()
             remote = remote,
             has_update = has_update,
         }
+        if repo_key then
+            repo_map[repo_key] = #data
+        end
+
+        ::continue_plugin::
     end
 
     summary.data = data
@@ -2495,6 +2547,93 @@ function Storefront:checkAllUpdates()
             return source:match(pattern)
         end
 
+        local function derivePluginRepoPathWorker(plugin_root)
+            if not plugin_root or plugin_root == "" then
+                return nil
+            end
+            local plugins_match = plugin_root:match("(plugins/.*)")
+            if plugins_match and plugins_match ~= "" then
+                return plugins_match
+            end
+            local koplugin_match = plugin_root:match("(%w[%w_%-%.]*%.koplugin.*)") or plugin_root:match("([^/]+%.koplugin.*)")
+            if koplugin_match and koplugin_match ~= "" then
+                return koplugin_match
+            end
+            local without_root = plugin_root
+            local slash = without_root:find("/")
+            if slash then
+                without_root = without_root:sub(slash + 1)
+            end
+            if without_root and without_root ~= "" then
+                return without_root
+            end
+            return plugin_root
+        end
+
+        local function normalizeMetaPathWorker(path)
+            if not path or path == "" then
+                return nil
+            end
+            local normalized = path:gsub("^/+", "")
+            if normalized:match("/_meta%.lua$") then
+                return normalized
+            end
+            if not normalized:match("%.koplugin$") then
+                normalized = normalized .. ".koplugin"
+            end
+            return normalized .. "/_meta.lua"
+        end
+
+        local function buildMetaPathCandidatesWorker(record)
+            if not record then
+                return {}
+            end
+            local seen = {}
+            local candidates = {}
+            local function add(path)
+                if not path or path == "" then
+                    return
+                end
+                local normalized = normalizeMetaPathWorker(path)
+                if not normalized or seen[normalized] then
+                    return
+                end
+                seen[normalized] = true
+                table.insert(candidates, normalized)
+            end
+
+            add(record.meta_path)
+            if record.meta_path then
+                add(derivePluginRepoPathWorker(record.meta_path))
+            end
+            add(record.meta_path_hint)
+
+            if record.meta_path then
+                local trimmed = record.meta_path:gsub("%.koplugin/_meta%.lua$", "/_meta.lua")
+                add(trimmed)
+                add(derivePluginRepoPathWorker(trimmed))
+            end
+            if record.meta_path_hint then
+                local trimmed = record.meta_path_hint:gsub("%.koplugin/_meta%.lua$", "/_meta.lua")
+                add(trimmed)
+            end
+
+            if record.dirname and record.dirname ~= "" then
+                add("plugins/" .. record.dirname .. "/_meta.lua")
+                add(record.dirname .. "/_meta.lua")
+                if record.dirname:match("%.koplugin$") then
+                    local without_suffix = record.dirname:gsub("%.koplugin$", "")
+                    add("plugins/" .. without_suffix .. "/_meta.lua")
+                    add(without_suffix .. "/_meta.lua")
+                end
+            end
+
+            add("plugins/_meta.lua")
+            add("_meta.lua")
+
+            return candidates
+        end
+
         local function runCheckAllUpdatesWorker(records_worker)
             local result = {}
             for _, record in ipairs(records_worker or {}) do
@@ -2590,17 +2729,34 @@ function Storefront:checkAllUpdates()
                         branch = metadata.default_branch or metadata.master_branch or "HEAD"
                     end
 
-                    if meta_path and meta_path ~= "" then
-                        local body, err = fetchGitHubRawWorker(owner, repo_name, branch, meta_path)
+                    local candidates = buildMetaPathCandidatesWorker and buildMetaPathCandidatesWorker(record) or {}
+                    if #candidates == 0 and meta_path then
+                        table.insert(candidates, meta_path)
+                    end
+
+                    local found_body = nil
+                    local working_meta_path = nil
+                    for _, candidate in ipairs(candidates) do
+                        local body, err = fetchGitHubRawWorker(owner, repo_name, branch, candidate)
                         if body then
-                            local version = extractMetaFieldWorker(body, "version")
-                            if version then
-                                remote_version = version
-                            else
-                                last_err = "Remote version not found."
+                            found_body = body
+                            working_meta_path = candidate
+                            break
+                        else
+                            last_err = err or last_err
+                        end
+                    end
+
+                    if found_body then
+                        local version = extractMetaFieldWorker(found_body, "version")
+                        if version then
+                            remote_version = version
+                            if working_meta_path and working_meta_path ~= record.meta_path then
+                                record.meta_path = working_meta_path
+                                pcall(function() InstallStore.upsert(dirname, record) end)
                             end
                         else
-                            last_err = err or last_err or "HTTP error"
+                            last_err = "Remote version not found."
                         end
                     else
                         last_err = last_err or "Missing meta path in record."
@@ -4369,6 +4525,14 @@ derivePluginRepoPath = function(plugin_root)
     if not plugin_root or plugin_root == "" then
         return nil
     end
+    local plugins_match = plugin_root:match("(plugins/.*)")
+    if plugins_match and plugins_match ~= "" then
+        return plugins_match
+    end
+    local koplugin_match = plugin_root:match("(%w[%w_%-%.]*%.koplugin.*)") or plugin_root:match("([^/]+%.koplugin.*)")
+    if koplugin_match and koplugin_match ~= "" then
+        return koplugin_match
+    end
     local without_root = plugin_root
     local slash = without_root:find("/")
     if slash then
@@ -5531,6 +5695,17 @@ function Storefront:installPluginFromReleaseAsset(repo, release, asset)
             if not ok_extract then
                 UIManager:show(InfoMessage:new{ text = _("Installation failed: ") .. tostring(dest_or_err), timeout = 6 })
                 return
+            end
+
+            -- Clean up duplicate directories on disk if any existed from prior bug
+            if info.duplicates then
+                for _, dup in ipairs(info.duplicates) do
+                    if dup.dirname and dup.dirname ~= info.plugin_dirname then
+                        local dup_path = (dup.root or dest_root) .. "/" .. dup.dirname
+                        deleteDirectoryRecursive(dup_path)
+                        InstallStore.remove(dup.dirname)
+                    end
+                end
             end
 
             UIManager:close(install_progress)
@@ -7791,23 +7966,47 @@ local function detectPluginFromArchive(reader, repo)
         local repo_name = repo and repo.name
         local repo_is_plugin_dir = repo_name and repo_name:match("^[%w_%-%.]+%.koplugin$") ~= nil
         
-        if repo_is_plugin_dir then
-            plugin_dirname = repo_name
-        elseif plugin_root and plugin_root ~= "" then
-            local root_basename = plugin_root:match("([^/]+)$")
-            if root_basename and root_basename:match("%.koplugin") then
-                local extracted = root_basename:match("([%w_%-%.]+%.koplugin)")
-                if extracted then
-                    plugin_dirname = extracted
+        -- 1. Check if an installed plugin on disk already matches this repo
+        if repo and repo.name then
+            local target_owner = getRepoOwner(repo)
+            if target_owner then
+                local records = getInstallRecordsMap()
+                local installed = listInstalledPlugins()
+                for _, inst in ipairs(installed) do
+                    local rec = records[inst.dirname]
+                    if rec and rec.owner and rec.repo then
+                        if rec.owner:lower() == target_owner:lower() and rec.repo:lower() == repo.name:lower() then
+                            plugin_dirname = inst.dirname
+                            break
+                        end
+                    end
+                end
+            end
+        end
+
+        if not plugin_dirname then
+            if repo_is_plugin_dir then
+                plugin_dirname = repo_name
+            elseif plugin_root and plugin_root ~= "" then
+                local root_basename = plugin_root:match("([^/]+)$")
+                if root_basename then
+                    if root_basename:match("%.koplugin") then
+                        local extracted = root_basename:match("([%w_%-%.]+%.koplugin)")
+                        if extracted then
+                            plugin_dirname = extracted
+                        end
+                    elseif root_basename ~= "plugins" and root_basename ~= "src" and root_basename:match("^[%w_%-%.]+$") then
+                        plugin_dirname = sanitizePluginDirname(root_basename)
+                    end
                 end
             end
         end
         
         if not plugin_dirname then
-            if plugin_name and plugin_name ~= "" then
-                plugin_dirname = sanitizePluginDirname(plugin_name)
-            elseif repo_name then
+            if repo_name and repo_name ~= "" then
                 plugin_dirname = sanitizePluginDirname(repo_name)
+            elseif plugin_name and plugin_name ~= "" then
+                plugin_dirname = sanitizePluginDirname(plugin_name)
             else
                 plugin_dirname = sanitizePluginDirname("Storefront")
             end
