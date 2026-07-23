@@ -4,6 +4,9 @@ local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
+local HorizontalSpan = require("ui/widget/horizontalspan")
+local ImageWidget = require("ui/widget/imagewidget")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local OverlapGroup = require("ui/widget/overlapgroup")
@@ -79,45 +82,73 @@ function StorefrontListItem:init()
         local updated_text = entry.updated or ""
         local desc_text = entry.description or ""
         local badge_text = entry.badge
+        local badge_icon = entry.badge_icon
 
         local badge_w
         local right_reserve = 0
-        if badge_text then
-            local is_update_btn = (badge_text == _("Update"))
-            local is_current_btn = (badge_text == _("✓ Current"))
-            local is_installed_badge = (badge_text == _("Installed"))
+        local sc = function(val) return Device.screen:scaleBySize(val) end
 
-            local badge_face
-            if is_update_btn or is_current_btn or is_installed_badge then
-                badge_face = Font:getFace("smallinfofont", 14)
-            else
-                local name_face_size = 22
-                badge_face = Font:getFace("smallinfofont", math.floor(name_face_size * 0.8))
+        if badge_icon or badge_text then
+            local right_widgets = {}
+
+            if badge_text then
+                local is_update_btn = (badge_text == _("Update"))
+                local is_current_btn = (badge_text == _("✓ Current"))
+                local is_installed_badge = (badge_text == _("Installed"))
+                local is_solid_inverted = (is_update_btn or is_installed_badge)
+                local badge_fg = entry.bFg or (is_solid_inverted and Blitbuffer.COLOR_WHITE or (is_current_btn and Blitbuffer.COLOR_DARK_GRAY or Blitbuffer.COLOR_BLACK))
+                local badge_bg = entry.bBg or (is_solid_inverted and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_WHITE)
+
+                local badge_txt_w = TextWidget:new{
+                    text = badge_text,
+                    face = Font:getFace("smallinfofont", 14),
+                    bold = is_solid_inverted,
+                    fgcolor = badge_fg,
+                }
+                local text_chip = FrameContainer:new{
+                    padding_top = sc(4),
+                    padding_bottom = sc(4),
+                    padding_left = sc(8),
+                    padding_right = sc(8),
+                    bordersize = is_solid_inverted and 0 or sc(1),
+                    background = badge_bg,
+                    color = Blitbuffer.COLOR_BLACK,
+                    radius = is_solid_inverted and sc(10) or sc(4),
+                    badge_txt_w,
+                }
+                table.insert(right_widgets, text_chip)
             end
 
-            local is_solid_inverted = (is_update_btn or is_installed_badge)
-            local badge_bg = entry.bBg or (is_solid_inverted and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_WHITE)
-            local badge_fg = entry.bFg or (is_solid_inverted and Blitbuffer.COLOR_WHITE or (is_current_btn and Blitbuffer.COLOR_DARK_GRAY or Blitbuffer.COLOR_BLACK))
-            local badge_border_color = is_current_btn and Blitbuffer.COLOR_DARK_GRAY or Blitbuffer.COLOR_BLACK
+            local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
+            if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
+            local has_icon = false
+            if badge_icon then
+                if ok_lfs and lfs and lfs.attributes then
+                    has_icon = (lfs.attributes(badge_icon, "mode") == "file")
+                else
+                    has_icon = true
+                end
+            end
 
-            local badge_inner = TextWidget:new{
-                text = badge_text,
-                face = badge_face,
-                bold = is_solid_inverted,
-                fgcolor = badge_fg,
-            }
-            local sc = function(val) return Device.screen:scaleBySize(val) end
-            badge_w = FrameContainer:new{
-                padding_top = sc(4),
-                padding_bottom = sc(4),
-                padding_left = is_solid_inverted and sc(12) or sc(8),
-                padding_right = is_solid_inverted and sc(12) or sc(8),
-                bordersize = is_solid_inverted and 0 or sc(1),
-                background = badge_bg,
-                color = badge_border_color,
-                radius = is_solid_inverted and sc(10) or sc(4),
-                badge_inner,
-            }
+            if badge_icon and has_icon then
+                local icon_w = ImageWidget:new{
+                    file = badge_icon,
+                    width = sc(22),
+                    height = sc(22),
+                    scale_factor = 0,
+                    alpha = true,
+                }
+                if #right_widgets > 0 then
+                    table.insert(right_widgets, HorizontalSpan:new{ width = sc(8) })
+                end
+                table.insert(right_widgets, icon_w)
+            end
+
+            if #right_widgets == 1 then
+                badge_w = right_widgets[1]
+            else
+                badge_w = HorizontalGroup:new(right_widgets)
+            end
             right_reserve = badge_w:getSize().w + Size.padding.default
         end
 
@@ -243,7 +274,16 @@ function StorefrontListItem:init()
     end
 end
 
-function StorefrontListItem:onStorefrontTap()
+function StorefrontListItem:onStorefrontTap(arg, ges)
+    if self.entry and self.entry.on_badge_tap and ges and ges.pos then
+        local sc = function(val) return Device.screen:scaleBySize(val) end
+        local right_edge = (self.dimen and self.dimen.x or 0) + (self.dimen and self.dimen.w or 0)
+        local badge_width = sc(70)
+        if ges.pos.x >= (right_edge - badge_width) then
+            self.entry.on_badge_tap()
+            return true
+        end
+    end
     if self.dialog then
         self.dialog:onEntryActivated(self.entry)
     end

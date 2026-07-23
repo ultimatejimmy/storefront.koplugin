@@ -183,7 +183,7 @@ local function isReleaseIgnored(owner, repo_name, version)
 end
 
 
-local extractRepoOwner, ensureCacheDir, ensurePatchesDir, downloadToFile, buildPatchDownloadUrl, derivePluginRepoPath, sanitizeMetaPath, fetchGitHubRaw, formatTimestamp, parseGitHubTimestamp, buildRepoDescriptorFromRecord, buildBranchCandidates, getRepoDefaultBranch, extractMetaField, getPatchRecordsMap, extractPluginToUserDir, extractReleaseNameFallback, detectPluginFromArchiveWithFallback, renderReleaseNotesText, softWrapLongTokens, repoIsFork, repoStarsValue
+local extractRepoOwner, ensureCacheDir, ensurePatchesDir, downloadToFile, buildPatchDownloadUrl, derivePluginRepoPath, sanitizeMetaPath, fetchGitHubRaw, formatTimestamp, parseGitHubTimestamp, buildRepoDescriptorFromRecord, buildBranchCandidates, getRepoDefaultBranch, extractMetaField, getInstallRecordsMap, getPatchRecordsMap, extractPluginToUserDir, extractReleaseNameFallback, detectPluginFromArchiveWithFallback, renderReleaseNotesText, softWrapLongTokens, repoIsFork, repoStarsValue
 
 local function buildPatchRepoDescriptor(record)
     if not record or not record.owner or not record.repo then
@@ -522,7 +522,10 @@ local function isPluginDisabled(dirname)
     if not dirname or dirname == "" then
         return false
     end
-    local plugins_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
+    if not G_reader_settings then
+        return false
+    end
+    local plugins_disabled = (type(G_reader_settings.readSetting) == "function" and G_reader_settings:readSetting("plugins_disabled")) or {}
     local plugin_name = dirname:gsub("%.koplugin$", "")
     return plugins_disabled[plugin_name] == true
 end
@@ -532,6 +535,93 @@ local function isPatchDisabled(filename)
         return false
     end
     return filename:match("%.disabled$") ~= nil
+end
+
+local function isDefaultPlugin(plugin, maybe_plugin)
+    if plugin == Storefront or (type(plugin) == "table" and plugin.name == "storefront") then
+        plugin = maybe_plugin
+    end
+    if not plugin or type(plugin) ~= "table" then return false end
+
+    local dirname = plugin.dirname or (plugin.name and plugin.name:match("%.koplugin$") and plugin.name)
+    if not dirname then return false end
+
+    local default_root = (PluginPaths.getDefaultPluginsRoot and PluginPaths.getDefaultPluginsRoot()) or "plugins"
+    local is_in_default_root = false
+    if plugin.root and (plugin.root == "plugins" or plugin.root == default_root) then
+        is_in_default_root = true
+    elseif plugin.path and (plugin.path:match("^plugins[/\\]") or plugin.path:match("^%/plugins%/")) then
+        is_in_default_root = true
+    elseif not plugin.root then
+        is_in_default_root = true
+    end
+
+    if is_in_default_root then
+        local records = (getInstallRecordsMap and getInstallRecordsMap()) or {}
+        local rec = records[dirname]
+        if not rec or rec.is_auto_matched or rec.installed_type == "core" or not (rec.owner or rec.repo_full_name) then
+            return true
+        end
+    end
+    return false
+end
+
+local function isDefaultPatch(patch)
+    return false
+end
+
+function Storefront:togglePluginDisabled(dirname)
+    if not dirname or dirname == "" then return end
+    local plugins_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
+    local plugin_name = dirname:gsub("%.koplugin$", "")
+    local currently_disabled = plugins_disabled[plugin_name] == true
+    if currently_disabled then
+        plugins_disabled[plugin_name] = nil
+    else
+        plugins_disabled[plugin_name] = true
+    end
+    G_reader_settings:saveSetting("plugins_disabled", plugins_disabled)
+    G_reader_settings:flush()
+
+    local action_str = currently_disabled and _("enabled") or _("disabled")
+    showRestartConfirmation(string.format(_("Plugin %s has been %s."), plugin_name, action_str))
+end
+
+function Storefront:togglePatchDisabled(filename)
+    if not filename or filename == "" then return end
+    local old_path = PATCHES_ROOT .. "/" .. filename
+    if lfs.attributes(old_path, "mode") ~= "file" then return end
+
+    local new_filename
+    local is_disabled = isPatchDisabled(filename)
+    if is_disabled then
+        new_filename = filename:gsub("%.disabled$", "")
+    else
+        new_filename = filename .. ".disabled"
+    end
+    local new_path = PATCHES_ROOT .. "/" .. new_filename
+
+    local ok, err = os.rename(old_path, new_path)
+    if ok then
+        local records = getPatchRecordsMap()
+        local rec = records[filename]
+        if rec then
+            InstallStore.removePatch(filename)
+            rec.filename = new_filename
+            InstallStore.upsertPatch(new_filename, rec)
+        end
+        local status_str = is_disabled and _("enabled") or _("disabled")
+        UIManager:show(InfoMessage:new{
+            text = string.format(_("Patch %s %s."), new_filename, status_str),
+            timeout = 3,
+        })
+    else
+        logger.warn("Storefront: failed to rename patch file", err)
+        UIManager:show(InfoMessage:new{
+            text = _("Failed to toggle patch status."),
+            timeout = 3,
+        })
+    end
 end
 
 local function deleteDirectoryRecursive(path)
@@ -1075,8 +1165,13 @@ local function loadPluginMeta(root, dirname)
 end
 
 local function getPluginDisplayName(meta, dirname)
-    if meta and meta.name and meta.name ~= "" then
-        return meta.name
+    if meta then
+        if meta.fullname and meta.fullname ~= "" then
+            return meta.fullname
+        end
+        if meta.name and meta.name ~= "" then
+            return meta.name
+        end
     end
     if dirname and dirname ~= "" then
         return dirname:gsub("%.koplugin$", "")
@@ -1119,6 +1214,8 @@ local function listInstalledPlugins()
                     local plugin = {
                         dirname = entry,
                         meta = meta,
+                        fullname = meta and (meta.fullname or meta.name),
+                        shortname = meta and meta.name,
                         name = getPluginDisplayName(meta, entry),
                         version = meta and meta.version or nil,
                         root = root,
@@ -1135,6 +1232,14 @@ local function listInstalledPlugins()
         return (a.name or a.dirname) < (b.name or b.dirname)
     end)
     return plugins
+end
+
+function Storefront:listInstalledPlugins()
+    return listInstalledPlugins()
+end
+
+function Storefront:listInstalledPatches()
+    return listInstalledPatches()
 end
 
 local function findInstalledPlugin(dirname)
@@ -5814,72 +5919,7 @@ formatTimestamp = function(ts)
     if not ts or ts <= 0 then
         return _("Never")
     end
-
-    local is_12h = false
-    if G_reader_settings then
-        if type(G_reader_settings.isTrue) == "function" and G_reader_settings:isTrue("twelve_hour_clock") then
-            is_12h = true
-        end
-        if not is_12h and type(G_reader_settings.readSetting) == "function" then
-            local val = G_reader_settings:readSetting("twelve_hour_clock")
-            if val == true or val == "true" or val == "12h" or val == 1 then
-                is_12h = true
-            end
-        end
-    end
-    local ok_dt, datetime = pcall(require, "datetime")
-    if not ok_dt then ok_dt, datetime = pcall(require, "ui/datetime") end
-    if ok_dt and datetime then
-        if type(datetime.is12HourClock) == "function" and datetime.is12HourClock() then
-            is_12h = true
-        elseif type(datetime.has12HourClock) == "function" and datetime.has12HourClock() then
-            is_12h = true
-        elseif type(datetime.is12Hour) == "function" and datetime.is12Hour() then
-            is_12h = true
-        end
-    end
-
-    if not is_12h and G_reader_settings then
-        if type(G_reader_settings.isTrue) == "function" then
-            if G_reader_settings:isTrue("clock_12h")
-                or G_reader_settings:isTrue("clock_format_12h")
-                or G_reader_settings:isTrue("c_clock_12h")
-                or G_reader_settings:isTrue("c_time_12h")
-                or G_reader_settings:isTrue("time_12h")
-                or G_reader_settings:isTrue("12h_clock")
-                or G_reader_settings:isTrue("use_12h_clock")
-                or G_reader_settings:isTrue("is_12h_clock")
-                or G_reader_settings:isTrue("is_12h")
-                or G_reader_settings:isTrue("12_hour_clock")
-                or G_reader_settings:isTrue("c_12_hour_clock") then
-                is_12h = true
-            end
-        end
-
-        if not is_12h and type(G_reader_settings.readSetting) == "function" then
-            local keys = {
-                "c_time_format", "clock_format", "time_format", "c_clock_format",
-                "clock", "time_mode", "clock_mode", "time_display", "status_time_format"
-            }
-            for _, key in ipairs(keys) do
-                local val = G_reader_settings:readSetting(key)
-                if val ~= nil then
-                    local sval = tostring(val):lower()
-                    if sval:find("12") or sval == "true" then
-                        is_12h = true
-                        break
-                    end
-                end
-            end
-        end
-    end
-
-    if is_12h then
-        local formatted = os.date("%Y-%m-%d %I:%M%p", ts):lower()
-        return (formatted:gsub(" 0(%d:)", " %1"))
-    else
-        return os.date("%Y-%m-%d %H:%M", ts)
-    end
+    return os.date("%Y-%m-%d", ts)
 end
 
 local function isPatchFilename(filename)
@@ -6380,93 +6420,6 @@ end
 
 function Storefront:updateReadmeFilter()
     self.readme_filter = nil
-    self:ensureBrowserState()
-    local kind = self.browser_state.kind or "plugin"
-    local search_text = self.browser_state.search_text or ""
-    if not self.browser_state.search_in_readme then
-        return
-    end
-    if search_text == "" then
-        return
-    end
-
-    local matches = {}
-
-    local function addMatchesFromQuery(query)
-        local per_page = 100
-        local sort = "stars"
-        local order = "desc"
-        local page = 1
-        while true do
-            local request_opts = {
-                q = query,
-                per_page = per_page,
-                sort = sort,
-                order = order,
-                page = page,
-            }
-            local response, err = GitHub.searchRepositories(request_opts)
-            if not response then
-                local body = err and err.body or err
-                logger.warn("Storefront README search error", query, body)
-                return false
-            end
-            local items = response.items or {}
-            if #items == 0 then
-                break
-            end
-            for _, repo in ipairs(items) do
-                if type(repo) == "table" then
-                    local key = repo.full_name or repo.name
-                    if not key and repo.owner and repo.name then
-                        local owner = repo.owner.login or repo.owner
-                        if owner and owner ~= "" then
-                            key = tostring(owner) .. "/" .. tostring(repo.name)
-                        end
-                    end
-                    if key and key ~= "" then
-                        matches[tostring(key)] = true
-                    end
-                end
-            end
-            if #items < per_page then
-                break
-            end
-            page = page + 1
-        end
-        return true
-    end
-
-    local base = search_text .. " in:readme,description"
-    local queries = {}
-    if kind == "plugin" then
-        table.insert(queries, base .. " topic:koreader-plugin")
-        table.insert(queries, base .. " in:name \".koplugin\"")
-    elseif kind == "patch" then
-        table.insert(queries, base .. " topic:koreader-user-patch")
-        table.insert(queries, base .. " in:name \"KOReader.patches\"")
-    else
-        return
-    end
-
-    local any_ok = false
-    for _, q in ipairs(queries) do
-        local ok = addMatchesFromQuery(q)
-        if ok then
-            any_ok = true
-        end
-    end
-
-    if not any_ok then
-        -- Leave readme_filter as nil to fall back to local-only behavior.
-        return
-    end
-
-    self.readme_filter = {
-        kind = kind,
-        search = search_text,
-        matches = matches,
-    }
 end
 
 function Storefront:getOwners(kind)
@@ -6984,14 +6937,15 @@ function Storefront:calculateDynamicPageSize(tab_name)
     local tab_bar_height = sc(38)
     local footer_height = sc(56)
     
+    local has_toolbar = (tab_name == "Installed")
     local toolbar_height = 0
-    if tab_name == "Updates" then
+    if has_toolbar then
         toolbar_height = sc(36) + Size.span.vertical_default
     end
     
     local divider_height = Size.line.thin + Size.span.vertical_default
-    if tab_name == "Updates" then
-        divider_height = divider_height + Size.span.vertical_default
+    if has_toolbar then
+        divider_height = divider_height + Size.line.thin + Size.span.vertical_default
     end
     
     local body_height = screen_h - title_height - tab_bar_height - toolbar_height - divider_height - footer_height
@@ -7000,15 +6954,309 @@ function Storefront:calculateDynamicPageSize(tab_name)
     end
     
     local item_height
-    if tab_name == "Plugins" then
-        item_height = sc(102)
-    elseif tab_name == "Patches" then
+    if tab_name == "Plugins" or tab_name == "Patches" or tab_name == "Installed" then
         item_height = sc(102)
     else -- Updates
         item_height = sc(82)
     end
     
     return math.max(1, math.floor(body_height / item_height))
+end
+
+function Storefront:ensureInstalledState()
+    if not self.installed_state then
+        self.installed_state = StorefrontSettings:readSetting("installed_state") or {}
+    end
+    self.installed_state.filter_type = self.installed_state.filter_type or "all"
+    self.installed_state.filter_default = self.installed_state.filter_default or "all"
+    self.installed_state.filter_status = self.installed_state.filter_status or "all"
+    self.installed_state.search_text = self.installed_state.search_text or ""
+    self.installed_state.sort_mode = self.installed_state.sort_mode or "name_asc"
+end
+
+function Storefront:saveInstalledState()
+    if self.installed_state then
+        StorefrontSettings:saveSetting("installed_state", self.installed_state)
+        StorefrontSettings:flush()
+    end
+end
+
+function Storefront:buildInstalledEntries()
+    self:ensureBrowserState()
+    self:ensureInstalledState()
+
+    local filter_type = self.installed_state.filter_type or "all"
+    local filter_default = self.installed_state.filter_default or "all"
+    local filter_status = self.installed_state.filter_status or "all"
+    local search_text = util.trim(self.installed_state.search_text or (self.browser_state and self.browser_state.search_text) or ""):lower()
+    local filter_owner = util.trim(self.browser_state and self.browser_state.owner or ""):lower()
+    local filter_min_stars = tonumber(self.browser_state and self.browser_state.min_stars) or 0
+    local sort_mode = self.installed_state.sort_mode or "name_asc"
+
+    local installed_plugins = self:listInstalledPlugins()
+    local installed_patches = self:listInstalledPatches()
+    local plugin_records = getInstallRecordsMap()
+    local patch_records = getPatchRecordsMap()
+
+    local update_summary = self:collectUpdateSummary()
+    local patch_update_summary = self:collectPatchUpdateSummary()
+    local plugin_updates_map = {}
+    for i, item in ipairs(update_summary.data or {}) do
+        if item.plugin and item.plugin.dirname then
+            plugin_updates_map[item.plugin.dirname] = item.has_update
+        end
+    end
+    local patch_updates_map = {}
+    for i, item in ipairs(patch_update_summary.data or {}) do
+        if item.patch and item.patch.filename then
+            patch_updates_map[item.patch.filename] = item.needs_update
+        end
+    end
+
+    local items = {}
+
+    local getAssetPath = function(filename)
+        local info = debug.getinfo(1, "S")
+        local dir = info.source:match("^@(.*[/\\])") or ""
+        return dir .. "assets/" .. filename
+    end
+
+    -- 1. Plugins
+    if filter_type == "all" or filter_type == "plugin" then
+        for i, plugin in ipairs(installed_plugins) do
+            local disabled = isPluginDisabled(plugin.dirname)
+            local is_default = isDefaultPlugin(plugin)
+            local has_update = plugin_updates_map[plugin.dirname] == true
+
+            local match_type = true
+            if filter_default == "exclude_default" and is_default then match_type = false end
+            if filter_default == "default_only" and not is_default then match_type = false end
+
+            local match_status = true
+            if filter_status == "enabled" and disabled then match_status = false end
+            if filter_status == "disabled" and not disabled then match_status = false end
+
+            local match_search = true
+            local fullname = (plugin.meta and plugin.meta.fullname) or plugin.fullname
+            local shortname = (plugin.meta and plugin.meta.name) or plugin.shortname
+            local display_name = (fullname and fullname ~= "") and fullname or (plugin.name or plugin.dirname)
+
+            if search_text ~= "" then
+                local full_lower = (fullname or ""):lower()
+                local short_lower = (shortname or plugin.name or ""):lower()
+                local dirname = (plugin.dirname or ""):lower():gsub("%.koplugin$", "")
+                local record = plugin_records[plugin.dirname]
+                local owner = (record and record.owner or ""):lower()
+                local desc = (record and record.repo_description or ""):lower()
+                local repo = (record and record.repo or ""):lower()
+                if not (full_lower:find(search_text, 1, true) or short_lower:find(search_text, 1, true) or dirname:find(search_text, 1, true) or owner:find(search_text, 1, true) or desc:find(search_text, 1, true) or repo:find(search_text, 1, true)) then
+                    match_search = false
+                end
+            end
+
+            if filter_owner ~= "" then
+                local record = plugin_records[plugin.dirname]
+                local owner = (record and record.owner or ""):lower()
+                if not owner:find(filter_owner, 1, true) then
+                    match_search = false
+                end
+            end
+
+            if filter_min_stars > 0 then
+                local record = plugin_records[plugin.dirname]
+                local stars = (record and tonumber(record.stars)) or 0
+                if stars < filter_min_stars then
+                    match_search = false
+                end
+            end
+
+            if match_type and match_status and match_search then
+                local record = plugin_records[plugin.dirname]
+                local kind_parts = { _("Plugin") }
+                if is_default then
+                    table.insert(kind_parts, _("Default"))
+                end
+                local meta_kind = table.concat(kind_parts, " · ")
+
+                table.insert(items, {
+                    name = display_name,
+                    owner = record and record.owner or "",
+                    stars_fmt = record and record.repo_description and "plugin" or "0",
+                    updated = formatTimestamp(plugin.latest_mtime),
+                    mtime = plugin.latest_mtime or 0,
+                    kind_label = meta_kind,
+                    description = record and record.repo_description or "",
+                    badge_icon = getAssetPath(disabled and "square.svg" or "check-square.svg"),
+                    badge = has_update and _("Update") or nil,
+                    is_entry = true,
+                    is_installed_item = true,
+                    is_plugin = true,
+                    is_disabled = disabled,
+                    is_default = is_default,
+                    dirname = plugin.dirname,
+                    on_badge_tap = function()
+                        self:togglePluginDisabled(plugin.dirname)
+                        self:reopenBrowser()
+                    end,
+                    callback = function()
+                        local DetailsDialog = require("storefront_details_dialog")
+                        local cached_repo
+                        if record then
+                            if record.repo_id then cached_repo = Cache.getRepo(record.repo_id) end
+                            if not cached_repo and record.owner and record.repo then cached_repo = Cache.getRepoByName(record.owner, record.repo) end
+                        end
+                        local repo = cached_repo or {
+                            name = record and record.repo or plugin.dirname,
+                            owner = record and record.owner or "",
+                            full_name = record and record.repo_full_name or "",
+                            id = record and record.repo_id or nil,
+                            description = record and record.repo_description or "",
+                            stars = 0,
+                        }
+                        local details_dialog = DetailsDialog:new{
+                            Storefront = self,
+                            repo = repo,
+                            kind = "plugin",
+                            update_item = { plugin = plugin, record = record, needs_update = has_update },
+                        }
+                        details_dialog:show()
+                    end,
+                })
+            end
+        end
+    end
+
+    -- 2. Patches
+    if filter_type == "all" or filter_type == "patch" then
+        for i, patch in ipairs(installed_patches) do
+            local disabled = patch.disabled or isPatchDisabled(patch.filename)
+            local is_default = false
+            local has_update = patch_updates_map[patch.filename] == true
+
+            local match_type = true
+            if filter_default == "exclude_default" and is_default then match_type = false end
+            if filter_default == "default_only" and not is_default then match_type = false end
+
+            local match_status = true
+            if filter_status == "enabled" and disabled then match_status = false end
+            if filter_status == "disabled" and not disabled then match_status = false end
+
+            local record = patch_records[patch.filename]
+            local match_search = true
+            if search_text ~= "" then
+                local filename = (patch.filename or ""):lower()
+                local owner = (record and record.owner or ""):lower()
+                local desc = (record and record.repo_description or ""):lower()
+                if not (filename:find(search_text, 1, true) or owner:find(search_text, 1, true) or desc:find(search_text, 1, true)) then
+                    match_search = false
+                end
+            end
+
+            if match_type and match_status and match_search then
+                table.insert(items, {
+                    name = patch.filename,
+                    owner = record and record.owner or "",
+                    stars_fmt = "patch",
+                    updated = formatTimestamp(patch.latest_mtime),
+                    mtime = patch.latest_mtime or 0,
+                    kind_label = _("Patch"),
+                    description = record and record.repo_description or "",
+                    badge_icon = getAssetPath(disabled and "square.svg" or "check-square.svg"),
+                    badge = has_update and _("Update") or nil,
+                    is_entry = true,
+                    is_installed_item = true,
+                    is_plugin = false,
+                    is_disabled = disabled,
+                    is_default = false,
+                    filename = patch.filename,
+                    on_badge_tap = function()
+                        self:togglePatchDisabled(patch.filename)
+                        self:reopenBrowser()
+                    end,
+                    callback = function()
+                        local DetailsDialog = require("storefront_details_dialog")
+                        local cached_repo
+                        if record then
+                            if record.repo_id then cached_repo = Cache.getRepo(record.repo_id) end
+                            if not cached_repo and record.owner and record.repo then cached_repo = Cache.getRepoByName(record.owner, record.repo) end
+                        end
+                        local repo = cached_repo or {
+                            name = record and record.repo or patch.filename,
+                            owner = record and record.owner or "",
+                            full_name = record and record.repo_full_name or "",
+                            id = record and record.repo_id or nil,
+                            description = record and record.repo_description or "",
+                            stars = 0,
+                        }
+                        local patch_entry = {
+                            filename = patch.filename,
+                            path = patch.path,
+                            display_path = record and record.path or patch.path,
+                        }
+                        local details_dialog = DetailsDialog:new{
+                            Storefront = self,
+                            repo = repo,
+                            patch = patch_entry,
+                            kind = "patch",
+                            update_item = { patch = patch, record = record, needs_update = has_update },
+                        }
+                        details_dialog:show()
+                    end,
+                })
+            end
+        end
+    end
+
+    -- 3. Sort items
+    table.sort(items, function(a, b)
+        if sort_mode == "name_desc" then
+            return (a.name or ""):lower() > (b.name or ""):lower()
+        elseif sort_mode == "date_desc" then
+            return (a.mtime or 0) > (b.mtime or 0)
+        elseif sort_mode == "date_asc" then
+            return (a.mtime or 0) < (b.mtime or 0)
+        elseif sort_mode == "type" then
+            if a.kind_label ~= b.kind_label then
+                return a.kind_label < b.kind_label
+            end
+            return (a.name or ""):lower() < (b.name or ""):lower()
+        elseif sort_mode == "status" then
+            if a.is_disabled ~= b.is_disabled then
+                return not a.is_disabled
+            end
+            return (a.name or ""):lower() < (b.name or ""):lower()
+        else -- name_asc
+            return (a.name or ""):lower() < (b.name or ""):lower()
+        end
+    end)
+
+    local display_total = #items
+    local page_size = self:calculateDynamicPageSize("Installed")
+    local total_pages = math.max(1, math.ceil(display_total / page_size))
+    local page = math.min(math.max(self.browser_state.page or 1, 1), total_pages)
+    if self.browser_state.page ~= page then
+        self.browser_state.page = page
+        self:saveBrowserState()
+    end
+
+    local start_index = (page - 1) * page_size + 1
+    local end_index = math.min(display_total, start_index + page_size - 1)
+
+    local page_items = {}
+    if display_total == 0 then
+        table.insert(page_items, {
+            text = _("No installed items found."),
+            select_enabled = false,
+        })
+    else
+        for i = start_index, end_index do
+            local entry = items[i]
+            entry.separator = true
+            table.insert(page_items, entry)
+        end
+    end
+
+    return page_items, total_pages
 end
 
 function Storefront:buildBrowserEntries()
@@ -7018,6 +7266,11 @@ function Storefront:buildBrowserEntries()
         local items, total_pages = self:buildUpdatesEntries()
         self._last_total_pages = total_pages
         self._last_total_kind = self.browser_state.kind or "plugin"
+        return items, total_pages
+    elseif tab == "Installed" then
+        local items, total_pages = self:buildInstalledEntries()
+        self._last_total_pages = total_pages
+        self._last_total_kind = "installed"
         return items, total_pages
     end
     local kind = tab == "Plugins" and "plugin" or "patch"
@@ -7237,6 +7490,22 @@ function Storefront:browserOpenFilter()
 end
 
 function Storefront:browserAdvanceSort()
+    if self.browser_state and self.browser_state.tab == "Installed" then
+        self:ensureInstalledState()
+        local current = self.installed_state.sort_mode or "name_asc"
+        local sort_modes = { "name_asc", "name_desc", "date_desc", "date_asc", "type", "status" }
+        local next_idx = 1
+        for i, mode in ipairs(sort_modes) do
+            if mode == current then
+                next_idx = (i % #sort_modes) + 1
+                break
+            end
+        end
+        self.installed_state.sort_mode = sort_modes[next_idx]
+        self:saveInstalledState()
+        self:reopenBrowser()
+        return
+    end
     self:advanceSortMode()
 end
 
@@ -7306,6 +7575,9 @@ end
 function Storefront:showBrowser(kind)
     logger.info("Storefront: showBrowser called")
     self:ensureBrowserState()
+    self:ensureUpdatesState()
+    self:ensurePatchUpdatesState()
+    self:ensureInstalledState()
     if self.browser_menu then
         self:closeBrowserMenu()
     end
@@ -7326,9 +7598,60 @@ function Storefront:showBrowser(kind)
 
     local toolbar_buttons
     if current_tab == "Updates" then
-        toolbar_buttons = {
-            { id = "check_all", text = _("↻ Check all"), callback = function() self:browserRefresh() end },
+        toolbar_buttons = nil
+    elseif current_tab == "Installed" then
+        self:ensureInstalledState()
+        toolbar_buttons = {}
+        if (self.installed_state.search_text or "") ~= "" then
+            table.insert(toolbar_buttons, {
+                id = "search",
+                text = _("Search: ") .. self.installed_state.search_text,
+                callback = function() self:showFilterDialog() end
+            })
+        end
+        local type_label = _("All Types")
+        if self.installed_state.filter_type == "plugin" then type_label = _("Plugins")
+        elseif self.installed_state.filter_type == "patch" then type_label = _("Patches") end
+        table.insert(toolbar_buttons, {
+            id = "type",
+            text = type_label,
+            callback = function() self:showInstalledFilter() end
+        })
+        if self.installed_state.filter_default and self.installed_state.filter_default ~= "all" then
+            local def_label = (self.installed_state.filter_default == "default_only") and _("Default") or _("User Installed")
+            table.insert(toolbar_buttons, {
+                id = "origin",
+                text = def_label,
+                callback = function() self:showInstalledFilter() end
+            })
+        end
+        if self.installed_state.filter_status and self.installed_state.filter_status ~= "all" then
+            local stat_label = (self.installed_state.filter_status == "enabled") and _("Enabled") or _("Disabled")
+            table.insert(toolbar_buttons, {
+                id = "status",
+                text = stat_label,
+                callback = function() self:showInstalledFilter() end
+            })
+        end
+        local sort_map = {
+            name_asc = _("Sort: A-Z"),
+            name_desc = _("Sort: Z-A"),
+            date_desc = _("Sort: Updated"),
+            date_asc = _("Sort: Oldest"),
+            date = _("Sort: Updated"),
+            type = _("Sort: Type"),
+            status = _("Sort: Status"),
         }
+        table.insert(toolbar_buttons, {
+            id = "sort",
+            text = sort_map[self.installed_state.sort_mode] or _("Sort"),
+            callback = function() self:browserAdvanceSort() end
+        })
+        table.insert(toolbar_buttons, {
+            id = "filter_dialog",
+            text = _("Filter..."),
+            callback = function() self:showInstalledFilter() end
+        })
     end
 
     local current_generation = InstallStore.getGeneration and InstallStore.getGeneration() or 0
@@ -7414,7 +7737,8 @@ function Storefront:showBrowser(kind)
             end
         end,
         on_next_page = function()
-            local total_pages = self._last_total_kind == (self.browser_state.kind or "plugin") and (self._last_total_pages or 1) or 1
+            local current_kind = (self.browser_state.tab == "Installed") and "installed" or (self.browser_state.kind or "plugin")
+            local total_pages = (self._last_total_kind == current_kind) and (self._last_total_pages or 1) or 1
             if self.browser_state.page < total_pages then
                 self:resetBrowserScrollState()
                 self.browser_focus_hint = self:computePageFlipFocus(self.browser_menu, true)
@@ -7426,7 +7750,8 @@ function Storefront:showBrowser(kind)
             end
         end,
         on_last_page = function()
-            local total_pages = self._last_total_kind == (self.browser_state.kind or "plugin") and (self._last_total_pages or 1) or 1
+            local current_kind = (self.browser_state.tab == "Installed") and "installed" or (self.browser_state.kind or "plugin")
+            local total_pages = (self._last_total_kind == current_kind) and (self._last_total_pages or 1) or 1
             if self.browser_state.page < total_pages then
                 self:resetBrowserScrollState()
                 self.browser_focus_hint = self:computePageFlipFocus(self.browser_menu, true)
@@ -7438,7 +7763,8 @@ function Storefront:showBrowser(kind)
             end
         end,
         on_goto_page = function(page_num)
-            local total_pages = self._last_total_kind == (self.browser_state.kind or "plugin") and (self._last_total_pages or 1) or 1
+            local current_kind = (self.browser_state.tab == "Installed") and "installed" or (self.browser_state.kind or "plugin")
+            local total_pages = (self._last_total_kind == current_kind) and (self._last_total_pages or 1) or 1
             if page_num >= 1 and page_num <= total_pages and page_num ~= self.browser_state.page then
                 local forward = page_num > self.browser_state.page
                 self:resetBrowserScrollState()
@@ -7474,6 +7800,10 @@ end
 
 function Storefront:showFilterDialog()
     require("storefront_filter_dialog"):show(self)
+end
+
+function Storefront:showInstalledFilter()
+    require("storefront_filter_dialog"):showInstalledFilter(self)
 end
 
 function Storefront:showStorefrontSettingsDialog()
@@ -9183,6 +9513,7 @@ end
 
 Storefront.listInstalledPlugins = listInstalledPlugins
 Storefront.listInstalledPatches = listInstalledPatches
+Storefront.isDefaultPlugin = isDefaultPlugin
 Storefront.getInstallRecordsMap = getInstallRecordsMap
 Storefront.getPatchRecordsMap = getPatchRecordsMap
 Storefront.getBrowserPageSize = getBrowserPageSize

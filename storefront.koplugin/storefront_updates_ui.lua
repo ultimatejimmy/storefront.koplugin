@@ -1,3 +1,4 @@
+local util = require("util")
 local InfoMessage = require("ui/widget/infomessage")
 local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
@@ -18,7 +19,11 @@ function StorefrontUpdatesUi:init(StorefrontClass)
         local remote_key = self.updates_state and self.updates_state.remote_info
         local patch_remote_key = self.patch_updates_state and self.patch_updates_state.remote_info
         local filter_outdated = self.updates_state and self.updates_state.filter_only_outdated
-        local cache_key = string.format("%s|%s|%s|%s", tostring(gen), tostring(remote_key), tostring(patch_remote_key), tostring(filter_outdated))
+        local search_text = util.trim(self.browser_state and self.browser_state.search_text or ""):lower()
+        local filter_owner = util.trim(self.browser_state and self.browser_state.owner or ""):lower()
+        local filter_min_stars = tonumber(self.browser_state and self.browser_state.min_stars) or 0
+
+        local cache_key = string.format("%s|%s|%s|%s|%s|%s|%s", tostring(gen), tostring(remote_key), tostring(patch_remote_key), tostring(filter_outdated), search_text, filter_owner, tostring(filter_min_stars))
 
         local merged
         if self._merged_updates_cache and self._merged_updates_cache.key == cache_key then
@@ -37,31 +42,64 @@ function StorefrontUpdatesUi:init(StorefrontClass)
             local remote = item.remote
             local has_update = item.has_update
             
-            if not self.updates_state.filter_only_outdated or has_update then
-                -- Strip leading 'v'/'V' so "v2.4.4" displays as "2.4.4" consistently.
-                local local_ver = (plugin.version and tostring(plugin.version):gsub("^[vV]", "")) or _("unknown")
-                local remote_ver_raw = remote and (remote.release_tag_name or remote.remote_version)
-                local remote_ver = remote_ver_raw and tostring(remote_ver_raw):gsub("^[vV]", "") or nil
+            local meta = plugin and plugin.meta
+            local fullname = (meta and meta.fullname) or (plugin and plugin.fullname)
+            local shortname = (meta and meta.name) or (plugin and (plugin.shortname or plugin.name))
+            local display_name = (fullname and fullname ~= "") and fullname or (shortname or (plugin and plugin.dirname and plugin.dirname:gsub("%.koplugin$", "")) or _("plugin"))
 
-                if not remote_ver or remote_ver == "" or remote_ver == "new" or remote_ver == local_ver then
-                    has_update = false
-                end
+            local match_search = true
+            if search_text ~= "" then
+                local full_lower = (fullname or ""):lower()
+                local short_lower = (shortname or (plugin and plugin.dirname) or ""):lower()
+                local dir_lower = (plugin and plugin.dirname or ""):lower():gsub("%.koplugin$", "")
+                local owner_lower = (record and record.owner or ""):lower()
+                local desc_lower = (record and record.repo_description or ""):lower()
+                local repo_lower = (record and record.repo or ""):lower()
 
-                local remote_display
-                if has_update then
-                    remote_display = remote_ver or _("new")
-                else
-                    remote_display = _("latest")
+                if not (full_lower:find(search_text, 1, true)
+                     or short_lower:find(search_text, 1, true)
+                     or dir_lower:find(search_text, 1, true)
+                     or owner_lower:find(search_text, 1, true)
+                     or desc_lower:find(search_text, 1, true)
+                     or repo_lower:find(search_text, 1, true)) then
+                    match_search = false
                 end
+            end
+
+            if filter_owner ~= "" then
+                local owner_lower = (record and record.owner or ""):lower()
+                if not owner_lower:find(filter_owner, 1, true) then
+                    match_search = false
+                end
+            end
+
+            if filter_min_stars > 0 then
+                local stars = (record and tonumber(record.stars)) or 0
+                if stars < filter_min_stars then
+                    match_search = false
+                end
+            end
+
+            -- Strip leading 'v'/'V' so "v2.4.4" displays as "2.4.4" consistently.
+            local local_ver = (plugin and plugin.version and tostring(plugin.version):gsub("^[vV]", "")) or _("unknown")
+            local remote_ver_raw = remote and (remote.release_tag_name or remote.remote_version)
+            local remote_ver = remote_ver_raw and tostring(remote_ver_raw):gsub("^[vV]", "") or nil
+
+            if not remote_ver or remote_ver == "" or remote_ver == "new" or remote_ver == local_ver then
+                has_update = false
+            end
+
+            if has_update and match_search then
+                local remote_display = remote_ver or _("new")
                 
                 table.insert(merged, {
-                    name = plugin.name or plugin.dirname,
+                    name = display_name,
                     owner = record and record.owner or "",
                     stars_fmt = record and record.repo_description and "plugin" or "0",
                     updated = "",
                     kind_label = _("Plugin"),
                     description = record and record.repo_description or "",
-                    badge = has_update and _("Update") or _("✓ Current"),
+                    badge = _("Update"),
                     is_entry = true,
                     keep_menu_open = true,
                     is_update_item = true,
@@ -78,7 +116,7 @@ function StorefrontUpdatesUi:init(StorefrontClass)
                             end
                         end
                         local repo = cached_repo or {
-                            name = record and record.repo or plugin.dirname,
+                            name = record and record.repo or (plugin and plugin.dirname or ""),
                             owner = record and record.owner or "",
                             full_name = record and record.repo_full_name or "",
                             id = record and record.repo_id or nil,
@@ -110,7 +148,26 @@ function StorefrontUpdatesUi:init(StorefrontClass)
             local remote_entry = item.remote_entry
             local has_update = item.needs_update
  
-            if not self.patch_updates_state.filter_only_outdated or has_update then
+            local patch_name = patch.filename or patch.path or _("patch")
+            local match_search = true
+            if search_text ~= "" then
+                local name_lower = patch_name:lower()
+                local owner_lower = (record and record.owner or ""):lower()
+                local desc_lower = (record and record.repo_description or ""):lower()
+                local repo_lower = (record and record.repo or ""):lower()
+                if not (name_lower:find(search_text, 1, true) or owner_lower:find(search_text, 1, true) or desc_lower:find(search_text, 1, true) or repo_lower:find(search_text, 1, true)) then
+                    match_search = false
+                end
+            end
+
+            if filter_owner ~= "" then
+                local owner_lower = (record and record.owner or ""):lower()
+                if not owner_lower:find(filter_owner, 1, true) then
+                    match_search = false
+                end
+            end
+
+            if has_update and match_search then
                 local local_commit = (record and record.commit) or item.local_sha or ""
                 local remote_commit = (remote_entry and remote_entry.remote_sha) or item.remote_sha or ""
                 local local_ver = local_commit ~= "" and ("sha " .. local_commit:sub(1, 5)) or _("unknown")

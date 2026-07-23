@@ -416,6 +416,7 @@ if ok_browser then
         -- Test autoMatchInstalled preference (highest stars win, author match wins top priority)
         package.loaded["storefront_plugin_paths"] = {
             getLookupPaths = function() return { "plugins" } end,
+            getDefaultPluginsRoot = function() return "plugins" end,
             isPathHidden = function() return false end,
         }
         local dummy_fork = { name = "simpleui.koplugin", owner = "somefork", full_name = "somefork/simpleui.koplugin", fork = true, stars = 0 }
@@ -439,6 +440,118 @@ if ok_browser then
         }
         check("StorefrontImageModal loaded and instantiated", modal ~= nil, true)
         check("StorefrontImageModal onClose executes without error", modal:onClose(), true)
+
+        -- Test Dispatcher action registration and onStorefrontOpen callback
+        local registered_action = nil
+        local DispatcherModule = package.loaded["dispatcher"]
+        DispatcherModule.registerAction = function(self, action_id, params)
+            registered_action = { id = action_id, params = params }
+        end
+        MainStorefront:onDispatcherRegisterActions()
+        check("Dispatcher registers storefront_open action", registered_action ~= nil and registered_action.id == "storefront_open", true)
+        check("Dispatcher action title is defined", registered_action and registered_action.params and registered_action.params.title ~= nil, true)
+
+        -- Test Storefront:onStorefrontOpen execution
+        local browser_opened_via_action = false
+        MainStorefront.showBrowser = function(self)
+            browser_opened_via_action = true
+        end
+        local action_result = MainStorefront:onStorefrontOpen()
+        check("onStorefrontOpen handles gesture/action event", action_result, true)
+
+        -- Test Tools menu integration (addToMainMenu)
+        local menu_items = {}
+        MainStorefront:addToMainMenu(menu_items)
+        check("addToMainMenu populates Storefront menu item", menu_items.Storefront ~= nil, true)
+        check("Storefront menu item sorting_hint is 'tools'", menu_items.Storefront and menu_items.Storefront.sorting_hint == "tools", true)
+
+        local browser_opened_via_menu = false
+        MainStorefront.showBrowser = function(self)
+            browser_opened_via_menu = true
+        end
+        if menu_items.Storefront and menu_items.Storefront.callback then
+            menu_items.Storefront.callback()
+        end
+        check("Tools menu callback opens Storefront browser", browser_opened_via_menu, true)
+
+        -- Test isDefaultPlugin with root = 'plugins'
+        local core_plugin_mock = { dirname = "terminal.koplugin", name = "Terminal", root = "plugins" }
+        local custom_plugin_mock = { dirname = "mycustom.koplugin", name = "MyCustom", root = "custom_plugins" }
+        check("isDefaultPlugin identifies core default plugin", MainStorefront:isDefaultPlugin(core_plugin_mock), true)
+        check("isDefaultPlugin rejects custom plugin", MainStorefront:isDefaultPlugin(custom_plugin_mock), false)
+
+        -- Test Installed tab state and buildInstalledEntries with full plugin objects
+        MainStorefront:ensureInstalledState()
+        check("ensureInstalledState initializes filter_type", MainStorefront.installed_state.filter_type, "all")
+        check("ensureInstalledState initializes sort_mode", MainStorefront.installed_state.sort_mode, "name_asc")
+
+        local dummy_plugin = { dirname = "coverbrowser.koplugin", name = "CoverBrowser", root = "plugins", latest_mtime = os.time() }
+        local dummy_patch = { filename = "2-test.lua", path = "patches/2-test.lua", latest_mtime = os.time() }
+        local orig_list_plugins = MainStorefront.listInstalledPlugins
+        local orig_list_patches = MainStorefront.listInstalledPatches
+        MainStorefront.listInstalledPlugins = function() return { dummy_plugin } end
+        MainStorefront.listInstalledPatches = function() return { dummy_patch } end
+
+        local installed_entries_ok, installed_entries = pcall(function()
+            return MainStorefront:buildInstalledEntries()
+        end)
+        check("buildInstalledEntries with full items runs without errors", installed_entries_ok, true)
+        check("buildInstalledEntries returns list table", type(installed_entries), "table")
+        check("buildInstalledEntries populates items", type(installed_entries) == "table" and (#installed_entries > 0), true)
+
+        -- Test meta.fullname preference and dual name search matching
+        local meta_plugin = {
+            dirname = "neo_quick_settings.koplugin",
+            meta = { name = "neo_quick_settings", fullname = "Neo Quick Settings" },
+            name = "Neo Quick Settings",
+            fullname = "Neo Quick Settings",
+            shortname = "neo_quick_settings",
+            path = "custom_plugins/neo_quick_settings.koplugin",
+            root = "custom_plugins",
+            latest_mtime = os.time()
+        }
+        MainStorefront.installed_state.search_text = ""
+        MainStorefront.installed_state.filter_type = "all"
+        MainStorefront.installed_state.filter_default = "all"
+        MainStorefront.installed_state.filter_status = "all"
+        if MainStorefront.browser_state then MainStorefront.browser_state.search_text = "" end
+        MainStorefront.listInstalledPlugins = function() return { meta_plugin } end
+        MainStorefront.listInstalledPatches = function() return {} end
+        local meta_entries = MainStorefront:buildInstalledEntries()
+        MainStorefront.listInstalledPlugins = orig_list_plugins
+        MainStorefront.listInstalledPatches = orig_list_patches
+        check("buildInstalledEntries uses meta.fullname for display name", meta_entries[1] and meta_entries[1].name, "Neo Quick Settings")
+
+        -- Test StorefrontListItem instantiation with badge_icon and badge_text
+        local StorefrontListItem = require("storefront_list_item")
+        local item_ok, item_inst = pcall(function()
+            return StorefrontListItem:new{
+                entry = {
+                    name = "Test Item",
+                    kind_label = "Plugin",
+                    badge_icon = "assets/check-square.svg",
+                    badge = "Update",
+                }
+            }
+        end)
+        check("StorefrontListItem with badge_icon & badge_text instantiates without error", item_ok, true)
+
+        -- Test StorefrontFilterDialog showInstalledFilter & show methods
+        local StorefrontFilterDialog = require("storefront_filter_dialog")
+        local filter_card_ok = pcall(function()
+            StorefrontFilterDialog:showInstalledFilter(MainStorefront)
+        end)
+        check("StorefrontFilterDialog:showInstalledFilter executes without error", filter_card_ok, true)
+
+        local main_show_filter_ok = pcall(function()
+            MainStorefront:showInstalledFilter()
+        end)
+        check("MainStorefront:showInstalledFilter executes without error", main_show_filter_ok, true)
+
+        local browser_open_filter_ok = pcall(function()
+            MainStorefront:browserOpenFilter()
+        end)
+        check("MainStorefront:browserOpenFilter executes without error", browser_open_filter_ok, true)
     end
 end
 

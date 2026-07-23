@@ -1,5 +1,6 @@
 local Blitbuffer = require("ffi/blitbuffer")
 local Button = require("ui/widget/button")
+local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
 local FocusManager = require("ui/widget/focusmanager")
 local Font = require("ui/font")
@@ -61,20 +62,18 @@ local StorefrontBrowserDialog = FocusManager:extend{
 }
 
 function StorefrontBrowserDialog:buildTabBar()
-    local tabs = { "Plugins", "Patches", "Updates" }
+    local tabs = { "Plugins", "Patches", "Installed", "Updates" }
     local tab_widgets = {}
 
     local sc = function(val) return Device.screen:scaleBySize(val) end
 
-
-
     for i, tab_name in ipairs(tabs) do
         if i > 1 then
-            table.insert(tab_widgets, HorizontalSpan:new{ width = sc(20) })
+            table.insert(tab_widgets, HorizontalSpan:new{ width = sc(12) })
         end
 
         local is_active = (self.current_tab == tab_name)
-        local font_face = is_active and Font:getFace("smallinfofontbold", 19) or Font:getFace("smallinfofont", 18)
+        local font_face = is_active and Font:getFace("smallinfofontbold", 18) or Font:getFace("smallinfofont", 17)
         
         local label = TextWidget:new{
             text = tab_name,
@@ -87,19 +86,19 @@ function StorefrontBrowserDialog:buildTabBar()
         if tab_name == "Updates" and self.updates_count > 0 then
             local badge_inner = TextWidget:new{
                 text = tostring(self.updates_count),
-                face = Font:getFace("smallinfofontbold", 13),
+                face = Font:getFace("smallinfofontbold", 12),
                 fgcolor = Blitbuffer.COLOR_WHITE,
             }
             local badge = FrameContainer:new{
                 padding = sc(2),
-                padding_left = sc(6),
-                padding_right = sc(6),
+                padding_left = sc(5),
+                padding_right = sc(5),
                 bordersize = 0,
                 background = Blitbuffer.COLOR_BLACK,
-                radius = sc(9),
+                radius = sc(8),
                 badge_inner,
             }
-            table.insert(tab_elements, HorizontalSpan:new{ width = sc(4) })
+            table.insert(tab_elements, HorizontalSpan:new{ width = sc(3) })
             table.insert(tab_elements, badge)
         end
 
@@ -417,141 +416,46 @@ function StorefrontBrowserDialog:init()
     }
 
     local toolbar_height = 0
-    if self.current_tab == "Updates" then
-        local outdated_active = self.updates_filter_only_outdated
-        
-        -- Outdated only button
-        local outdated_btn = Button:new{
-            text = _("Outdated only"),
-            text_font_size = 14,
-            padding = sc(8),
-            radius = sc(16),
-            bordersize = outdated_active and 0 or sc(1),
-            background = outdated_active and Blitbuffer.COLOR_BLACK or nil,
-            callback = function()
-                if self.on_updates_filter then
-                    self.on_updates_filter(true)
-                end
-            end,
-            show_parent = self,
-        }
-        if outdated_active then
-            outdated_btn.label_widget.fgcolor = Blitbuffer.COLOR_WHITE
-        end
-
-        -- All installed button
-        local all_active = not outdated_active
-        local all_btn = Button:new{
-            text = _("All installed"),
-            text_font_size = 14,
-            padding = sc(8),
-            radius = sc(16),
-            bordersize = all_active and 0 or sc(1),
-            background = all_active and Blitbuffer.COLOR_BLACK or nil,
-            callback = function()
-                if self.on_updates_filter then
-                    self.on_updates_filter(false)
-                end
-            end,
-            show_parent = self,
-        }
-        if all_active then
-            all_btn.label_widget.fgcolor = Blitbuffer.COLOR_WHITE
-        end
-
-        -- Built manually (not via Button's `icon` field, which can't load a
-        -- custom asset path -- see getAssetPath's comment above) so the
-        -- refresh icon actually renders instead of falling back to
-        -- KOReader's "icon not found" placeholder.
-        local check_btn_frame = FrameContainer:new{
-            width = sc(36),
-            height = sc(36),
-            padding = 0,
-            bordersize = 0,
-            radius = sc(18),
-            CenterContainer:new{
-                dimen = Geom:new{ w = sc(36), h = sc(36) },
-                ImageWidget:new{
-                    file = getAssetPath("rotate-cw.svg"),
-                    width = sc(20),
-                    height = sc(20),
-                    scale_factor = 0,
-                    alpha = true,
-                },
-            },
-        }
-        local check_btn = InputContainer:new{ check_btn_frame }
-        local check_btn_size = check_btn_frame:getSize() or { w = sc(36), h = sc(36) }
-        check_btn.ges_events = {
-            Tap = {
-                GestureRange:new{
-                    ges = "tap",
-                    range = function()
-                        local dim = check_btn.dimen
-                        if not dim then
-                            return Geom:new{ x = -1, y = -1, w = 1, h = 1 }
-                        end
-                        return Geom:new{
-                            x = dim.x or 0,
-                            y = dim.y or 0,
-                            w = check_btn_size.w or sc(36),
-                            h = check_btn_size.h or sc(36),
-                        }
-                    end,
-                }
-            }
-        }
-        check_btn.onTap = function()
-            if self.on_refresh then
-                self.on_refresh()
-            end
-            return true
-        end
-
-        self._updates_outdated_btn = outdated_btn
-        self._updates_all_btn = all_btn
-        self._updates_check_btn = check_btn
-
-        -- Spacer in the middle
-        local left_w = outdated_btn:getSize().w + sc(8) + all_btn:getSize().w
-        local right_w = check_btn:getSize().w
-        local pad_w = self.width - sc(24) -- left and right margin/padding
-        local spacer_w = math.max(sc(8), pad_w - left_w - right_w)
-
-        local updates_toolbar = HorizontalGroup:new{
-            outdated_btn,
-            HorizontalSpan:new{ width = sc(8) },
-            all_btn,
-            HorizontalSpan:new{ width = spacer_w },
-            check_btn,
-        }
-
-        self.toolbar = FrameContainer:new{
-            padding_left = sc(12),
-            padding_right = sc(12),
-            bordersize = 0,
-            updates_toolbar,
-        }
-        toolbar_height = self.toolbar:getSize().h + Size.span.vertical_default
-    elseif self.toolbar_buttons and #self.toolbar_buttons > 0 then
+    if self.toolbar_buttons and #self.toolbar_buttons > 0 then
         local tb = HorizontalGroup:new{}
         self._toolbar_widgets = {}
         self._toolbar_ids = {}
         for i, spec in ipairs(self.toolbar_buttons) do
             if i > 1 then
-                table.insert(tb, HorizontalSpan:new{ width = Size.span.horizontal_default })
+                table.insert(tb, HorizontalSpan:new{ width = sc(4) })
+                table.insert(tb, TextWidget:new{
+                    text = "·",
+                    face = Font:getFace("cfont", 14),
+                    fgcolor = Blitbuffer.COLOR_BLACK,
+                })
+                table.insert(tb, HorizontalSpan:new{ width = sc(4) })
             end
             local btn = Button:new{
                 text = spec.text,
-                radius = Size.radius.button,
+                text_font_size = 14,
+                padding = sc(8),
+                radius = sc(16),
+                bordersize = sc(1),
+                background = Blitbuffer.COLOR_WHITE,
                 callback = spec.callback,
+                show_parent = self,
             }
             table.insert(tb, btn)
             self._toolbar_widgets[#self._toolbar_widgets + 1] = btn
             self._toolbar_ids[#self._toolbar_ids + 1] = { id = spec.id }
         end
-        self.toolbar = tb
-        toolbar_height = tb:getSize().h + Size.span.vertical_default
+        self.toolbar = FrameContainer:new{
+            padding_left = sc(12),
+            padding_right = sc(12),
+            padding_top = sc(4),
+            padding_bottom = sc(4),
+            bordersize = 0,
+            CenterContainer:new{
+                dimen = Geom:new{ w = self.width - sc(24), h = tb:getSize().h },
+                tb,
+            },
+        }
+        toolbar_height = self.toolbar:getSize().h + Size.span.vertical_default
     end
 
     local tab_bar = self:buildTabBar()
@@ -561,7 +465,7 @@ function StorefrontBrowserDialog:init()
     
     local divider_height = Size.line.thin + Size.span.vertical_default
     if self.toolbar then
-        divider_height = divider_height + Size.span.vertical_default
+        divider_height = divider_height + Size.line.thin + Size.span.vertical_default
     end
     local body_height = self.screen_h - title_height - tab_bar_height - footer_height - toolbar_height - divider_height
     if body_height < math.floor(self.screen_h * 0.5) then
@@ -587,6 +491,8 @@ function StorefrontBrowserDialog:init()
     }
     if self.toolbar then
         table.insert(self.content, self.toolbar)
+        table.insert(self.content, VerticalSpan:new{ width = Size.span.vertical_default })
+        table.insert(self.content, LineWidget:new{ background = Blitbuffer.COLOR_DARK_GRAY, dimen = Geom:new{ w = self.width, h = Size.line.thin } })
         table.insert(self.content, VerticalSpan:new{ width = Size.span.vertical_default })
     end
     table.insert(self.content, self.list_scroller)

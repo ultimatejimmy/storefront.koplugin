@@ -250,9 +250,15 @@ function StorefrontDetailsDialog:init()
     local is_installed = false
     local has_update   = false
 
+    if (self.update_item and (self.update_item.is_installed_item or self.update_item.plugin))
+       or (self.repo and (self.repo.is_installed_item or self.repo.is_installed or self.repo.is_default))
+       or self.kind == "installed" then
+        is_installed = true
+    end
+
     if self.patch then
         local patch_map = InstallStore.listPatches() or {}
-        is_installed = patch_map[self.patch.filename] ~= nil
+        if patch_map[self.patch.filename] ~= nil then is_installed = true end
     else
         local installed_lookup = self.Storefront and self.Storefront.getInstalledLookup and self.Storefront:getInstalledLookup()
         if installed_lookup then
@@ -275,6 +281,22 @@ function StorefrontDetailsDialog:init()
             if rec and not (rec.owner or rec.repo_full_name or rec.repo_id) then
                 is_installed = true
             end
+        end
+    end
+
+    local is_default = false
+    if self.update_item and self.update_item.is_default ~= nil then
+        is_default = self.update_item.is_default
+    elseif self.repo and self.repo.is_default ~= nil then
+        is_default = self.repo.is_default
+    elseif self.Storefront and self.Storefront.isDefaultPlugin then
+        local plugin_obj = (self.update_item and self.update_item.plugin) or self.repo
+        is_default = self.Storefront:isDefaultPlugin(plugin_obj)
+    end
+    if is_default then
+        is_installed = true
+        if desc_text == "" or desc_text == _("No README available.") then
+            desc_text = _("Pre-installed core KOReader plugin.")
         end
     end
 
@@ -391,42 +413,111 @@ function StorefrontDetailsDialog:init()
             }
         }
     elseif is_installed then
-        local primary_btn = Button:new{
-            text = _("Reinstall"),
-            text_font_size = 18,
-            text_font_color = Blitbuffer.COLOR_WHITE,
-            background = Blitbuffer.COLOR_BLACK,
-            bordersize = 0,
-            padding = sc(11),
-            radius = sc(4),
-            width = primary_btn_w,
-            show_parent = self,
-            callback = function()
-                self:onClose()
-                if self.patch then
-                    self.Storefront:installPatchFromRepo(self.repo, self.patch)
-                else
-                    self.Storefront:installPluginFromRepo(self.repo)
-                end
-            end,
-        }
-        if primary_btn.label_widget then
-            primary_btn.label_widget.fgcolor = Blitbuffer.COLOR_WHITE
+        local is_item_disabled = false
+        if self.patch and self.patch.filename then
+            is_item_disabled = (self.patch.filename:match("%.disabled$") ~= nil)
+        elseif self.repo and self.repo.name then
+            local plugins_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
+            local dirname = (self.update_item and self.update_item.plugin and self.update_item.plugin.dirname) or self.repo.name
+            local p_name = dirname:gsub("%.koplugin$", "")
+            is_item_disabled = plugins_disabled[p_name] == true
         end
-        main_action_btn = HorizontalGroup:new{
-            primary_btn,
-            HorizontalSpan:new{ width = sc(12) },
-            Button:new{
-                text = _("Remove"),
+
+        if is_default then
+            local toggle_btn = Button:new{
+                text = is_item_disabled and _("Enable") or _("Disable"),
+                text_font_size = 18,
+                text_font_color = is_item_disabled and Blitbuffer.COLOR_WHITE or Blitbuffer.COLOR_BLACK,
+                background = is_item_disabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_WHITE,
+                bordersize = is_item_disabled and 0 or sc(1),
+                padding = sc(11),
+                radius = sc(4),
+                width = action_btn_width,
+                show_parent = self,
+                callback = function()
+                    self:onClose()
+                    local dirname = (self.update_item and self.update_item.plugin and self.update_item.plugin.dirname) or (self.repo and self.repo.name)
+                    if dirname and self.Storefront then
+                        self.Storefront:togglePluginDisabled(dirname)
+                        self.Storefront:reopenBrowser()
+                    end
+                end,
+            }
+            if toggle_btn.label_widget and is_item_disabled then
+                toggle_btn.label_widget.fgcolor = Blitbuffer.COLOR_WHITE
+            end
+            main_action_btn = toggle_btn
+        else
+            local toggle_btn_w = math.floor(action_btn_width * 0.28)
+            local remove_btn_w = math.floor(action_btn_width * 0.23)
+            local primary_btn_w = action_btn_width - toggle_btn_w - remove_btn_w - sc(16)
+
+            local primary_btn = Button:new{
+                text = _("Reinstall"),
+                text_font_size = 18,
+                text_font_color = Blitbuffer.COLOR_WHITE,
+                background = Blitbuffer.COLOR_BLACK,
+                bordersize = 0,
+                padding = sc(11),
+                radius = sc(4),
+                width = primary_btn_w,
+                show_parent = self,
+                callback = function()
+                    self:onClose()
+                    if self.patch then
+                        self.Storefront:installPatchFromRepo(self.repo, self.patch)
+                    else
+                        self.Storefront:installPluginFromRepo(self.repo)
+                    end
+                end,
+            }
+            if primary_btn.label_widget then
+                primary_btn.label_widget.fgcolor = Blitbuffer.COLOR_WHITE
+            end
+
+            local toggle_btn = Button:new{
+                text = is_item_disabled and _("Enable") or _("Disable"),
                 text_font_size = 18,
                 bordersize = sc(1),
                 padding = sc(11),
                 radius = sc(4),
-                width = remove_btn_w,
+                width = toggle_btn_w,
                 show_parent = self,
-                callback = doRemove,
+                callback = function()
+                    self:onClose()
+                    if self.patch then
+                        local filename = self.patch.filename
+                        if filename and self.Storefront then
+                            self.Storefront:togglePatchDisabled(filename)
+                            self.Storefront:reopenBrowser()
+                        end
+                    else
+                        local dirname = (self.update_item and self.update_item.plugin and self.update_item.plugin.dirname) or (self.repo and self.repo.name)
+                        if dirname and self.Storefront then
+                            self.Storefront:togglePluginDisabled(dirname)
+                            self.Storefront:reopenBrowser()
+                        end
+                    end
+                end,
             }
-        }
+
+            main_action_btn = HorizontalGroup:new{
+                primary_btn,
+                HorizontalSpan:new{ width = sc(8) },
+                toggle_btn,
+                HorizontalSpan:new{ width = sc(8) },
+                Button:new{
+                    text = _("Remove"),
+                    text_font_size = 18,
+                    bordersize = sc(1),
+                    padding = sc(11),
+                    radius = sc(4),
+                    width = remove_btn_w,
+                    show_parent = self,
+                    callback = doRemove,
+                }
+            }
+        end
     else
         main_action_btn = Button:new{
             text = self.patch and _("Install Patch") or _("Install"),
@@ -758,62 +849,42 @@ img { max-width: 100%%; height: auto; display: block; margin-left: auto; margin-
                 return
             end
 
-            local ffiutil = require("ffi/util")
-            local pid, parent_read_fd = ffiutil.runInSubProcess(function(pid, child_write_fd)
-                local ok, path
-                if tab_name == "release_notes" then
-                    local rel_data = (self.update_item and (self.update_item.remote or self.update_item.remote_entry)) or self.repo.latest_release
+            local RepoContent = require("storefront_repo_content")
+            local ok, path
+            if tab_name == "release_notes" then
+                local rel_data = (self.update_item and (self.update_item.remote or self.update_item.remote_entry)) or self.repo.latest_release
+                if RepoContent and type(RepoContent.fetchReleaseNotesHtml) == "function" then
                     ok, path = RepoContent.fetchReleaseNotesHtml(owner, repo_name, rel_data)
-                else
+                end
+            else
+                if RepoContent and type(RepoContent.fetchReadmeHtml) == "function" then
                     ok, path = RepoContent.fetchReadmeHtml(owner, repo_name)
                 end
-                local result = ""
-                if ok and path then
-                    result = path
-                end
-                ffiutil.writeToFD(child_write_fd, result, true)
-            end, true)
+            end
 
-            if pid then
-                local check_func
-                check_func = function()
-                    if self.is_closed or self.load_req_id ~= current_req_id or self.active_tab ~= tab_name then
-                        ffiutil.terminateSubProcess(pid)
-                        if parent_read_fd then
-                            ffiutil.readAllFromFD(parent_read_fd)
-                        end
-                        return
-                    end
-                    if ffiutil.isSubProcessDone(pid) then
-                        local path = ffiutil.readAllFromFD(parent_read_fd)
-                        if path and path ~= "" then
-                            local html_content = util.readFromFile(path)
-                            if html_content and html_content ~= "" then
-                                local cache_dir = require("datastorage"):getDataDir() .. (tab_name == "release_notes" and "/cache/Storefront/release_notes" or "/cache/Storefront/readme")
-                                html_box:setContent(html_content, readme_css, sc(18), false, false, cache_dir)
-                                if rawget(html_box, "_bb") then html_box._bb = nil end
-                                if rawget(html_box, "bb") then html_box.bb = nil end
-                                updatePagination()
-                            else
-                                local msg = (tab_name == "release_notes") and _("Unable to read Release Notes.") or _("Unable to read README.")
-                                html_box:setContent("<p style='text-align:center;color:red;'>" .. msg .. "</p>", readme_css, sc(18))
-                                updatePagination()
-                            end
-                        else
-                            local msg = (tab_name == "release_notes") and _("No Release Notes available.") or _("No README available.")
-                            html_box:setContent("<p style='text-align:center;color:gray;'>" .. msg .. "</p>", readme_css, sc(18))
-                            updatePagination()
-                        end
-                        UIManager:setDirty(self, "ui")
-                    else
-                        UIManager:scheduleIn(0.2, check_func)
-                    end
+            if self.is_closed or self.load_req_id ~= current_req_id or self.active_tab ~= tab_name then
+                return
+            end
+
+            if ok and path then
+                local html_content = util.readFromFile(path)
+                if html_content and html_content ~= "" then
+                    local cache_dir = require("datastorage"):getDataDir() .. (tab_name == "release_notes" and "/cache/Storefront/release_notes" or "/cache/Storefront/readme")
+                    html_box:setContent(html_content, readme_css, sc(18), false, false, cache_dir)
+                    if rawget(html_box, "_bb") then html_box._bb = nil end
+                    if rawget(html_box, "bb") then html_box.bb = nil end
+                    updatePagination()
+                else
+                    local msg = (tab_name == "release_notes") and _("Unable to read Release Notes.") or _("Unable to read README.")
+                    html_box:setContent("<p style='text-align:center;color:red;'>" .. msg .. "</p>", readme_css, sc(18))
+                    updatePagination()
                 end
-                UIManager:scheduleIn(0.2, check_func)
             else
-                html_box:setContent("<p style='text-align:center;color:red;'>" .. _("Failed to start background process.") .. "</p>", readme_css, sc(18))
+                local msg = (tab_name == "release_notes") and _("No Release Notes available.") or _("No README available.")
+                html_box:setContent("<p style='text-align:center;color:gray;'>" .. msg .. "</p>", readme_css, sc(18))
                 updatePagination()
             end
+            UIManager:setDirty(self, "ui")
         end
 
         if NetworkMgr and type(NetworkMgr.runWhenOnline) == "function" then
