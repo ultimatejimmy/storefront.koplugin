@@ -392,8 +392,10 @@ if ok_browser then
             list = function() return dummy_records end,
             listPatches = function() return {} end,
         }
+        package.loaded["main"] = nil
         local MainStorefront = require("main")
         MainStorefront._installed_lookup_cache = nil
+        MainStorefront._installed_lookup_gen = nil
         local lookup = MainStorefront:getInstalledLookup()
         check("Installed lookup matches exact repo full_name", lookup["doctorhetfield-cmd/simpleui.koplugin"] == true, true)
         
@@ -552,6 +554,31 @@ if ok_browser then
             MainStorefront:browserOpenFilter()
         end)
         check("MainStorefront:browserOpenFilter executes without error", browser_open_filter_ok, true)
+
+        -- Test toggleFilterBar and showCatalogFilter
+        MainStorefront:ensureBrowserState()
+        MainStorefront.browser_state.show_filter_bar_plugins = false
+        MainStorefront.browser_state.show_filter_bar_patches = false
+        MainStorefront:toggleFilterBar("Plugins")
+        check("toggleFilterBar Plugins sets show_filter_bar_plugins to true", MainStorefront.browser_state.show_filter_bar_plugins, true)
+        MainStorefront:toggleFilterBar("Plugins")
+        check("toggleFilterBar Plugins toggles show_filter_bar_plugins back to false", MainStorefront.browser_state.show_filter_bar_plugins, false)
+
+        local catalog_filter_card_ok = pcall(function()
+            StorefrontFilterDialog:showCatalogFilter(MainStorefront)
+        end)
+        check("StorefrontFilterDialog:showCatalogFilter executes without error", catalog_filter_card_ok, true)
+
+        -- Test clearSearchAndFilters
+        MainStorefront.browser_state.search_text = "testquery"
+        MainStorefront.browser_state.min_stars = 50
+        MainStorefront.installed_state.search_text = "testquery"
+        MainStorefront.installed_state.filter_type = "plugin"
+        MainStorefront:clearSearchAndFilters()
+        check("clearSearchAndFilters clears search_text", MainStorefront.browser_state.search_text, "")
+        check("clearSearchAndFilters clears min_stars", MainStorefront.browser_state.min_stars, 0)
+        check("clearSearchAndFilters clears installed_state search_text", MainStorefront.installed_state.search_text, "")
+        check("clearSearchAndFilters clears installed_state filter_type", MainStorefront.installed_state.filter_type, "all")
     end
 end
 

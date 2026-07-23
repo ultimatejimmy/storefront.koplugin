@@ -269,6 +269,13 @@ function StorefrontUpdatesUi:init(StorefrontClass)
                 text = _("No items found."),
                 select_enabled = false,
             })
+            table.insert(items, {
+                text = _("Clear search/filters"),
+                is_clear_button = true,
+                callback = function()
+                    self:clearSearchAndFilters()
+                end,
+            })
         else
             for i = start_index, end_index do
                 local entry = merged[i]

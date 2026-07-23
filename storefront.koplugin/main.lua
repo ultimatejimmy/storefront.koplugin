@@ -658,6 +658,10 @@ local function deleteDirectoryRecursive(path)
 end
 
 function listInstalledPatches()
+    local generation = InstallStore.getGeneration and InstallStore.getGeneration() or 0
+    if G_installed_patches_cache and G_installed_patches_cache.generation == generation then
+        return G_installed_patches_cache.patches
+    end
     local patches = {}
     if lfs.attributes(PATCHES_ROOT, "mode") ~= "directory" then
         return patches
@@ -684,6 +688,10 @@ function listInstalledPatches()
     table.sort(patches, function(a, b)
         return (a.filename or "") < (b.filename or "")
     end)
+    G_installed_patches_cache = {
+        generation = generation,
+        patches = patches,
+    }
     return patches
 end
 
@@ -1179,31 +1187,22 @@ local function getPluginDisplayName(meta, dirname)
     return "plugin"
 end
 
+local G_installed_plugins_cache = nil
+local G_installed_patches_cache = nil
+
 local function getLatestModificationTimestamp(path)
     if not path or path == "" then
         return 0
     end
     local attr = lfs.attributes(path)
-    if not attr then
-        return 0
-    end
-    local latest = attr.modification or 0
-    if attr.mode ~= "directory" then
-        return latest
-    end
-    for entry in lfs.dir(path) do
-        if entry ~= "." and entry ~= ".." then
-            local child_path = path .. "/" .. entry
-            local child_mtime = getLatestModificationTimestamp(child_path)
-            if child_mtime > latest then
-                latest = child_mtime
-            end
-        end
-    end
-    return latest
+    return attr and (attr.modification or 0) or 0
 end
 
 local function listInstalledPlugins()
+    local generation = InstallStore.getGeneration and InstallStore.getGeneration() or 0
+    if G_installed_plugins_cache and G_installed_plugins_cache.generation == generation then
+        return G_installed_plugins_cache.plugins
+    end
     local plugins = {}
     local hidden_paths = StorefrontSettings:readSetting(PluginPaths.HIDDEN_PLUGIN_PATHS_KEY) or {}
     for _, root in ipairs(PluginPaths.getLookupPaths()) do
@@ -1211,6 +1210,8 @@ local function listInstalledPlugins()
             for entry in lfs.dir(root) do
                 if entry ~= "." and entry ~= ".." and entry:match("%.koplugin$") then
                     local meta = loadPluginMeta(root, entry)
+                    local plugin_path = root .. "/" .. entry
+                    local attr = lfs.attributes(plugin_path)
                     local plugin = {
                         dirname = entry,
                         meta = meta,
@@ -1219,10 +1220,10 @@ local function listInstalledPlugins()
                         name = getPluginDisplayName(meta, entry),
                         version = meta and meta.version or nil,
                         root = root,
-                        path = root .. "/" .. entry,
+                        path = plugin_path,
                         meta_path_hint = entry .. "/_meta.lua",
+                        latest_mtime = attr and (attr.modification or 0) or 0,
                     }
-                    plugin.latest_mtime = getLatestModificationTimestamp(plugin.path)
                     table.insert(plugins, plugin)
                 end
             end
@@ -1231,6 +1232,10 @@ local function listInstalledPlugins()
     table.sort(plugins, function(a, b)
         return (a.name or a.dirname) < (b.name or b.dirname)
     end)
+    G_installed_plugins_cache = {
+        generation = generation,
+        plugins = plugins,
+    }
     return plugins
 end
 
@@ -6184,6 +6189,20 @@ local function compareRepoNameAsc(a, b)
     return repoUpdatedValue(a) > repoUpdatedValue(b)
 end
 
+local function compareRepoNameDesc(a, b)
+    local na = repoNameKey(a)
+    local nb = repoNameKey(b)
+    if na ~= nb then
+        return na > nb
+    end
+    local sa = repoStarsValue(a)
+    local sb = repoStarsValue(b)
+    if sa ~= sb then
+        return sa > sb
+    end
+    return repoUpdatedValue(a) > repoUpdatedValue(b)
+end
+
 local function compareRepoCreatedDesc(a, b)
     local ca = repoCreatedValue(a)
     local cb = repoCreatedValue(b)
@@ -6231,6 +6250,15 @@ local function comparePatchNameAsc(a, b)
     return patchNameKey(a) < patchNameKey(b)
 end
 
+local function comparePatchNameDesc(a, b)
+    local na = repoNameKey(a.repo)
+    local nb = repoNameKey(b.repo)
+    if na ~= nb then
+        return na > nb
+    end
+    return patchNameKey(a) > patchNameKey(b)
+end
+
 local function comparePatchRepoCreatedDesc(a, b)
     local ca = repoCreatedValue(a.repo)
     local cb = repoCreatedValue(b.repo)
@@ -6260,10 +6288,10 @@ local SORT_OPTIONS = {
         patch_comparator = comparePatchNameAsc,
     },
     {
-        id = "created_desc",
-        summary = _("Sort: New"),
-        repo_comparator = compareRepoCreatedDesc,
-        patch_comparator = comparePatchRepoCreatedDesc,
+        id = "name_desc",
+        summary = _("Sort: Name (Z → A)"),
+        repo_comparator = compareRepoNameDesc,
+        patch_comparator = comparePatchNameDesc,
     },
 }
 
@@ -6354,6 +6382,9 @@ function Storefront:loadBrowserStateFromSettings()
         scroll_offset = normalizeScrollOffset(decoded.scroll_offset),
         sort_mode = decoded.sort_mode or DEFAULT_SORT_MODE,
         search_in_readme = decoded.search_in_readme == true,
+        show_filter_bar_plugins = decoded.show_filter_bar_plugins == true,
+        show_filter_bar_patches = decoded.show_filter_bar_patches == true,
+        show_filter_bar_installed = decoded.show_filter_bar_installed ~= false,
     }
 end
 
@@ -6371,6 +6402,9 @@ function Storefront:saveBrowserState()
         scroll_offset = normalizeScrollOffset(self.browser_state.scroll_offset),
         sort_mode = self.browser_state.sort_mode or DEFAULT_SORT_MODE,
         search_in_readme = self.browser_state.search_in_readme == true,
+        show_filter_bar_plugins = self.browser_state.show_filter_bar_plugins == true,
+        show_filter_bar_patches = self.browser_state.show_filter_bar_patches == true,
+        show_filter_bar_installed = self.browser_state.show_filter_bar_installed ~= false,
     }
     self.browser_state.scroll_offset = state.scroll_offset
     local ok, encoded = pcall(json.encode, state)
@@ -6395,6 +6429,9 @@ function Storefront:ensureBrowserState()
             scroll_offset = nil,
             sort_mode = DEFAULT_SORT_MODE,
             search_in_readme = false,
+            show_filter_bar_plugins = false,
+            show_filter_bar_patches = false,
+            show_filter_bar_installed = true,
         }
         self:saveBrowserState()
         return
@@ -6415,6 +6452,15 @@ function Storefront:ensureBrowserState()
     end
     if type(self.browser_state.search_in_readme) ~= "boolean" then
         self.browser_state.search_in_readme = false
+    end
+    if type(self.browser_state.show_filter_bar_plugins) ~= "boolean" then
+        self.browser_state.show_filter_bar_plugins = false
+    end
+    if type(self.browser_state.show_filter_bar_patches) ~= "boolean" then
+        self.browser_state.show_filter_bar_patches = false
+    end
+    if type(self.browser_state.show_filter_bar_installed) ~= "boolean" then
+        self.browser_state.show_filter_bar_installed = true
     end
 end
 
@@ -6495,9 +6541,10 @@ function Storefront:getFilteredDescriptors(kind)
     local rf_key = rf and (rf.kind .. "_" .. (rf.matches_count or 0)) or ""
     local fetched = Cache.getLastFetched and Cache.getLastFetched(kind) or 0
     local gen = InstallStore.getGeneration and InstallStore.getGeneration() or 0
-    local cache_key = string.format("%s|%s|%s|%s|%s|%s|%s|%s|%s",
+    local cache_key = string.format("%s|%s|%s|%s|%s|%s|%s|%s|%s|%s",
         tostring(kind), tostring(search), tostring(self.browser_state.search_in_readme),
         tostring(self.browser_state.min_stars), tostring(self.browser_state.owner),
+        tostring(self.browser_state.sort_mode),
         tostring(self.browser_state.include_zero_star_forks), rf_key, tostring(fetched), tostring(gen))
         
     if self._filtered_descriptors_cache and self._filtered_descriptors_cache.key == cache_key then
@@ -6784,7 +6831,8 @@ end
 
 function Storefront:collectPatchEntries(repos)
     local search = normalizedLower(self.browser_state.search_text)
-    local cache_key = tostring(#repos) .. "_" .. search .. "_" .. (self.browser_state.search_in_readme and "1" or "0")
+    local sort_mode = tostring(self.browser_state.sort_mode)
+    local cache_key = tostring(#repos) .. "_" .. search .. "_" .. (self.browser_state.search_in_readme and "1" or "0") .. "_" .. sort_mode
     if self._cached_patch_entries and self._cached_patch_entries_key == cache_key then
         return self._cached_patch_entries
     end
@@ -6937,18 +6985,25 @@ function Storefront:calculateDynamicPageSize(tab_name)
     local tab_bar_height = sc(38)
     local footer_height = sc(56)
     
-    local has_toolbar = (tab_name == "Installed")
+    local has_toolbar = (tab_name == "Installed" and self.browser_state and self.browser_state.show_filter_bar_installed ~= false)
+        or (tab_name == "Plugins" and self.browser_state and self.browser_state.show_filter_bar_plugins == true)
+        or (tab_name == "Patches" and self.browser_state and self.browser_state.show_filter_bar_patches == true)
     local toolbar_height = 0
     if has_toolbar then
         toolbar_height = sc(36) + Size.span.vertical_default
     end
     
+    -- One divider below the tab bar, plus one more below the toolbar if present
     local divider_height = Size.line.thin + Size.span.vertical_default
     if has_toolbar then
         divider_height = divider_height + Size.line.thin + Size.span.vertical_default
     end
+
+    -- list_container has padding = Size.padding.default on all sides,
+    -- consuming vertical space at the top and bottom of the scroll area
+    local list_padding = 2 * Size.padding.default
     
-    local body_height = screen_h - title_height - tab_bar_height - toolbar_height - divider_height - footer_height
+    local body_height = screen_h - title_height - tab_bar_height - toolbar_height - divider_height - footer_height - list_padding
     if body_height < math.floor(screen_h * 0.5) then
         body_height = math.floor(screen_h * 0.5)
     end
@@ -6959,8 +7014,12 @@ function Storefront:calculateDynamicPageSize(tab_name)
     else -- Updates
         item_height = sc(82)
     end
+
+    -- Each item slot includes the item itself plus a separator (thin line between
+    -- items, VerticalSpan after the last). Use VerticalSpan as the conservative value.
+    local slot_height = item_height + Size.span.vertical_default
     
-    return math.max(1, math.floor(body_height / item_height))
+    return math.max(1, math.floor(body_height / slot_height))
 end
 
 function Storefront:ensureInstalledState()
@@ -7248,6 +7307,13 @@ function Storefront:buildInstalledEntries()
             text = _("No installed items found."),
             select_enabled = false,
         })
+        table.insert(page_items, {
+            text = _("Clear search/filters"),
+            is_clear_button = true,
+            callback = function()
+                self:clearSearchAndFilters()
+            end,
+        })
     else
         for i = start_index, end_index do
             local entry = items[i]
@@ -7257,6 +7323,35 @@ function Storefront:buildInstalledEntries()
     end
 
     return page_items, total_pages
+end
+
+function Storefront:clearSearchAndFilters()
+    self:ensureBrowserState()
+    self:ensureInstalledState()
+    self:ensureUpdatesState()
+    self:ensurePatchUpdatesState()
+
+    self.browser_state.search_text = ""
+    self.browser_state.owner = ""
+    self.browser_state.min_stars = 0
+    self.browser_state.page = 1
+    self.browser_state.scroll_offset = nil
+
+    self.installed_state.search_text = ""
+    self.installed_state.filter_type = "all"
+    self.installed_state.filter_default = "all"
+    self.installed_state.filter_status = "all"
+
+    if self.updates_state then
+        self.updates_state.filter_only_outdated = false
+    end
+    if self.patch_updates_state then
+        self.patch_updates_state.filter_only_outdated = false
+    end
+
+    self:saveBrowserState()
+    self:saveInstalledState()
+    self:reopenBrowser()
 end
 
 function Storefront:buildBrowserEntries()
@@ -7357,6 +7452,13 @@ function Storefront:buildBrowserEntries()
         table.insert(items, {
             text = empty_text,
             select_enabled = false,
+        })
+        table.insert(items, {
+            text = _("Clear search/filters"),
+            is_clear_button = true,
+            callback = function()
+                self:clearSearchAndFilters()
+            end,
         })
     else
         for i = start_index, end_index do
@@ -7597,10 +7699,47 @@ function Storefront:showBrowser(kind)
     self.browser_focus_hint = nil
 
     local toolbar_buttons
-    if current_tab == "Updates" then
+    local show_plugins_bar = (current_tab == "Plugins" and self.browser_state and self.browser_state.show_filter_bar_plugins == true)
+    local show_patches_bar = (current_tab == "Patches" and self.browser_state and self.browser_state.show_filter_bar_patches == true)
+    if show_plugins_bar or show_patches_bar then
+        toolbar_buttons = {}
+        if (self.browser_state.search_text or "") ~= "" then
+            table.insert(toolbar_buttons, {
+                id = "search",
+                text = _("Search: ") .. self.browser_state.search_text,
+                callback = function() self:showCatalogFilter() end
+            })
+        end
+        if (self.browser_state.owner or "") ~= "" then
+            table.insert(toolbar_buttons, {
+                id = "owner",
+                text = _("Owner: ") .. self.browser_state.owner,
+                callback = function() self:showCatalogFilter() end
+            })
+        end
+        if (self.browser_state.min_stars or 0) > 0 then
+            table.insert(toolbar_buttons, {
+                id = "stars",
+                text = "★ " .. tostring(self.browser_state.min_stars) .. "+",
+                callback = function() self:showCatalogFilter() end
+            })
+        end
+        local sort_opt = self:getSortOption(self.browser_state.sort_mode)
+        table.insert(toolbar_buttons, {
+            id = "sort",
+            text = sort_opt and sort_opt.summary or _("Sort"),
+            callback = function() self:browserAdvanceSort() end
+        })
+        table.insert(toolbar_buttons, {
+            id = "filter_dialog",
+            text = _("Filter..."),
+            callback = function() self:showCatalogFilter() end
+        })
+    elseif current_tab == "Updates" then
         toolbar_buttons = nil
     elseif current_tab == "Installed" then
         self:ensureInstalledState()
+        if self.browser_state.show_filter_bar_installed ~= false then
         toolbar_buttons = {}
         if (self.installed_state.search_text or "") ~= "" then
             table.insert(toolbar_buttons, {
@@ -7652,6 +7791,7 @@ function Storefront:showBrowser(kind)
             text = _("Filter..."),
             callback = function() self:showInstalledFilter() end
         })
+        end -- show_filter_bar_installed
     end
 
     local current_generation = InstallStore.getGeneration and InstallStore.getGeneration() or 0
@@ -7684,6 +7824,12 @@ function Storefront:showBrowser(kind)
         toolbar_buttons = toolbar_buttons,
         current_tab = current_tab,
         updates_count = updates_count,
+        show_filter_bar_plugins = self.browser_state and self.browser_state.show_filter_bar_plugins == true,
+        show_filter_bar_patches = self.browser_state and self.browser_state.show_filter_bar_patches == true,
+        show_filter_bar_installed = self.browser_state and self.browser_state.show_filter_bar_installed ~= false,
+        on_toggle_filter_bar = function(tab_name)
+            self:toggleFilterBar(tab_name)
+        end,
         updates_filter_only_outdated = self.updates_state.filter_only_outdated,
         on_updates_filter = function(outdated_only)
             self.updates_state.filter_only_outdated = outdated_only
@@ -7804,6 +7950,23 @@ end
 
 function Storefront:showInstalledFilter()
     require("storefront_filter_dialog"):showInstalledFilter(self)
+end
+
+function Storefront:showCatalogFilter()
+    require("storefront_filter_dialog"):showCatalogFilter(self)
+end
+
+function Storefront:toggleFilterBar(tab_name)
+    self:ensureBrowserState()
+    if tab_name == "Plugins" then
+        self.browser_state.show_filter_bar_plugins = not self.browser_state.show_filter_bar_plugins
+    elseif tab_name == "Patches" then
+        self.browser_state.show_filter_bar_patches = not self.browser_state.show_filter_bar_patches
+    elseif tab_name == "Installed" then
+        self.browser_state.show_filter_bar_installed = not (self.browser_state.show_filter_bar_installed ~= false)
+    end
+    self:saveBrowserState()
+    self:reopenBrowser()
 end
 
 function Storefront:showStorefrontSettingsDialog()

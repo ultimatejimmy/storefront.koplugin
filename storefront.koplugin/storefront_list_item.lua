@@ -1,4 +1,6 @@
 local Blitbuffer = require("ffi/blitbuffer")
+local Button = require("ui/widget/button")
+local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
@@ -33,9 +35,40 @@ function StorefrontListItem:init()
     local text_color = (entry.dim or entry.select_enabled == false) and Blitbuffer.COLOR_DARK_GRAY or Blitbuffer.COLOR_BLACK
     local content_inner = content_width - 2 * Size.padding.default
 
-    local is_control = entry.callback and not entry.is_entry and entry.select_enabled ~= false
+    local is_clear_button = entry.is_clear_button == true
+    local is_control = entry.callback and not entry.is_entry and entry.select_enabled ~= false and not is_clear_button
 
-    if is_control then
+    if is_clear_button then
+        -- Centered pill chip style matching toolbar chips
+        local sc = function(val) return Device.screen:scaleBySize(val) end
+        local btn = Button:new{
+            text = entry.text or "",
+            text_font_size = 14,
+            padding = sc(8),
+            padding_left = sc(16),
+            padding_right = sc(16),
+            radius = sc(16),
+            bordersize = sc(1),
+            background = Blitbuffer.COLOR_WHITE,
+            callback = entry.callback,
+            show_parent = self.dialog,
+        }
+        local chip_h = btn:getSize().h + sc(8)
+        self.frame = FrameContainer:new{
+            padding_top = sc(4),
+            padding_bottom = sc(4),
+            bordersize = 0,
+            CenterContainer:new{
+                dimen = Geom:new{ w = content_width, h = chip_h },
+                btn,
+            },
+        }
+        self[1] = self.frame
+        self.dimen = self.frame:getSize()
+        -- Wire tap directly to the button callback
+        self.ges_events = {}
+        self._clear_btn = btn
+    elseif is_control then
         -- Control rows (Filter / Sort / Settings links) keep the existing TextBox representation with a frame
         local face = Font:getFace("smallinfofont")
         local text_box = TextBoxWidget:new{

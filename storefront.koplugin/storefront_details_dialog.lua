@@ -887,14 +887,16 @@ img { max-width: 100%%; height: auto; display: block; margin-left: auto; margin-
             UIManager:setDirty(self, "ui")
         end
 
-        if NetworkMgr and type(NetworkMgr.runWhenOnline) == "function" then
-            NetworkMgr:runWhenOnline(executeLoad)
-        else
-            executeLoad()
-        end
+        UIManager:scheduleIn(0.01, function()
+            if NetworkMgr and type(NetworkMgr.runWhenOnline) == "function" then
+                NetworkMgr:runWhenOnline(executeLoad)
+            else
+                executeLoad()
+            end
+        end)
     end
 
-    -- Initial load for default active tab
+    -- Initial load for default active tab (asynchronously scheduled so dialog opens instantly)
     loadContent(self.active_tab)
 
     -- -----------------------------------------------------------------------

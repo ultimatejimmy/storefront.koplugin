@@ -58,7 +58,11 @@ local StorefrontBrowserDialog = FocusManager:extend{
     on_settings_tap = nil,
     current_tab = "Plugins",
     updates_count = 0,
+    show_filter_bar_plugins = false,
+    show_filter_bar_patches = false,
+    show_filter_bar_installed = true,
     on_tab_switch = nil,
+    on_toggle_filter_bar = nil,
 }
 
 function StorefrontBrowserDialog:buildTabBar()
@@ -150,13 +154,89 @@ function StorefrontBrowserDialog:buildTabBar()
     end
 
     local tab_bar_group = HorizontalGroup:new(tab_widgets)
+    local frame_content = tab_bar_group
+
+    if self.current_tab == "Plugins" or self.current_tab == "Patches" or self.current_tab == "Installed" then
+        local is_bar_visible
+        if self.current_tab == "Plugins" then
+            is_bar_visible = self.show_filter_bar_plugins == true
+        elseif self.current_tab == "Patches" then
+            is_bar_visible = self.show_filter_bar_patches == true
+        else -- Installed
+            is_bar_visible = self.show_filter_bar_installed ~= false
+        end
+        local filter_icon = ImageWidget:new{
+            file = getAssetPath("filter.svg"),
+            width = sc(20),
+            height = sc(20),
+            scale_factor = 0,
+            alpha = true,
+        }
+
+        local icon_elements = { filter_icon }
+        if is_bar_visible then
+            local badge_dot = FrameContainer:new{
+                padding = sc(3),
+                bordersize = 0,
+                background = Blitbuffer.COLOR_BLACK,
+                radius = sc(3),
+                VerticalSpan:new{ width = 0 },
+            }
+            table.insert(icon_elements, HorizontalSpan:new{ width = sc(3) })
+            table.insert(icon_elements, badge_dot)
+        end
+
+        local filter_btn_content = HorizontalGroup:new(icon_elements)
+        local filter_btn = InputContainer:new{
+            FrameContainer:new{
+                padding = sc(4),
+                padding_left = sc(6),
+                padding_right = sc(6),
+                bordersize = 0,
+                filter_btn_content,
+            }
+        }
+        filter_btn.ges_events = {
+            Tap = {
+                GestureRange:new{
+                    ges = "tap",
+                    range = function()
+                        local dim = filter_btn.dimen or { x = 0, y = 0, w = 0, h = 0 }
+                        return Geom:new{
+                            x = dim.x or 0,
+                            y = dim.y or 0,
+                            w = dim.w or 0,
+                            h = dim.h or 0
+                        }
+                    end,
+                }
+            }
+        }
+        filter_btn.onTap = function()
+            if self.on_toggle_filter_bar then
+                self.on_toggle_filter_bar(self.current_tab)
+            end
+            return true
+        end
+
+        local right_container = RightContainer:new{
+            dimen = Geom:new{ w = self.width - sc(24), h = tab_bar_group:getSize().h },
+            filter_btn,
+        }
+
+        frame_content = OverlapGroup:new{
+            tab_bar_group,
+            right_container,
+        }
+    end
+
     return FrameContainer:new{
         padding_top = sc(12),
         padding_left = sc(12),
         padding_right = sc(12),
         padding_bottom = 0,
         bordersize = 0,
-        tab_bar_group,
+        frame_content,
     }
 end
 
