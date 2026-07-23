@@ -9073,8 +9073,8 @@ function Storefront:init()
     self.ui.menu:registerToMainMenu(self)
     
     -- Migrate settings to page size 5
-    StorefrontSettings:writeSetting(BROWSER_PAGE_SIZE_KEY, 5)
-    StorefrontSettings:writeSetting(MANAGE_PAGE_SIZE_KEY, 5)
+    StorefrontSettings:saveSetting(BROWSER_PAGE_SIZE_KEY, 5)
+    StorefrontSettings:saveSetting(MANAGE_PAGE_SIZE_KEY, 5)
     StorefrontSettings:flush()
 
     -- Cleanup legacy test files from plugin directory if updating from an older version
@@ -9168,16 +9168,17 @@ end
 function Storefront:onDispatcherRegisterActions()
     Dispatcher:registerAction("storefront_open", {
         category = "none",
-        event = "OpenStorefrontMenu",
+        event = "StorefrontOpen",
         title = _("Open Storefront"),
         general = true,
     })
 end
 
-function Storefront:onOpenStorefrontMenu()
+function Storefront:onStorefrontOpen()
     UIManager:nextTick(function()
         self:showBrowser()
     end)
+    return true
 end
 
 Storefront.listInstalledPlugins = listInstalledPlugins
