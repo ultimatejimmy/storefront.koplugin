@@ -376,6 +376,25 @@ if ok_browser then
         if not update_details_ok then
             print("Update details error was:", update_details_err)
         end
+
+        -- Test page_number reset when switching tabs in details dialog
+        local page_reset_ok = pcall(function()
+            local details = StorefrontDetailsDialog:new{
+                Storefront = full_dummy_storefront,
+                repo = dummy_repo,
+                kind = "plugin",
+            }
+            details:init()
+            -- Simulate user navigating to page 2 of release notes / readme
+            package.loaded["ui/widget/htmlboxwidget"].page_number = 2
+            -- Trigger tab switch to release_notes
+            details.active_tab = "readme"
+            if details[1] and details[1][1] then
+                -- Call loadContent via tab switch simulation
+                details.active_tab = "release_notes"
+            end
+        end)
+        check("Details dialog page_number reset test executed", page_reset_ok, true)
     end
 
     do

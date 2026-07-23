@@ -734,8 +734,9 @@ img { max-width: 100%%; height: auto; display: block; margin-left: auto; margin-
     local next_btn
 
     local function updatePagination()
-        local current = html_box.page_number or 1
         local total   = html_box.page_count  or 1
+        html_box.page_number = math.max(1, math.min(html_box.page_number or 1, total))
+        local current = html_box.page_number
         if page_indicator.setText then
             page_indicator:setText(string.format("%d / %d", current, total), readme_w / 3)
         end
@@ -827,6 +828,7 @@ img { max-width: 100%%; height: auto; display: block; margin-left: auto; margin-
         self.load_req_id = (self.load_req_id or 0) + 1
         local current_req_id = self.load_req_id
 
+        html_box.page_number = 1
         if rawget(html_box, "_bb") then html_box._bb = nil end
         if rawget(html_box, "bb") then html_box.bb = nil end
 
@@ -870,17 +872,20 @@ img { max-width: 100%%; height: auto; display: block; margin-left: auto; margin-
                 local html_content = util.readFromFile(path)
                 if html_content and html_content ~= "" then
                     local cache_dir = require("datastorage"):getDataDir() .. (tab_name == "release_notes" and "/cache/Storefront/release_notes" or "/cache/Storefront/readme")
+                    html_box.page_number = 1
                     html_box:setContent(html_content, readme_css, sc(18), false, false, cache_dir)
                     if rawget(html_box, "_bb") then html_box._bb = nil end
                     if rawget(html_box, "bb") then html_box.bb = nil end
                     updatePagination()
                 else
                     local msg = (tab_name == "release_notes") and _("Unable to read Release Notes.") or _("Unable to read README.")
+                    html_box.page_number = 1
                     html_box:setContent("<p style='text-align:center;color:red;'>" .. msg .. "</p>", readme_css, sc(18))
                     updatePagination()
                 end
             else
                 local msg = (tab_name == "release_notes") and _("No Release Notes available.") or _("No README available.")
+                html_box.page_number = 1
                 html_box:setContent("<p style='text-align:center;color:gray;'>" .. msg .. "</p>", readme_css, sc(18))
                 updatePagination()
             end
