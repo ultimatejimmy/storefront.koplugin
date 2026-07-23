@@ -41,7 +41,7 @@ local function loadStorefrontMeta()
     return {
         name = "Storefront",
         version = "1.0.0",
-        fullname = "ultimatejimmy",
+        author = "ultimatejimmy",
         description = _("Plugin and patch browser for KOReader."),
     }
 end
@@ -118,6 +118,7 @@ function StorefrontAboutDialog.checkForUpdates(Storefront)
             owner = "ultimatejimmy",
             name = "storefront.koplugin",
             full_name = "ultimatejimmy/storefront.koplugin",
+            kind = "plugin",
             description = _("Plugin and patch browser for KOReader."),
         }
 
@@ -127,8 +128,8 @@ function StorefrontAboutDialog.checkForUpdates(Storefront)
                 ok_text = _("Update"),
                 cancel_text = _("Cancel"),
                 ok_callback = function()
-                    if Storefront and type(Storefront.promptPluginInstallOptions) == "function" then
-                        Storefront:promptPluginInstallOptions(repo_desc, target_release)
+                    if Storefront and type(Storefront.installPluginFromRepo) == "function" then
+                        Storefront:installPluginFromRepo(repo_desc)
                     end
                 end,
             })
@@ -159,7 +160,7 @@ function StorefrontAboutDialog.show(Storefront, on_close_cb)
             UIManager:close(overlay, "ui")
         end
 
-        -- Header
+        -- Title Header (Matching Settings Card style)
         local title_label = TextWidget:new{
             text = _("About Storefront"),
             face = Font:getFace("cfont", title_font_size),
@@ -182,195 +183,140 @@ function StorefrontAboutDialog.show(Storefront, on_close_cb)
             }
         }
 
-        -- Metadata Info Block
-        local name_str = meta.fullname or meta.name or "Storefront"
-        local ver_str = meta.version or "1.0.0"
-        local author_str = meta.author or "ultimatejimmy"
-        local desc_str = meta.description or _("Plugin and patch browser for KOReader.")
-
-        local meta_text = string.format("%s v%s\n%s: %s\n\n%s", name_str, ver_str, _("Author"), author_str, desc_str)
-
-        local meta_box = TextBoxWidget:new{
-            text = meta_text,
-            face = Font:getFace("cfont", ui_font_size - 1),
-            fgcolor = Blitbuffer.COLOR_BLACK,
-            width = dialog_w - sc(24),
-            alignment = "left",
-        }
-
-        local meta_frame = FrameContainer:new{
-            bordersize = 0,
-            padding = sc(10),
-            width = dialog_w - sc(4),
-            meta_box,
-        }
-
-        table.insert(content_vg, meta_frame)
-
-        -- Section Divider: Update Channel
-        table.insert(content_vg, LineWidget:new{
-            dimen = Geom:new{ w = dialog_w - sc(4), h = sc(1) },
-            background = Blitbuffer.COLOR_DARK_GRAY,
-        })
-
-        local channel_header = TextWidget:new{
-            text = _("Storefront Update Channel"),
-            face = Font:getFace("cfont", ui_font_size),
-            bold = true,
-            fgcolor = storefront_theme.color_label_dim,
-        }
-
-        local channel_header_container = FrameContainer:new{
-            padding = sc(10),
-            bordersize = 0,
-            channel_header,
-        }
-        table.insert(content_vg, channel_header_container)
-
-        -- Option Picker Radio Buttons (Stable vs Beta)
-        local options = {
-            {
-                key = "stable",
-                label = _("Stable"),
-                desc = _("Official stable releases only"),
-            },
-            {
-                key = "beta",
-                label = _("Beta"),
-                desc = _("Include pre-releases & beta builds"),
-            },
-        }
-
-        for _, opt in ipairs(options) do
-            local is_selected = (current_channel == opt.key)
-            local bullet_str = is_selected and "● " or "○ "
-            local border_w = is_selected and sc(2) or sc(1)
-            local border_col = is_selected and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY
-
-            local bullet_widget = TextWidget:new{
-                text = bullet_str,
-                face = Font:getFace("cfont", ui_font_size),
-                bold = is_selected,
+        -- Helper to create section header (Matching Settings Card style)
+        local function create_section_header(title)
+            local label = TextWidget:new{
+                text = title:upper(),
+                face = Font:getFace("cfont", ui_font_size - 3),
+                bold = true,
                 fgcolor = Blitbuffer.COLOR_BLACK,
             }
+            return FrameContainer:new{
+                padding = sc(5),
+                padding_left = sc(8),
+                bordersize = 0,
+                width = dialog_w - sc(4),
+                background = Blitbuffer.COLOR_LIGHT_GRAY,
+                label,
+            }
+        end
 
-            local label_box = TextBoxWidget:new{
-                text = string.format("%s - %s", opt.label, opt.desc),
-                face = Font:getFace("cfont", ui_font_size - 1),
-                bold = is_selected,
-                fgcolor = Blitbuffer.COLOR_BLACK,
-                width = dialog_w - sc(54),
+        -- Helper to create setting row (Matching Settings Card style)
+        local function create_setting_row(left_text, right_widget, callback)
+            local frame_padding = sc(10)
+            local avail_w = dialog_w - (frame_padding * 2) - sc(4)
+            local right_w = right_widget and ((right_widget.getSize and right_widget:getSize().w) or sc(60)) or 0
+
+            local max_left_w = avail_w - right_w - sc(8)
+            if max_left_w < sc(60) then
+                max_left_w = sc(60)
+            end
+
+            local txt = TextBoxWidget:new{
+                text = left_text,
+                face = Font:getFace("cfont", ui_font_size),
+                fgcolor = callback and Blitbuffer.COLOR_BLACK or storefront_theme.color_label_dim,
+                width = max_left_w,
                 alignment = "left",
             }
 
-            local row_content = HorizontalGroup:new{
-                bullet_widget,
-                HorizontalSpan:new{ width = sc(4) },
-                label_box,
+            local left_used_w = (txt.getSize and txt:getSize().w) or max_left_w
+            local spacer_w = avail_w - left_used_w - right_w
+            if spacer_w < sc(8) then
+                spacer_w = sc(8)
+            end
+
+            local row_elements = { txt, HorizontalSpan:new{ width = spacer_w } }
+            if right_widget then
+                table.insert(row_elements, right_widget)
+            end
+
+            local frame = FrameContainer:new{
+                bordersize = 0,
+                padding = frame_padding,
+                width = dialog_w - sc(4),
+                HorizontalGroup:new(row_elements),
             }
 
-            local opt_frame = FrameContainer:new{
-                bordersize = border_w,
-                color = border_col,
-                radius = sc(6),
-                padding = sc(8),
-                width = dialog_w - sc(16),
-                background = storefront_theme.color_bg,
-                row_content,
-            }
+            if not callback then
+                return frame
+            end
 
-            local item = InputContainer:new{ opt_frame }
-            local row_size = opt_frame:getSize() or { w = dialog_w - sc(16), h = 0 }
-            local opt_key = opt.key
-
+            local item = InputContainer:new{ frame }
+            local row_size = frame:getSize() or { w = dialog_w - sc(4), h = 0 }
             item.ges_events = {
                 Tap = {
                     GestureRange:new{
                         ges = "tap",
                         range = function()
                             local dim = item.dimen
-                            if not dim then
-                                return Geom:new{ x = -1, y = -1, w = 1, h = 1 }
-                            end
+                            if not dim then return Geom:new{ x = -1, y = -1, w = 1, h = 1 } end
                             return Geom:new{
                                 x = dim.x or 0,
                                 y = dim.y or 0,
-                                w = row_size.w or (dialog_w - sc(16)),
+                                w = row_size.w or (dialog_w - sc(4)),
                                 h = row_size.h or 0,
                             }
                         end
                     }
                 }
             }
-
             item.onTap = function()
-                current_channel = opt_key
-                StorefrontAboutDialog.setChannel(opt_key)
-                refresh()
+                callback()
                 return true
             end
-
-            table.insert(content_vg, FrameContainer:new{
-                bordersize = 0,
-                padding_left = sc(6),
-                padding_right = sc(6),
-                padding_bottom = sc(4),
-                item,
-            })
+            return item
         end
 
-        -- Check for updates Button
-        local check_text_widget = TextWidget:new{
-            text = _("Check for updates"),
-            face = Font:getFace("cfont", ui_font_size),
-            bold = true,
-            fgcolor = Blitbuffer.COLOR_BLACK,
+        -- SECTION 1: ABOUT
+        table.insert(content_vg, create_section_header(_("About")))
+
+        -- Version Row
+        local ver_widget = TextWidget:new{
+            text = string.format("v%s", meta.version or "1.0.0"),
+            face = Font:getFace("cfont", ui_font_size - 1),
+            fgcolor = storefront_theme.color_label_dim,
         }
-        local check_row_content = HorizontalGroup:new{
-            HorizontalSpan:new{ width = (dialog_w - check_text_widget:getSize().w) / 2 - sc(10) },
-            check_text_widget,
+        table.insert(content_vg, create_setting_row(_("Version"), ver_widget, nil))
+
+        -- Author Row
+        local author_widget = TextWidget:new{
+            text = meta.author or "ultimatejimmy",
+            face = Font:getFace("cfont", ui_font_size - 1),
+            fgcolor = storefront_theme.color_label_dim,
         }
-        local check_frame = FrameContainer:new{
-            bordersize = 0,
-            padding = sc(10),
-            width = dialog_w - sc(4),
-            check_row_content,
+        table.insert(content_vg, create_setting_row(_("Author"), author_widget, nil))
+
+        -- SECTION 2: UPDATES
+        table.insert(content_vg, create_section_header(_("Updates")))
+
+        -- Update Channel Row
+        local channel_label = (current_channel == "beta") and _("Beta") or _("Stable")
+        local channel_widget = TextWidget:new{
+            text = channel_label,
+            face = Font:getFace("cfont", ui_font_size - 1),
+            fgcolor = storefront_theme.color_label_dim,
         }
-        local check_btn = InputContainer:new{ check_frame }
-        local check_size = check_frame:getSize() or { w = dialog_w - sc(4), h = 0 }
-        check_btn.ges_events = {
-            Tap = {
-                GestureRange:new{
-                    ges = "tap",
-                    range = function()
-                        local dim = check_btn.dimen
-                        if not dim then
-                            return Geom:new{ x = -1, y = -1, w = 1, h = 1 }
-                        end
-                        return Geom:new{
-                            x = dim.x or 0,
-                            y = dim.y or 0,
-                            w = check_size.w or (dialog_w - sc(4)),
-                            h = check_size.h or 0,
-                        }
-                    end
-                }
-            }
-        }
-        check_btn.onTap = function()
+        table.insert(content_vg, create_setting_row(_("Update channel"), channel_widget, function()
+            local next_ch = (current_channel == "beta") and "stable" or "beta"
+            StorefrontAboutDialog.setChannel(next_ch)
+            current_channel = next_ch
+            refresh()
+        end))
+
+        -- Check for updates Row
+        table.insert(content_vg, create_setting_row(_("Check for updates"), nil, function()
             UIManager:close(overlay, "ui")
             StorefrontAboutDialog.checkForUpdates(Storefront)
-            return true
-        end
-        table.insert(content_vg, check_btn)
+        end))
 
-        -- Bottom Divider line
+        -- Bottom Divider Line
         table.insert(content_vg, LineWidget:new{
             dimen = Geom:new{ w = dialog_w - sc(4), h = sc(1) },
             background = Blitbuffer.COLOR_DARK_GRAY,
         })
 
-        -- Close Button
+        -- Close Row
         local close_text_widget = TextWidget:new{
             text = _("Close"),
             face = Font:getFace("cfont", ui_font_size),
@@ -395,9 +341,7 @@ function StorefrontAboutDialog.show(Storefront, on_close_cb)
                     ges = "tap",
                     range = function()
                         local dim = close_btn.dimen
-                        if not dim then
-                            return Geom:new{ x = -1, y = -1, w = 1, h = 1 }
-                        end
+                        if not dim then return Geom:new{ x = -1, y = -1, w = 1, h = 1 } end
                         return Geom:new{
                             x = dim.x or 0,
                             y = dim.y or 0,
@@ -410,14 +354,12 @@ function StorefrontAboutDialog.show(Storefront, on_close_cb)
         }
         close_btn.onTap = function()
             UIManager:close(overlay, "ui")
-            if on_close_cb then
-                on_close_cb()
-            end
+            if on_close_cb then on_close_cb() end
             return true
         end
         table.insert(content_vg, close_btn)
 
-        -- Build modal card
+        -- Build modal card (Matching Settings Card style 1:1)
         local card = FrameContainer:new{
             padding = 0,
             radius = sc(12),
@@ -432,17 +374,13 @@ function StorefrontAboutDialog.show(Storefront, on_close_cb)
             align = "center",
             vertical_align = "center",
             dimen = Geom:new{ w = sw, h = sh },
-            key_events = {
-                Close = { { "Back" } }
-            },
+            key_events = { Close = { { "Back" } } },
             card
         }
 
         overlay.onClose = function()
             UIManager:close(overlay, "ui")
-            if on_close_cb then
-                on_close_cb()
-            end
+            if on_close_cb then on_close_cb() end
             return true
         end
 
