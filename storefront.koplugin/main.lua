@@ -9169,7 +9169,7 @@ function Storefront:onDispatcherRegisterActions()
     Dispatcher:registerAction("storefront_open", {
         category = "none",
         event = "StorefrontOpen",
-        title = _("Open Storefront"),
+        title = _("Storefront: Open"),
         general = true,
     })
 end

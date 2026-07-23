@@ -17,15 +17,34 @@ Always reference design tokens from `storefront_theme` and `Screen:scaleBySize(v
 | `sc(val)` | `Device.screen:scaleBySize(val)` | Scales pixel sizes dynamically to device DPI |
 | `color_bg` | `Blitbuffer.COLOR_WHITE` | Card and modal background color |
 | `color_border` | `Blitbuffer.COLOR_BLACK` | Main high-contrast border color |
-| `color_label_dim` | `Blitbuffer.Color8(120)` | Faded/secondary text labels and subtitles |
+| `color_label_dim` | `Blitbuffer.Color8(40)` | High-contrast secondary text labels and subtitles (E-ink sharp) |
 | `border_line_h` | `sc(1)` | Divider line thickness (`LineWidget`) |
 | `border_window` | `sc(2)` | Card window border thickness |
 | `border_btn` | `sc(2)` | Selected option / button border thickness |
 | `radius_window` | `sc(12)` | Rounded corner radius for modals & cards |
 | `radius_btn` | `sc(18)` | Pill/button corner radius |
 | `gap` | `sc(8)` | Standard vertical/horizontal spacing |
-| `face_label_size` | `16` | Standard body / row font size (`cfont`) |
-| `title_font_size` | `18` | Section & modal header font size (`cfont`) |
+| `face_label_size` | `18` | Standard body / setting row font size (`cfont`) |
+| `title_font_size` | `22` | Modal card header title font size (`cfont`) |
+| `subtext_font_size` | `16` | Secondary values, status indicators, and subtitles |
+| `section_header_font_size` | `16` | Category / section header font size (`cfont`, bold) |
+
+---
+
+## 1.1 E-Ink Readability & Typography Standards
+
+To guarantee high legibility across E-ink devices (e.g. Kindle, Kobo, Onyx Boox):
+
+1. **Eliminate Faint Gray Text (No Dithering Noise)**:
+   - E-ink hardware renders mid-level grays (e.g. `Color8(120)`) using dithered pixel patterns, making text appear blurry, fuzzy, and unreadable.
+   - Text labels, titles, and subtext MUST use high-contrast dark values (`Blitbuffer.COLOR_BLACK` or dark gray `Blitbuffer.Color8(40)` minimum).
+2. **Setting Row Label Contrast**:
+   - Setting row text labels MUST remain solid black (`COLOR_BLACK`) regardless of whether the row is interactive or non-interactive/informational. Never gray out setting row titles.
+3. **Font Scale Minimums**:
+   - **Modal Header Titles**: `22pt` bold (`title_font_size`).
+   - **Row Labels**: `18pt` (`face_label_size`).
+   - **Section Headers**: `16pt` bold uppercase (`section_header_font_size`).
+   - **Subtext & Secondary Indicators**: `16pt` minimum (`subtext_font_size`).
 
 ---
 
