@@ -345,7 +345,31 @@ function StorefrontDetailsDialog:init()
                 if self.patch then
                     self.Storefront:installPatchFromRepo(self.repo, self.patch)
                 else
-                    self.Storefront:installPluginFromRepo(self.repo)
+                    local rel = (self.update_item and (self.update_item.remote or self.update_item.remote_entry)) or self.repo.latest_release
+                    local asset = nil
+                    if rel and type(rel) == "table" then
+                        if rel.assets and type(rel.assets) == "table" and #rel.assets > 0 then
+                            for _, a in ipairs(rel.assets) do
+                                if a.name and a.name:match("%.zip$") and a.browser_download_url then
+                                    asset = a
+                                    break
+                                end
+                            end
+                            if not asset then asset = rel.assets[1] end
+                        elseif rel.zipball_url then
+                            asset = { name = (rel.tag_name or "release") .. ".zip", browser_download_url = rel.zipball_url }
+                        elseif rel.tag_name then
+                            local owner_name = self.repo.owner or "ultimatejimmy"
+                            local tag_url = string.format("https://github.com/%s/%s/archive/refs/tags/%s.zip", owner_name, self.repo.name, rel.tag_name)
+                            asset = { name = rel.tag_name .. ".zip", browser_download_url = tag_url }
+                        end
+                    end
+
+                    if asset and type(self.Storefront.installPluginFromReleaseAsset) == "function" then
+                        self.Storefront:installPluginFromReleaseAsset(self.repo, rel, asset)
+                    else
+                        self.Storefront:installPluginFromRepo(self.repo)
+                    end
                 end
             end,
         }
@@ -738,7 +762,8 @@ img { max-width: 100%%; height: auto; display: block; margin-left: auto; margin-
             local pid, parent_read_fd = ffiutil.runInSubProcess(function(pid, child_write_fd)
                 local ok, path
                 if tab_name == "release_notes" then
-                    ok, path = RepoContent.fetchReleaseNotesHtml(owner, repo_name)
+                    local rel_data = (self.update_item and (self.update_item.remote or self.update_item.remote_entry)) or self.repo.latest_release
+                    ok, path = RepoContent.fetchReleaseNotesHtml(owner, repo_name, rel_data)
                 else
                     ok, path = RepoContent.fetchReadmeHtml(owner, repo_name)
                 end

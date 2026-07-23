@@ -8443,11 +8443,31 @@ function Storefront:_installPluginFromRepoInternal(repo)
 
     local url
     local branch = repo.default_branch or (repo.data and repo.data.default_branch) or "main"
-    if GitHub.isDirectApiEnabled() then
-        url = string.format("https://api.github.com/repos/%s/%s/zipball", owner, repo.name)
-    else
-        if repo.latest_release and type(repo.latest_release) == "table" and repo.latest_release.download_url and repo.latest_release.download_url ~= "" then
-            url = repo.latest_release.download_url
+    local release = repo.latest_release or (repo.data and repo.data.latest_release)
+
+    if release and type(release) == "table" then
+        if release.download_url and release.download_url ~= "" then
+            url = release.download_url
+        elseif release.assets and type(release.assets) == "table" and #release.assets > 0 then
+            for _, asset in ipairs(release.assets) do
+                if asset.name and asset.name:match("%.zip$") and asset.browser_download_url then
+                    url = asset.browser_download_url
+                    break
+                end
+            end
+            if not url and release.assets[1] then
+                url = release.assets[1].browser_download_url
+            end
+        elseif release.zipball_url and release.zipball_url ~= "" then
+            url = release.zipball_url
+        elseif release.tag_name and release.tag_name ~= "" then
+            url = string.format("https://github.com/%s/%s/archive/refs/tags/%s.zip", owner, repo.name, release.tag_name)
+        end
+    end
+
+    if not url or url == "" then
+        if GitHub.isDirectApiEnabled() then
+            url = string.format("https://api.github.com/repos/%s/%s/zipball", owner, repo.name)
         else
             url = string.format("https://github.com/%s/%s/archive/refs/heads/%s.zip", owner, repo.name, branch)
         end

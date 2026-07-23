@@ -312,7 +312,7 @@ function RepoContent.openReadme(path)
     })
 end
 
-function RepoContent.fetchReleaseNotesHtml(owner, repo)
+function RepoContent.fetchReleaseNotesHtml(owner, repo, release_override)
     if not owner or not repo or owner == "" or repo == "" then
         return false, "missing owner/repo"
     end
@@ -328,20 +328,22 @@ function RepoContent.fetchReleaseNotesHtml(owner, repo)
     local safe_repo  = clean_repo:gsub("[^%w_-]", "_")
     local path = string.format("%s/%s_%s_RELEASENOTES.html", cache_dir, safe_owner, safe_repo)
 
-    -- Extract release info from Cache if available
-    local repo_obj = nil
-    local ok_cache, Cache = pcall(require, "storefront_cache")
-    if ok_cache and Cache then
-        Cache.init()
-        repo_obj = Cache.getRepoByName(owner, repo) or Cache.getRepoByName(owner, clean_repo)
-    end
+    local rel_data = release_override
+    if not rel_data then
+        -- Extract release info from Cache if available
+        local repo_obj = nil
+        local ok_cache, Cache = pcall(require, "storefront_cache")
+        if ok_cache and Cache then
+            Cache.init()
+            repo_obj = Cache.getRepoByName(owner, repo) or Cache.getRepoByName(owner, clean_repo)
+        end
 
-    local rel_data = nil
-    if repo_obj then
-        if type(repo_obj.latest_release) == "table" then
-            rel_data = repo_obj.latest_release
-        elseif repo_obj.data and type(repo_obj.data.latest_release) == "table" then
-            rel_data = repo_obj.data.latest_release
+        if repo_obj then
+            if type(repo_obj.latest_release) == "table" then
+                rel_data = repo_obj.latest_release
+            elseif repo_obj.data and type(repo_obj.data.latest_release) == "table" then
+                rel_data = repo_obj.data.latest_release
+            end
         end
     end
 
@@ -364,10 +366,22 @@ function RepoContent.fetchReleaseNotesHtml(owner, repo)
         end
     end
 
-    local tag_fmt = (tag_name and tag_name ~= "") and (tag_name:sub(1, 1):lower() == "v" and tag_name or ("v" .. tag_name)) or ""
-    local header_title = tag_fmt ~= "" and tag_fmt or _("Latest Release")
-    if rel_name and rel_name ~= "" and rel_name ~= tag_fmt then
-        header_title = header_title .. " - " .. rel_name
+    local clean_tag = tag_name and tag_name:gsub("^[vV]", "") or ""
+    local clean_rel = rel_name and rel_name:gsub("^[vV]", "") or ""
+
+    local tag_fmt = clean_tag ~= "" and ("v" .. clean_tag) or ""
+    local header_title = ""
+
+    if clean_rel == "" or clean_rel:lower() == clean_tag:lower() then
+        header_title = tag_fmt ~= "" and tag_fmt or _("Latest Release")
+    elseif rel_name and (rel_name:lower():find(clean_tag:lower(), 1, true) or (tag_fmt ~= "" and rel_name:lower():find(tag_fmt:lower(), 1, true))) then
+        header_title = rel_name
+    else
+        if tag_fmt ~= "" then
+            header_title = tag_fmt .. " — " .. rel_name
+        else
+            header_title = rel_name
+        end
     end
 
     local pub_str = (published_at and type(published_at) == "string") and published_at:sub(1, 10) or ""

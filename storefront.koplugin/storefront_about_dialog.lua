@@ -114,25 +114,50 @@ function StorefrontAboutDialog.checkForUpdates(Storefront)
         local clean_latest = latest_tag:gsub("^[vV]", "")
         local clean_current = current_version:gsub("^[vV]", "")
 
-        local repo_desc = {
+        local Cache = require("storefront_cache")
+        local cached_repo = Cache.getRepoByName("ultimatejimmy", "storefront.koplugin")
+            or Cache.getRepoByName("ultimatejimmy", "storefront")
+        local stars_count = (cached_repo and tonumber(cached_repo.stars))
+            or (cached_repo and cached_repo.data and tonumber(cached_repo.data.stargazers_count))
+            or (target_release and (tonumber(target_release.stargazers_count) or tonumber(target_release.stars)))
+            or 0
+
+        local repo_desc = cached_repo or {
             owner = "ultimatejimmy",
             name = "storefront.koplugin",
             full_name = "ultimatejimmy/storefront.koplugin",
             kind = "plugin",
+            stars = stars_count,
             description = _("Plugin and patch browser for KOReader."),
+            latest_release = target_release,
+            tag_name = latest_tag,
+            latest_version = clean_latest,
+            data = {
+                owner = { login = "ultimatejimmy" },
+                stargazers_count = stars_count,
+                default_branch = "main",
+            }
         }
+        if not repo_desc.stars or repo_desc.stars == 0 then
+            repo_desc.stars = stars_count
+        end
+        repo_desc.latest_release = target_release
+        repo_desc.latest_version = clean_latest
 
         if clean_latest ~= "" and clean_latest ~= clean_current then
-            UIManager:show(ConfirmBox:new{
-                text = string.format(_("Storefront update available: v%s (Current: v%s)\n\nWould you like to install the update now?"), clean_latest, clean_current),
-                ok_text = _("Update"),
-                cancel_text = _("Cancel"),
-                ok_callback = function()
-                    if Storefront and type(Storefront.installPluginFromRepo) == "function" then
-                        Storefront:installPluginFromRepo(repo_desc)
-                    end
-                end,
-            })
+            local DetailsDialog = require("storefront_details_dialog")
+            local details_dialog = DetailsDialog:new{
+                Storefront = Storefront,
+                repo = repo_desc,
+                kind = "update",
+                update_item = {
+                    plugin = { dirname = "storefront.koplugin", version = clean_current },
+                    remote = target_release,
+                    needs_update = true,
+                },
+                default_tab = "release_notes",
+            }
+            details_dialog:show()
         else
             UIManager:show(InfoMessage:new{
                 text = string.format(_("Storefront is up to date (v%s)."), current_version),
