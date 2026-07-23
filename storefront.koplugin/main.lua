@@ -565,11 +565,14 @@ local CORE_KOREADER_PLUGINS = {
     ["profiles.koplugin"] = true,
     ["qrclipboard.koplugin"] = true,
     ["readtimer.koplugin"] = true,
+    ["ssh.koplugin"] = true,
     ["statistics.koplugin"] = true,
     ["systemstat.koplugin"] = true,
     ["terminal.koplugin"] = true,
     ["texteditor.koplugin"] = true,
+    ["timesync.koplugin"] = true,
     ["vocabbuilder.koplugin"] = true,
+    ["wallabag.koplugin"] = true,
 }
 
 local function isDefaultPlugin(plugin, maybe_plugin)
@@ -578,44 +581,76 @@ local function isDefaultPlugin(plugin, maybe_plugin)
     end
     if not plugin or type(plugin) ~= "table" then return false end
 
-    local dirname = plugin.dirname or (plugin.name and plugin.name:match("%.koplugin$") and plugin.name)
-    if not dirname then return false end
-    local clean_dirname = dirname:gsub("%.koplugin$", ""):lower()
-    local koplugin_dirname = clean_dirname .. ".koplugin"
+    local candidates = {}
+    if plugin.dirname and plugin.dirname ~= "" then
+        table.insert(candidates, plugin.dirname)
+    end
+    if plugin.shortname and plugin.shortname ~= "" then
+        table.insert(candidates, plugin.shortname)
+    end
+    if plugin.name and plugin.name ~= "" then
+        table.insert(candidates, plugin.name)
+    end
+    if plugin.fullname and plugin.fullname ~= "" then
+        table.insert(candidates, plugin.fullname)
+    end
+    if plugin.meta and type(plugin.meta) == "table" then
+        if plugin.meta.name then table.insert(candidates, plugin.meta.name) end
+        if plugin.meta.fullname then table.insert(candidates, plugin.meta.fullname) end
+    end
+    if #candidates == 0 then return false end
 
-    -- 1. Check Storefront install records with normalized key lookups
     local records = (getInstallRecordsMap and getInstallRecordsMap()) or {}
-    local rec = records[dirname] or records[clean_dirname] or records[koplugin_dirname]
-    if not rec and plugin.fullname then
-        rec = records[plugin.fullname] or records[plugin.fullname:lower()]
-    end
 
-    if rec then
-        if rec.installed_type == "user" or rec.owner or rec.repo_full_name or rec.repo_id then
-            return false
-        end
-        if rec.installed_type == "core" then
-            return true
-        end
-    end
-
-    -- 2. Check if plugin matches a descriptor in Storefront's catalog
-    if Storefront and type(Storefront.getRepoDescriptors) == "function" then
-        local descriptors = Storefront:getRepoDescriptors("plugin") or {}
-        for _, repo in ipairs(descriptors) do
-            local repo_name = (repo.name or ""):gsub("%.koplugin$", ""):lower()
-            if repo_name == clean_dirname then
+    -- 1. Explicit installed_type override check in Storefront records
+    for _, cand in ipairs(candidates) do
+        local clean = cand:gsub("%.koplugin$", ""):lower()
+        local koplugin_key = clean .. ".koplugin"
+        local rec = records[cand] or records[clean] or records[koplugin_key]
+        if rec then
+            if rec.installed_type == "user" then
                 return false
+            end
+            if rec.installed_type == "core" then
+                return true
             end
         end
     end
 
-    -- 3. Check known KOReader core bundled plugins set
-    if CORE_KOREADER_PLUGINS[koplugin_dirname] or CORE_KOREADER_PLUGINS[clean_dirname] then
-        return true
+    -- 2. Check known KOReader core bundled plugins set (takes priority over catalog matches)
+    for _, cand in ipairs(candidates) do
+        local clean = cand:gsub("%.koplugin$", ""):lower()
+        local koplugin_key = clean .. ".koplugin"
+        if CORE_KOREADER_PLUGINS[koplugin_key] or CORE_KOREADER_PLUGINS[clean] then
+            return true
+        end
     end
 
-    -- 4. Non-standard custom plugin root path
+    -- 3. Check install records with owner/repo_full_name for user-installed items
+    for _, cand in ipairs(candidates) do
+        local clean = cand:gsub("%.koplugin$", ""):lower()
+        local koplugin_key = clean .. ".koplugin"
+        local rec = records[cand] or records[clean] or records[koplugin_key]
+        if rec and (rec.owner or rec.repo_full_name or rec.repo_id) then
+            return false
+        end
+    end
+
+    -- 4. Check if plugin matches a non-core descriptor in Storefront's catalog
+    if Storefront and type(Storefront.getRepoDescriptors) == "function" then
+        local descriptors = Storefront:getRepoDescriptors("plugin") or {}
+        for _, cand in ipairs(candidates) do
+            local clean = cand:gsub("%.koplugin$", ""):lower()
+            for _, repo in ipairs(descriptors) do
+                local repo_name = (repo.name or ""):gsub("%.koplugin$", ""):lower()
+                if repo_name == clean then
+                    return false
+                end
+            end
+        end
+    end
+
+    -- 5. Check non-standard custom plugin root path
     local default_root = (PluginPaths.getDefaultPluginsRoot and PluginPaths.getDefaultPluginsRoot()) or "plugins"
     if plugin.root and plugin.root ~= "plugins" and plugin.root ~= default_root then
         return false
