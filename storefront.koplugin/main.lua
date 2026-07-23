@@ -537,6 +537,41 @@ local function isPatchDisabled(filename)
     return filename:match("%.disabled$") ~= nil
 end
 
+local CORE_KOREADER_PLUGINS = {
+    ["archiveviewer.koplugin"] = true,
+    ["autodim.koplugin"] = true,
+    ["autostandby.koplugin"] = true,
+    ["autosuspend.koplugin"] = true,
+    ["autoturn.koplugin"] = true,
+    ["batterystat.koplugin"] = true,
+    ["bookshortcuts.koplugin"] = true,
+    ["calibre.koplugin"] = true,
+    ["coverbrowser.koplugin"] = true,
+    ["coverimage.koplugin"] = true,
+    ["docsettingtweak.koplugin"] = true,
+    ["exporter.koplugin"] = true,
+    ["externalkeyboard.koplugin"] = true,
+    ["gestures.koplugin"] = true,
+    ["hello.koplugin"] = true,
+    ["hotkeys.koplugin"] = true,
+    ["httpinspector.koplugin"] = true,
+    ["japanese.koplugin"] = true,
+    ["keepalive.koplugin"] = true,
+    ["kosync.koplugin"] = true,
+    ["movetoarchive.koplugin"] = true,
+    ["newsdownloader.koplugin"] = true,
+    ["opds.koplugin"] = true,
+    ["perceptionexpander.koplugin"] = true,
+    ["profiles.koplugin"] = true,
+    ["qrclipboard.koplugin"] = true,
+    ["readtimer.koplugin"] = true,
+    ["statistics.koplugin"] = true,
+    ["systemstat.koplugin"] = true,
+    ["terminal.koplugin"] = true,
+    ["texteditor.koplugin"] = true,
+    ["vocabbuilder.koplugin"] = true,
+}
+
 local function isDefaultPlugin(plugin, maybe_plugin)
     if plugin == Storefront or (type(plugin) == "table" and plugin.name == "storefront") then
         plugin = maybe_plugin
@@ -545,24 +580,47 @@ local function isDefaultPlugin(plugin, maybe_plugin)
 
     local dirname = plugin.dirname or (plugin.name and plugin.name:match("%.koplugin$") and plugin.name)
     if not dirname then return false end
+    local clean_dirname = dirname:gsub("%.koplugin$", ""):lower()
+    local koplugin_dirname = clean_dirname .. ".koplugin"
 
-    local default_root = (PluginPaths.getDefaultPluginsRoot and PluginPaths.getDefaultPluginsRoot()) or "plugins"
-    local is_in_default_root = false
-    if plugin.root and (plugin.root == "plugins" or plugin.root == default_root) then
-        is_in_default_root = true
-    elseif plugin.path and (plugin.path:match("^plugins[/\\]") or plugin.path:match("^%/plugins%/")) then
-        is_in_default_root = true
-    elseif not plugin.root then
-        is_in_default_root = true
+    -- 1. Check Storefront install records with normalized key lookups
+    local records = (getInstallRecordsMap and getInstallRecordsMap()) or {}
+    local rec = records[dirname] or records[clean_dirname] or records[koplugin_dirname]
+    if not rec and plugin.fullname then
+        rec = records[plugin.fullname] or records[plugin.fullname:lower()]
     end
 
-    if is_in_default_root then
-        local records = (getInstallRecordsMap and getInstallRecordsMap()) or {}
-        local rec = records[dirname]
-        if not rec or rec.is_auto_matched or rec.installed_type == "core" or not (rec.owner or rec.repo_full_name) then
+    if rec then
+        if rec.installed_type == "user" or rec.owner or rec.repo_full_name or rec.repo_id then
+            return false
+        end
+        if rec.installed_type == "core" then
             return true
         end
     end
+
+    -- 2. Check if plugin matches a descriptor in Storefront's catalog
+    if Storefront and type(Storefront.getRepoDescriptors) == "function" then
+        local descriptors = Storefront:getRepoDescriptors("plugin") or {}
+        for _, repo in ipairs(descriptors) do
+            local repo_name = (repo.name or ""):gsub("%.koplugin$", ""):lower()
+            if repo_name == clean_dirname then
+                return false
+            end
+        end
+    end
+
+    -- 3. Check known KOReader core bundled plugins set
+    if CORE_KOREADER_PLUGINS[koplugin_dirname] or CORE_KOREADER_PLUGINS[clean_dirname] then
+        return true
+    end
+
+    -- 4. Non-standard custom plugin root path
+    local default_root = (PluginPaths.getDefaultPluginsRoot and PluginPaths.getDefaultPluginsRoot()) or "plugins"
+    if plugin.root and plugin.root ~= "plugins" and plugin.root ~= default_root then
+        return false
+    end
+
     return false
 end
 

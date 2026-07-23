@@ -495,11 +495,13 @@ if ok_browser then
         end
         check("Tools menu callback opens Storefront browser", browser_opened_via_menu, true)
 
-        -- Test isDefaultPlugin with root = 'plugins'
+        -- Test isDefaultPlugin with core plugins vs user catalog plugins vs custom path plugins
         local core_plugin_mock = { dirname = "terminal.koplugin", name = "Terminal", root = "plugins" }
         local custom_plugin_mock = { dirname = "mycustom.koplugin", name = "MyCustom", root = "custom_plugins" }
+        local catalog_user_plugin = { dirname = "readest.koplugin", name = "readest", root = "plugins" }
         check("isDefaultPlugin identifies core default plugin", MainStorefront:isDefaultPlugin(core_plugin_mock), true)
         check("isDefaultPlugin rejects custom plugin", MainStorefront:isDefaultPlugin(custom_plugin_mock), false)
+        check("isDefaultPlugin rejects catalog user plugin in default root", MainStorefront:isDefaultPlugin(catalog_user_plugin), false)
 
         -- Test Installed tab state and buildInstalledEntries with full plugin objects
         MainStorefront:ensureInstalledState()
