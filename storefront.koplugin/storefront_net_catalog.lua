@@ -163,6 +163,96 @@ function CatalogClient.cancelAsyncFetch()
     end
 end
 
+function CatalogClient.processCatalogDataToStaging(catalog_data, staging_plugins_file, staging_patches_file)
+    if not catalog_data or type(catalog_data) ~= "table" then
+        return false, "invalid catalog format"
+    end
+    
+    local plugins = catalog_data.plugins or {}
+    local patches = catalog_data.patches or {}
+    local fetched_at = os.time()
+
+    local function getOwnerLogin(owner)
+        if type(owner) == "string" then return owner
+        elseif type(owner) == "table" and owner.login then return tostring(owner.login)
+        end
+        return ""
+    end
+
+    local plugin_list = {}
+    for _, repo in ipairs(plugins) do
+        table.insert(plugin_list, {
+            repo_id = tonumber(repo.id) or 0,
+            kind = "plugin",
+            name = tostring(repo.name or ""),
+            owner = getOwnerLogin(repo.owner),
+            full_name = tostring(repo.full_name or ""),
+            description = repo.description ~= json.null and tostring(repo.description or "") or "",
+            stars = tonumber(repo.stargazers_count) or tonumber(repo.stars) or 0,
+            language = repo.language ~= json.null and tostring(repo.language or "") or "",
+            homepage = repo.homepage ~= json.null and tostring(repo.homepage or "") or "",
+            fetched_at = fetched_at,
+            data = repo,
+        })
+    end
+
+    local patch_list = {}
+    for _, repo in ipairs(patches) do
+        local repo_id = tonumber(repo.id) or 0
+        local record = {
+            repo_id = repo_id,
+            kind = "patch",
+            name = tostring(repo.name or ""),
+            owner = getOwnerLogin(repo.owner),
+            full_name = tostring(repo.full_name or ""),
+            description = repo.description ~= json.null and tostring(repo.description or "") or "",
+            stars = tonumber(repo.stargazers_count) or tonumber(repo.stars) or 0,
+            language = repo.language ~= json.null and tostring(repo.language or "") or "",
+            homepage = repo.homepage ~= json.null and tostring(repo.homepage or "") or "",
+            fetched_at = fetched_at,
+            data = repo,
+            patch_files = {},
+        }
+        if repo.patch_files and type(repo.patch_files) == "table" then
+            local pushed_at = repo.pushed_at or repo.updated_at or ""
+            local patch_files = {}
+            for _, entry in ipairs(repo.patch_files) do
+                table.insert(patch_files, {
+                    path = tostring(entry.path or ""),
+                    filename = tostring(entry.filename or ""),
+                    branch = tostring(entry.branch or ""),
+                    sha = tostring(entry.sha or ""),
+                    size = tonumber(entry.size) or 0,
+                    download_url = tostring(entry.download_url or ""),
+                    fetched_at = fetched_at,
+                    source_pushed_at = tostring(pushed_at),
+                })
+            end
+            record.patch_files = patch_files
+        end
+        table.insert(patch_list, record)
+    end
+
+    local plugin_data = { fetched_at = fetched_at, repos = plugin_list }
+    local patch_data = { fetched_at = fetched_at, repos = patch_list }
+
+    local ok_p, ser_p = pcall(json.encode, plugin_data)
+    if not ok_p then return false, "plugin json encode failed" end
+    local fp, err_p = io.open(staging_plugins_file, "w")
+    if not fp then return false, "failed to write staging plugins" end
+    fp:write(ser_p)
+    fp:close()
+
+    local ok_pt, ser_pt = pcall(json.encode, patch_data)
+    if not ok_pt then return false, "patch json encode failed" end
+    local fpt, err_pt = io.open(staging_patches_file, "w")
+    if not fpt then return false, "failed to write staging patches" end
+    fpt:write(ser_pt)
+    fpt:close()
+
+    return true, nil
+end
+
 function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback)
     local GitHub = require("storefront_net_github")
     if GitHub and GitHub.isDirectApiEnabled and GitHub.isDirectApiEnabled() then
@@ -188,9 +278,17 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback)
 
     local cache_dir = DataStorage:getDataDir() .. "/cache/Storefront"
     util.makePath(cache_dir)
-    local tmp_file = cache_dir .. "/catalog_download.json.tmp"
 
-    os.remove(tmp_file)
+    local staging_raw_catalog = cache_dir .. "/catalog_download.json.tmp"
+    local staging_plugins_file = cache_dir .. "/storefront_plugins.json.tmp"
+    local staging_patches_file = cache_dir .. "/storefront_patches.json.tmp"
+
+    local final_plugins_file = cache_dir .. "/storefront_plugins.json"
+    local final_patches_file = cache_dir .. "/storefront_patches.json"
+
+    os.remove(staging_raw_catalog)
+    os.remove(staging_plugins_file)
+    os.remove(staging_patches_file)
 
     if not (ok_ffi and ffiutil and ffiutil.runInSubProcess) then
         logger.warn("Storefront: ffiutil.runInSubProcess unavailable, falling back to sync fetch")
@@ -199,11 +297,36 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback)
         return
     end
 
+    -- Run download AND JSON decoding AND disk writing inside child subprocess
     local pid = ffiutil.runInSubProcess(function(pid, child_write_fd)
-        local ok, fetch_err = CatalogClient.fetchCatalogToFile(target_url, tmp_file)
-        if child_write_fd then
-            ffiutil.writeToFD(child_write_fd, ok and "OK" or (fetch_err or "ERR"), true)
+        local ok_dl, dl_err = CatalogClient.fetchCatalogToFile(target_url, staging_raw_catalog)
+        if not ok_dl then
+            if child_write_fd then ffiutil.writeToFD(child_write_fd, "ERR_DOWNLOAD", true) end
+            return
         end
+
+        local f = io.open(staging_raw_catalog, "r")
+        if not f then
+            if child_write_fd then ffiutil.writeToFD(child_write_fd, "ERR_NOFILE", true) end
+            return
+        end
+        local content = f:read("*all")
+        f:close()
+        os.remove(staging_raw_catalog)
+
+        local ok_dec, parsed = pcall(json.decode, content)
+        if not ok_dec or type(parsed) ~= "table" then
+            if child_write_fd then ffiutil.writeToFD(child_write_fd, "ERR_DECODE", true) end
+            return
+        end
+
+        local ok_proc, proc_err = CatalogClient.processCatalogDataToStaging(parsed, staging_plugins_file, staging_patches_file)
+        if not ok_proc then
+            if child_write_fd then ffiutil.writeToFD(child_write_fd, "ERR_PROC", true) end
+            return
+        end
+
+        if child_write_fd then ffiutil.writeToFD(child_write_fd, "OK", true) end
     end, true)
 
     if not pid then
@@ -223,38 +346,21 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback)
 
         if ffiutil.isSubProcessDone(pid) then
             CatalogClient._async_pid = nil
-            local file = io.open(tmp_file, "r")
-            if not file then
-                logger.warn("Storefront catalog async fetch failed: temp file missing")
-                if callback then callback(false, "temp file missing") end
-                return
-            end
-            local body = file:read("*all")
-            file:close()
-            os.remove(tmp_file)
 
-            if not body or body == "" then
-                logger.warn("Storefront catalog async fetch failed: empty response")
-                if callback then callback(false, "empty response") end
-                return
-            end
+            -- Main thread does ONLY an atomic file rename (< 1ms CPU time)
+            local ok_rename_p = os.rename(staging_plugins_file, final_plugins_file)
+            local ok_rename_pt = os.rename(staging_patches_file, final_patches_file)
 
-            local ok_dec, parsed = pcall(json.decode, body)
-            if not ok_dec or type(parsed) ~= "table" then
-                logger.warn("Storefront catalog async fetch JSON decode failed", parsed)
-                if callback then callback(false, "JSON decode error") end
-                return
+            if ok_rename_p or ok_rename_pt then
+                Cache.invalidate()
+                logger.info("Storefront: background catalog update finished and atomic cache swap complete")
+                if StorefrontLogger then StorefrontLogger.info("Storefront: background catalog update finished and atomic cache swap complete") end
+                if callback then callback(true, nil) end
+            else
+                logger.warn("Storefront catalog async fetch failed: staged files missing or rename failed")
+                if StorefrontLogger then StorefrontLogger.warn("Storefront catalog async fetch failed: staged files missing or rename failed") end
+                if callback then callback(false, "staged rename failed") end
             end
-
-            local ok_upd, upd_err = CatalogClient.updateCacheFromCatalog(parsed)
-            if not ok_upd then
-                logger.warn("Storefront catalog cache update failed", upd_err)
-                if callback then callback(false, upd_err) end
-                return
-            end
-
-            logger.info("Storefront: catalog async fetch and update completed successfully")
-            if callback then callback(true, nil) end
         else
             UIManager:scheduleIn(1.0, poll_func)
         end

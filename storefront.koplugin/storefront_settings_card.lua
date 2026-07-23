@@ -411,7 +411,7 @@ end
             face = Font:getFace("cfont", ui_font_size - 1),
             fgcolor = storefront_theme.color_label_dim,
         }
-        table.insert(content_vg, create_setting_row("info.svg", _("About Storefront"), ver_widget, function()
+        table.insert(content_vg, create_setting_row(nil, _("About Storefront"), ver_widget, function()
             UIManager:close(overlay, "ui")
             StorefrontAboutDialog.show(Storefront, function()
                 StorefrontSettingsCard.show(Storefront)

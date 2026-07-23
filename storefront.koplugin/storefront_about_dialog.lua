@@ -73,6 +73,74 @@ function StorefrontAboutDialog.setChannel(channel)
     ChannelSettings:flush()
 end
 
+function StorefrontAboutDialog.checkForUpdates(Storefront)
+    local NetworkMgr = require("ui/network/manager")
+    local InfoMessage = require("ui/widget/infomessage")
+    local ConfirmBox = require("ui/widget/confirmbox")
+    local GitHub = require("storefront_net_github")
+
+    NetworkMgr:runWhenOnline(function()
+        local progress = InfoMessage:new{ text = _("Checking for Storefront updates…"), timeout = 0 }
+        UIManager:show(progress)
+        UIManager:forceRePaint()
+
+        local current_version = StorefrontAboutDialog.getVersion()
+        local channel = StorefrontAboutDialog.getChannel()
+
+        local target_release, err
+        if channel == "beta" then
+            local releases, rel_err = GitHub.fetchReleases("ultimatejimmy", "storefront.koplugin")
+            if releases and #releases > 0 then
+                target_release = releases[1]
+            else
+                err = rel_err
+            end
+        else
+            target_release, err = GitHub.fetchLatestRelease("ultimatejimmy", "storefront.koplugin")
+        end
+
+        UIManager:close(progress)
+
+        if not target_release then
+            local err_msg = (type(err) == "table" and err.body) and tostring(err.body) or tostring(err or _("Unknown error"))
+            UIManager:show(InfoMessage:new{
+                text = string.format(_("Failed to check for Storefront updates: %s"), err_msg),
+                timeout = 5,
+            })
+            return
+        end
+
+        local latest_tag = target_release.tag_name or target_release.name or ""
+        local clean_latest = latest_tag:gsub("^[vV]", "")
+        local clean_current = current_version:gsub("^[vV]", "")
+
+        local repo_desc = {
+            owner = "ultimatejimmy",
+            name = "storefront.koplugin",
+            full_name = "ultimatejimmy/storefront.koplugin",
+            description = _("Plugin and patch browser for KOReader."),
+        }
+
+        if clean_latest ~= "" and clean_latest ~= clean_current then
+            UIManager:show(ConfirmBox:new{
+                text = string.format(_("Storefront update available: v%s (Current: v%s)\n\nWould you like to install the update now?"), clean_latest, clean_current),
+                ok_text = _("Update"),
+                cancel_text = _("Cancel"),
+                ok_callback = function()
+                    if Storefront and type(Storefront.promptPluginInstallOptions) == "function" then
+                        Storefront:promptPluginInstallOptions(repo_desc, target_release)
+                    end
+                end,
+            })
+        else
+            UIManager:show(InfoMessage:new{
+                text = string.format(_("Storefront is up to date (v%s)."), current_version),
+                timeout = 4,
+            })
+        end
+    end)
+end
+
 function StorefrontAboutDialog.show(Storefront, on_close_cb)
     local meta = loadStorefrontMeta()
     local sw = Screen:getWidth()
@@ -250,6 +318,51 @@ function StorefrontAboutDialog.show(Storefront, on_close_cb)
                 item,
             })
         end
+
+        -- Check for updates Button
+        local check_text_widget = TextWidget:new{
+            text = _("Check for updates"),
+            face = Font:getFace("cfont", ui_font_size),
+            bold = true,
+            fgcolor = Blitbuffer.COLOR_BLACK,
+        }
+        local check_row_content = HorizontalGroup:new{
+            HorizontalSpan:new{ width = (dialog_w - check_text_widget:getSize().w) / 2 - sc(10) },
+            check_text_widget,
+        }
+        local check_frame = FrameContainer:new{
+            bordersize = 0,
+            padding = sc(10),
+            width = dialog_w - sc(4),
+            check_row_content,
+        }
+        local check_btn = InputContainer:new{ check_frame }
+        local check_size = check_frame:getSize() or { w = dialog_w - sc(4), h = 0 }
+        check_btn.ges_events = {
+            Tap = {
+                GestureRange:new{
+                    ges = "tap",
+                    range = function()
+                        local dim = check_btn.dimen
+                        if not dim then
+                            return Geom:new{ x = -1, y = -1, w = 1, h = 1 }
+                        end
+                        return Geom:new{
+                            x = dim.x or 0,
+                            y = dim.y or 0,
+                            w = check_size.w or (dialog_w - sc(4)),
+                            h = check_size.h or 0,
+                        }
+                    end
+                }
+            }
+        }
+        check_btn.onTap = function()
+            UIManager:close(overlay, "ui")
+            StorefrontAboutDialog.checkForUpdates(Storefront)
+            return true
+        end
+        table.insert(content_vg, check_btn)
 
         -- Bottom Divider line
         table.insert(content_vg, LineWidget:new{

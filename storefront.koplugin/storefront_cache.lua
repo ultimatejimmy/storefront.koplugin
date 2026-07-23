@@ -368,6 +368,16 @@ function Cache.findPatchRepoAndFile(filename)
     return nil, nil
 end
 
+function Cache.invalidate()
+    _loaded = false
+    _data = {
+        plugin = { fetched_at = 0, repos = {} },
+        patch = { fetched_at = 0, repos = {} },
+    }
+    _by_id = {}
+    _by_name = {}
+end
+
 function Cache.clear()
     _data = {
         plugin = { fetched_at = 0, repos = {} },

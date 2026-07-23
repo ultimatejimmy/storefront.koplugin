@@ -7240,6 +7240,69 @@ function Storefront:browserAdvanceSort()
     self:advanceSortMode()
 end
 
+function Storefront:softRefreshCurrentBrowserView()
+    self._repo_descriptors_cache = nil
+    self._filtered_descriptors_cache = nil
+
+    if self.browser_menu then
+        UIManager:setDirty(self.browser_menu)
+    end
+end
+
+function Storefront:maybeCheckCatalogBackground()
+    local GitHub = require("storefront_net_github")
+    if GitHub.isDirectApiEnabled() then
+        return
+    end
+
+    local ok_nm, NetworkMgr = pcall(require, "ui/network/manager")
+    if not (ok_nm and NetworkMgr) then
+        return
+    end
+
+    local is_online = false
+    if type(NetworkMgr.isOnline) == "function" then
+        is_online = NetworkMgr:isOnline()
+    elseif type(NetworkMgr.isWifiOn) == "function" then
+        is_online = NetworkMgr:isWifiOn()
+    elseif type(NetworkMgr.isConnected) == "function" then
+        is_online = NetworkMgr:isConnected()
+    end
+
+    if not is_online then
+        return
+    end
+
+    local Cache = require("storefront_cache")
+    local current_tab = (self.browser_state and self.browser_state.tab) or "Plugins"
+    local check_kind = (current_tab == "Patches") and "patch" or "plugin"
+    local last_fetched = Cache.getLastFetched(check_kind) or 0
+    local now = os.time()
+    local age = (last_fetched > 0) and (now - last_fetched) or 999999
+
+    if last_fetched == 0 or age > 3600 then
+        local msg = string.format("Storefront: catalog cache is stale (%ds old > 3600s), triggering background fetch", age)
+        logger.info(msg)
+        StorefrontLogger.info(msg)
+
+        local CatalogClient = require("storefront_net_catalog")
+        CatalogClient.fetchAndUpdateCacheAsync(nil, function(ok, err)
+            if ok then
+                logger.info("Storefront: background catalog update finished")
+                StorefrontLogger.info("Storefront: background catalog update finished")
+                self:softRefreshCurrentBrowserView()
+            else
+                logger.warn("Storefront: background catalog update failed: " .. tostring(err))
+                StorefrontLogger.warn("Storefront: background catalog update failed: " .. tostring(err))
+            end
+        end)
+    else
+        local msg = string.format("Storefront: catalog cache is fresh (%ds old <= 3600s), skipping background fetch", age)
+        logger.info(msg)
+        StorefrontLogger.info(msg)
+    end
+end
+
 function Storefront:showBrowser(kind)
     logger.info("Storefront: showBrowser called")
     self:ensureBrowserState()
@@ -7249,43 +7312,10 @@ function Storefront:showBrowser(kind)
     local current_tab = self.browser_state.tab or "Plugins"
     self:maybeAutoCheckUpdates()
 
-    local Cache = require("storefront_cache")
-    local check_kind = (current_tab == "Patches") and "patch" or "plugin"
-    local last_fetched = Cache.getLastFetched(check_kind)
-    local now = os.time()
-    
-    -- Silent non-blocking catalog update check every 1 hour (3600s) when online
-    local CatalogClient = require("storefront_net_catalog")
-    local ok_nm, NetworkMgr = pcall(require, "ui/network/manager")
-    local online = ok_nm and NetworkMgr and (
-        (NetworkMgr.isOnline and NetworkMgr:isOnline()) or
-        (NetworkMgr.isWifiOn and NetworkMgr:isWifiOn()) or
-        (NetworkMgr.isConnected and NetworkMgr:isConnected())
-    )
-    if not GitHub.isDirectApiEnabled() and online then
-        local age = (last_fetched and last_fetched > 0) and (now - last_fetched) or 999999
-        if not last_fetched or last_fetched == 0 or age > 3600 then
-            local msg = string.format("Storefront: catalog cache is stale (%ds old > 3600s), triggering background fetch", age)
-            logger.info(msg)
-            StorefrontLogger.info(msg)
-            CatalogClient.fetchAndUpdateCacheAsync(nil, function(ok, err)
-                if ok then
-                    logger.info("Storefront: background catalog update finished")
-                    StorefrontLogger.info("Storefront: background catalog update finished")
-                    if self.browser_menu then
-                        self:reopenBrowser(kind)
-                    end
-                else
-                    logger.warn("Storefront: background catalog update failed: " .. tostring(err))
-                    StorefrontLogger.warn("Storefront: background catalog update failed: " .. tostring(err))
-                end
-            end)
-        else
-            local msg = string.format("Storefront: catalog cache is fresh (%ds old <= 3600s), skipping background fetch", age)
-            logger.info(msg)
-            StorefrontLogger.info(msg)
-        end
-    end
+    -- Schedule deferred background catalog check 0.5s AFTER opening UI (zero launch delay)
+    UIManager:scheduleIn(0.5, function()
+        self:maybeCheckCatalogBackground()
+    end)
 
     local title = _("Storefront")
     local Trapper = require("ui/trapper")
