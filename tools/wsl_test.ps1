@@ -102,7 +102,7 @@ function Run-Workflow {
     Start-Sleep -Seconds 1
 
     # Define start command
-    $DefaultCmd = "C:\Windows\System32\wsl.exe --exec dbus-launch --exit-with-session bash -c `"cd $SquashPath && ./launch_with_log.sh`""
+    $DefaultCmd = "C:\Windows\System32\wsl.exe bash -c `"cd $SquashPath && ./launch_with_log.sh`""
     $StartCmd = if ($env:KOREADER_START_CMD) { $env:KOREADER_START_CMD } else { $DefaultCmd }
     
     Write-Host "Starting KOReader: $StartCmd"

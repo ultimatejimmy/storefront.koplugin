@@ -206,7 +206,6 @@ function StorefrontListItem:init()
             meta_text = table.concat(meta_parts, "  ·  ")
         else
             if owner_text ~= "" then table.insert(meta_parts, owner_text) end
-            table.insert(meta_parts, "★ " .. stars_text)
             if updated_text ~= "" then table.insert(meta_parts, updated_text) end
             if entry.kind_label then table.insert(meta_parts, entry.kind_label) end
             meta_text = table.concat(meta_parts, "  ·  ")
@@ -237,14 +236,17 @@ function StorefrontListItem:init()
                 max_width = text_w,
             }
 
-            group = VerticalGroup:new{
-                align = "left",
-                name_w,
-                VerticalSpan:new{ width = 2 },
-                meta_w,
-                VerticalSpan:new{ width = 4 },
-                desc_w,
-            }
+            local group_items = { align = "left", name_w }
+            if meta_text ~= "" then
+                table.insert(group_items, VerticalSpan:new{ width = 2 })
+                table.insert(group_items, meta_w)
+            end
+            if desc_text ~= "" then
+                table.insert(group_items, VerticalSpan:new{ width = 2 })
+                table.insert(group_items, desc_w)
+            end
+
+            group = VerticalGroup:new(group_items)
         end
 
         local row_widget
@@ -317,7 +319,9 @@ function StorefrontListItem:onStorefrontTap(arg, ges)
             return true
         end
     end
-    if self.dialog then
+    if self.entry and self.entry.callback then
+        self.entry.callback()
+    elseif self.dialog and self.dialog.onEntryActivated then
         self.dialog:onEntryActivated(self.entry)
     end
     return true

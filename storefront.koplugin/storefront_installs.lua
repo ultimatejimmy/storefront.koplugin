@@ -23,9 +23,11 @@ local function normalizeData(data)
         data = {
             plugins = data,
             patches = {},
+            item_options = {},
         }
     else
         data.patches = data.patches or {}
+        data.item_options = data.item_options or {}
     end
     return data
 end
@@ -172,6 +174,51 @@ function InstallStore.clearPatches()
     local data = readStore()
     data.patches = {}
     return writeStore(data)
+end
+
+function InstallStore.getItemOptions(item_key)
+    if not item_key or item_key == "" then
+        return { allow_prerelease = false, ignored_releases = {} }
+    end
+    item_key = item_key:lower()
+    local data = readStore()
+    local opts = (data.item_options and data.item_options[item_key]) or {}
+    opts.ignored_releases = opts.ignored_releases or {}
+    return opts
+end
+
+function InstallStore.setItemOptions(item_key, opts)
+    if not item_key or item_key == "" then
+        return false
+    end
+    item_key = item_key:lower()
+    local data = readStore()
+    data.item_options[item_key] = opts or {}
+    return writeStore(data)
+end
+
+function InstallStore.isPreReleaseAllowed(item_key)
+    local opts = InstallStore.getItemOptions(item_key)
+    return opts.allow_prerelease == true
+end
+
+function InstallStore.setPreReleaseAllowed(item_key, allowed)
+    local opts = InstallStore.getItemOptions(item_key)
+    opts.allow_prerelease = (allowed == true)
+    return InstallStore.setItemOptions(item_key, opts)
+end
+
+function InstallStore.isReleaseIgnored(item_key, tag_name)
+    if not tag_name or tag_name == "" then return false end
+    local opts = InstallStore.getItemOptions(item_key)
+    return opts.ignored_releases[tag_name] == true
+end
+
+function InstallStore.toggleReleaseIgnored(item_key, tag_name)
+    if not tag_name or tag_name == "" then return false end
+    local opts = InstallStore.getItemOptions(item_key)
+    opts.ignored_releases[tag_name] = not (opts.ignored_releases[tag_name] == true)
+    return InstallStore.setItemOptions(item_key, opts)
 end
 
 return InstallStore

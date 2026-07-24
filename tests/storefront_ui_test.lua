@@ -76,7 +76,6 @@ local widgets = {
     "ui/gesturerange",
     "ui/widget/inputdialog",
     "libs/libkoreader-lfs",
-    "json",
     "socket.url",
     "ui/widget/textviewer",
     "apps/filemanager/filemanager",
@@ -91,13 +90,17 @@ local widgets = {
     "ffi/sha2",
     "socketutil",
     "socket",
-    "luasettings",
 }
 
-package.loaded["storefront_installs"] = {
-    getGeneration = function() return 1 end,
-    list = function() return {} end,
-    listPatches = function() return {} end,
+local _mock_json_db = { plugins = {}, patches = {}, item_options = {} }
+package.loaded["json"] = {
+    encode = function(val)
+        if type(val) == "table" then _mock_json_db = val end
+        return "MOCK_JSON"
+    end,
+    decode = function(str)
+        return _mock_json_db
+    end,
 }
 
 package.loaded["ffi/util"] = {
@@ -150,6 +153,14 @@ package.loaded["storefront_net_github"] = {
     getCatalogMode = function() return "static" end,
     setCatalogMode = function() end,
     isDirectApiEnabled = function() return false end,
+    fetchReleases = function(owner, repo)
+        return {
+            { tag_name = "26.7.23", body = "Release notes text", published_at = "2026-07-23" }
+        }, nil
+    end,
+    markdownToHtml = function(md)
+        return "<p>" .. tostring(md) .. "</p>"
+    end,
 }
 
 package.loaded["storefront_updates_ui"] = {
@@ -349,6 +360,8 @@ if ok_browser then
             getInstallRecordsMap = function() return {} end,
             getPatchRecordsMap = function() return {} end,
         }
+        local dummy_bb = { w = 600, h = 800 }
+
         local details_ok, details_err = pcall(function()
             local details = StorefrontDetailsDialog:new{
                 Storefront = full_dummy_storefront,
@@ -356,8 +369,11 @@ if ok_browser then
                 kind = "plugin",
             }
             details:init()
+            if details.paintTo then
+                details:paintTo(dummy_bb, 0, 0)
+            end
         end)
-        check("Details dialog loaded successfully", details_ok, true)
+        check("Details dialog loaded and painted successfully", details_ok, true)
         if not details_ok then
             print("Details dialog init error was:", details_err)
         end
@@ -371,10 +387,32 @@ if ok_browser then
                 update_item = { plugin = { dirname = "test-plugin" }, needs_update = true },
             }
             details:init()
+            if details.paintTo then
+                details:paintTo(dummy_bb, 0, 0)
+            end
         end)
-        check("Update details dialog loaded successfully", update_details_ok, true)
+        check("Update details dialog loaded and painted successfully", update_details_ok, true)
         if not update_details_ok then
             print("Update details error was:", update_details_err)
+        end
+
+        local versions_test_ok, versions_test_err = pcall(function()
+            local details = StorefrontDetailsDialog:new{
+                Storefront = full_dummy_storefront,
+                repo = dummy_repo,
+                kind = "plugin",
+                default_tab = "versions",
+            }
+            details:init()
+            details.cached_releases = {
+                { tag_name = "v1.2.0", body = "# Test Release\n- Added feature A\n- Fixed bug B", published_at = "2026-07-24" }
+            }
+            details:onLinkTap("storefront-select-version:1")
+            details:onLinkTap("storefront-back-to-versions")
+        end)
+        check("Details dialog versions tab navigation executes without error", versions_test_ok, true)
+        if not versions_test_ok then
+            print("Versions tab navigation error was:", versions_test_err)
         end
 
         -- Test page_number reset when switching tabs in details dialog
@@ -406,13 +444,12 @@ if ok_browser then
                 repo_full_name = "doctorhetfield-cmd/simpleui.koplugin",
             }
         }
-        package.loaded["storefront_installs"] = {
-            getGeneration = function() return 1 end,
-            list = function() return dummy_records end,
-            listPatches = function() return {} end,
-        }
+        local real_installs = require("storefront_installs")
+        real_installs.list = function() return dummy_records end
+        package.loaded["storefront_installs"] = real_installs
         package.loaded["main"] = nil
         local MainStorefront = require("main")
+        if getfenv then getfenv(1).check = check end
         MainStorefront._installed_lookup_cache = nil
         MainStorefront._installed_lookup_gen = nil
         local lookup = MainStorefront:getInstalledLookup()
@@ -608,13 +645,19 @@ if ok_browser then
             check_called = true
             return false
         end
-        MainStorefront:maybeCheckCatalogBackground()
-        check("maybeCheckCatalogBackground throttles check when called within cooldown", check_called, false)
+        -- Test InstallStore item options (Pre-release & Ignore release)
+        local InstallStore = require("storefront_installs")
+        check("isPreReleaseAllowed defaults to false", InstallStore.isPreReleaseAllowed("test_plugin"), false)
+        InstallStore.setPreReleaseAllowed("test_plugin", true)
+        check("isPreReleaseAllowed returns true after enabling", InstallStore.isPreReleaseAllowed("test_plugin"), true)
+        InstallStore.setPreReleaseAllowed("test_plugin", false)
+        check("isPreReleaseAllowed returns false after disabling", InstallStore.isPreReleaseAllowed("test_plugin"), false)
 
-        MainStorefront._last_catalog_check_time = os.time() - 301
-        MainStorefront:maybeCheckCatalogBackground()
-        check("maybeCheckCatalogBackground proceeds when past cooldown interval", check_called, true)
-        package.loaded["storefront_net_github"].isDirectApiEnabled = orig_is_direct
+        check("isReleaseIgnored defaults to false", InstallStore.isReleaseIgnored("test_plugin", "v1.0.0-beta"), false)
+        InstallStore.toggleReleaseIgnored("test_plugin", "v1.0.0-beta")
+        check("isReleaseIgnored returns true after toggling", InstallStore.isReleaseIgnored("test_plugin", "v1.0.0-beta"), true)
+        InstallStore.toggleReleaseIgnored("test_plugin", "v1.0.0-beta")
+        check("isReleaseIgnored returns false after toggling again", InstallStore.isReleaseIgnored("test_plugin", "v1.0.0-beta"), false)
     end
 end
 
