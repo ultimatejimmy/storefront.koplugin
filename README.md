@@ -17,6 +17,7 @@ Storefront surfaces a curated list of plugins and patches from GitHub with filte
 - **Per-entry README viewer** that fetches `README.md` directly from GitHub and displays it in the plugin.
 - **Install/update pipeline** that handles `.koplugin` archives, verifies metadata, and copies files to `data/plugins` or `data/patches` accordingly.
 - **Update tracking** for installed plugins and numbered patch files, complete with SHA comparisons and refreshable summaries.
+- **Versions tab** showing all published releases for any plugin or patch, with per-version install, ignore, and pre-release filtering.
 - **Optional authentication** through a GitHub Personal Access Token (PAT) to increase API rate limits.
 
 ## Screenshots
@@ -28,6 +29,10 @@ Storefront surfaces a curated list of plugins and patches from GitHub with filte
 | Plugin Detail & README | Check Updates |
 | :---: | :---: |
 | ![Plugin Detail](https://raw.githubusercontent.com/wiki/ultimatejimmy/storefront.koplugin/img/plugin_detail.png) | ![Updates](https://raw.githubusercontent.com/wiki/ultimatejimmy/storefront.koplugin/img/update.png) |
+
+| Installed Plugins | Versions Tab |
+| :---: | :---: |
+| ![Installed Plugins](https://raw.githubusercontent.com/wiki/ultimatejimmy/storefront.koplugin/img/installed.png) | ![Versions](https://raw.githubusercontent.com/wiki/ultimatejimmy/storefront.koplugin/img/versions.png) |
 
 ## Documentation
 
