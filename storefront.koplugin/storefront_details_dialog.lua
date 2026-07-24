@@ -1197,7 +1197,9 @@ td { vertical-align: top; }
                         }
 
                         table.insert(list_items, item)
-                        table.insert(list_items, LineWidget:new{ background = Blitbuffer.COLOR_DARK_GRAY, dimen = Geom:new{ w = readme_w, h = Size.line.thin } })
+                        if i < end_idx then
+                            table.insert(list_items, LineWidget:new{ background = Blitbuffer.COLOR_DARK_GRAY, dimen = Geom:new{ w = readme_w, h = Size.line.thin } })
+                        end
                     end
                 end
 
