@@ -206,6 +206,7 @@ function StorefrontListItem:init()
             meta_text = table.concat(meta_parts, "  ·  ")
         else
             if owner_text ~= "" then table.insert(meta_parts, owner_text) end
+            if stars_text ~= "" and stars_text ~= "0" then table.insert(meta_parts, "★ " .. stars_text) end
             if updated_text ~= "" then table.insert(meta_parts, updated_text) end
             if entry.kind_label then table.insert(meta_parts, entry.kind_label) end
             meta_text = table.concat(meta_parts, "  ·  ")
