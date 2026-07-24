@@ -1090,6 +1090,7 @@ td { vertical-align: top; }
                     width = sc(28),
                     height = sc(28),
                     scale_factor = 0,
+                    is_icon = true,
                     alpha = true,
                 }
                 local toggle_row = OverlapGroup:new{
@@ -1512,6 +1513,7 @@ function StorefrontVersionDetailsDialog:init()
         width = sc(18),
         height = sc(18),
         scale_factor = 0,
+        is_icon = true,
         alpha = true,
     }
     local ignore_txt_w = TextWidget:new{

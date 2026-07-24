@@ -169,6 +169,7 @@ function StorefrontListItem:init()
                     width = sc(22),
                     height = sc(22),
                     scale_factor = 0,
+                    is_icon = true,
                     alpha = true,
                 }
                 if #right_widgets > 0 then

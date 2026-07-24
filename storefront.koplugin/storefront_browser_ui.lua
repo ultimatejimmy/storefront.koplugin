@@ -170,6 +170,7 @@ function StorefrontBrowserDialog:buildTabBar()
             width = sc(20),
             height = sc(20),
             scale_factor = 0,
+            is_icon = true,
             alpha = true,
         }
 
@@ -272,6 +273,7 @@ function StorefrontBrowserDialog:init()
         width = sc(24),
         height = sc(24),
         scale_factor = 0,
+        is_icon = true,
         alpha = true,
     }
 

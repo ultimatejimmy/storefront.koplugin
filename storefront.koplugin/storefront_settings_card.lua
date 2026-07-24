@@ -97,6 +97,7 @@ function StorefrontSettingsCard.show(Storefront)
                         width = sc(20),
                         height = sc(20),
                         scale_factor = 0,
+                        is_icon = true,
                         alpha = true,
                     }
                 elseif type(icon_arg) == "string" then
