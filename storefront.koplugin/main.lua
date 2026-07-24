@@ -82,6 +82,7 @@ local BROWSER_PAGE_SIZE_KEY = "browser_page_size"
 local MANAGE_PAGE_SIZE_KEY = "manage_page_size"
 local INCLUDE_ZERO_STAR_FORKS_KEY = "include_zero_star_forks"
 local PATCH_CACHE_TTL = 10 * 60
+local MIN_CATALOG_CHECK_INTERVAL = 300
 local DEFAULT_SORT_MODE = "stars_desc"
 
 local PluginPaths = require("storefront_plugin_paths")
@@ -7714,6 +7715,11 @@ function Storefront:softRefreshCurrentBrowserView()
 end
 
 function Storefront:maybeCheckCatalogBackground()
+    local now = os.time()
+    if self._last_catalog_check_time and (now - self._last_catalog_check_time) < MIN_CATALOG_CHECK_INTERVAL then
+        return
+    end
+
     local GitHub = require("storefront_net_github")
     if GitHub.isDirectApiEnabled() then
         return
@@ -7737,11 +7743,12 @@ function Storefront:maybeCheckCatalogBackground()
         return
     end
 
+    self._last_catalog_check_time = now
+
     local Cache = require("storefront_cache")
     local current_tab = (self.browser_state and self.browser_state.tab) or "Plugins"
     local check_kind = (current_tab == "Patches") and "patch" or "plugin"
     local last_fetched = Cache.getLastFetched(check_kind) or 0
-    local now = os.time()
     local age = (last_fetched > 0) and (now - last_fetched) or 999999
 
     if last_fetched == 0 or age > 3600 then
@@ -7780,9 +7787,12 @@ function Storefront:showBrowser(kind)
     self:maybeAutoCheckUpdates()
 
     -- Schedule deferred background catalog check 0.5s AFTER opening UI (zero launch delay)
-    UIManager:scheduleIn(0.5, function()
-        self:maybeCheckCatalogBackground()
-    end)
+    local now = os.time()
+    if not self._last_catalog_check_time or (now - self._last_catalog_check_time) >= MIN_CATALOG_CHECK_INTERVAL then
+        UIManager:scheduleIn(0.5, function()
+            self:maybeCheckCatalogBackground()
+        end)
+    end
 
     local title = _("Storefront")
     local Trapper = require("ui/trapper")
@@ -9685,6 +9695,9 @@ function Storefront:init()
         local ok_nm, NetworkMgr = pcall(require, "ui/network/manager")
         if ok_nm and NetworkMgr and NetworkMgr.runWhenOnline then
             NetworkMgr:runWhenOnline(function()
+                if Storefront.instance then
+                    Storefront.instance._last_catalog_check_time = os.time()
+                end
                 local Cache = require("storefront_cache")
                 local plugin_fetched = Cache.getLastFetched("plugin") or 0
                 local patch_fetched = Cache.getLastFetched("patch") or 0

@@ -600,6 +600,21 @@ if ok_browser then
         check("clearSearchAndFilters clears min_stars", MainStorefront.browser_state.min_stars, 0)
         check("clearSearchAndFilters clears installed_state search_text", MainStorefront.installed_state.search_text, "")
         check("clearSearchAndFilters clears installed_state filter_type", MainStorefront.installed_state.filter_type, "all")
+        -- Test catalog check throttling
+        MainStorefront._last_catalog_check_time = os.time()
+        local check_called = false
+        local orig_is_direct = package.loaded["storefront_net_github"].isDirectApiEnabled
+        package.loaded["storefront_net_github"].isDirectApiEnabled = function()
+            check_called = true
+            return false
+        end
+        MainStorefront:maybeCheckCatalogBackground()
+        check("maybeCheckCatalogBackground throttles check when called within cooldown", check_called, false)
+
+        MainStorefront._last_catalog_check_time = os.time() - 301
+        MainStorefront:maybeCheckCatalogBackground()
+        check("maybeCheckCatalogBackground proceeds when past cooldown interval", check_called, true)
+        package.loaded["storefront_net_github"].isDirectApiEnabled = orig_is_direct
     end
 end
 
