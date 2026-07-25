@@ -4,7 +4,7 @@ return {
     name = "storefront",
     fullname = _("Storefront"),
     description = _([[Discover and manage community plugins and patches from GitHub topics.]]),
-    version = "26.7.25.1",
+    version = "26.7.25.2-beta",
     author = "ultimatejimmy",
 }
 
