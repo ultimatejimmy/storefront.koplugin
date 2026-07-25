@@ -313,41 +313,40 @@ function StorefrontUpdatesUi:init(StorefrontClass)
             UIManager:show(progress)
             UIManager:forceRePaint()
 
-            NetworkMgr:runWhenOnline(function()
-                -- Check plugins
-                local installed_plugins = self:listInstalledPlugins()
-                local records = self:getInstallRecordsMap()
-                local plugin_repos = {}
-                for idx, plugin in ipairs(installed_plugins) do
-                    local record = records[plugin.dirname]
-                    if record and record.owner and record.repo then
-                        table.insert(plugin_repos, record)
-                    end
+            -- wifi already confirmed on above; call directly to avoid runWhenOnline prompting
+            -- Check plugins
+            local installed_plugins = self:listInstalledPlugins()
+            local records = self:getInstallRecordsMap()
+            local plugin_repos = {}
+            for idx, plugin in ipairs(installed_plugins) do
+                local record = records[plugin.dirname]
+                if record and record.owner and record.repo then
+                    table.insert(plugin_repos, record)
                 end
-                
-                -- Check patches
-                local installed_patches = self:listInstalledPatches()
-                local patch_records = self:getPatchRecordsMap()
-                local patch_repos = {}
-                for idx, patch in ipairs(installed_patches) do
-                    local record = patch_records[patch.filename]
-                    if record and record.owner and record.repo and record.path then
-                        table.insert(patch_repos, record)
-                    end
+            end
+
+            -- Check patches
+            local installed_patches = self:listInstalledPatches()
+            local patch_records = self:getPatchRecordsMap()
+            local patch_repos = {}
+            for idx, patch in ipairs(installed_patches) do
+                local record = patch_records[patch.filename]
+                if record and record.owner and record.repo and record.path then
+                    table.insert(patch_repos, record)
                 end
+            end
 
-                -- Run the checks
-                pcall(function()
-                    self:_checkAllUpdatesInternal(plugin_repos)
-                end)
-                pcall(function()
-                    self:_refreshPatchUpdatesInternal(patch_repos)
-                end)
+            -- Run the checks
+            pcall(function()
+                self:_checkAllUpdatesInternal(plugin_repos)
+            end)
+            pcall(function()
+                self:_refreshPatchUpdatesInternal(patch_repos)
+            end)
 
-                UIManager:close(progress)
-                UIManager:nextTick(function()
-                    self:reopenBrowser()
-                end)
+            UIManager:close(progress)
+            UIManager:nextTick(function()
+                self:reopenBrowser()
             end)
         end)
     end

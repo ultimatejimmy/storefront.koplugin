@@ -9691,41 +9691,55 @@ function Storefront:init()
     end
 
     -- Trigger non-blocking silent catalog update on startup if online and cache is older than 1 hour (3600s)
+    -- NOTE: We intentionally do NOT use NetworkMgr:runWhenOnline here because that prompts the user
+    -- to enable wifi when offline. This is a background operation; silently skip if not connected.
     UIManager:nextTick(function()
         local ok_nm, NetworkMgr = pcall(require, "ui/network/manager")
-        if ok_nm and NetworkMgr and NetworkMgr.runWhenOnline then
-            NetworkMgr:runWhenOnline(function()
-                if Storefront.instance then
-                    Storefront.instance._last_catalog_check_time = os.time()
-                end
-                local Cache = require("storefront_cache")
-                local plugin_fetched = Cache.getLastFetched("plugin") or 0
-                local patch_fetched = Cache.getLastFetched("patch") or 0
-                local last_fetched = (plugin_fetched > 0 and patch_fetched > 0) and math.min(plugin_fetched, patch_fetched) or 0
-                local age = (last_fetched > 0) and (os.time() - last_fetched) or 999999
-                if not GitHub.isDirectApiEnabled() and (last_fetched == 0 or age > 3600) then
-                    local msg = string.format("Storefront init: catalog cache is stale (%ds old > 3600s), triggering background fetch", age)
-                    logger.info(msg)
-                    StorefrontLogger.info(msg)
-                    local CatalogClient = require("storefront_net_catalog")
-                    CatalogClient.fetchAndUpdateCacheAsync(nil, function(ok, err)
-                        if ok then
-                            logger.info("Storefront init: background catalog update finished")
-                            StorefrontLogger.info("Storefront init: background catalog update finished")
-                            if Storefront.instance and Storefront.instance.browser_menu then
-                                Storefront.instance:reopenBrowser()
-                            end
-                        else
-                            logger.warn("Storefront init: background catalog update failed: " .. tostring(err))
-                            StorefrontLogger.warn("Storefront init: background catalog update failed: " .. tostring(err))
-                        end
-                    end)
+        if not (ok_nm and NetworkMgr) then return end
+
+        -- Silently check connectivity without prompting
+        local is_online = false
+        if type(NetworkMgr.isOnline) == "function" then
+            is_online = NetworkMgr:isOnline()
+        elseif type(NetworkMgr.isWifiOn) == "function" then
+            is_online = NetworkMgr:isWifiOn()
+        elseif type(NetworkMgr.isConnected) == "function" then
+            is_online = NetworkMgr:isConnected()
+        end
+        if not is_online then
+            logger.info("Storefront init: skipping background catalog update — not online")
+            return
+        end
+
+        if Storefront.instance then
+            Storefront.instance._last_catalog_check_time = os.time()
+        end
+        local Cache = require("storefront_cache")
+        local plugin_fetched = Cache.getLastFetched("plugin") or 0
+        local patch_fetched = Cache.getLastFetched("patch") or 0
+        local last_fetched = (plugin_fetched > 0 and patch_fetched > 0) and math.min(plugin_fetched, patch_fetched) or 0
+        local age = (last_fetched > 0) and (os.time() - last_fetched) or 999999
+        if not GitHub.isDirectApiEnabled() and (last_fetched == 0 or age > 3600) then
+            local msg = string.format("Storefront init: catalog cache is stale (%ds old > 3600s), triggering background fetch", age)
+            logger.info(msg)
+            StorefrontLogger.info(msg)
+            local CatalogClient = require("storefront_net_catalog")
+            CatalogClient.fetchAndUpdateCacheAsync(nil, function(ok, err)
+                if ok then
+                    logger.info("Storefront init: background catalog update finished")
+                    StorefrontLogger.info("Storefront init: background catalog update finished")
+                    if Storefront.instance and Storefront.instance.browser_menu then
+                        Storefront.instance:reopenBrowser()
+                    end
                 else
-                    local msg = string.format("Storefront init: catalog cache is fresh (%ds old <= 3600s), skipping background fetch", age)
-                    logger.info(msg)
-                    StorefrontLogger.info(msg)
+                    logger.warn("Storefront init: background catalog update failed: " .. tostring(err))
+                    StorefrontLogger.warn("Storefront init: background catalog update failed: " .. tostring(err))
                 end
             end)
+        else
+            local msg = string.format("Storefront init: catalog cache is fresh (%ds old <= 3600s), skipping background fetch", age)
+            logger.info(msg)
+            StorefrontLogger.info(msg)
         end
     end)
 end
