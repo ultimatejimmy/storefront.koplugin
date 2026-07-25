@@ -163,9 +163,7 @@ package.loaded["storefront_net_github"] = {
     end,
 }
 
-package.loaded["storefront_updates_ui"] = {
-    init = function() end,
-}
+-- package.loaded["storefront_updates_ui"] is loaded normally
 
 package.loaded["luasettings"] = dummy_widget
 
@@ -202,6 +200,7 @@ package.loaded["dispatcher"] = {
 package.loaded["storefront_cache"] = {
     getLastFetched = function() return 1234567890 end,
     listRepos = function() return {} end,
+    isLegacyFormat = function() return false end,
 }
 
 package.loaded["datastorage"] = {
@@ -658,6 +657,115 @@ if ok_browser then
         check("isReleaseIgnored returns true after toggling", InstallStore.isReleaseIgnored("test_plugin", "v1.0.0-beta"), true)
         InstallStore.toggleReleaseIgnored("test_plugin", "v1.0.0-beta")
         check("isReleaseIgnored returns false after toggling again", InstallStore.isReleaseIgnored("test_plugin", "v1.0.0-beta"), false)
+
+        -- Test Updates Tab & Merged Updates Cache Invalidation
+        --
+        -- Strategy: stub collectUpdateSummary / collectPatchUpdateSummary so
+        -- buildUpdatesEntries runs headlessly (no filesystem access needed).
+        -- This verifies the cache-key and invalidation behaviour we fixed.
+        local orig_collect_plugin = MainStorefront.collectUpdateSummary
+        local orig_collect_patch  = MainStorefront.collectPatchUpdateSummary
+
+        local function makeFakePluginSummary(remote_tag)
+            return {
+                total = 1, tracked = 1, unmatched = 0, updates = 1,
+                data = {
+                    {
+                        plugin = { dirname = "test_plugin.koplugin", name = "Test Plugin",
+                                   version = "1.0.0", latest_mtime = 500 },
+                        record = { owner = "testowner", repo = "test_plugin" },
+                        remote = { release_tag_name = remote_tag,
+                                   remote_version = remote_tag:gsub("^v", "") },
+                        has_update = true,
+                    }
+                },
+                records = {},
+            }
+        end
+        MainStorefront.collectUpdateSummary      = function() return makeFakePluginSummary("v2.0.0") end
+        MainStorefront.collectPatchUpdateSummary = function() return { total=0, tracked=0, data={}, records={} } end
+
+        MainStorefront:ensureUpdatesState()
+        MainStorefront.browser_state = { tab = "Updates", page = 1, search_text = "", owner = "", min_stars = 0 }
+        MainStorefront.updates_state.remote_info = {
+            ["test_plugin.koplugin"] = { release_tag_name = "v2.0.0", last_checked = 1000 }
+        }
+        MainStorefront.updates_state.last_checked = 1000
+        MainStorefront._merged_updates_cache  = nil
+        MainStorefront._cached_plugin_summary = nil
+
+        local update_items = MainStorefront:buildUpdatesEntries()
+        check("buildUpdatesEntries returns items table", type(update_items), "table")
+        check("buildUpdatesEntries finds update for 1.0.0 -> v2.0.0",
+            type(update_items) == "table" and #update_items == 1 and update_items[1].name == "Test Plugin", true)
+        check("buildUpdatesEntries creates transition string",
+            update_items[1] and update_items[1].version_transition, "1.0.0 → 2.0.0")
+
+        -- Cache must be populated; key is based on last_checked, not table address
+        check("_merged_updates_cache is populated after buildUpdatesEntries",
+            MainStorefront._merged_updates_cache ~= nil, true)
+        local initial_cache_key = MainStorefront._merged_updates_cache.key
+
+        -- Simulate _checkAllUpdatesInternal: mutate remote_info IN PLACE, bump last_checked,
+        -- clear both caches (the fix we added)
+        MainStorefront.updates_state.remote_info["test_plugin.koplugin"] = {
+            release_tag_name = "v3.0.0", last_checked = 2000
+        }
+        MainStorefront.updates_state.last_checked = 2000
+        MainStorefront._cached_plugin_summary = nil
+        MainStorefront._merged_updates_cache  = nil
+        MainStorefront.collectUpdateSummary   = function() return makeFakePluginSummary("v3.0.0") end
+
+        local updated_items = MainStorefront:buildUpdatesEntries()
+        check("Cache key changes after last_checked is bumped",
+            MainStorefront._merged_updates_cache.key ~= initial_cache_key, true)
+        check("New update item reflects v3.0.0 remote",
+            updated_items[1] and updated_items[1].version_transition, "1.0.0 → 3.0.0")
+
+        -- Explicit nil also works
+        MainStorefront._merged_updates_cache = nil
+        local cache_nil_items = MainStorefront:buildUpdatesEntries()
+        check("buildUpdatesEntries succeeds after explicit _merged_updates_cache = nil",
+            type(cache_nil_items) == "table" and #cache_nil_items == 1, true)
+
+        -- Same last_checked -> cache hit (no recompute)
+        local key_after_nil = MainStorefront._merged_updates_cache.key
+        local second_items = MainStorefront:buildUpdatesEntries()
+        check("buildUpdatesEntries uses cache when last_checked is unchanged",
+            MainStorefront._merged_updates_cache.key == key_after_nil, true)
+        check("Cached result has correct entry count", #second_items, 1)
+
+        -- Test invalidateInstalledPluginsCache executes cleanly
+        local inv_ok = pcall(function()
+            MainStorefront:invalidateInstalledPluginsCache()
+        end)
+        check("invalidateInstalledPluginsCache executes cleanly", inv_ok, true)
+
+        -- Test 4-part version comparisons (e.g. 26.7.24.4 > 26.7.24)
+        MainStorefront._merged_updates_cache = nil
+        MainStorefront._cached_plugin_summary = nil
+        MainStorefront.collectUpdateSummary = function()
+            return {
+                total = 1, tracked = 1, unmatched = 0, updates = 1,
+                data = {
+                    {
+                        plugin = { dirname = "storefront.koplugin", name = "Storefront", version = "26.7.24", latest_mtime = 500 },
+                        record = { owner = "testowner", repo = "storefront.koplugin" },
+                        remote = { release_tag_name = "26.7.24.4", remote_version = "26.7.24.4" },
+                        has_update = true,
+                    }
+                },
+                records = {},
+            }
+        end
+        local four_part_items = MainStorefront:buildUpdatesEntries()
+        check("4-part version update 26.7.24 -> 26.7.24.4 detected",
+            four_part_items[1] and four_part_items[1].version_transition, "26.7.24 → 26.7.24.4")
+
+        -- Cleanup
+        MainStorefront.collectUpdateSummary      = orig_collect_plugin
+        MainStorefront.collectPatchUpdateSummary = orig_collect_patch
+
     end
 end
 

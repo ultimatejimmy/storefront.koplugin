@@ -16,8 +16,8 @@ function StorefrontUpdatesUi:init(StorefrontClass)
 
         local InstallStore = require("storefront_installs")
         local gen = InstallStore.getGeneration and InstallStore.getGeneration() or 0
-        local remote_key = self.updates_state and self.updates_state.remote_info
-        local patch_remote_key = self.patch_updates_state and self.patch_updates_state.remote_info
+        local remote_key = self.updates_state and self.updates_state.last_checked
+        local patch_remote_key = self.patch_updates_state and self.patch_updates_state.last_checked
         local filter_outdated = self.updates_state and self.updates_state.filter_only_outdated
         local search_text = util.trim(self.browser_state and self.browser_state.search_text or ""):lower()
         local filter_owner = util.trim(self.browser_state and self.browser_state.owner or ""):lower()
@@ -84,10 +84,6 @@ function StorefrontUpdatesUi:init(StorefrontClass)
             local local_ver = (plugin and plugin.version and tostring(plugin.version):gsub("^[vV]", "")) or _("unknown")
             local remote_ver_raw = remote and (remote.release_tag_name or remote.remote_version)
             local remote_ver = remote_ver_raw and tostring(remote_ver_raw):gsub("^[vV]", "") or nil
-
-            if not remote_ver or remote_ver == "" or remote_ver == "new" or remote_ver == local_ver then
-                has_update = false
-            end
 
             if has_update and match_search then
                 local remote_display = remote_ver or _("new")

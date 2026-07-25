@@ -138,9 +138,35 @@ function Cache.storeRepos(kind, repos)
         return ""
     end
     
+    local existing_latest_releases = {}
+    if _data[kind] and _data[kind].repos then
+        for _, r in ipairs(_data[kind].repos) do
+            if r.latest_release then
+                if r.repo_id and r.repo_id ~= 0 then
+                    existing_latest_releases[tostring(r.repo_id)] = r.latest_release
+                end
+                if r.full_name and r.full_name ~= "" then
+                    existing_latest_releases[r.full_name:lower()] = r.latest_release
+                end
+                if r.name and r.name ~= "" then
+                    existing_latest_releases[r.name:lower()] = r.latest_release
+                end
+            end
+        end
+    end
+
     for _, repo in ipairs(repos) do
         local owner_login = getOwnerLogin(repo.owner)
-        local repo_id = tonumber(repo.id) or 0
+        local repo_id = tonumber(repo.id or repo.repo_id) or 0
+        local key_id = tostring(repo_id)
+        local key_fn = tostring(repo.full_name or ""):lower()
+        local key_nm = tostring(repo.name or ""):lower()
+        local latest_rel = repo.latest_release
+            or (repo.data and repo.data.latest_release)
+            or existing_latest_releases[key_id]
+            or (key_fn ~= "" and existing_latest_releases[key_fn])
+            or (key_nm ~= "" and existing_latest_releases[key_nm])
+        local version = repo.version or (latest_rel and latest_rel.tag_name) or repo.release_tag_name or repo.tag_name or (repo.data and repo.data.version)
         local record = {
             repo_id = repo_id,
             kind = kind,
@@ -151,6 +177,8 @@ function Cache.storeRepos(kind, repos)
             stars = tonumber(repo.stargazers_count) or tonumber(repo.stars) or 0,
             language = repo.language ~= json.null and tostring(repo.language or "") or "",
             homepage = repo.homepage ~= json.null and tostring(repo.homepage or "") or "",
+            version = version,
+            latest_release = latest_rel,
             fetched_at = fetched_at,
             data = repo,
         }
@@ -170,6 +198,23 @@ function Cache.storeRepos(kind, repos)
     
     _loaded = false
     Cache.init()
+end
+
+function Cache.isLegacyFormat(kind)
+    kind = kind or "plugin"
+    Cache.init()
+    local repos = _data[kind] and _data[kind].repos or {}
+    if #repos == 0 then return false end
+    
+    local check_count = math.min(#repos, 30)
+    local has_any_release = false
+    for i = 1, check_count do
+        if repos[i].latest_release ~= nil then
+            has_any_release = true
+            break
+        end
+    end
+    return not has_any_release
 end
 
 function Cache.listRepos(kind)

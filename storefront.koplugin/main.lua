@@ -1135,20 +1135,13 @@ local function parseVersionFromTag(tag_name)
     cleaned = cleaned:gsub("^version%-?", "")
     cleaned = cleaned:gsub("^plugin%-?", "")
     
-    local patterns = {
-        "^(%d+%.%d+%.%d+)",
-        "^(%d+%.%d+)",
-        "^(%d+)",
-    }
-    
-    for _, pattern in ipairs(patterns) do
-        local version = cleaned:match(pattern)
-        if version then
-            if isDateBasedVersion(version) then
-                return nil
-            end
-            return version
+    local raw_version = cleaned:match("^(%d+[%d%.]*)")
+    if raw_version and raw_version ~= "" then
+        local version = raw_version:gsub("%.$", "")
+        if isDateBasedVersion(version) then
+            return nil
         end
+        return version
     end
     
     return nil
@@ -1284,6 +1277,15 @@ end
 local G_installed_plugins_cache = nil
 local G_installed_patches_cache = nil
 
+local function invalidateInstalledPluginsCache()
+    G_installed_plugins_cache = nil
+    G_installed_patches_cache = nil
+end
+
+function Storefront:invalidateInstalledPluginsCache()
+    invalidateInstalledPluginsCache()
+end
+
 local function getLatestModificationTimestamp(path)
     if not path or path == "" then
         return 0
@@ -1393,10 +1395,103 @@ function Storefront:ensureUpdatesState()
     if not self.updates_state then
         self.updates_state = StorefrontSettings:readSetting("updates_state") or {}
     end
-    self.updates_state.filter_only_outdated = self.updates_state.filter_only_outdated or false
     self.updates_state.filter_only_linked = self.updates_state.filter_only_linked or false
-    self.updates_state.remote_info = self.updates_state.remote_info or {}
+    self.updates_state.filter_only_outdated = self.updates_state.filter_only_outdated or false
     self.updates_state.page = self.updates_state.page or 1
+    self.updates_state.remote_info = self.updates_state.remote_info or {}
+    self.patch_updates_state = self.patch_updates_state or {}
+    self.patch_updates_state.filter_only_linked = self.patch_updates_state.filter_only_linked or false
+    self.patch_updates_state.filter_only_outdated = self.patch_updates_state.filter_only_outdated or false
+    self.patch_updates_state.page = self.patch_updates_state.page or 1
+    self.patch_updates_state.remote_info = self.patch_updates_state.remote_info or {}
+    self:sanitizeRemoteInfo()
+    self:checkAndRecoverLegacyCache()
+end
+
+function Storefront:sanitizeRemoteInfo()
+    if not self.updates_state or not self.updates_state.remote_info then return end
+    local remote_info = self.updates_state.remote_info
+    for dirname, entry in pairs(remote_info) do
+        if type(entry) == "table" and entry.error then
+            entry.error = nil
+        end
+    end
+end
+
+function Storefront:populateRemoteInfoFromCatalog()
+    self:ensureUpdatesState()
+    local installed = listInstalledPlugins()
+    local records = InstallStore.getRecords()
+    local remote_info = self.updates_state.remote_info or {}
+    local updated_count = 0
+
+    for _, plugin in ipairs(installed) do
+        local record = records[plugin.dirname]
+        if record and (record.repo_id or (record.owner and record.repo)) then
+            local cached_repo
+            if record.repo_id then
+                cached_repo = Cache.getRepo(record.repo_id)
+            end
+            if not cached_repo and record.owner and record.repo then
+                cached_repo = Cache.getRepoByName(record.owner, record.repo)
+            end
+            if cached_repo then
+                local cat_rel = cached_repo.latest_release or (cached_repo.data and cached_repo.data.latest_release)
+                local cat_tag = (cat_rel and cat_rel.tag_name)
+                    or cached_repo.version
+                    or (cached_repo.data and (cached_repo.data.version or cached_repo.data.tag_name or cached_repo.data.latest_version))
+                local cat_published = cat_rel and cat_rel.published_at
+
+                if cat_tag then
+                    remote_info[plugin.dirname] = {
+                        remote_version = cat_tag:gsub("^[vV]", ""),
+                        release_tag_name = cat_tag,
+                        release_published_at = cat_published and parseGitHubTimestamp(cat_published) or 0,
+                        last_checked = os.time(),
+                        is_cached_fallback = true,
+                    }
+                    updated_count = updated_count + 1
+                else
+                    if remote_info[plugin.dirname] and remote_info[plugin.dirname].is_cached_fallback then
+                        remote_info[plugin.dirname] = nil
+                        updated_count = updated_count + 1
+                    end
+                end
+            end
+        end
+    end
+
+    self.updates_state.remote_info = remote_info
+    self.updates_state.last_checked = os.time()
+    self:saveUpdatesState()
+    self._cached_plugin_summary = nil
+    self._merged_updates_cache = nil
+    if updated_count > 0 then
+        if StorefrontLogger then
+            StorefrontLogger.info(string.format("Populated remote_info from catalog for %d plugins", updated_count))
+        end
+    end
+end
+
+function Storefront:checkAndRecoverLegacyCache()
+    if GitHub and GitHub.isDirectApiEnabled and GitHub.isDirectApiEnabled() then
+        return
+    end
+    if self._recovery_attempted then
+        return
+    end
+    if Cache and Cache.isLegacyFormat and Cache.isLegacyFormat("plugin") then
+        self._recovery_attempted = true
+        if StorefrontLogger then
+            StorefrontLogger.info("Legacy cache format detected without latest_release; triggering automatic recovery catalog refresh")
+        end
+        local CatalogClient = require("storefront_net_catalog")
+        CatalogClient.fetchAndUpdateCacheAsync(nil, function(success, err)
+            if success then
+                self:populateRemoteInfoFromCatalog()
+            end
+        end)
+    end
 end
 
 function Storefront:ensurePatchUpdatesState()
@@ -1594,8 +1689,9 @@ function Storefront:autoMatchInstalled()
 end
 
 function Storefront:collectPatchUpdateSummary()
+    invalidateInstalledPluginsCache()
     local current_generation = InstallStore.getGeneration and InstallStore.getGeneration() or 0
-    local remote_info_key = self.patch_updates_state and self.patch_updates_state.remote_info
+    local remote_info_key = self.patch_updates_state and self.patch_updates_state.last_checked
     
     if self._cached_patch_summary
        and self._cached_patch_summary_gen == current_generation
@@ -1607,6 +1703,11 @@ function Storefront:collectPatchUpdateSummary()
     self:ensurePatchUpdatesState()
     local summary = buildPatchSummary(self.patch_updates_state.remote_info)
     
+    StorefrontLogger.info(string.format(
+        "PATCH UPDATE SCAN COMPLETE: %d patches total, %d tracked, %d with updates",
+        summary and summary.total or 0, summary and summary.tracked or 0, summary and summary.updates or 0
+    ))
+
     self._cached_patch_summary = summary
     self._cached_patch_summary_gen = current_generation
     self._cached_patch_summary_remote = remote_info_key
@@ -1627,9 +1728,10 @@ function Storefront:getPatchUpdatesSummaryText(summary)
 end
 
 function Storefront:collectUpdateSummary()
+    invalidateInstalledPluginsCache()
     local current_generation = InstallStore.getGeneration and InstallStore.getGeneration() or 0
-    local remote_info_key = self.updates_state and self.updates_state.remote_info
-    
+    local remote_info_key = self.updates_state and self.updates_state.last_checked
+
     if self._cached_plugin_summary
        and self._cached_plugin_summary_gen == current_generation
        and self._cached_plugin_summary_remote == remote_info_key then
@@ -1648,6 +1750,8 @@ function Storefront:collectUpdateSummary()
         unmatched = 0,
         updates = 0,
     }
+
+    StorefrontLogger.info(string.format("UPDATE SCAN: checking %d installed plugins", #installed))
 
     local repo_map = {}
 
@@ -1697,8 +1801,13 @@ function Storefront:collectUpdateSummary()
         end
 
         local remote = remote_info[plugin.dirname]
-        local has_checked_info = remote and not remote.error
-        if not has_checked_info and tracked then
+        -- A remote entry with an error is still usable if it has a release_tag_name.
+        -- Only treat it as unchecked if it has NO version info at all.
+        local has_checked_info = remote and (remote.release_tag_name or remote.remote_version) and not (remote.error and not remote.release_tag_name)
+
+        -- Always check the catalog cache for a fresh release tag, and prefer it
+        -- if it's newer than what's in the (possibly stale) remote_info.
+        if tracked then
             local cached_repo
             if record.repo_id then
                 cached_repo = Cache.getRepo(record.repo_id)
@@ -1706,20 +1815,48 @@ function Storefront:collectUpdateSummary()
             if not cached_repo and record.owner and record.repo then
                 cached_repo = Cache.getRepoByName(record.owner, record.repo)
             end
-            if cached_repo and cached_repo.data then
-                local pushed_at_str = cached_repo.data.pushed_at or cached_repo.data.updated_at
+            if cached_repo then
+                -- Pull release tag from catalog: prefer top-level latest_release, then data.latest_release, then version fields
+                local cat_rel = cached_repo.latest_release or (cached_repo.data and cached_repo.data.latest_release)
+                local cat_tag = (cat_rel and cat_rel.tag_name)
+                    or cached_repo.version
+                    or (cached_repo.data and (cached_repo.data.version or cached_repo.data.tag_name or cached_repo.data.latest_version))
+                local cat_published = cat_rel and cat_rel.published_at
+
+                local pushed_at_str = (cached_repo.data and (cached_repo.data.pushed_at or cached_repo.data.updated_at))
                 local remote_repo_ts = pushed_at_str and parseGitHubTimestamp(pushed_at_str) or 0
-                local remote_version = cached_repo.data.version
-                local prev_version = remote and (remote.release_tag_name or remote.remote_version)
-                -- Fix 3: Carry release_tag_name through the fallback so the version-compare
-                -- branch is taken in has_update logic (instead of timestamp-only).
-                local prev_release_tag = remote and remote.release_tag_name
-                remote = {
-                    remote_version = prev_version or remote_version,
-                    remote_repo_ts = remote_repo_ts,
-                    release_tag_name = prev_release_tag,
-                    is_cached_fallback = true,
-                }
+
+                if cat_tag then
+                    -- Use catalog data if remote_info is missing, errored, or has an older tag
+                    local existing_tag = remote and remote.release_tag_name
+                    local should_use_catalog = not existing_tag
+                        or (remote and remote.error ~= nil)
+                        or isVersionNewer(cat_tag, existing_tag)
+
+                    if should_use_catalog then
+                        StorefrontLogger.info(string.format(
+                            "UPDATE SCAN catalog override: %s  old_tag=%s  cat_tag=%s",
+                            tostring(plugin.dirname), tostring(existing_tag), tostring(cat_tag)
+                        ))
+                        remote = {
+                            remote_version = remote and remote.remote_version,
+                            remote_repo_ts = remote_repo_ts,
+                            release_tag_name = cat_tag,
+                            release_published_at = cat_published and parseGitHubTimestamp(cat_published) or 0,
+                            is_cached_fallback = true,
+                        }
+                        has_checked_info = true
+                    end
+                elseif not has_checked_info then
+                    -- No release tag from catalog either; use timestamp-based fallback
+                    local prev_version = remote and (remote.release_tag_name or remote.remote_version)
+                    remote = {
+                        remote_version = prev_version,
+                        remote_repo_ts = remote_repo_ts,
+                        release_tag_name = remote and remote.release_tag_name,
+                        is_cached_fallback = true,
+                    }
+                end
             end
         end
         local local_version = plugin.version
@@ -1730,13 +1867,21 @@ function Storefront:collectUpdateSummary()
         end
         
         local has_update = false
-        
+
         if tracked and remote then
             local release_tag = remote.release_tag_name
             local release_ts = remote.release_published_at or 0
-            
+
             if release_tag then
                 local release_version = parseVersionFromTag(release_tag)
+
+                StorefrontLogger.info(string.format(
+                    "UPDATE SCAN plugin: %s  local=%s  tag=%s  parsed_remote=%s",
+                    tostring(plugin.dirname),
+                    tostring(local_version),
+                    tostring(release_tag),
+                    tostring(release_version)
+                ))
 
                 if release_version and local_version then
                     has_update = isVersionNewer(release_version, local_version)
@@ -1770,16 +1915,37 @@ function Storefront:collectUpdateSummary()
                 local remote_version = remote.remote_version
                 local remote_repo_ts = remote.remote_repo_ts or 0
 
+                StorefrontLogger.info(string.format(
+                    "UPDATE SCAN plugin: %s  local=%s  remote_version=%s  (no tag)",
+                    tostring(plugin.dirname),
+                    tostring(local_version),
+                    tostring(remote_version)
+                ))
+
                 if remote_version and local_version then
                     has_update = isVersionNewer(remote_version, local_version)
                 else
                     has_update = false
                 end
             end
+        else
+            StorefrontLogger.info(string.format(
+                "UPDATE SCAN plugin: %s  local=%s  tracked=%s  has_remote=%s",
+                tostring(plugin.dirname),
+                tostring(local_version),
+                tostring(tracked and (record.owner .. "/" .. record.repo) or "no"),
+                tostring(remote ~= nil)
+            ))
         end
-        
+
         if has_update then
             summary.updates = summary.updates + 1
+            StorefrontLogger.info(string.format(
+                "UPDATE AVAILABLE: %s  (%s → %s)",
+                tostring(plugin.dirname),
+                tostring(local_version),
+                tostring(remote and (remote.release_tag_name or remote.remote_version) or "?")
+            ))
         end
 
         data[#data + 1] = {
@@ -1797,7 +1963,12 @@ function Storefront:collectUpdateSummary()
 
     summary.data = data
     summary.records = records
-    
+
+    StorefrontLogger.info(string.format(
+        "UPDATE SCAN COMPLETE: %d plugins total, %d tracked, %d with updates",
+        summary.total or 0, summary.tracked or 0, summary.updates or 0
+    ))
+
     self._cached_plugin_summary = summary
     self._cached_plugin_summary_gen = current_generation
     self._cached_plugin_summary_remote = remote_info_key
@@ -2677,6 +2848,7 @@ function Storefront:showPatchFilterDialog()
 end
 
 function Storefront:checkAllUpdates()
+    invalidateInstalledPluginsCache()
     local records = getInstallRecordsMap()
     local tracked = {}
     local installed = listInstalledPlugins()
@@ -2696,7 +2868,49 @@ function Storefront:checkAllUpdates()
         UIManager:show(InfoMessage:new{ text = _("No matched plugins to check."), timeout = 4 })
         return
     end
+    local GitHub = require("storefront_net_github")
+    if GitHub and GitHub.isDirectApiEnabled and GitHub.isDirectApiEnabled() then
+        self:_scanUpdatesForDirectApi(tracked)
+        return
+    end
+
     NetworkMgr:runWhenOnline(function()
+        local info = InfoMessage:new{
+            text = _("Refreshing catalog cache…"),
+            timeout = 0,
+            dismissable = false,
+        }
+        UIManager:show(info)
+        UIManager:forceRePaint()
+        StorefrontLogger.info("Storefront UI: manual refresh triggered, fetching catalog cache...")
+
+        local CatalogClient = require("storefront_net_catalog")
+        CatalogClient.fetchAndUpdateCacheAsync(nil, function(ok, err)
+            UIManager:close(info)
+            if ok then
+                StorefrontLogger.info("Storefront UI: manual refresh succeeded, populating remote info.")
+                self:populateRemoteInfoFromCatalog()
+                self:updateUpdatesDialog()
+                UIManager:setDirty(nil, "full")
+                self:softRefreshCurrentBrowserView()
+                UIManager:show(InfoMessage:new{ text = _("Catalog refreshed successfully."), timeout = 3 })
+            else
+                StorefrontLogger.warn("Storefront UI: manual refresh failed: " .. tostring(err))
+                UIManager:show(InfoMessage:new{ text = _("Catalog refresh failed: ") .. tostring(err), timeout = 3 })
+            end
+        end)
+    end)
+end
+
+function Storefront:_scanUpdatesForDirectApi(tracked)
+    NetworkMgr:runWhenOnline(function()
+        local CatalogClient = require("storefront_net_catalog")
+        CatalogClient.fetchAndUpdateCacheAsync(nil, function(ok, err)
+            if ok then
+                self:softRefreshCurrentBrowserView()
+            end
+        end)
+
         local Trapper = require("ui/trapper")
         local http = require("socket.http")
         local ltn12 = require("ltn12")
@@ -2853,117 +3067,119 @@ function Storefront:checkAllUpdates()
                 if not owner or not repo_name then
                     last_err = "Missing repository info."
                 else
-                    local cached_repo = Cache.getRepoByName(owner, repo_name) or (record.repo_id and Cache.getRepo(record.repo_id))
-                    if cached_repo and not GitHub.isDirectApiEnabled() then
-                        local rel = cached_repo.latest_release or (cached_repo.data and cached_repo.data.latest_release)
-                        if rel and rel.tag_name then
-                            release_tag_name = rel.tag_name
-                            release_published_at = parseGitHubTimestampWorker(rel.published_at)
-                        end
-                        if not release_tag_name and cached_repo.version then
-                            release_tag_name = cached_repo.version
-                        end
-                        local ts = cached_repo.data and (cached_repo.data.pushed_at or cached_repo.data.created_at)
-                        remote_repo_ts = parseGitHubTimestampWorker(ts)
-                    else
-                        local latest_release, release_err = GitHub.fetchLatestRelease(owner, repo_name)
-                        
-                        if latest_release and latest_release.tag_name then
-                            if not latest_release.prerelease and not latest_release.draft then
-                                local tag_lower = latest_release.tag_name:lower()
-                                local is_prerelease_tag = tag_lower:find("alpha", 1, true) or 
-                                                          tag_lower:find("beta", 1, true) or 
-                                                          tag_lower:find("rc", 1, true) or 
-                                                          tag_lower:find("dev", 1, true) or 
-                                                          tag_lower:find("preview", 1, true) or 
-                                                          tag_lower:find("pre", 1, true) or 
-                                                          tag_lower:find("test", 1, true)
-                                
-                                if not is_prerelease_tag then
-                                    release_tag_name = latest_release.tag_name
-                                    release_published_at = parseGitHubTimestampWorker(latest_release.published_at)
-                                end
+                    -- Check live GitHub release first
+                    local latest_release, release_err = GitHub.fetchLatestRelease(owner, repo_name)
+                    if latest_release and latest_release.tag_name then
+                        if not latest_release.prerelease and not latest_release.draft then
+                            local tag_lower = latest_release.tag_name:lower()
+                            local is_prerelease_tag = tag_lower:find("alpha", 1, true) or 
+                                                      tag_lower:find("beta", 1, true) or 
+                                                      tag_lower:find("rc", 1, true) or 
+                                                      tag_lower:find("dev", 1, true) or 
+                                                      tag_lower:find("preview", 1, true) or 
+                                                      tag_lower:find("test", 1, true)
+                            if not is_prerelease_tag then
+                                release_tag_name = latest_release.tag_name
+                                release_published_at = parseGitHubTimestampWorker(latest_release.published_at)
                             end
                         end
-                        
-                        if not release_tag_name then
-                            local releases, fetch_err = GitHub.fetchReleases(owner, repo_name, {
-                                per_page = 30,
-                                max_pages = 1,
-                            })
-                            
-                            if releases and #releases > 0 then
-                                for _, release in ipairs(releases) do
-                                    if not release.draft and not release.prerelease then
-                                        local tag_lower = release.tag_name:lower()
-                                        local is_prerelease_tag = tag_lower:find("alpha", 1, true) or 
-                                                                  tag_lower:find("beta", 1, true) or 
-                                                                  tag_lower:find("rc", 1, true) or 
-                                                                  tag_lower:find("dev", 1, true) or 
-                                                                  tag_lower:find("preview", 1, true) or 
-                                                                  tag_lower:find("pre", 1, true) or 
-                                                                  tag_lower:find("test", 1, true)
-                                        
-                                        if not is_prerelease_tag then
-                                            release_tag_name = release.tag_name
-                                            release_published_at = parseGitHubTimestampWorker(release.published_at)
-                                            break
-                                        end
+                    end
+
+                    if not release_tag_name then
+                        local releases, fetch_err = GitHub.fetchReleases(owner, repo_name, {
+                            per_page = 30,
+                            max_pages = 1,
+                        })
+                        if releases and #releases > 0 then
+                            for _, release in ipairs(releases) do
+                                if not release.draft and not release.prerelease then
+                                    local tag_lower = release.tag_name:lower()
+                                    local is_prerelease_tag = tag_lower:find("alpha", 1, true) or 
+                                                              tag_lower:find("beta", 1, true) or 
+                                                              tag_lower:find("rc", 1, true) or 
+                                                              tag_lower:find("dev", 1, true) or 
+                                                              tag_lower:find("preview", 1, true) or 
+                                                              tag_lower:find("test", 1, true)
+                                    if not is_prerelease_tag then
+                                        release_tag_name = release.tag_name
+                                        release_published_at = parseGitHubTimestampWorker(release.published_at)
+                                        break
                                     end
                                 end
                             end
                         end
-                        
-                        local metadata, metadata_err = GitHub.fetchRepoMetadata(owner, repo_name)
-                        if metadata and type(metadata) == "table" then
-                            local ts = metadata.pushed_at or metadata.created_at
+                    end
+
+                    -- Fallback to static catalog cache if live GitHub releases fetch returned nothing
+                    if not release_tag_name then
+                        local cached_repo = Cache.getRepoByName(owner, repo_name) or (record.repo_id and Cache.getRepo(record.repo_id))
+                        if cached_repo then
+                            local rel = cached_repo.latest_release or (cached_repo.data and cached_repo.data.latest_release)
+                            if rel and rel.tag_name then
+                                release_tag_name = rel.tag_name
+                                release_published_at = parseGitHubTimestampWorker(rel.published_at)
+                            end
+                            if not release_tag_name and cached_repo.version then
+                                release_tag_name = cached_repo.version
+                            end
+                            local ts = cached_repo.data and (cached_repo.data.pushed_at or cached_repo.data.created_at)
                             remote_repo_ts = parseGitHubTimestampWorker(ts)
-                        else
-                            last_err = metadata_err or last_err
                         end
                     end
 
-                    local meta_path = record.meta_path
-                    if (not meta_path or meta_path == "") and dirname and dirname ~= "" then
-                        meta_path = dirname .. "/_meta.lua"
+                    local metadata, metadata_err = GitHub.fetchRepoMetadata(owner, repo_name)
+                    if metadata and type(metadata) == "table" then
+                        local ts = metadata.pushed_at or metadata.created_at
+                        remote_repo_ts = parseGitHubTimestampWorker(ts)
                     end
 
-                    local branch = record.branch
-                    if (not branch or branch == "") and metadata and type(metadata) == "table" then
-                        branch = metadata.default_branch or metadata.master_branch or "HEAD"
-                    end
-
-                    local candidates = buildMetaPathCandidatesWorker and buildMetaPathCandidatesWorker(record) or {}
-                    if #candidates == 0 and meta_path then
-                        table.insert(candidates, meta_path)
-                    end
-
-                    local found_body = nil
-                    local working_meta_path = nil
-                    for _, candidate in ipairs(candidates) do
-                        local body, err = fetchGitHubRawWorker(owner, repo_name, branch, candidate)
-                        if body then
-                            found_body = body
-                            working_meta_path = candidate
-                            break
-                        else
-                            last_err = err or last_err
+                    if release_tag_name then
+                        last_err = nil
+                    else
+                        local meta_path = record.meta_path
+                        if (not meta_path or meta_path == "") and dirname and dirname ~= "" then
+                            meta_path = dirname .. "/_meta.lua"
                         end
-                    end
 
-                    if found_body then
-                        local version = extractMetaFieldWorker(found_body, "version")
-                        if version then
-                            remote_version = version
-                            if working_meta_path and working_meta_path ~= record.meta_path then
-                                record.meta_path = working_meta_path
-                                pcall(function() InstallStore.upsert(dirname, record) end)
+                        local branch = record.branch
+                        if (not branch or branch == "") and metadata and type(metadata) == "table" then
+                            branch = metadata.default_branch or metadata.master_branch or "HEAD"
+                        end
+
+                        local candidates = buildMetaPathCandidatesWorker and buildMetaPathCandidatesWorker(record) or {}
+                        if #candidates == 0 and meta_path then
+                            table.insert(candidates, meta_path)
+                        end
+
+                        local found_body = nil
+                        local working_meta_path = nil
+                        for _, candidate in ipairs(candidates) do
+                            local body, err = fetchGitHubRawWorker(owner, repo_name, branch, candidate)
+                            if body then
+                                found_body = body
+                                working_meta_path = candidate
+                                last_err = nil
+                                break
+                            else
+                                last_err = err or last_err
+                            end
+                        end
+
+                        if found_body then
+                            local version = extractMetaFieldWorker(found_body, "version")
+                            if version then
+                                remote_version = version
+                                last_err = nil
+                                if working_meta_path and working_meta_path ~= record.meta_path then
+                                    record.meta_path = working_meta_path
+                                    pcall(function() InstallStore.upsert(dirname, record) end)
+                                end
+                            else
+                                last_err = "Remote version not found."
                             end
                         else
-                            last_err = "Remote version not found."
+                            last_err = last_err or "Missing meta path in record."
                         end
-                    else
-                        last_err = last_err or "Missing meta path in record."
                     end
                 end
 
@@ -3003,25 +3219,28 @@ function Storefront:checkAllUpdates()
             return
         end
 
-        if type(remote_info_result) ~= "table" then
-            return
-        end
-
         self:ensureUpdatesState()
         local remote_info = self.updates_state.remote_info or {}
         for dirname, data in pairs(remote_info_result) do
-            if not data.error or not remote_info[dirname] then
-                remote_info[dirname] = data
-            elseif remote_info[dirname] then
-                remote_info[dirname].error = data.error
-            end
+            remote_info[dirname] = data
         end
         self.updates_state.remote_info = remote_info
         self.updates_state.last_checked = os.time()
-        -- Fix 4: Bust the summary cache. The cache key is the remote_info table
-        -- reference, but we mutate it in-place, so the reference never changes and
-        -- stale has_update values survive. Clearing the cache forces recomputation.
+        
+        StorefrontLogger.action(string.format("REMOTE UPDATE CHECK FINISHED: %d records processed", #tracked))
+        for dirname, data in pairs(remote_info_result) do
+            StorefrontLogger.info(string.format(
+                "REMOTE UPDATE CHECK RECORD: %s -> tag=%s, remote_version=%s, err=%s",
+                tostring(dirname),
+                tostring(data.release_tag_name or "-"),
+                tostring(data.remote_version or "-"),
+                tostring(data.error or "none")
+            ))
+        end
+
+        invalidateInstalledPluginsCache()
         self._cached_plugin_summary = nil
+        self._merged_updates_cache = nil
         self:updateUpdatesDialog()
         self:saveUpdatesState()
         UIManager:setDirty(nil, "full")
@@ -3047,8 +3266,9 @@ function Storefront:_checkAllUpdatesInternal(records)
     UIManager:close(progress)
     self.updates_state.remote_info = remote_info
     self.updates_state.last_checked = os.time()
-    -- Fix 4: bust summary cache (see companion note in subprocess path above)
+    invalidateInstalledPluginsCache()
     self._cached_plugin_summary = nil
+    self._merged_updates_cache = nil
     self:updateUpdatesDialog()
     self:saveUpdatesState()
     UIManager:setDirty(nil, "full")
@@ -7706,6 +7926,10 @@ function Storefront:browserAdvanceSort()
 end
 
 function Storefront:softRefreshCurrentBrowserView()
+    invalidateInstalledPluginsCache()
+    self._cached_plugin_summary = nil
+    self._cached_patch_summary = nil
+    self._merged_updates_cache = nil
     self._repo_descriptors_cache = nil
     self._filtered_descriptors_cache = nil
 
@@ -7776,6 +8000,10 @@ end
 
 function Storefront:showBrowser(kind)
     logger.info("Storefront: showBrowser called")
+    invalidateInstalledPluginsCache()
+    self._cached_plugin_summary = nil
+    self._cached_patch_summary = nil
+    self._merged_updates_cache = nil
     self:ensureBrowserState()
     self:ensureUpdatesState()
     self:ensurePatchUpdatesState()
