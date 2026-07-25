@@ -9,6 +9,15 @@ local util = require("util")
 local logger = require("logger")
 local lfs = require("libs/libkoreader-lfs")
 local GitHubClient = require("storefront_net_github")
+local ok_json, json = pcall(require, "json")
+local json_null = (ok_json and json and json.null) or nil
+
+local function safeString(val)
+    if type(val) == "string" and val ~= json_null then
+        return val
+    end
+    return nil
+end
 
 local RepoContent = {}
 
@@ -126,7 +135,8 @@ local function resolveImageUrl(raw_url, owner, repo)
 end
 
 function RepoContent.stripMarkdown(text)
-    if not text then return "" end
+    text = safeString(text)
+    if not text or text == "" then return "" end
     -- Remove HTML comments
     text = text:gsub("<!%-%-.-%-%->", "")
     -- Strip HTML tags completely
@@ -347,10 +357,10 @@ function RepoContent.fetchReleaseNotesHtml(owner, repo, release_override)
         end
     end
 
-    local tag_name     = rel_data and (rel_data.tag_name or rel_data.release_tag_name or rel_data.version)
-    local rel_name     = rel_data and rel_data.name
-    local published_at = rel_data and (rel_data.published_at or rel_data.created_at)
-    local body         = rel_data and rel_data.body
+    local tag_name     = rel_data and safeString(rel_data.tag_name or rel_data.release_tag_name or rel_data.version)
+    local rel_name     = rel_data and safeString(rel_data.name)
+    local published_at = rel_data and safeString(rel_data.published_at or rel_data.created_at)
+    local body         = rel_data and safeString(rel_data.body)
 
     -- If release notes body is missing from catalog/cache data, fetch live from GitHub API
     if not body or body == "" then
@@ -359,10 +369,10 @@ function RepoContent.fetchReleaseNotesHtml(owner, repo, release_override)
             fetched_rel, err = GitHubClient.fetchLatestRelease(owner, clean_repo)
         end
         if fetched_rel and type(fetched_rel) == "table" then
-            tag_name     = tag_name or fetched_rel.tag_name or fetched_rel.name
-            rel_name     = rel_name or fetched_rel.name
-            published_at = published_at or fetched_rel.published_at or fetched_rel.created_at
-            body         = fetched_rel.body
+            tag_name     = tag_name or safeString(fetched_rel.tag_name or fetched_rel.name)
+            rel_name     = rel_name or safeString(fetched_rel.name)
+            published_at = published_at or safeString(fetched_rel.published_at or fetched_rel.created_at)
+            body         = safeString(fetched_rel.body)
         end
     end
 
@@ -394,7 +404,7 @@ function RepoContent.fetchReleaseNotesHtml(owner, repo, release_override)
     end
     table.insert(html_parts, "<hr style=\"margin-top:0.6em;margin-bottom:0.8em;\"/>")
 
-    if body and body:match("%S") then
+    if body and type(body) == "string" and body:match("%S") then
         local body_html = GitHubClient.markdownToHtml(body, owner, clean_repo)
         table.insert(html_parts, body_html)
     else

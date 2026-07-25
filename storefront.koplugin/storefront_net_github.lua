@@ -329,8 +329,8 @@ function GitHubClient.fetchCompareCommits(owner, repo, base, head)
 end
 
 local function markdownToHtml(md, owner, repo)
-    if not md or md == "" then
-        return "<div class=\"markdown-body\"><p>No README content.</p></div>"
+    if type(md) ~= "string" or md == "" or md == json.null then
+        return "<div class=\"markdown-body\"><p>No release notes or README content provided.</p></div>"
     end
 
     local lines = {}

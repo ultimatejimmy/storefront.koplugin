@@ -14,7 +14,8 @@ end
 
 -- Mock dependencies for headless testing
 package.loaded["socket.http"] = {}
-package.loaded["json"] = {}
+local json_null_sentinel = setmetatable({}, { __tostring = function() return "null" end })
+package.loaded["json"] = { null = json_null_sentinel }
 package.loaded["socket.url"] = {}
 package.loaded["logger"] = { dbg = function() end, info = function() end, warn = function() end, err = function() end }
 package.loaded["datastorage"] = { getSettingsDir = function() return "/tmp" end, getDataDir = function() return "/tmp" end }
@@ -92,6 +93,39 @@ local ok_empty, path_empty = RepoContent.fetchReleaseNotesHtml("testowner", "emp
 check("Empty body fetch returns success", ok_empty == true)
 local html_empty = util.last_written or ""
 check("Fallback text displayed for empty release notes", html_empty:find("No detailed release notes provided") ~= nil)
+
+-- Test 3: json.null sentinel table in release notes body (zlibrary.koplugin scenario)
+local json_null_repo = {
+    name = "zlibrary",
+    owner = "testowner",
+    latest_release = {
+        tag_name = "v2.0.0",
+        name = json_null_sentinel,
+        published_at = json_null_sentinel,
+        body = json_null_sentinel
+    }
+}
+GitHubClient.fetchLatestRelease = function(owner, repo)
+    return { tag_name = "v2.0.0", name = json_null_sentinel, published_at = json_null_sentinel, body = json_null_sentinel }
+end
+
+local ok_null, path_null
+local test_null_pass, err_msg = pcall(function()
+    ok_null, path_null = RepoContent.fetchReleaseNotesHtml("testowner", "zlibrary", json_null_repo.latest_release)
+end)
+
+check("json.null body handled without fatal error", test_null_pass == true)
+check("json.null fetch returned success", ok_null == true)
+local html_null = util.last_written or ""
+check("Fallback text displayed when body is json.null", html_null:find("No detailed release notes provided") ~= nil)
+
+-- Test 4: markdownToHtml with json.null
+local md_html_res = GitHubClient.markdownToHtml(json_null_sentinel, "testowner", "zlibrary")
+check("markdownToHtml handles json.null without crashing", md_html_res:find("No release notes") ~= nil)
+
+-- Test 5: stripMarkdown with json.null
+local stripped = RepoContent.stripMarkdown(json_null_sentinel)
+check("stripMarkdown handles json.null without crashing", stripped == "")
 
 if failures > 0 then
     print(string.format("RELEASE NOTES TESTS FAILED: %d errors", failures))

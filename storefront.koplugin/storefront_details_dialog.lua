@@ -30,6 +30,8 @@ local InstallStore = require("storefront_installs")
 local logger = require("logger")
 local GestureRange = require("ui/gesturerange")
 local util = require("util")
+local ok_json, json = pcall(require, "json")
+local json_null = (ok_json and json and json.null) or nil
 
 local ffiutil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
@@ -1229,11 +1231,23 @@ td { vertical-align: top; }
             if tab_name == "release_notes" then
                 local rel_data = (self.update_item and (self.update_item.remote or self.update_item.remote_entry)) or self.repo.latest_release
                 if RepoContent and type(RepoContent.fetchReleaseNotesHtml) == "function" then
-                    ok, path = RepoContent.fetchReleaseNotesHtml(owner, repo_name, rel_data)
+                    local ok_pcall, res_ok, res_path = pcall(RepoContent.fetchReleaseNotesHtml, owner, repo_name, rel_data)
+                    if ok_pcall then
+                        ok, path = res_ok, res_path
+                    else
+                        logger.warn("Storefront: error fetching release notes", res_ok)
+                        ok, path = false, nil
+                    end
                 end
             else
                 if RepoContent and type(RepoContent.fetchReadmeHtml) == "function" then
-                    ok, path = RepoContent.fetchReadmeHtml(owner, repo_name)
+                    local ok_pcall, res_ok, res_path = pcall(RepoContent.fetchReadmeHtml, owner, repo_name)
+                    if ok_pcall then
+                        ok, path = res_ok, res_path
+                    else
+                        logger.warn("Storefront: error fetching readme", res_ok)
+                        ok, path = false, nil
+                    end
                 end
             end
 
@@ -1710,7 +1724,7 @@ a.plain-link { color: #000000 !important; text-decoration: none !important; }
     local parts = {}
 
     table.insert(parts, "<h3 style='color:#000;margin-top:0;'> " .. _("Release Notes") .. "</h3>")
-    if rel.body and rel.body ~= "" then
+    if type(rel.body) == "string" and rel.body ~= json_null and rel.body:match("%S") then
         local notes_html = GitHubClient.markdownToHtml(rel.body, self.owner, self.repo_name)
         table.insert(parts, notes_html)
     else
