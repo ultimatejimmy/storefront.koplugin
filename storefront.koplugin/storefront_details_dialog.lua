@@ -74,9 +74,8 @@ function StorefrontDetailsDialog:init()
     local back_btn = Button:new{
         text = "< Back",
         text_font_size = 20,
-        bordersize = sc(1),
-        padding = sc(8),
-        background = Blitbuffer.COLOR_WHITE,
+        bordersize = 0,
+        background = nil,
         show_parent = self,
         callback = function()
             self:onClose()
@@ -782,8 +781,8 @@ td { vertical-align: top; }
         text = "< Prev",
         text_font_size = 16,
         padding = sc(8),
-        bordersize = sc(1),
-        background = Blitbuffer.COLOR_WHITE,
+        bordersize = 0,
+        background = nil,
         show_parent = self,
         callback = function()
             if self.active_tab == "versions" then
@@ -806,8 +805,8 @@ td { vertical-align: top; }
         text = "Next >",
         text_font_size = 16,
         padding = sc(8),
-        bordersize = sc(1),
-        background = Blitbuffer.COLOR_WHITE,
+        bordersize = 0,
+        background = nil,
         show_parent = self,
         callback = function()
             if self.active_tab == "versions" then
