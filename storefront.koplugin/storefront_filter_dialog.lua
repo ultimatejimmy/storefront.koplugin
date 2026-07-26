@@ -634,7 +634,7 @@ function StorefrontFilterDialog.show(arg1, arg2)
                     text = _("Apply"),
                     is_enter_default = true,
                     callback = function()
-                        local values = dialog:getFields()
+                        local values = dialog:getFields() or {}
                         local search_val = util.trim(values[1] or "")
                         if active_tab == "Installed" then
                             Storefront.installed_state.search_text = search_val
@@ -660,9 +660,6 @@ function StorefrontFilterDialog.show(arg1, arg2)
     }
 
     UIManager:show(dialog)
-    if dialog.onShowKeyboard then
-        pcall(function() dialog:onShowKeyboard() end)
-    end
 end
 
 return StorefrontFilterDialog
