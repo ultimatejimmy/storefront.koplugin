@@ -272,10 +272,15 @@ package.loaded["ui/uimanager"] = {
 
 -- Setup basic reader settings mock
 G_reader_settings = {
+    settings = {},
     readSetting = function(self, key)
-        if key == "cre_font_size" then return 20 end
-        return nil
-    end
+        return self.settings and self.settings[key] or (key == "cre_font_size" and 20 or nil)
+    end,
+    saveSetting = function(self, key, val)
+        if not self.settings then self.settings = {} end
+        self.settings[key] = val
+    end,
+    flush = function(self) end,
 }
 
 print("Running storefront UI crash tests...")
@@ -796,6 +801,46 @@ if ok_browser then
 
         check("fetchAndUpdateCacheAsync executed callback on subprocess failure", async_cb_called, true)
         check("fetchAndUpdateCacheAsync returned false on subprocess failure", async_cb_ok, false)
+
+        -- Test togglePluginDisabled settings state toggle and return values
+        local dis_state1, dis_name1 = MainStorefront:togglePluginDisabled("test_plugin.koplugin", true)
+        check("togglePluginDisabled disables plugin", dis_state1, true)
+        check("togglePluginDisabled returns cleaned plugin name", dis_name1, "test_plugin")
+
+        local dis_state2, dis_name2 = MainStorefront:togglePluginDisabled("test_plugin.koplugin", true)
+        check("togglePluginDisabled re-enables plugin", dis_state2, false)
+        check("togglePluginDisabled returns cleaned plugin name on enable", dis_name2, "test_plugin")
+
+        -- Test browserRefresh preserves open browser dialog (does not close plugin window)
+        local netmgr = require("ui/network/manager")
+        netmgr.runWhenOnline = function(self, cb)
+            if type(self) == "function" then self() elseif cb then cb() end
+        end
+        local dummy_browser_menu = { is_open = true }
+        MainStorefront.browser_menu = dummy_browser_menu
+        MainStorefront:browserRefresh()
+        check("browserRefresh does not close browser_menu window", MainStorefront.browser_menu, dummy_browser_menu)
+
+        -- Test togglePluginDisabled shows restart confirmation modal
+        local shown_dialogs = {}
+        local UIManager = package.loaded["ui/uimanager"]
+        local orig_ui_show = UIManager.show
+        UIManager.show = function(self, widget, type)
+            table.insert(shown_dialogs, widget)
+            if orig_ui_show then return orig_ui_show(self, widget, type) end
+        end
+
+        MainStorefront:togglePluginDisabled("test_restart_plugin.koplugin")
+
+        local restart_dialog_found = false
+        for _, widget in ipairs(shown_dialogs) do
+            if widget and widget.key_events and widget.key_events.Close then
+                restart_dialog_found = true
+                break
+            end
+        end
+        check("togglePluginDisabled triggers UIManager:show with restart confirmation dialog", restart_dialog_found, true)
+        UIManager.show = orig_ui_show
 
         -- Restore mock
         package.loaded["ffi/util"].readAllFromFD = orig_readAllFromFD
