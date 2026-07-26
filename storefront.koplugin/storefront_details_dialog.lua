@@ -447,7 +447,6 @@ function StorefrontDetailsDialog:init()
                     local dirname = (self.update_item and self.update_item.plugin and self.update_item.plugin.dirname) or (self.repo and self.repo.name)
                     if dirname and self.Storefront then
                         self.Storefront:togglePluginDisabled(dirname)
-                        self.Storefront:reopenBrowser()
                     end
                 end,
             }
@@ -497,13 +496,11 @@ function StorefrontDetailsDialog:init()
                         local filename = self.patch.filename
                         if filename and self.Storefront then
                             self.Storefront:togglePatchDisabled(filename)
-                            self.Storefront:reopenBrowser()
                         end
                     else
                         local dirname = (self.update_item and self.update_item.plugin and self.update_item.plugin.dirname) or (self.repo and self.repo.name)
                         if dirname and self.Storefront then
                             self.Storefront:togglePluginDisabled(dirname)
-                            self.Storefront:reopenBrowser()
                         end
                     end
                 end,
