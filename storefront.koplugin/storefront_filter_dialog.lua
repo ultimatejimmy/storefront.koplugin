@@ -264,9 +264,12 @@ function StorefrontFilterDialog.showInstalledFilter(arg1, arg2)
             padding = sc(10),
             radius = sc(4),
             width = dialog_w - sc(36),
+            allow_flash = false,
             callback = function()
                 if overlay then UIManager:close(overlay, "ui") end
-                Storefront:reopenBrowser()
+                UIManager:nextTick(function()
+                    Storefront:reopenBrowser()
+                end)
             end,
         }
         if apply_btn.label_widget then
@@ -608,12 +611,14 @@ function StorefrontFilterDialog.show(arg1, arg2)
             {
                 {
                     text = _("Cancel"),
+                    allow_flash = false,
                     callback = function()
                         UIManager:close(dialog)
                     end,
                 },
                 {
                     text = _("Clear"),
+                    allow_flash = false,
                     callback = function()
                         if active_tab == "Installed" then
                             Storefront.installed_state.search_text = ""
@@ -627,11 +632,14 @@ function StorefrontFilterDialog.show(arg1, arg2)
                         Storefront.browser_state.scroll_offset = nil
                         Storefront:saveBrowserState()
                         UIManager:close(dialog)
-                        Storefront:reopenBrowser()
+                        UIManager:nextTick(function()
+                            Storefront:reopenBrowser()
+                        end)
                     end,
                 },
                 {
                     text = _("Apply"),
+                    allow_flash = false,
                     is_enter_default = true,
                     callback = function()
                         local values = dialog:getFields() or {}
@@ -652,7 +660,9 @@ function StorefrontFilterDialog.show(arg1, arg2)
                         Storefront.browser_state.scroll_offset = nil
                         Storefront:saveBrowserState()
                         UIManager:close(dialog)
-                        Storefront:reopenBrowser()
+                        UIManager:nextTick(function()
+                            Storefront:reopenBrowser()
+                        end)
                     end,
                 },
             },
