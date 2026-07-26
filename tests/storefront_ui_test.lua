@@ -778,6 +778,28 @@ if ok_browser then
         if not asset_modal_ok then print("Asset Modal Error:", asset_modal_err) end
         check("renderAssetPickerModal executes without error", asset_modal_ok, true)
 
+        -- Test fetchAndUpdateCacheAsync subprocess failure graceful fallback
+        local CatalogClient = require("storefront_net_catalog")
+        local async_cb_called = false
+        local async_cb_ok = nil
+        local async_cb_err = nil
+
+        -- Mock ffiutil readAllFromFD to return empty string (SUBPROCESS_NO_MSG)
+        local orig_readAllFromFD = package.loaded["ffi/util"].readAllFromFD
+        package.loaded["ffi/util"].readAllFromFD = function() return "" end
+
+        CatalogClient.fetchAndUpdateCacheAsync(nil, function(ok, err)
+            async_cb_called = true
+            async_cb_ok = ok
+            async_cb_err = err
+        end)
+
+        check("fetchAndUpdateCacheAsync executed callback on subprocess failure", async_cb_called, true)
+        check("fetchAndUpdateCacheAsync returned false on subprocess failure", async_cb_ok, false)
+
+        -- Restore mock
+        package.loaded["ffi/util"].readAllFromFD = orig_readAllFromFD
+
         -- Cleanup
         MainStorefront.collectUpdateSummary      = orig_collect_plugin
         MainStorefront.collectPatchUpdateSummary = orig_collect_patch

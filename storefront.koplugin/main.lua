@@ -10427,6 +10427,26 @@ function Storefront:init()
                 else
                     logger.warn("Storefront init: background catalog update failed: " .. tostring(err))
                     StorefrontLogger.warn("Storefront init: background catalog update failed: " .. tostring(err))
+                    if Storefront.instance and not Storefront.instance._init_catalog_retried then
+                        Storefront.instance._init_catalog_retried = true
+                        local UIManager = require("ui/uimanager")
+                        UIManager:scheduleIn(60, function()
+                            logger.info("Storefront init: retrying background catalog update after delay...")
+                            if StorefrontLogger then StorefrontLogger.info("Storefront init: retrying background catalog update after delay...") end
+                            CatalogClient.fetchAndUpdateCacheAsync(nil, function(retry_ok, retry_err)
+                                if retry_ok then
+                                    logger.info("Storefront init: background catalog update retry succeeded")
+                                    if StorefrontLogger then StorefrontLogger.info("Storefront init: background catalog update retry succeeded") end
+                                    if Storefront.instance and Storefront.instance.browser_menu then
+                                        Storefront.instance:reopenBrowser()
+                                    end
+                                else
+                                    logger.warn("Storefront init: background catalog update retry failed: " .. tostring(retry_err))
+                                    if StorefrontLogger then StorefrontLogger.warn("Storefront init: background catalog update retry failed: " .. tostring(retry_err)) end
+                                end
+                            end)
+                        end)
+                    end
                 end
             end)
         else
