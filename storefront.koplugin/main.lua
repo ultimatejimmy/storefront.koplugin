@@ -343,11 +343,13 @@ local function showDeleteConfirmationDialog(display_name, is_plugin, plugin_inst
     local title_font_size = storefront_theme.title_font_size or 22
 
     local title_text = string.format(is_plugin and _("Delete plugin '%s'?") or _("Delete patch '%s'?"), display_name)
-    local title_label = TextWidget:new{
+    local title_label = TextBoxWidget:new{
         text = title_text,
         face = Font:getFace("cfont", title_font_size),
         bold = true,
         fgcolor = Blitbuffer.COLOR_BLACK,
+        width = dialog_w - sc(32),
+        alignment = "center",
     }
 
     local title_container = FrameContainer:new{
@@ -381,10 +383,12 @@ local function showDeleteConfirmationDialog(display_name, is_plugin, plugin_inst
             return icon .. _("Also delete plugin settings")
         end
 
-        local check_text_widget = TextWidget:new{
+        local check_text_widget = TextBoxWidget:new{
             text = get_check_text(),
             face = Font:getFace("cfont", ui_font_size),
             fgcolor = Blitbuffer.COLOR_BLACK,
+            width = dialog_w - sc(40),
+            alignment = "center",
         }
 
         local check_frame = FrameContainer:new{
@@ -7768,7 +7772,7 @@ function Storefront:calculateDynamicPageSize(tab_name)
     local screen_h = Device.screen:getHeight()
     local sc = function(val) return Device.screen:scaleBySize(val) end
     
-    local title_height = sc(64)
+    local title_height = sc(56)
     local tab_bar_height = sc(38)
     local footer_height = sc(56)
     
@@ -7776,37 +7780,28 @@ function Storefront:calculateDynamicPageSize(tab_name)
         or (tab_name == "Plugins" and self.browser_state and self.browser_state.show_filter_bar_plugins == true)
         or (tab_name == "Patches" and self.browser_state and self.browser_state.show_filter_bar_patches == true)
     local toolbar_height = 0
-    if has_toolbar then
-        toolbar_height = sc(36) + Size.span.vertical_default
-    end
-    
-    -- One divider below the tab bar, plus one more below the toolbar if present
     local divider_height = Size.line.thin + Size.span.vertical_default
     if has_toolbar then
+        toolbar_height = sc(40) + Size.span.vertical_default
         divider_height = divider_height + Size.line.thin + Size.span.vertical_default
     end
 
-    -- list_container has padding = Size.padding.default on all sides,
-    -- consuming vertical space at the top and bottom of the scroll area
-    local list_padding = 2 * Size.padding.default
-    
-    local body_height = screen_h - title_height - tab_bar_height - toolbar_height - divider_height - footer_height - list_padding
+    local body_height = screen_h - title_height - tab_bar_height - toolbar_height - divider_height - footer_height
     if body_height < math.floor(screen_h * 0.5) then
         body_height = math.floor(screen_h * 0.5)
     end
     
-    local item_height
+    local slot_height, container_padding
     if tab_name == "Plugins" or tab_name == "Patches" or tab_name == "Installed" then
-        item_height = sc(102)
+        slot_height = sc(94)
+        container_padding = sc(20)
     else -- Updates
-        item_height = sc(82)
+        slot_height = sc(72)
+        container_padding = sc(20)
     end
 
-    -- Each item slot includes the item itself plus a separator (thin line between
-    -- items, VerticalSpan after the last). Use VerticalSpan as the conservative value.
-    local slot_height = item_height + Size.span.vertical_default
-    
-    return math.max(1, math.floor(body_height / slot_height))
+    local avail_for_items = body_height - container_padding
+    return math.max(1, math.floor(avail_for_items / slot_height))
 end
 
 function Storefront:ensureInstalledState()

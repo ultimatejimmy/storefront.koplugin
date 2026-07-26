@@ -658,8 +658,8 @@ function StorefrontDetailsDialog:init()
     local tab_bar_h = sc(26)
 
     -- Measure header area heights to compute available content box space
-    local header_h = sc(8) + sc(1)   -- divider line gap
-                   + sc(12)          -- gap above title
+    local header_h = back_btn:getSize().h
+                   + sc(8)
                    + title_label:getSize().h
                    + sc(4)
                    + meta_label:getSize().h
@@ -669,19 +669,18 @@ function StorefrontDetailsDialog:init()
                    + sc(16)
                    + (main_action_btn.getSize and main_action_btn:getSize().h or sc(44))
                    + sc(16)
-                   + sc(1)           -- second divider
+                   + Size.line.thin
+                   + sc(8)
                    + tab_bar_h
+                   + sc(8)
 
-    -- Back-button row height
-    local back_h   = back_btn:getSize().h + sc(8)
-
-    -- Pagination bar height
-    local pager_h  = sc(44) + sc(12)
+    -- Pagination bar height (top gap + bar height + bottom margin gap)
+    local pager_h  = sc(12) + sc(36) + sc(12)
 
     -- FrameContainer padding (top+bottom)
     local frame_padding = sc(12) * 2
 
-    local readme_h = self.screen_h - frame_padding - back_h - header_h - pager_h
+    local readme_h = self.screen_h - frame_padding - header_h - pager_h
     if readme_h < sc(80) then readme_h = sc(80) end
 
     local ffiutil = require("ffi/util")
@@ -812,9 +811,7 @@ td { vertical-align: top; }
         show_parent = self,
         callback = function()
             if self.active_tab == "versions" then
-                local total_rels = self.cached_releases and #self.cached_releases or 0
-                local per_page = 4
-                local total_pages = math.max(1, math.ceil(total_rels / per_page))
+                local total_pages = self.versions_total_pages or 1
                 if self.versions_page and self.versions_page < total_pages then
                     self.versions_page = self.versions_page + 1
                     if self.loadContent then self.loadContent("versions") end
@@ -1051,13 +1048,14 @@ td { vertical-align: top; }
                 local StorefrontListItem = require("storefront_list_item")
                 self.versions_page = self.versions_page or 1
 
-                local toggle_h = sc(40)
+                local toggle_h = sc(46)
                 local avail_h = readme_h - toggle_h
-                local row_h = sc(68)
-                local per_page = math.max(2, math.floor(avail_h / row_h))
+                local row_h = sc(72)
+                local per_page = math.max(1, math.floor(avail_h / row_h))
                 local total_rels = #self.cached_releases
                 local total_pages = math.max(1, math.ceil(total_rels / per_page))
                 self.versions_total_pages = total_pages
+                self.versions_per_page = per_page
                 self.versions_page = math.max(1, math.min(self.versions_page, total_pages))
 
                 local list_items = {}
@@ -1338,6 +1336,7 @@ td { vertical-align: top; }
     table.insert(content_group_items, self.content_area_box)
     table.insert(content_group_items, VerticalSpan:new{ width = sc(12) })
     table.insert(content_group_items, self.pagination_bar_container)
+    table.insert(content_group_items, VerticalSpan:new{ width = sc(12) })
 
     local content_group = VerticalGroup:new(content_group_items)
 
