@@ -593,5 +593,55 @@ function CatalogClient.fetchAndUpdateCache(url_to_fetch)
     return true, nil
 end
 
+function CatalogClient.syncMissingFromBundledCatalog()
+    local path = CatalogClient.getBundledCatalogPath()
+    if not path then return end
+
+    local f = io.open(path, "rb")
+    if not f then return end
+    local content = f:read("*all")
+    f:close()
+    if not content or content == "" then return end
+
+    local ok, parsed = pcall(json.decode, content)
+    if not ok or type(parsed) ~= "table" then return end
+
+    local Cache = require("storefront_cache")
+    local changed = false
+
+    local kinds = { "plugin", "patch", "font" }
+    local plural_map = { plugin = "plugins", patch = "patches", font = "fonts" }
+
+    for _, kind in ipairs(kinds) do
+        local plural = plural_map[kind]
+        local catalog_entries = parsed[plural]
+        if type(catalog_entries) == "table" and #catalog_entries > 0 then
+            local current_repos = Cache.listRepos(kind) or {}
+            local existing_names = {}
+            for _, r in ipairs(current_repos) do
+                local n = r.name or r.full_name
+                if n then existing_names[n:lower()] = true end
+            end
+
+            local new_entries = {}
+            for _, cat_repo in ipairs(catalog_entries) do
+                local name = cat_repo.name or cat_repo.full_name
+                if name and not existing_names[name:lower()] then
+                    table.insert(new_entries, cat_repo)
+                end
+            end
+
+            if #new_entries > 0 then
+                for _, ne in ipairs(new_entries) do
+                    table.insert(current_repos, ne)
+                end
+                Cache.storeRepos(kind, current_repos)
+                changed = true
+            end
+        end
+    end
+    return changed
+end
+
 return CatalogClient
 

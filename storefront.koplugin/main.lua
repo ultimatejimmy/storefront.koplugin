@@ -18,7 +18,7 @@ local R = {
     Size = require("ui/size"),
     Blitbuffer = require("ffi/blitbuffer"),
     ConfirmBox = require("ui/widget/confirmbox"),
-    InfoMessage = require("storefront_toast"),
+    InfoMessage = require("ui/widget/infomessage"),
     TextViewer = require("ui/widget/textviewer"),
     TextWidget = require("ui/widget/textwidget"),
     TextBoxWidget = require("ui/widget/textboxwidget"),
@@ -127,124 +127,19 @@ local function getManagePageSize()
 end
 
 local function showRestartConfirmation(message)
-    local storefront_theme = require("storefront_theme")
-    local Device = require("device")
-    local sc = function(val) return (Device and Device.screen and Device.screen.scaleBySize and Device.screen:scaleBySize(val)) or val end
-
-    local sw = Device.screen:getWidth()
-    local sh = Device.screen:getHeight()
-    local dialog_w = math.min(sw - sc(20), sc(380))
-
-    local ui_font_size = storefront_theme.face_label_size or 18
-    local title_font_size = storefront_theme.title_font_size or 22
-
-    local overlay
-
-    local title_label = TextWidget:new{
-        text = _("Restart Required"),
-        face = Font:getFace("cfont", title_font_size),
-        bold = true,
-        fgcolor = Blitbuffer.COLOR_BLACK,
-    }
-
-    local title_container = FrameContainer:new{
-        padding = sc(12),
-        bordersize = 0,
-        title_label,
-    }
-
+    local ConfirmBox = require("ui/widget/confirmbox")
     local body_text = string.format("%s\n\n%s", message or "", _("This will take effect on next restart."))
-    local body_widget = TextBoxWidget:new{
+    UIManager:show(ConfirmBox:new{
         text = body_text,
-        face = Font:getFace("cfont", ui_font_size),
-        fgcolor = Blitbuffer.COLOR_BLACK,
-        width = dialog_w - sc(40),
-        alignment = "center",
-    }
-
-    local body_container = FrameContainer:new{
-        padding = sc(12),
-        bordersize = 0,
-        body_widget,
-    }
-
-    local card_padding = sc(6)
-    local card_border = storefront_theme.border_window or sc(2)
-    local inner_w = dialog_w - (card_padding * 2) - (card_border * 2)
-
-    local later_btn = Button:new{
-        text = _("Restart later"),
-        bordersize = sc(1),
-        radius = storefront_theme.radius_btn or sc(18),
-        padding = sc(10),
-        width = math.floor((inner_w - sc(12)) / 2),
-        callback = function()
-            if overlay then UIManager:close(overlay, "ui") end
-        end,
-    }
-
-    local now_btn = Button:new{
-        text = _("Restart now"),
-        bordersize = sc(1),
-        radius = storefront_theme.radius_btn or sc(18),
-        padding = sc(10),
-        width = math.floor((inner_w - sc(12)) / 2),
-        callback = function()
-            if overlay then UIManager:close(overlay, "ui") end
+        ok_text = _("Restart now"),
+        cancel_text = _("Restart later"),
+        ok_callback = function()
             UIManager:restartKOReader()
         end,
-    }
-
-    local btn_row = HorizontalGroup:new{
-        align = "center",
-        later_btn,
-        HorizontalSpan:new{ width = sc(8) },
-        now_btn,
-    }
-
-    local content_vg = VerticalGroup:new{
-        align = "center",
-        title_container,
-        LineWidget:new{
-            dimen = Geom:new{ w = inner_w, h = sc(1) },
-            background = Blitbuffer.COLOR_BLACK,
-        },
-        VerticalSpan:new{ width = sc(8) },
-        body_container,
-        VerticalSpan:new{ width = sc(12) },
-        FrameContainer:new{ padding = sc(4), bordersize = 0, btn_row },
-    }
-
-    local card = FrameContainer:new{
-        padding = sc(6),
-        radius = storefront_theme.radius_window or sc(12),
-        bordersize = storefront_theme.border_window or sc(2),
-        color = Blitbuffer.COLOR_BLACK,
-        background = storefront_theme.color_bg or Blitbuffer.COLOR_WHITE,
-        width = dialog_w,
-        content_vg,
-    }
-
-    overlay = InputContainer:new{
-        dimen = Geom:new{ w = sw, h = sh },
         key_events = {
             Close = { { "Back" } }
         },
-        CenterContainer:new{
-            dimen = Geom:new{ w = sw, h = sh },
-            card,
-        },
-    }
-
-    later_btn.show_parent = overlay
-    now_btn.show_parent = overlay
-
-    overlay.onClose = function()
-        UIManager:close(overlay, "ui")
-        return true
-    end
-
-    UIManager:show(overlay, "ui")
+    })
 end
 
 local function showFetchingProgress(message)
@@ -261,7 +156,7 @@ local function showFetchingProgress(message)
 
     local title_label = TextWidget:new{
         text = _("Fetching Release Info"),
-        face = Font:getFace("cfont", title_font_size),
+        face = Font:getFace("NotoSerif-Regular.ttf", title_font_size),
         bold = true,
         fgcolor = Blitbuffer.COLOR_BLACK,
     }
@@ -274,7 +169,7 @@ local function showFetchingProgress(message)
 
     local body_widget = TextBoxWidget:new{
         text = message or _("Connecting to GitHub…\n\nPlease wait."),
-        face = Font:getFace("cfont", ui_font_size),
+        face = Font:getFace("NotoSerif-Regular.ttf", ui_font_size),
         fgcolor = Blitbuffer.COLOR_BLACK,
         width = dialog_w - sc(40),
         alignment = "center",
@@ -345,7 +240,7 @@ local function showDeleteConfirmationDialog(display_name, is_plugin, plugin_inst
     local title_text = string.format(is_plugin and _("Delete plugin '%s'?") or _("Delete patch '%s'?"), display_name)
     local title_label = TextWidget:new{
         text = title_text,
-        face = Font:getFace("cfont", title_font_size),
+        face = Font:getFace("NotoSerif-Regular.ttf", title_font_size),
         bold = true,
         fgcolor = Blitbuffer.COLOR_BLACK,
     }
@@ -359,7 +254,7 @@ local function showDeleteConfirmationDialog(display_name, is_plugin, plugin_inst
     local body_text = _("This action cannot be undone.\n\nChanges will take effect after restart.")
     local body_widget = TextBoxWidget:new{
         text = body_text,
-        face = Font:getFace("cfont", ui_font_size),
+        face = Font:getFace("NotoSerif-Regular.ttf", ui_font_size),
         fgcolor = Blitbuffer.COLOR_BLACK,
         width = dialog_w - sc(40),
         alignment = "center",
@@ -383,7 +278,7 @@ local function showDeleteConfirmationDialog(display_name, is_plugin, plugin_inst
 
         local check_text_widget = TextWidget:new{
             text = get_check_text(),
-            face = Font:getFace("cfont", ui_font_size),
+            face = Font:getFace("NotoSerif-Regular.ttf", ui_font_size),
             fgcolor = Blitbuffer.COLOR_BLACK,
         }
 
@@ -2080,7 +1975,7 @@ function Storefront:autoMatchInstalled()
 end
 
 function Storefront:collectPatchUpdateSummary()
-    invalidateInstalledPluginsCache()
+    self:ensurePatchUpdatesState()
     local current_generation = InstallStore.getGeneration and InstallStore.getGeneration() or 0
     local remote_info_key = self.patch_updates_state and self.patch_updates_state.last_checked
     
@@ -2091,7 +1986,6 @@ function Storefront:collectPatchUpdateSummary()
     end
 
     self:autoMatchInstalled()
-    self:ensurePatchUpdatesState()
     local summary = buildPatchSummary(self.patch_updates_state.remote_info)
     
     StorefrontLogger.info(string.format(
@@ -2119,7 +2013,7 @@ function Storefront:getPatchUpdatesSummaryText(summary)
 end
 
 function Storefront:collectUpdateSummary()
-    invalidateInstalledPluginsCache()
+    self:ensureUpdatesState()
     local current_generation = InstallStore.getGeneration and InstallStore.getGeneration() or 0
     local remote_info_key = self.updates_state and self.updates_state.last_checked
 
@@ -4833,19 +4727,28 @@ function Storefront:_installFontFromRepoInternal(repo)
     end
 
     -- Find bundled font source directory or files
-    local candidate_src_dirs = {
-        "assets/fonts/" .. font_name,
-        "plugins/storefront.koplugin/assets/fonts/" .. font_name,
-        DataStorage:getDataDir() .. "/plugins/storefront.koplugin/assets/fonts/" .. font_name,
-        DataStorage:getDataDir() .. "/plugins/storefront.koplugin/storefront.koplugin/assets/fonts/" .. font_name,
-    }
+    local info = debug.getinfo(1, "S")
+    local script_dir = info and info.source and info.source:match("^@(.*[/\\])") or ""
+    if script_dir:sub(-1) == "/" or script_dir:sub(-1) == "\\" then
+        script_dir = script_dir:sub(1, -2)
+    end
+
+    local candidate_src_dirs = {}
+    if script_dir ~= "" then
+        table.insert(candidate_src_dirs, script_dir .. "/assets/fonts/" .. font_name)
+        table.insert(candidate_src_dirs, script_dir .. "/../assets/fonts/" .. font_name)
+    end
+    table.insert(candidate_src_dirs, DataStorage:getDataDir() .. "/plugins/storefront.koplugin/assets/fonts/" .. font_name)
+    table.insert(candidate_src_dirs, DataStorage:getDataDir() .. "/plugins/storefront.koplugin/storefront.koplugin/assets/fonts/" .. font_name)
+    table.insert(candidate_src_dirs, "assets/fonts/" .. font_name)
 
     local copied_files = 0
     for _, src_dir in ipairs(candidate_src_dirs) do
-        local real_src = ffiutil.realpath and ffiutil.realpath(src_dir) or src_dir
+        local real_src = (ffiutil and ffiutil.realpath) and ffiutil.realpath(src_dir) or src_dir
+        if not real_src or real_src == "" then real_src = src_dir end
         if real_src and lfs.attributes(real_src, "mode") == "directory" then
             for file in lfs.dir(real_src) do
-                if file:match("%.ttf$") or file:match("%.otf$") then
+                if file ~= "." and file ~= ".." and (file:match("%.ttf$") or file:match("%.otf$")) then
                     local src_file = real_src .. "/" .. file
                     local dst_file = font_target_dir .. "/" .. file
                     local sf = io.open(src_file, "rb")
@@ -4870,6 +4773,11 @@ function Storefront:_installFontFromRepoInternal(repo)
     if copied_files == 0 then
         UIManager:show(InfoMessage:new{ text = string.format(_("Bundled font files not found for %s."), font_name), timeout = 5 })
         return
+    end
+
+    local ok_font, Font = pcall(require, "ui/font")
+    if ok_font and Font and type(Font.updateFontList) == "function" then
+        pcall(Font.updateFontList, Font)
     end
 
     InstallStore.upsertFont(font_name, {
@@ -6109,7 +6017,7 @@ function Storefront:renderAssetPickerModal(repo, release, custom_assets, saved_c
 
     local title_label = TextWidget:new{
         text = string.format(_("Choose Build — %s"), repo and repo.name or "Plugin"),
-        face = Font:getFace("cfont", title_font_size),
+        face = Font:getFace("NotoSerif-Regular.ttf", title_font_size),
         bold = true,
         fgcolor = Blitbuffer.COLOR_BLACK,
     }
@@ -6149,7 +6057,7 @@ function Storefront:renderAssetPickerModal(repo, release, custom_assets, saved_c
 
         local text_w = TextBoxWidget:new{
             text = display_text,
-            face = Font:getFace("cfont", ui_font_size),
+            face = Font:getFace("NotoSerif-Regular.ttf", ui_font_size),
             fgcolor = Blitbuffer.COLOR_BLACK,
             width = inner_w - sc(32),
             alignment = "left",
@@ -7287,8 +7195,8 @@ function Storefront:saveBrowserState()
         return
     end
     local state = {
-        kind = self.browser_state.kind == "patch" and "patch" or "plugin",
-        tab = self.browser_state.tab or "Plugins",
+        kind = (self.browser_state.kind == "patch" and "patch") or (self.browser_state.kind == "font" and "font") or "plugin",
+        tab = self.browser_state.tab or (self.browser_state.kind == "patch" and "Patches" or (self.browser_state.kind == "font" and "Fonts" or "Plugins")),
         search_text = self.browser_state.search_text or "",
         owner = self.browser_state.owner or "",
         min_stars = tonumber(self.browser_state.min_stars) or 0,
@@ -7330,8 +7238,8 @@ function Storefront:ensureBrowserState()
         self:saveBrowserState()
         return
     end
-    self.browser_state.kind = self.browser_state.kind == "patch" and "patch" or "plugin"
-    self.browser_state.tab = self.browser_state.tab or (self.browser_state.kind == "patch" and "Patches" or "Plugins")
+    self.browser_state.kind = (self.browser_state.kind == "patch" and "patch") or (self.browser_state.kind == "font" and "font") or "plugin"
+    self.browser_state.tab = self.browser_state.tab or (self.browser_state.kind == "patch" and "Patches" or (self.browser_state.kind == "font" and "Fonts" or "Plugins"))
     if type(self.browser_state.search_text) ~= "string" then
         self.browser_state.search_text = ""
     end
@@ -7820,6 +7728,12 @@ function Storefront:makeRepoMenuItem(repo, installed_lookup)
 
     return {
         name = repo.name or repo.full_name or _("Repository"),
+        kind = repo.kind or (self.browser_state and self.browser_state.kind),
+        font_family = repo.font_family,
+        font_file = repo.font_file,
+        category = repo.category,
+        license = repo.license,
+        download_url = repo.download_url,
         owner = owner,
         stars_fmt = stars_fmt,
         updated = updated,
@@ -7903,7 +7817,7 @@ function Storefront:calculateDynamicPageSize(tab_name)
     end
     
     local item_height
-    if tab_name == "Plugins" or tab_name == "Patches" or tab_name == "Installed" then
+    if tab_name == "Plugins" or tab_name == "Patches" or tab_name == "Fonts" or tab_name == "Installed" then
         item_height = sc(102)
     else -- Updates
         item_height = sc(82)
@@ -9309,28 +9223,33 @@ function Storefront:getRepoDescriptors(kind)
     -- which is the dominant cost when flipping pages. Invalidate when the cache's
     -- last-fetched stamp changes (refresh) — see refreshCache resetting it too.
     local fetched = Cache.getLastFetched and Cache.getLastFetched(kind)
+    local entries = Cache.listRepos(kind)
     local cache = self._repo_descriptors_cache
-    if cache and cache[kind] and cache[kind].fetched == fetched then
+    if cache and cache[kind] and cache[kind].fetched == fetched and cache[kind].descriptors and #cache[kind].descriptors == #entries then
         return cache[kind].descriptors
     end
-    local entries = Cache.listRepos(kind)
     local descriptors = {}
     for _, repo in ipairs(entries) do
         local owner = repo.owner or (repo.data and repo.data.owner and repo.data.owner.login)
         local descriptor = {
             id = repo.repo_id,
             kind = kind,
-            name = repo.name,
-            full_name = repo.full_name,
+            name = repo.name or (repo.data and repo.data.name),
+            font_family = repo.font_family or (repo.data and (repo.data.font_family or repo.data.name)) or repo.name,
+            font_file = repo.font_file or (repo.data and repo.data.font_file),
+            category = repo.category or (repo.data and repo.data.category),
+            license = repo.license or (repo.data and repo.data.license),
+            download_url = repo.download_url or (repo.data and repo.data.download_url),
+            full_name = repo.full_name or (repo.data and repo.data.full_name),
             owner = owner,
             stars = (repo.stars and repo.stars > 0) and repo.stars or (repo.data and tonumber(repo.data.stargazers_count) or 0),
-            language = repo.language,
-            description = repo.description,
-            homepage = repo.homepage,
-            default_branch = repo.default_branch,
-            latest_release = repo.latest_release,
-            patch_files = repo.patch_files,
-            data = repo.data,
+            language = repo.language or (repo.data and repo.data.language),
+            description = repo.description or (repo.data and repo.data.description),
+            homepage = repo.homepage or (repo.data and repo.data.homepage),
+            default_branch = repo.default_branch or (repo.data and repo.data.default_branch),
+            latest_release = repo.latest_release or (repo.data and repo.data.latest_release),
+            patch_files = repo.patch_files or (repo.data and repo.data.patch_files),
+            data = repo.data or repo,
         }
         table.insert(descriptors, descriptor)
     end
@@ -9795,11 +9714,12 @@ function Storefront:promptRepoAction(repo)
         return
     end
 
+    local current_kind = repo.kind or (self.browser_state and self.browser_state.kind) or "plugin"
     local DetailsDialog = require("storefront_details_dialog")
     local details_dialog = DetailsDialog:new{
         Storefront = self,
         repo = repo,
-        kind = "plugin",
+        kind = current_kind,
     }
     details_dialog:show()
 end

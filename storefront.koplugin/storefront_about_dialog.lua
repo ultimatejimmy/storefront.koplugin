@@ -188,7 +188,7 @@ function StorefrontAboutDialog.show(Storefront, on_close_cb)
         -- Title Header (Matching Settings Card style)
         local title_label = TextWidget:new{
             text = _("About Storefront"),
-            face = Font:getFace("cfont", title_font_size),
+            face = Font:getFace("NotoSerif-Regular.ttf", title_font_size),
             bold = true,
             fgcolor = Blitbuffer.COLOR_BLACK,
         }
@@ -212,7 +212,7 @@ function StorefrontAboutDialog.show(Storefront, on_close_cb)
         local function create_section_header(title)
             local label = TextWidget:new{
                 text = title:upper(),
-                face = Font:getFace("cfont", ui_font_size - 3),
+                face = Font:getFace("NotoSerif-Regular.ttf", ui_font_size - 3),
                 bold = true,
                 fgcolor = Blitbuffer.COLOR_BLACK,
             }
@@ -239,7 +239,7 @@ function StorefrontAboutDialog.show(Storefront, on_close_cb)
 
             local txt = TextBoxWidget:new{
                 text = left_text,
-                face = Font:getFace("cfont", ui_font_size),
+                face = Font:getFace("NotoSerif-Regular.ttf", ui_font_size),
                 fgcolor = callback and Blitbuffer.COLOR_BLACK or storefront_theme.color_label_dim,
                 width = max_left_w,
                 alignment = "left",
@@ -299,7 +299,7 @@ function StorefrontAboutDialog.show(Storefront, on_close_cb)
         -- Version Row
         local ver_widget = TextWidget:new{
             text = string.format("v%s", meta.version or "1.0.0"),
-            face = Font:getFace("cfont", ui_font_size - 1),
+            face = Font:getFace("NotoSerif-Regular.ttf", ui_font_size - 1),
             fgcolor = storefront_theme.color_label_dim,
         }
         table.insert(content_vg, create_setting_row(_("Version"), ver_widget, nil))
@@ -307,7 +307,7 @@ function StorefrontAboutDialog.show(Storefront, on_close_cb)
         -- Author Row
         local author_widget = TextWidget:new{
             text = meta.author or "ultimatejimmy",
-            face = Font:getFace("cfont", ui_font_size - 1),
+            face = Font:getFace("NotoSerif-Regular.ttf", ui_font_size - 1),
             fgcolor = storefront_theme.color_label_dim,
         }
         table.insert(content_vg, create_setting_row(_("Author"), author_widget, nil))
@@ -319,7 +319,7 @@ function StorefrontAboutDialog.show(Storefront, on_close_cb)
         local channel_label = (current_channel == "beta") and _("Beta") or _("Stable")
         local channel_widget = TextWidget:new{
             text = channel_label,
-            face = Font:getFace("cfont", ui_font_size - 1),
+            face = Font:getFace("NotoSerif-Regular.ttf", ui_font_size - 1),
             fgcolor = storefront_theme.color_label_dim,
         }
         table.insert(content_vg, create_setting_row(_("Update channel"), channel_widget, function()
@@ -344,7 +344,7 @@ function StorefrontAboutDialog.show(Storefront, on_close_cb)
         -- Close Row
         local close_text_widget = TextWidget:new{
             text = _("Close"),
-            face = Font:getFace("cfont", ui_font_size),
+            face = Font:getFace("NotoSerif-Regular.ttf", ui_font_size),
             bold = true,
             fgcolor = Blitbuffer.COLOR_BLACK,
         }

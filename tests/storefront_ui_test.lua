@@ -840,7 +840,12 @@ if ok_browser then
             end
         end
         check("togglePluginDisabled triggers UIManager:show with restart confirmation dialog", restart_dialog_found, true)
-        UIManager.show = orig_ui_show
+        -- Test collectUpdateSummary caching (prevents CPU/memory thrashing on Kindle)
+        MainStorefront.collectUpdateSummary = orig_collect_plugin
+        MainStorefront._cached_plugin_summary = nil
+        local sum1 = MainStorefront:collectUpdateSummary()
+        local sum2 = MainStorefront:collectUpdateSummary()
+        check("collectUpdateSummary returns cached summary object on repeated call", sum1 == sum2, true)
 
         -- Restore mock
         package.loaded["ffi/util"].readAllFromFD = orig_readAllFromFD

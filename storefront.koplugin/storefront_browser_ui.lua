@@ -510,7 +510,7 @@ function StorefrontBrowserDialog:init()
                 table.insert(tb, HorizontalSpan:new{ width = sc(4) })
                 table.insert(tb, TextWidget:new{
                     text = "·",
-                    face = Font:getFace("cfont", 14),
+                    face = Font:getFace("NotoSerif-Regular.ttf", 14),
                     fgcolor = Blitbuffer.COLOR_BLACK,
                 })
                 table.insert(tb, HorizontalSpan:new{ width = sc(4) })

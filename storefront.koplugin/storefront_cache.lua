@@ -74,7 +74,8 @@ end
 local _seeding_in_progress = false
 
 function Cache.init()
-    if _loaded or _seeding_in_progress then
+    if _seeding_in_progress then return end
+    if _loaded then
         return
     end
     ensureDirectory()
@@ -214,6 +215,12 @@ function Cache.storeRepos(kind, repos)
         }
         if kind == "patch" then
             record.patch_files = existing_patches[repo_id] or {}
+        elseif kind == "font" then
+            record.font_family = tostring(repo.font_family or repo.name or "")
+            record.font_file = tostring(repo.font_file or "")
+            record.category = tostring(repo.category or "Serif")
+            record.license = tostring(repo.license or "OFL")
+            record.download_url = tostring(repo.download_url or "")
         end
         table.insert(list, record)
     end

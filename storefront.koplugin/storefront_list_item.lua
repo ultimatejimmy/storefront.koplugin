@@ -33,18 +33,34 @@ local function getCustomFontFace(entry_name, font_family, font_file)
     local DataStorage = require("datastorage")
     local lfs = require("libs/libkoreader-lfs")
 
-    local search_dirs = {
-        DataStorage:getDataDir() .. "/fonts/" .. entry_name,
-        "assets/fonts/" .. entry_name,
-        "plugins/storefront.koplugin/assets/fonts/" .. entry_name,
-        DataStorage:getDataDir() .. "/plugins/storefront.koplugin/assets/fonts/" .. entry_name,
-        DataStorage:getDataDir() .. "/plugins/storefront.koplugin/storefront.koplugin/assets/fonts/" .. entry_name,
-    }
+    local info = debug.getinfo(1, "S")
+    local script_dir = info and info.source and info.source:match("^@(.*[/\\])") or ""
+    if script_dir:sub(-1) == "/" or script_dir:sub(-1) == "\\" then
+        script_dir = script_dir:sub(1, -2)
+    end
+
+    local candidate_dirs = {}
+    if script_dir ~= "" then
+        table.insert(candidate_dirs, script_dir .. "/assets/fonts/" .. entry_name)
+        table.insert(candidate_dirs, script_dir .. "/../assets/fonts/" .. entry_name)
+    end
+    table.insert(candidate_dirs, DataStorage:getDataDir() .. "/fonts/" .. entry_name)
+    table.insert(candidate_dirs, DataStorage:getDataDir() .. "/plugins/storefront.koplugin/assets/fonts/" .. entry_name)
+    table.insert(candidate_dirs, DataStorage:getDataDir() .. "/plugins/storefront.koplugin/storefront.koplugin/assets/fonts/" .. entry_name)
+    table.insert(candidate_dirs, "assets/fonts/" .. entry_name)
 
     local found_path = nil
-    for _, dir in ipairs(search_dirs) do
-        local rp = ffiutil.realpath and ffiutil.realpath(dir) or dir
+    for _, dir in ipairs(candidate_dirs) do
+        local rp = (ffiutil and ffiutil.realpath) and ffiutil.realpath(dir) or dir
+        if not rp or rp == "" then rp = dir end
         if rp and lfs.attributes and lfs.attributes(rp, "mode") == "directory" then
+            if font_file and font_file ~= "" then
+                local exact_p = rp .. "/" .. font_file
+                if lfs.attributes(exact_p, "mode") == "file" then
+                    found_path = exact_p
+                    break
+                end
+            end
             for file in lfs.dir(rp) do
                 if file ~= "." and file ~= ".." and (file:match("%.ttf$") or file:match("%.otf$")) then
                     found_path = rp .. "/" .. file
@@ -249,6 +265,7 @@ function StorefrontListItem:init()
             name_face = getCustomFontFace(entry.name, font_face_name, font_file)
         end
 
+        local is_custom_font = (name_face ~= nil)
         if not name_face then
             name_face = Font:getFace("NotoSerif-Bold.ttf", 22)
         end
@@ -256,7 +273,7 @@ function StorefrontListItem:init()
         local name_w = TextWidget:new{
             text = name_text,
             face = name_face,
-            bold = true,
+            bold = not is_custom_font,
             fgcolor = text_color,
             max_width = text_w,
         }
@@ -276,7 +293,7 @@ function StorefrontListItem:init()
             meta_text = table.concat(meta_parts, "  ·  ")
         end
 
-        local meta_face = Font:getFace("cfont", 16)
+        local meta_face = Font:getFace("NotoSerif-Regular.ttf", 16)
         local meta_w = TextWidget:new{
             text = meta_text,
             face = meta_face,
@@ -293,7 +310,7 @@ function StorefrontListItem:init()
                 meta_w,
             }
         else
-            local desc_face = Font:getFace("cfont", 14)
+            local desc_face = Font:getFace("NotoSerif-Regular.ttf", 14)
             local desc_w = TextWidget:new{
                 text = desc_text,
                 face = desc_face,

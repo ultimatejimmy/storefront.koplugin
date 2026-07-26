@@ -237,7 +237,7 @@ function StorefrontDetailsDialog:init()
             local folder_name = self.update_item.plugin.dirname
             local folder_text = TextWidget:new{
                 text = string.format("folder: %s", folder_name),
-                face = Font:getFace("cfont", 14),
+                face = Font:getFace("NotoSerif-Regular.ttf", 14),
                 bold = true,
                 fgcolor = Blitbuffer.COLOR_WHITE,
             }
@@ -260,12 +260,12 @@ function StorefrontDetailsDialog:init()
     }
     local meta_label = TextWidget:new{
         text = meta_text,
-        face = Font:getFace("cfont", 16),
+        face = Font:getFace("NotoSerif-Regular.ttf", 16),
         fgcolor = Blitbuffer.COLOR_BLACK,
     }
     local desc_label = TextBoxWidget:new{
         text = desc_text,
-        face = Font:getFace("cfont", 16),
+        face = Font:getFace("NotoSerif-Regular.ttf", 16),
         fgcolor = Blitbuffer.COLOR_BLACK,
         width = self.screen_w - sc(24),
     }
@@ -614,6 +614,43 @@ function StorefrontDetailsDialog:init()
     local readme_w = self.screen_w - sc(24)
 
     local loadContent
+    local function makeTab(label, is_active, callback_fn)
+        local txt_w = TextWidget:new{
+            text = label,
+            face = Font:getFace("NotoSerif-Regular.ttf", 18),
+            bold = is_active,
+            fgcolor = is_active and Blitbuffer.COLOR_BLACK or Blitbuffer.Color8(120),
+        }
+        local btn = Button:new{
+            text = label,
+            text_font_size = 18,
+            text_font_bold = is_active,
+            text_font_color = is_active and Blitbuffer.COLOR_BLACK or Blitbuffer.Color8(120),
+            bordersize = 0,
+            padding = sc(4),
+            radius = 0,
+            show_parent = self,
+            callback = callback_fn,
+        }
+        local btn_w = txt_w:getSize().w + sc(8)
+        local underline
+        if is_active then
+            underline = LineWidget:new{
+                background = Blitbuffer.COLOR_BLACK,
+                dimen = Geom:new{ w = btn_w, h = sc(3) },
+            }
+        else
+            underline = VerticalSpan:new{ width = sc(3) }
+        end
+
+        return VerticalGroup:new{
+            align = "center",
+            btn,
+            VerticalSpan:new{ width = sc(2) },
+            underline,
+        }
+    end
+
     local function buildTabBar()
         if self.kind == "font" then
             local sample_col = makeTab(_("Sample Text"), true, function() end)
@@ -626,43 +663,6 @@ function StorefrontDetailsDialog:init()
         local is_readme = (self.active_tab == "readme")
         local is_rel    = (self.active_tab == "release_notes")
         local is_ver    = (self.active_tab == "versions")
-
-        local function makeTab(label, is_active, callback_fn)
-            local txt_w = TextWidget:new{
-                text = label,
-                face = Font:getFace("cfont", 18),
-                bold = is_active,
-                fgcolor = is_active and Blitbuffer.COLOR_BLACK or Blitbuffer.Color8(120),
-            }
-            local btn = Button:new{
-                text = label,
-                text_font_size = 18,
-                text_font_bold = is_active,
-                text_font_color = is_active and Blitbuffer.COLOR_BLACK or Blitbuffer.Color8(120),
-                bordersize = 0,
-                padding = sc(4),
-                radius = 0,
-                show_parent = self,
-                callback = callback_fn,
-            }
-            local btn_w = txt_w:getSize().w + sc(8)
-            local underline
-            if is_active then
-                underline = LineWidget:new{
-                    background = Blitbuffer.COLOR_BLACK,
-                    dimen = Geom:new{ w = btn_w, h = sc(3) },
-                }
-            else
-                underline = VerticalSpan:new{ width = sc(3) }
-            end
-
-            return VerticalGroup:new{
-                align = "center",
-                btn,
-                VerticalSpan:new{ width = sc(2) },
-                underline,
-            }
-        end
 
         local readme_col = makeTab(_("README"), is_readme, function()
             if self.active_tab ~= "readme" then
@@ -815,7 +815,7 @@ td { vertical-align: top; }
     -- -----------------------------------------------------------------------
     local page_indicator = TextWidget:new{
         text = "1 / 1",
-        face = Font:getFace("cfont", 18),
+        face = Font:getFace("NotoSerif-Regular.ttf", 18),
         fgcolor = Blitbuffer.COLOR_BLACK,
     }
 
@@ -964,7 +964,7 @@ td { vertical-align: top; }
         local page_str = string.format("%d / %d", cur, total)
         local page_label = TextWidget:new{
             text = page_str,
-            face = Font:getFace("cfont", 18),
+            face = Font:getFace("NotoSerif-Regular.ttf", 18),
         }
 
         local next_btn = Button:new{
@@ -1199,7 +1199,7 @@ td { vertical-align: top; }
                 local pre_svg_icon = allow_pre and getAssetPath("toggle-right.svg") or getAssetPath("toggle-left.svg")
                 local pre_label_w = TextWidget:new{
                     text = _("Allow pre-release updates"),
-                    face = Font:getFace("cfont", 16),
+                    face = Font:getFace("NotoSerif-Regular.ttf", 16),
                     bold = true,
                     fgcolor = Blitbuffer.COLOR_BLACK,
                 }
@@ -1260,7 +1260,7 @@ td { vertical-align: top; }
                 if not releases or #releases == 0 then
                     table.insert(list_items, TextWidget:new{
                         text = _("No releases found for this repository."),
-                        face = Font:getFace("cfont", 14),
+                        face = Font:getFace("NotoSerif-Regular.ttf", 14),
                         fgcolor = Blitbuffer.COLOR_DARK_GRAY,
                     })
                 else
@@ -1599,7 +1599,7 @@ function StorefrontVersionDetailsDialog:init()
     local meta_str = string.format("Version: %s%s%s", tag, is_pre and " (PRE-RELEASE)" or "", published ~= "" and ("  ·  Published: " .. published) or "")
     local meta_label = TextWidget:new{
         text = meta_str,
-        face = Font:getFace("cfont", 16),
+        face = Font:getFace("NotoSerif-Regular.ttf", 16),
         fgcolor = Blitbuffer.COLOR_BLACK,
     }
 
@@ -1645,7 +1645,7 @@ function StorefrontVersionDetailsDialog:init()
     }
     local ignore_txt_w = TextWidget:new{
         text = is_ignored and _("Ignored") or _("Ignore"),
-        face = Font:getFace("cfont", 16),
+        face = Font:getFace("NotoSerif-Regular.ttf", 16),
         bold = is_ignored,
         fgcolor = Blitbuffer.COLOR_BLACK,
     }
