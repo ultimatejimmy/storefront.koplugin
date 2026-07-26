@@ -21,6 +21,59 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local _ = require("gettext")
 
+local _cached_font_faces = {}
+
+local function getCustomFontFace(entry_name, font_family, font_file)
+    if not entry_name or entry_name == "" then return nil end
+    if _cached_font_faces[entry_name] ~= nil then
+        return _cached_font_faces[entry_name] or nil
+    end
+
+    local ffiutil = require("ffi/util")
+    local DataStorage = require("datastorage")
+    local lfs = require("libs/libkoreader-lfs")
+
+    local search_dirs = {
+        DataStorage:getDataDir() .. "/fonts/" .. entry_name,
+        "assets/fonts/" .. entry_name,
+        "plugins/storefront.koplugin/assets/fonts/" .. entry_name,
+        DataStorage:getDataDir() .. "/plugins/storefront.koplugin/assets/fonts/" .. entry_name,
+        DataStorage:getDataDir() .. "/plugins/storefront.koplugin/storefront.koplugin/assets/fonts/" .. entry_name,
+    }
+
+    local found_path = nil
+    for _, dir in ipairs(search_dirs) do
+        local rp = ffiutil.realpath and ffiutil.realpath(dir) or dir
+        if rp and lfs.attributes and lfs.attributes(rp, "mode") == "directory" then
+            for file in lfs.dir(rp) do
+                if file ~= "." and file ~= ".." and (file:match("%.ttf$") or file:match("%.otf$")) then
+                    found_path = rp .. "/" .. file
+                    break
+                end
+            end
+        end
+        if found_path then break end
+    end
+
+    local face = nil
+    if found_path then
+        local ok, res = pcall(Font.getFace, Font, found_path, 22)
+        if ok and res then
+            face = res
+        end
+    end
+
+    if not face and font_family then
+        local ok, res = pcall(Font.getFace, Font, font_family, 22)
+        if ok and res then
+            face = res
+        end
+    end
+
+    _cached_font_faces[entry_name] = face or false
+    return face or nil
+end
+
 local StorefrontListItem = InputContainer:extend{
     align = "left",
     entry = nil,
@@ -189,7 +242,17 @@ function StorefrontListItem:init()
         local text_w = content_inner - right_reserve
 
         -- Line 1: Name
-        local name_face = Font:getFace("NotoSerif-Bold.ttf", 22)
+        local name_face = nil
+        if entry.kind == "font" or entry.type == "font" or entry.font_family or entry.font_file then
+            local font_file = entry.font_file or entry.font_filename or ""
+            local font_face_name = entry.font_family or entry.font_face or entry.name
+            name_face = getCustomFontFace(entry.name, font_face_name, font_file)
+        end
+
+        if not name_face then
+            name_face = Font:getFace("NotoSerif-Bold.ttf", 22)
+        end
+
         local name_w = TextWidget:new{
             text = name_text,
             face = name_face,

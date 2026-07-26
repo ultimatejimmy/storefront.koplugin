@@ -9,11 +9,13 @@ local Cache = {}
 local DB_DIRECTORY = ffiUtil.joinPath(DataStorage:getDataDir(), "cache/Storefront")
 local PLUGINS_FILE = ffiUtil.joinPath(DB_DIRECTORY, "storefront_plugins.json")
 local PATCHES_FILE = ffiUtil.joinPath(DB_DIRECTORY, "storefront_patches.json")
+local FONTS_FILE = ffiUtil.joinPath(DB_DIRECTORY, "storefront_fonts.json")
 
 local _loaded = false
 local _data = {
     plugin = { fetched_at = 0, repos = {} },
     patch = { fetched_at = 0, repos = {} },
+    font = { fetched_at = 0, repos = {} },
 }
 
 local _by_id = {}
@@ -69,8 +71,10 @@ local function readJsonFile(filepath)
     return decoded
 end
 
+local _seeding_in_progress = false
+
 function Cache.init()
-    if _loaded then
+    if _loaded or _seeding_in_progress then
         return
     end
     ensureDirectory()
@@ -82,7 +86,30 @@ function Cache.init()
     if patches_data then
         _data.patch = patches_data
     end
+    local fonts_data = readJsonFile(FONTS_FILE)
+    if fonts_data then
+        _data.font = fonts_data
+    end
     
+    local has_plugins = _data.plugin and _data.plugin.repos and #_data.plugin.repos > 0
+    local has_fonts   = _data.font and _data.font.repos and #_data.font.repos > 0
+    
+    if not has_plugins or not has_fonts then
+        _seeding_in_progress = true
+        logger.info("Storefront cache incomplete (plugins:", tostring(has_plugins), "fonts:", tostring(has_fonts), "), seeding from bundled catalog...")
+        local ok_cat, CatalogClient = pcall(require, "storefront_net_catalog")
+        if ok_cat and CatalogClient and CatalogClient.loadBundledCatalog then
+            CatalogClient.loadBundledCatalog()
+            plugins_data = readJsonFile(PLUGINS_FILE)
+            if plugins_data then _data.plugin = plugins_data end
+            patches_data = readJsonFile(PATCHES_FILE)
+            if patches_data then _data.patch = patches_data end
+            fonts_data = readJsonFile(FONTS_FILE)
+            if fonts_data then _data.font = fonts_data end
+        end
+        _seeding_in_progress = false
+    end
+
     _by_id = {}
     _by_name = {}
     
@@ -108,6 +135,9 @@ function Cache.init()
     end
     if _data.patch and _data.patch.repos then
         indexRepos(_data.patch.repos)
+    end
+    if _data.font and _data.font.repos then
+        indexRepos(_data.font.repos)
     end
     
     _loaded = true
@@ -193,7 +223,7 @@ function Cache.storeRepos(kind, repos)
         repos = list,
     }
     
-    local file_path = kind == "plugin" and PLUGINS_FILE or PATCHES_FILE
+    local file_path = (kind == "plugin" and PLUGINS_FILE) or (kind == "patch" and PATCHES_FILE) or FONTS_FILE
     writeJsonFile(file_path, _data[kind])
     
     _loaded = false

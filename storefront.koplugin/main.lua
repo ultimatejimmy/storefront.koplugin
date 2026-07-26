@@ -4799,6 +4799,112 @@ function Storefront:deletePatch(filename, record)
     end)
 end
 
+function Storefront:installFontFromRepo(repo)
+    if not repo then return end
+    self:_installFontFromRepoInternal(repo)
+end
+
+function Storefront:_installFontFromRepoInternal(repo)
+    local font_name = repo.font_family or repo.name or repo.full_name
+    if not font_name or font_name == "" then
+        UIManager:show(InfoMessage:new{ text = _("Missing font metadata."), timeout = 4 })
+        return
+    end
+
+    local lfs = require("libs/libkoreader-lfs")
+    local ffiutil = require("ffi/util")
+    local util = require("util")
+
+    local fonts_root = DataStorage:getDataDir() .. "/fonts"
+    if lfs.attributes(fonts_root, "mode") ~= "directory" then
+        lfs.mkdir(fonts_root)
+    end
+
+    local font_target_dir = fonts_root .. "/" .. font_name
+    if lfs.attributes(font_target_dir, "mode") ~= "directory" then
+        lfs.mkdir(font_target_dir)
+    end
+
+    -- Find bundled font source directory or files
+    local candidate_src_dirs = {
+        "assets/fonts/" .. font_name,
+        "plugins/storefront.koplugin/assets/fonts/" .. font_name,
+        DataStorage:getDataDir() .. "/plugins/storefront.koplugin/assets/fonts/" .. font_name,
+        DataStorage:getDataDir() .. "/plugins/storefront.koplugin/storefront.koplugin/assets/fonts/" .. font_name,
+    }
+
+    local copied_files = 0
+    for _, src_dir in ipairs(candidate_src_dirs) do
+        local real_src = ffiutil.realpath and ffiutil.realpath(src_dir) or src_dir
+        if real_src and lfs.attributes(real_src, "mode") == "directory" then
+            for file in lfs.dir(real_src) do
+                if file:match("%.ttf$") or file:match("%.otf$") then
+                    local src_file = real_src .. "/" .. file
+                    local dst_file = font_target_dir .. "/" .. file
+                    local sf = io.open(src_file, "rb")
+                    if sf then
+                        local content = sf:read("*all")
+                        sf:close()
+                        local df = io.open(dst_file, "wb")
+                        if df then
+                            df:write(content)
+                            df:close()
+                            copied_files = copied_files + 1
+                        end
+                    end
+                end
+            end
+            if copied_files > 0 then
+                break
+            end
+        end
+    end
+
+    if copied_files == 0 then
+        UIManager:show(InfoMessage:new{ text = string.format(_("Bundled font files not found for %s."), font_name), timeout = 5 })
+        return
+    end
+
+    InstallStore.upsertFont(font_name, {
+        font_name = font_name,
+        owner = repo.owner,
+        repo = repo.name,
+        full_name = repo.full_name,
+        installed_at = os.time(),
+        version = repo.version or "1.0",
+    })
+
+    showRestartConfirmation(string.format(_("Installed font \"%s\" (%d file(s)) into KOReader fonts directory."), font_name, copied_files))
+end
+
+function Storefront:deleteFont(font_name, record)
+    if not font_name or font_name == "" then
+        return
+    end
+    local display_name = font_name
+    showDeleteConfirmationDialog(display_name, false, nil, function()
+        local fonts_root = DataStorage:getDataDir() .. "/fonts"
+        local font_dir = fonts_root .. "/" .. font_name
+        local util = require("util")
+        local lfs = require("libs/libkoreader-lfs")
+
+        if lfs.attributes(font_dir, "mode") == "directory" then
+            util.purgeDir(font_dir)
+            lfs.rmdir(font_dir)
+        else
+            os.remove(fonts_root .. "/" .. font_name .. ".ttf")
+            os.remove(fonts_root .. "/" .. font_name .. ".otf")
+        end
+
+        InstallStore.removeFont(font_name)
+        UIManager:show(InfoMessage:new{
+            text = string.format(_("Removed font %s."), font_name),
+            timeout = 5,
+        })
+        self:reopenBrowser()
+    end)
+end
+
 function Storefront:checkSinglePlugin(record)
     if not record then
         return
@@ -8149,7 +8255,7 @@ function Storefront:buildBrowserEntries()
         self._last_total_kind = "installed"
         return items, total_pages
     end
-    local kind = tab == "Plugins" and "plugin" or "patch"
+    local kind = (tab == "Plugins" and "plugin") or (tab == "Fonts" and "font") or "patch"
     self.browser_state.kind = kind
     local items = {}
 
@@ -8313,13 +8419,17 @@ function Storefront:browserSwitchTab(tab_name)
         if current == "Plugins" then
             tab_name = "Patches"
         elseif current == "Patches" then
+            tab_name = "Fonts"
+        elseif current == "Fonts" then
+            tab_name = "Installed"
+        elseif current == "Installed" then
             tab_name = "Updates"
         else
             tab_name = "Plugins"
         end
     end
     self.browser_state.tab = tab_name
-    self.browser_state.kind = (tab_name == "Patches" and "patch" or "plugin")
+    self.browser_state.kind = (tab_name == "Patches" and "patch") or (tab_name == "Fonts" and "font") or "plugin"
     self.browser_state.page = 1
     self.browser_state.scroll_offset = nil
     self:resetFiltersForRefresh()
@@ -8639,7 +8749,7 @@ function Storefront:showBrowser(kind)
         end,
         on_tab_switch = function(tab_name)
             self.browser_state.tab = tab_name
-            self.browser_state.kind = (tab_name == "Patches" and "patch" or "plugin")
+            self.browser_state.kind = (tab_name == "Patches" and "patch") or (tab_name == "Fonts" and "font") or "plugin"
             self.browser_state.page = 1
             self.browser_state.scroll_offset = nil
             self:saveBrowserState()

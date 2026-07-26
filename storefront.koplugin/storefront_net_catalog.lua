@@ -131,14 +131,18 @@ function CatalogClient.updateCacheFromCatalog(catalog_data)
     
     local plugins = catalog_data.plugins or {}
     local patches = catalog_data.patches or {}
+    local fonts   = catalog_data.fonts or {}
     
-    logger.info("Storefront: updating cache from static catalog", "plugins:", #plugins, "patches:", #patches)
+    logger.info("Storefront: updating cache from static catalog", "plugins:", #plugins, "patches:", #patches, "fonts:", #fonts)
     
     -- Store plugin repositories
     Cache.storeRepos("plugin", plugins)
     
     -- Store patch repositories
     Cache.storeRepos("patch", patches)
+    
+    -- Store font repositories
+    Cache.storeRepos("font", fonts)
     
     -- Store patch file metadata for patch repositories
     for _, repo in ipairs(patches) do
@@ -232,13 +236,14 @@ function CatalogClient.cancelAsyncFetch()
     end
 end
 
-function CatalogClient.processCatalogDataToStaging(catalog_data, staging_plugins_file, staging_patches_file)
+function CatalogClient.processCatalogDataToStaging(catalog_data, staging_plugins_file, staging_patches_file, staging_fonts_file)
     if not catalog_data or type(catalog_data) ~= "table" then
         return false, "invalid catalog format"
     end
     
     local plugins = catalog_data.plugins or {}
     local patches = catalog_data.patches or {}
+    local fonts   = catalog_data.fonts or {}
     local fetched_at = os.time()
 
     local function getOwnerLogin(owner)
@@ -305,8 +310,30 @@ function CatalogClient.processCatalogDataToStaging(catalog_data, staging_plugins
         table.insert(patch_list, record)
     end
 
+    local font_list = {}
+    for _, repo in ipairs(fonts) do
+        table.insert(font_list, {
+            repo_id = tonumber(repo.id or repo.repo_id) or 0,
+            kind = "font",
+            name = tostring(repo.name or ""),
+            font_family = tostring(repo.font_family or repo.name or ""),
+            font_file = tostring(repo.font_file or ""),
+            owner = getOwnerLogin(repo.owner),
+            full_name = tostring(repo.full_name or ""),
+            description = repo.description ~= json.null and tostring(repo.description or "") or "",
+            category = tostring(repo.category or "Serif"),
+            license = tostring(repo.license or "OFL"),
+            stars = tonumber(repo.stargazers_count) or tonumber(repo.stars) or 0,
+            download_url = tostring(repo.download_url or ""),
+            html_url = tostring(repo.html_url or ""),
+            fetched_at = fetched_at,
+            data = repo,
+        })
+    end
+
     local plugin_data = { fetched_at = fetched_at, repos = plugin_list }
     local patch_data = { fetched_at = fetched_at, repos = patch_list }
+    local font_data = { fetched_at = fetched_at, repos = font_list }
 
     local ok_p, ser_p = pcall(json.encode, plugin_data)
     if not ok_p then return false, "plugin json encode failed" end
@@ -321,6 +348,15 @@ function CatalogClient.processCatalogDataToStaging(catalog_data, staging_plugins
     if not fpt then return false, "failed to write staging patches" end
     fpt:write(ser_pt)
     fpt:close()
+
+    if staging_fonts_file then
+        local ok_f, ser_f = pcall(json.encode, font_data)
+        if not ok_f then return false, "font json encode failed" end
+        local ff, err_f = io.open(staging_fonts_file, "w")
+        if not ff then return false, "failed to write staging fonts" end
+        ff:write(ser_f)
+        ff:close()
+    end
 
     return true, nil
 end
@@ -354,13 +390,16 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback)
     local staging_raw_catalog = cache_dir .. "/catalog_download.json.tmp"
     local staging_plugins_file = cache_dir .. "/storefront_plugins.json.tmp"
     local staging_patches_file = cache_dir .. "/storefront_patches.json.tmp"
+    local staging_fonts_file = cache_dir .. "/storefront_fonts.json.tmp"
 
     local final_plugins_file = cache_dir .. "/storefront_plugins.json"
     local final_patches_file = cache_dir .. "/storefront_patches.json"
+    local final_fonts_file = cache_dir .. "/storefront_fonts.json"
 
     os.remove(staging_raw_catalog)
     os.remove(staging_plugins_file)
     os.remove(staging_patches_file)
+    os.remove(staging_fonts_file)
 
     if not (ok_ffi and ffiutil and ffiutil.runInSubProcess) then
         logger.warn("Storefront: ffiutil.runInSubProcess unavailable, skipping background catalog update")
@@ -393,7 +432,7 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback)
                 return
             end
 
-            local ok_proc, proc_err = CatalogClient.processCatalogDataToStaging(parsed, staging_plugins_file, staging_patches_file)
+            local ok_proc, proc_err = CatalogClient.processCatalogDataToStaging(parsed, staging_plugins_file, staging_patches_file, staging_fonts_file)
             if not ok_proc then
                 if child_write_fd then ffiutil.writeToFD(child_write_fd, "ERR_PROC: " .. tostring(proc_err), true) end
                 return
@@ -457,8 +496,9 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback)
 
             local ok_swap_p = safeReplace(staging_plugins_file, final_plugins_file)
             local ok_swap_pt = safeReplace(staging_patches_file, final_patches_file)
+            local ok_swap_f = safeReplace(staging_fonts_file, final_fonts_file)
 
-            if child_msg == "OK" and (ok_swap_p or ok_swap_pt) then
+            if child_msg == "OK" and (ok_swap_p or ok_swap_pt or ok_swap_f) then
                 Cache.invalidate()
                 logger.info("Storefront: background catalog update finished and cache swap complete")
                 if StorefrontLogger then StorefrontLogger.info("Storefront: background catalog update finished and cache swap complete") end
@@ -466,6 +506,7 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback)
             else
                 os.remove(staging_plugins_file)
                 os.remove(staging_patches_file)
+                os.remove(staging_fonts_file)
                 os.remove(staging_raw_catalog)
 
                 local err_msg = "Catalog async fetch failed (msg: " .. tostring(child_msg) .. ")"
@@ -482,6 +523,58 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback)
     UIManager:scheduleIn(1.0, poll_func)
 end
 
+function CatalogClient.getBundledCatalogPath()
+    local info = debug.getinfo(1, "S")
+    local src = (info and info.source) and info.source:gsub("^@", "") or ""
+    local dir = src:match("^(.*[/\\])") or ""
+
+    local candidates = {
+        dir .. "catalog.json",
+        dir .. "../catalog.json",
+        DataStorage:getDataDir() .. "/plugins/storefront.koplugin/catalog.json",
+        DataStorage:getDataDir() .. "/plugins/storefront.koplugin/storefront.koplugin/catalog.json",
+    }
+
+    for _, path in ipairs(candidates) do
+        local f = io.open(path, "r")
+        if f then
+            f:close()
+            return path
+        end
+    end
+    return nil
+end
+
+function CatalogClient.loadBundledCatalog()
+    local path = CatalogClient.getBundledCatalogPath()
+    if not path then
+        logger.warn("Storefront: bundled catalog.json not found")
+        return false, "bundled catalog.json not found"
+    end
+
+    local f, err = io.open(path, "rb")
+    if not f then
+        logger.warn("Storefront: failed to open bundled catalog", err)
+        return false, err
+    end
+
+    local content = f:read("*all")
+    f:close()
+
+    if not content or content == "" then
+        return false, "empty catalog file"
+    end
+
+    local ok, parsed = pcall(json.decode, content)
+    if not ok or type(parsed) ~= "table" then
+        logger.warn("Storefront: failed to parse bundled catalog JSON", parsed)
+        return false, "failed to parse catalog JSON"
+    end
+
+    logger.info("Storefront: seeding cache from bundled catalog.json at", path)
+    return CatalogClient.updateCacheFromCatalog(parsed)
+end
+
 function CatalogClient.fetchAndUpdateCache(url_to_fetch)
     local GitHub = require("storefront_net_github")
     if GitHub and GitHub.isDirectApiEnabled and GitHub.isDirectApiEnabled() then
@@ -490,7 +583,8 @@ function CatalogClient.fetchAndUpdateCache(url_to_fetch)
     end
     local catalog, err = CatalogClient.fetchCatalog(url_to_fetch)
     if not catalog then
-        return false, err
+        logger.info("Storefront: remote catalog fetch failed, attempting fallback to bundled catalog.json")
+        return CatalogClient.loadBundledCatalog()
     end
     local ok, update_err = CatalogClient.updateCacheFromCatalog(catalog)
     if not ok then

@@ -23,10 +23,12 @@ local function normalizeData(data)
         data = {
             plugins = data,
             patches = {},
+            fonts = {},
             item_options = {},
         }
     else
         data.patches = data.patches or {}
+        data.fonts = data.fonts or {}
         data.item_options = data.item_options or {}
     end
     return data
@@ -76,6 +78,10 @@ function InstallStore.listPatches()
     return readStore().patches
 end
 
+function InstallStore.listFonts()
+    return readStore().fonts
+end
+
 function InstallStore.save(entries)
     local data = readStore()
     data.plugins = entries or {}
@@ -85,6 +91,12 @@ end
 function InstallStore.savePatches(entries)
     local data = readStore()
     data.patches = entries or {}
+    return writeStore(data)
+end
+
+function InstallStore.saveFonts(entries)
+    local data = readStore()
+    data.fonts = entries or {}
     return writeStore(data)
 end
 
@@ -132,6 +144,20 @@ function InstallStore.upsertPatch(filename, record)
     return writeStore(data)
 end
 
+function InstallStore.upsertFont(font_name, record)
+    if not font_name or font_name == "" then
+        return false
+    end
+    local data = readStore()
+    font_name = font_name:lower()
+    local existing = data.fonts[font_name]
+    if isRecordEqual(existing, record) then
+        return true
+    end
+    data.fonts[font_name] = record
+    return writeStore(data)
+end
+
 function InstallStore.remove(plugin_id)
     if not plugin_id or plugin_id == "" then
         return false
@@ -150,6 +176,15 @@ function InstallStore.removePatch(filename)
     return writeStore(data)
 end
 
+function InstallStore.removeFont(font_name)
+    if not font_name or font_name == "" then
+        return false
+    end
+    local data = readStore()
+    data.fonts[font_name:lower()] = nil
+    return writeStore(data)
+end
+
 function InstallStore.get(plugin_id)
     if not plugin_id or plugin_id == "" then
         return nil
@@ -164,6 +199,14 @@ function InstallStore.getPatch(filename)
     end
     local data = readStore()
     return data.patches[filename]
+end
+
+function InstallStore.getFont(font_name)
+    if not font_name or font_name == "" then
+        return nil
+    end
+    local data = readStore()
+    return data.fonts[font_name:lower()]
 end
 
 function InstallStore.clear()

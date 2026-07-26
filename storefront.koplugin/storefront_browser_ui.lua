@@ -60,13 +60,14 @@ local StorefrontBrowserDialog = FocusManager:extend{
     updates_count = 0,
     show_filter_bar_plugins = false,
     show_filter_bar_patches = false,
+    show_filter_bar_fonts = false,
     show_filter_bar_installed = true,
     on_tab_switch = nil,
     on_toggle_filter_bar = nil,
 }
 
 function StorefrontBrowserDialog:buildTabBar()
-    local tabs = { "Plugins", "Patches", "Installed", "Updates" }
+    local tabs = { "Plugins", "Patches", "Fonts", "Installed", "Updates" }
     local tab_widgets = {}
 
     local sc = function(val) return Device.screen:scaleBySize(val) end
@@ -156,12 +157,14 @@ function StorefrontBrowserDialog:buildTabBar()
     local tab_bar_group = HorizontalGroup:new(tab_widgets)
     local frame_content = tab_bar_group
 
-    if self.current_tab == "Plugins" or self.current_tab == "Patches" or self.current_tab == "Installed" then
+    if self.current_tab == "Plugins" or self.current_tab == "Patches" or self.current_tab == "Fonts" or self.current_tab == "Installed" then
         local is_bar_visible
         if self.current_tab == "Plugins" then
             is_bar_visible = self.show_filter_bar_plugins == true
         elseif self.current_tab == "Patches" then
             is_bar_visible = self.show_filter_bar_patches == true
+        elseif self.current_tab == "Fonts" then
+            is_bar_visible = self.show_filter_bar_fonts == true
         else -- Installed
             is_bar_visible = self.show_filter_bar_installed ~= false
         end

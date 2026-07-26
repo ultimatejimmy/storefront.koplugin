@@ -283,7 +283,13 @@ function StorefrontDetailsDialog:init()
         is_installed = true
     end
 
-    if self.patch then
+    if self.kind == "font" then
+        local font_map = InstallStore.listFonts and InstallStore.listFonts() or {}
+        local font_name = self.repo and (self.repo.name or self.repo.font_family)
+        if font_name and (font_map[font_name] or font_map[font_name:lower()]) then
+            is_installed = true
+        end
+    elseif self.patch then
         local patch_map = InstallStore.listPatches() or {}
         if patch_map[self.patch.filename] ~= nil then is_installed = true end
     else
@@ -338,7 +344,11 @@ function StorefrontDetailsDialog:init()
     local primary_btn_w = action_btn_width - remove_btn_w - sc(12)
 
     local function getInstallRecord()
-        if self.patch then
+        if self.kind == "font" then
+            local font_map = InstallStore.listFonts and InstallStore.listFonts() or {}
+            local font_name = self.repo and (self.repo.name or self.repo.font_family)
+            return font_name and font_map[font_name:lower()]
+        elseif self.patch then
             local patch_map = InstallStore.listPatches() or {}
             return patch_map[self.patch.filename]
         elseif self.update_item and self.update_item.record then
@@ -362,7 +372,11 @@ function StorefrontDetailsDialog:init()
 
     local function doRemove()
         self:onClose()
-        if self.patch then
+        if self.kind == "font" then
+            local record = (self.update_item and self.update_item.record) or getInstallRecord()
+            local font_name = self.repo.name or self.repo.font_family
+            self.Storefront:deleteFont(font_name, record)
+        elseif self.patch then
             local record = (self.update_item and self.update_item.record) or getInstallRecord()
             local filename = self.patch.filename
             self.Storefront:deletePatch(filename, record)
@@ -455,6 +469,43 @@ function StorefrontDetailsDialog:init()
                 toggle_btn.label_widget.fgcolor = Blitbuffer.COLOR_WHITE
             end
             main_action_btn = toggle_btn
+        elseif self.kind == "font" then
+            local remove_btn_w = math.floor(action_btn_width * 0.28)
+            local primary_btn_w = action_btn_width - remove_btn_w - sc(12)
+
+            local primary_btn = Button:new{
+                text = _("Reinstall"),
+                text_font_size = 18,
+                text_font_color = Blitbuffer.COLOR_WHITE,
+                background = Blitbuffer.COLOR_BLACK,
+                bordersize = 0,
+                padding = sc(11),
+                radius = sc(4),
+                width = primary_btn_w,
+                show_parent = self,
+                callback = function()
+                    self:onClose()
+                    self.Storefront:installFontFromRepo(self.repo)
+                end,
+            }
+            if primary_btn.label_widget then
+                primary_btn.label_widget.fgcolor = Blitbuffer.COLOR_WHITE
+            end
+
+            main_action_btn = HorizontalGroup:new{
+                primary_btn,
+                HorizontalSpan:new{ width = sc(12) },
+                Button:new{
+                    text = _("Remove"),
+                    text_font_size = 18,
+                    bordersize = sc(1),
+                    padding = sc(11),
+                    radius = sc(4),
+                    width = remove_btn_w,
+                    show_parent = self,
+                    callback = doRemove,
+                }
+            }
         else
             local toggle_btn_w = math.floor(action_btn_width * 0.28)
             local remove_btn_w = math.floor(action_btn_width * 0.23)
@@ -528,7 +579,7 @@ function StorefrontDetailsDialog:init()
         end
     else
         main_action_btn = Button:new{
-            text = self.patch and _("Install Patch") or _("Install"),
+            text = self.kind == "font" and _("Install Font") or (self.patch and _("Install Patch") or _("Install")),
             text_font_size = 18,
             text_font_color = Blitbuffer.COLOR_WHITE,
             background = Blitbuffer.COLOR_BLACK,
@@ -539,7 +590,9 @@ function StorefrontDetailsDialog:init()
             show_parent = self,
             callback = function()
                 self:onClose()
-                if self.patch then
+                if self.kind == "font" then
+                    self.Storefront:installFontFromRepo(self.repo)
+                elseif self.patch then
                     self.Storefront:installPatchFromRepo(self.repo, self.patch)
                 else
                     local rel = self.repo and (self.repo.latest_release or (self.repo.data and self.repo.data.latest_release))
@@ -559,12 +612,20 @@ function StorefrontDetailsDialog:init()
     -- -----------------------------------------------------------------------
     -- 4. README / Release Notes Section Tabs & HTML Display
     -- -----------------------------------------------------------------------
-    self.active_tab = self.default_tab or (self.kind == "update" and "release_notes" or "readme")
+    self.active_tab = self.default_tab or (self.kind == "font" and "sample_text" or (self.kind == "update" and "release_notes" or "readme"))
 
     local readme_w = self.screen_w - sc(24)
 
     local loadContent
     local function buildTabBar()
+        if self.kind == "font" then
+            local sample_col = makeTab(_("Sample Text"), true, function() end)
+            return HorizontalGroup:new{
+                align = "center",
+                sample_col,
+            }
+        end
+
         local is_readme = (self.active_tab == "readme")
         local is_rel    = (self.active_tab == "release_notes")
         local is_ver    = (self.active_tab == "versions")
@@ -963,6 +1024,78 @@ td { vertical-align: top; }
         html_box.page_number = 1
         if rawget(html_box, "_bb") then html_box._bb = nil end
         if rawget(html_box, "bb") then html_box.bb = nil end
+
+        if self.kind == "font" or tab_name == "sample_text" then
+            local font_family = self.repo.font_family or self.repo.font_face or self.repo.name or "Sample Font"
+            local font_file = self.repo.font_file or self.repo.font_filename or (self.repo.name and (self.repo.name .. "-Regular.ttf")) or ""
+            local font_cat = self.repo.category or self.repo.kind_label or "E-Reader Font"
+            local font_lic = self.repo.license or "SIL Open Font License"
+            local font_author = (owner and owner ~= "") and owner or (self.repo.author or "Open Source Community")
+
+            local search_dirs = {
+                DataStorage:getDataDir() .. "/fonts/" .. (self.repo.name or ""),
+                "assets/fonts/" .. (self.repo.name or ""),
+                "plugins/storefront.koplugin/assets/fonts/" .. (self.repo.name or ""),
+                DataStorage:getDataDir() .. "/plugins/storefront.koplugin/assets/fonts/" .. (self.repo.name or ""),
+                DataStorage:getDataDir() .. "/plugins/storefront.koplugin/storefront.koplugin/assets/fonts/" .. (self.repo.name or ""),
+            }
+
+            local loaded_font_path = nil
+            for _, dir in ipairs(search_dirs) do
+                local rp = ffiutil.realpath and ffiutil.realpath(dir) or dir
+                if rp and lfs.attributes(rp, "mode") == "directory" then
+                    for file in lfs.dir(rp) do
+                        if file ~= "." and file ~= ".." and (file:match("%.ttf$") or file:match("%.otf$")) then
+                            loaded_font_path = rp .. "/" .. file
+                            break
+                        end
+                    end
+                end
+                if loaded_font_path then break end
+            end
+
+            local custom_font_face_rule = ""
+            local css_family_name = font_family
+            if loaded_font_path then
+                css_family_name = "CustomPreviewFont"
+                custom_font_face_rule = string.format("\n@font-face { font-family: 'CustomPreviewFont'; src: url('%s'); }", loaded_font_path)
+            end
+
+            local specimen_css = readme_css .. custom_font_face_rule .. string.format("\n.specimen-text { font-family: '%s', serif, sans-serif !important; }", css_family_name)
+
+            local specimen_html = string.format([[
+<div class="specimen-text">
+  <h2 style="margin-bottom: 4px; font-size: 24px;">%s</h2>
+  <p style="color: #555555; font-size: 14px; margin-top: 0; margin-bottom: 12px;">Category: %s &nbsp;&middot;&nbsp; License: %s &nbsp;&middot;&nbsp; By: %s</p>
+  <hr style="border: 0; border-top: 1px solid #cccccc; margin: 8px 0;" />
+  
+  <h3 style="margin-top: 12px; margin-bottom: 6px; font-size: 18px;">Alphabet &amp; Numbers</h3>
+  <p style="font-size: 18px; letter-spacing: 1px; line-height: 1.4; margin-bottom: 12px;">
+    ABCDEFGHIJKLMNOPQRSTUVWXYZ<br/>
+    abcdefghijklmnopqrstuvwxyz<br/>
+    0123456789 (!@#$%%^&amp;*.,?:;)
+  </p>
+
+  <hr style="border: 0; border-top: 1px solid #cccccc; margin: 8px 0;" />
+  <h3 style="margin-top: 12px; margin-bottom: 6px; font-size: 18px;">Pangram Preview</h3>
+  <p style="font-size: 22px; line-height: 1.35; margin-bottom: 8px;">The quick brown fox jumps over the lazy dog.</p>
+  <p style="font-size: 16px; line-height: 1.35; margin-bottom: 12px;">Pack my box with five dozen liquor jugs.</p>
+
+  <hr style="border: 0; border-top: 1px solid #cccccc; margin: 8px 0;" />
+  <h3 style="margin-top: 12px; margin-bottom: 6px; font-size: 18px;">Reading Passage Specimen</h3>
+  <p style="font-size: 16px; line-height: 1.45; text-align: justify; margin-bottom: 10px;">
+    It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters.
+  </p>
+  <p style="font-size: 16px; line-height: 1.45; text-align: justify; margin-bottom: 10px;">
+    "My dear Mr. Bennet," said his lady to him one day, "have you heard that Netherfield Park is let at last?" Mr. Bennet replied that he had not. "But it is," returned she; "for Mrs. Long has just been here, and she told me all about it." Mr. Bennet made no answer.
+  </p>
+</div>
+]], font_family, font_cat, font_lic, font_author)
+
+            html_box:setContent(specimen_html, specimen_css, sc(16))
+            updatePagination()
+            return
+        end
 
         if tab_name == "release_notes" then
             html_box:setContent("<p style='text-align:center;color:gray;'>" .. _("Loading Release Notes...") .. "</p>", readme_css, sc(18))
