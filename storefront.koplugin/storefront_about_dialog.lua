@@ -75,7 +75,7 @@ end
 
 function StorefrontAboutDialog.checkForUpdates(Storefront)
     local NetworkMgr = require("ui/network/manager")
-    local InfoMessage = require("ui/widget/infomessage")
+    local InfoMessage = require("storefront_toast")
     local ConfirmBox = require("ui/widget/confirmbox")
     local GitHub = require("storefront_net_github")
 

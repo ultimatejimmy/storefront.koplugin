@@ -544,7 +544,7 @@ function StorefrontDetailsDialog:init()
                 else
                     local rel = self.repo and (self.repo.latest_release or (self.repo.data and self.repo.data.latest_release))
                     if self.Storefront and type(self.Storefront.promptPluginInstallOptions) == "function" then
-                        self.Storefront:promptPluginInstallOptions(self.repo, rel, false)
+                        self.Storefront:promptPluginInstallOptions(self.repo, rel, true)
                     else
                         self.Storefront:installPluginFromRepo(self.repo)
                     end
@@ -1246,20 +1246,35 @@ td { vertical-align: top; }
                 if html_content and html_content ~= "" then
                     local cache_dir = require("datastorage"):getDataDir() .. (tab_name == "release_notes" and "/cache/Storefront/release_notes" or "/cache/Storefront/readme")
                     html_box.page_number = 1
-                    html_box:setContent(html_content, readme_css, sc(18), false, false, cache_dir)
+                    local set_ok, set_err = pcall(function()
+                        html_box:setContent(html_content, readme_css, sc(18), false, false, cache_dir)
+                    end)
+                    if not set_ok then
+                        logger.warn("Storefront Details: html_box:setContent failed", tab_name, set_err)
+                        local stripped = (RepoContent and type(RepoContent.stripMarkdown) == "function") and RepoContent.stripMarkdown(html_content) or html_content
+                        local clean_text = tostring(stripped):gsub("&", "&amp;"):gsub("<", "&lt;"):gsub(">", "&gt;")
+                        local safe_fallback = string.format("<div class=\"markdown-body\"><p>%s</p></div>", clean_text)
+                        pcall(function()
+                            html_box:setContent(safe_fallback, readme_css, sc(18))
+                        end)
+                    end
                     if rawget(html_box, "_bb") then html_box._bb = nil end
                     if rawget(html_box, "bb") then html_box.bb = nil end
                     updatePagination()
                 else
                     local msg = (tab_name == "release_notes") and _("Unable to read Release Notes.") or _("Unable to read README.")
                     html_box.page_number = 1
-                    html_box:setContent("<p style='text-align:center;color:red;'>" .. msg .. "</p>", readme_css, sc(18))
+                    pcall(function()
+                        html_box:setContent("<p style='text-align:center;color:red;'>" .. msg .. "</p>", readme_css, sc(18))
+                    end)
                     updatePagination()
                 end
             else
                 local msg = (tab_name == "release_notes") and _("No Release Notes available.") or _("No README available.")
                 html_box.page_number = 1
-                html_box:setContent("<p style='text-align:center;color:gray;'>" .. msg .. "</p>", readme_css, sc(18))
+                pcall(function()
+                    html_box:setContent("<p style='text-align:center;color:gray;'>" .. msg .. "</p>", readme_css, sc(18))
+                end)
                 updatePagination()
             end
             UIManager:setDirty(self, "ui")

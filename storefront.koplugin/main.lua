@@ -18,7 +18,7 @@ local R = {
     Size = require("ui/size"),
     Blitbuffer = require("ffi/blitbuffer"),
     ConfirmBox = require("ui/widget/confirmbox"),
-    InfoMessage = require("ui/widget/infomessage"),
+    InfoMessage = require("storefront_toast"),
     TextViewer = require("ui/widget/textviewer"),
     TextWidget = require("ui/widget/textwidget"),
     TextBoxWidget = require("ui/widget/textboxwidget"),
@@ -6193,10 +6193,16 @@ function Storefront:promptPluginInstallOptions(repo, release_override, force_sho
         self.pending_install_context = saved_ctx
         local release, release_err
         local catalog_mode = GitHub.getCatalogMode and GitHub.getCatalogMode() or "static"
+        local catalog_repo = Cache.getRepo and (
+            Cache.getRepo("plugin", repo.full_name or repo.name)
+            or (repo.owner and repo.name and Cache.getRepo("plugin", repo.owner .. "/" .. repo.name))
+        )
         local catalog_release = (catalog_mode == "static") and (
             release_override
             or (repo and repo.latest_release)
             or (repo and repo.data and repo.data.latest_release)
+            or (catalog_repo and catalog_repo.latest_release)
+            or (catalog_repo and catalog_repo.data and catalog_repo.data.latest_release)
         ) or nil
 
         local has_catalog_assets = catalog_release and type(catalog_release) == "table"
@@ -9701,7 +9707,7 @@ function Storefront:installPluginFromRepo(repo)
         return
     end
 
-    self:promptPluginInstallOptions(repo)
+    self:promptPluginInstallOptions(repo, nil, true)
 end
 
 function Storefront:_installPluginFromRepoInternal(repo)

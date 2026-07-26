@@ -333,6 +333,36 @@ local function markdownToHtml(md, owner, repo)
         return "<div class=\"markdown-body\"><p>No release notes or README content provided.</p></div>"
     end
 
+    -- Clean control characters and null bytes
+    md = md:gsub("[%z\1-\8\11\12\14-\31]", "")
+
+    -- Enforce max body length (50 KB) to avoid MuPDF memory exhaustion
+    if #md > 50000 then
+        md = md:sub(1, 50000) .. "\n\n*(Release notes truncated...)*"
+    end
+
+    -- Strip HTML comments
+    md = md:gsub("<!%-%-.-%-%->", "")
+
+    -- Convert unrecognized named HTML entities to UTF-8 characters
+    local entity_map = {
+        ["&nbsp;"] = " ",
+        ["&mdash;"] = "—",
+        ["&ndash;"] = "–",
+        ["&hellip;"] = "…",
+        ["&rsquo;"] = "’",
+        ["&lsquo;"] = "‘",
+        ["&rdquo;"] = "”",
+        ["&ldquo;"] = "“",
+        ["&bull;"] = "•",
+        ["&copy;"] = "©",
+        ["&trade;"] = "™",
+        ["&check;"] = "✓",
+    }
+    for entity, repl in pairs(entity_map) do
+        md = md:gsub(entity, repl)
+    end
+
     local lines = {}
     local in_code_block = false
     local in_list = false
@@ -355,7 +385,7 @@ local function markdownToHtml(md, owner, repo)
 
             -- Convert Markdown Images: ![alt](url) -> <img src="url" alt="alt"/>
             processed = processed:gsub("!%[([^%]]*)%]%(([^%)]+)%)", function(alt, src)
-                if owner and repo and not src:find("^https?://") and not src:find("^data:") then
+                if owner and repo and type(owner) == "string" and type(repo) == "string" and not src:find("^https?://") and not src:find("^data:") then
                     local clean_src = src:gsub("^%./", "")
                     src = string.format("https://raw.githubusercontent.com/%s/%s/HEAD/%s", owner, repo, clean_src)
                 end
@@ -365,7 +395,7 @@ local function markdownToHtml(md, owner, repo)
             -- Restore/convert raw HTML img tags that got escaped by &lt;img ... &gt;
             processed = processed:gsub("&lt;img%s+(.-)/?&gt;", function(attrs)
                 local unescaped_attrs = attrs:gsub("&quot;", '"'):gsub("&amp;", "&")
-                if owner and repo then
+                if owner and repo and type(owner) == "string" and type(repo) == "string" then
                     unescaped_attrs = unescaped_attrs:gsub('src=["\']([^"\']+)["\']', function(src)
                         if not src:find("^https?://") and not src:find("^data:") then
                             local clean_src = src:gsub("^%./", "")
@@ -377,13 +407,22 @@ local function markdownToHtml(md, owner, repo)
                 return string.format('<img %s/>', unescaped_attrs)
             end)
 
-            -- Inline formatting
-            processed = processed:gsub("%[([^%]]+)%]%(([^%)]+)%)", '<a href="%2">%1</a>')
-            processed = processed:gsub("%*%*([^*]+)%*%*", "<b>%1</b>")
-            processed = processed:gsub("__([^_]+)__", "<b>%1</b>")
-            processed = processed:gsub("%*([^*]+)%*", "<i>%1</i>")
-            processed = processed:gsub("_([^_]+)_", "<i>%1</i>")
-            processed = processed:gsub("`([^`]+)`", "<code>%1</code>")
+            -- Convert/clean problematic raw HTML tags (e.g. details/summary/table)
+            processed = processed:gsub("&lt;details&gt;", "<div>")
+            processed = processed:gsub("&lt;/details&gt;", "</div>")
+            processed = processed:gsub("&lt;summary&gt;", "<p><b>")
+            processed = processed:gsub("&lt;/summary&gt;", "</b></p>")
+            processed = processed:gsub("&lt;br%s*/?&gt;", "<br/>")
+
+            -- Inline formatting (using replacement functions to avoid Lua gsub '%' capture expansion crashes)
+            processed = processed:gsub("%[([^%]]+)%]%(([^%)]+)%)", function(label, url)
+                return string.format('<a href="%s">%s</a>', url, label)
+            end)
+            processed = processed:gsub("%*%*([^*]+)%*%*", function(b) return string.format("<b>%s</b>", b) end)
+            processed = processed:gsub("__([^_]+)__", function(b) return string.format("<b>%s</b>", b) end)
+            processed = processed:gsub("%*([^*]+)%*", function(i) return string.format("<i>%s</i>", i) end)
+            processed = processed:gsub("_([^_]+)_", function(i) return string.format("<i>%s</i>", i) end)
+            processed = processed:gsub("`([^`]+)`", function(c) return string.format("<code>%s</code>", c) end)
 
             -- Headings
             local h6 = processed:match("^######%s+(.+)")

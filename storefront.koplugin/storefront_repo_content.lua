@@ -1,6 +1,6 @@
 local DataStorage = require("datastorage")
 local UIManager = require("ui/uimanager")
-local InfoMessage = require("ui/widget/infomessage")
+local InfoMessage = require("storefront_toast")
 local FileManager = require("apps/filemanager/filemanager")
 local _ = require("gettext")
 local http = require("socket.http")
@@ -323,7 +323,7 @@ function RepoContent.openReadme(path)
 end
 
 function RepoContent.fetchReleaseNotesHtml(owner, repo, release_override)
-    if not owner or not repo or owner == "" or repo == "" then
+    if type(owner) ~= "string" or type(repo) ~= "string" or owner == "" or repo == "" or owner == json_null or repo == json_null then
         return false, "missing owner/repo"
     end
 
@@ -338,7 +338,7 @@ function RepoContent.fetchReleaseNotesHtml(owner, repo, release_override)
     local safe_repo  = clean_repo:gsub("[^%w_-]", "_")
     local path = string.format("%s/%s_%s_RELEASENOTES.html", cache_dir, safe_owner, safe_repo)
 
-    local rel_data = release_override
+    local rel_data = (type(release_override) == "table" and release_override ~= json_null) and release_override or nil
     if not rel_data then
         -- Extract release info from Cache if available
         local repo_obj = nil
@@ -348,7 +348,7 @@ function RepoContent.fetchReleaseNotesHtml(owner, repo, release_override)
             repo_obj = Cache.getRepoByName(owner, repo) or Cache.getRepoByName(owner, clean_repo)
         end
 
-        if repo_obj then
+        if repo_obj and type(repo_obj) == "table" then
             if type(repo_obj.latest_release) == "table" then
                 rel_data = repo_obj.latest_release
             elseif repo_obj.data and type(repo_obj.data.latest_release) == "table" then
@@ -357,10 +357,11 @@ function RepoContent.fetchReleaseNotesHtml(owner, repo, release_override)
         end
     end
 
-    local tag_name     = rel_data and safeString(rel_data.tag_name or rel_data.release_tag_name or rel_data.version)
-    local rel_name     = rel_data and safeString(rel_data.name)
-    local published_at = rel_data and safeString(rel_data.published_at or rel_data.created_at)
-    local body         = rel_data and safeString(rel_data.body)
+    local is_rel_table = (type(rel_data) == "table" and rel_data ~= json_null)
+    local tag_name     = is_rel_table and safeString(rel_data.tag_name or rel_data.release_tag_name or rel_data.version)
+    local rel_name     = is_rel_table and safeString(rel_data.name)
+    local published_at = is_rel_table and safeString(rel_data.published_at or rel_data.created_at)
+    local body         = is_rel_table and safeString(rel_data.body)
 
     -- If release notes body is missing from catalog/cache data, fetch live from GitHub API
     if not body or body == "" then

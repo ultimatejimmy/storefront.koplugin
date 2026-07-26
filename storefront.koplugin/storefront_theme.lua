@@ -1,8 +1,12 @@
 local Blitbuffer = require("ffi/blitbuffer")
-local Device = require("device")
+local Device = package.loaded["device"]
+if not Device then
+    local ok, dev = pcall(require, "device")
+    if ok then Device = dev end
+end
 
 local function sc(val)
-    return Device.screen:scaleBySize(val)
+    return (Device and Device.screen and Device.screen.scaleBySize and Device.screen:scaleBySize(val)) or val
 end
 
 local storefront_theme = {

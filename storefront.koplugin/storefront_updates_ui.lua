@@ -1,5 +1,5 @@
 local util = require("util")
-local InfoMessage = require("ui/widget/infomessage")
+local InfoMessage = require("storefront_toast")
 local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
 local Cache = require("storefront_cache")

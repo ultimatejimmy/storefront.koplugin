@@ -127,6 +127,43 @@ check("markdownToHtml handles json.null without crashing", md_html_res:find("No 
 local stripped = RepoContent.stripMarkdown(json_null_sentinel)
 check("stripMarkdown handles json.null without crashing", stripped == "")
 
+-- Test 6: Percent-encoded URLs in markdown links
+local md_percent_link = "[Release Tag v1.0](https://github.com/foo/bar/releases/tag/v1.0%20beta%2Ftest)"
+local res_percent_pass, res_percent_html = pcall(function()
+    return GitHubClient.markdownToHtml(md_percent_link, "foo", "bar")
+end)
+check("Markdown URL with '%' does not crash gsub", res_percent_pass == true)
+check("Percent-encoded link converted properly", res_percent_html and res_percent_html:find('href="https://github.com/foo/bar/releases/tag/v1.0%20beta%2Ftest"', 1, true) ~= nil)
+
+-- Test 7: Named HTML entities conversion
+local md_entities = "Notes with&nbsp;space and&mdash;dash and&rsquo;quote"
+local html_entities = GitHubClient.markdownToHtml(md_entities, "foo", "bar")
+check("Named HTML entity &nbsp; converted", html_entities:find("Notes with space") ~= nil)
+check("Named HTML entity &mdash; converted", html_entities:find("—") ~= nil)
+check("Named HTML entity &rsquo; converted", html_entities:find("’") ~= nil)
+
+-- Test 8: Complex raw HTML tags & comments
+local md_raw_html = "<!-- comment -->\n<details><summary>Click Me</summary>Some text</details>"
+local html_raw = GitHubClient.markdownToHtml(md_raw_html, "foo", "bar")
+check("HTML comment stripped", html_raw:find("comment") == nil)
+check("raw <details> converted to <div>", html_raw:find("<div>") ~= nil)
+
+-- Test 9: Non-table rel_data (boolean, number, json.null)
+local pass_bool, ok_bool = pcall(function()
+    return RepoContent.fetchReleaseNotesHtml("testowner", "myplugin", true)
+end)
+check("Boolean rel_data handled safely without crash", pass_bool == true and ok_bool == true)
+
+local pass_num, ok_num = pcall(function()
+    return RepoContent.fetchReleaseNotesHtml("testowner", "myplugin", 12345)
+end)
+check("Number rel_data handled safely without crash", pass_num == true and ok_num == true)
+
+-- Test 10: Truncation of huge release notes
+local huge_md = string.rep("Long line of release note text.\n", 2000)
+local html_huge = GitHubClient.markdownToHtml(huge_md, "foo", "bar")
+check("Huge release notes body truncated", html_huge:find("Release notes truncated") ~= nil)
+
 if failures > 0 then
     print(string.format("RELEASE NOTES TESTS FAILED: %d errors", failures))
     os.exit(1)

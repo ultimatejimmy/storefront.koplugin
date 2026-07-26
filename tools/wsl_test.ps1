@@ -20,7 +20,7 @@ foreach ($item in $EnvList) {
 }
 
 $WslHome = (wsl sh -c "echo -n ~").Trim()
-$PluginDir = "storefront.koplugin/storefront.koplugin"
+$PluginDir = "storefront.koplugin"
 $WSLDest = "$WslHome/.config/koreader/plugins/storefront.koplugin"
 
 # Probe for the squashfs-root location in WSL
@@ -57,7 +57,7 @@ function Run-Workflow {
         Write-Host " FAILED" -ForegroundColor Red
         return $false
     }
-    wsl rsync -rv --delete "./storefront.koplugin/tests/" "$WSLDest/tests/"
+    wsl rsync -rv --delete "./tests/" "$WSLDest/tests/"
     if ($LASTEXITCODE -ne 0) {
         Write-Host " FAILED" -ForegroundColor Red
         return $false
