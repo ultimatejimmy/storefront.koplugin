@@ -168,14 +168,14 @@ def process_single_repo(repo_item, is_patch):
             for asset in assets:
                 asset_name = asset.get("name", "")
                 url = asset.get("browser_download_url", "")
-                if asset_name and url:
+                if asset_name and url and asset_name.lower().endswith(".zip"):
                     parsed_assets.append({
                         "name": asset_name,
                         "browser_download_url": url,
                         "size": asset.get("size", 0),
                         "content_type": asset.get("content_type", ""),
                     })
-                    if not download_url and asset_name.endswith(".zip"):
+                    if not download_url:
                         download_url = url
             if not download_url and "zipball_url" in rel:
                 download_url = rel.get("zipball_url")

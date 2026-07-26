@@ -127,15 +127,393 @@ local function getManagePageSize()
 end
 
 local function showRestartConfirmation(message)
-    UIManager:show(ConfirmBox:new{
-        text = message .. "\n\n" .. _("This will take effect on next restart."),
-        ok_text = _("Restart now"),
-        ok_callback = function()
+    local storefront_theme = require("storefront_theme")
+    local Device = require("device")
+    local sc = function(val) return (Device and Device.screen and Device.screen.scaleBySize and Device.screen:scaleBySize(val)) or val end
+
+    local sw = Device.screen:getWidth()
+    local sh = Device.screen:getHeight()
+    local dialog_w = math.min(sw - sc(20), sc(380))
+
+    local ui_font_size = storefront_theme.face_label_size or 18
+    local title_font_size = storefront_theme.title_font_size or 22
+
+    local title_label = TextWidget:new{
+        text = _("Restart Required"),
+        face = Font:getFace("cfont", title_font_size),
+        bold = true,
+        fgcolor = Blitbuffer.COLOR_BLACK,
+    }
+
+    local title_container = FrameContainer:new{
+        padding = sc(12),
+        bordersize = 0,
+        title_label,
+    }
+
+    local body_text = string.format("%s\n\n%s", message or "", _("This will take effect on next restart."))
+    local body_widget = TextBoxWidget:new{
+        text = body_text,
+        face = Font:getFace("cfont", ui_font_size),
+        fgcolor = Blitbuffer.COLOR_BLACK,
+        width = dialog_w - sc(40),
+        alignment = "center",
+    }
+
+    local body_container = FrameContainer:new{
+        padding = sc(12),
+        bordersize = 0,
+        body_widget,
+    }
+
+    local card_padding = sc(6)
+    local card_border = storefront_theme.border_window or sc(2)
+    local inner_w = dialog_w - (card_padding * 2) - (card_border * 2)
+
+    local later_btn = Button:new{
+        text = _("Restart later"),
+        bordersize = sc(1),
+        radius = storefront_theme.radius_btn or sc(18),
+        padding = sc(10),
+        width = math.floor((inner_w - sc(12)) / 2),
+        show_parent = overlay,
+        callback = function()
+            UIManager:close(overlay, "ui")
+        end,
+    }
+
+    local now_btn = Button:new{
+        text = _("Restart now"),
+        bordersize = sc(1),
+        radius = storefront_theme.radius_btn or sc(18),
+        padding = sc(10),
+        width = math.floor((inner_w - sc(12)) / 2),
+        show_parent = overlay,
+        callback = function()
+            UIManager:close(overlay, "ui")
             UIManager:restartKOReader()
         end,
-        cancel_text = _("Restart later"),
-        background = Blitbuffer.COLOR_WHITE,
-    })
+    }
+
+    local btn_row = HorizontalGroup:new{
+        align = "center",
+        later_btn,
+        HorizontalSpan:new{ width = sc(8) },
+        now_btn,
+    }
+
+    local content_vg = VerticalGroup:new{
+        align = "center",
+        title_container,
+        LineWidget:new{
+            dimen = Geom:new{ w = inner_w, h = sc(1) },
+            background = Blitbuffer.COLOR_BLACK,
+        },
+        VerticalSpan:new{ width = sc(8) },
+        body_container,
+        VerticalSpan:new{ width = sc(12) },
+        FrameContainer:new{ padding = sc(4), bordersize = 0, btn_row },
+    }
+
+    local card = FrameContainer:new{
+        padding = sc(6),
+        radius = storefront_theme.radius_window or sc(12),
+        bordersize = storefront_theme.border_window or sc(2),
+        color = Blitbuffer.COLOR_BLACK,
+        background = storefront_theme.color_bg or Blitbuffer.COLOR_WHITE,
+        width = dialog_w,
+        content_vg,
+    }
+
+    overlay = InputContainer:new{
+        dimen = Geom:new{ w = sw, h = sh },
+        key_events = {
+            Close = { { "Back" } }
+        },
+        CenterContainer:new{
+            dimen = Geom:new{ w = sw, h = sh },
+            card,
+        },
+    }
+
+    overlay.onClose = function()
+        UIManager:close(overlay, "ui")
+        return true
+    end
+
+    UIManager:show(overlay, "ui")
+end
+
+local function showFetchingProgress(message)
+    local storefront_theme = require("storefront_theme")
+    local Device = require("device")
+    local sc = function(val) return (Device and Device.screen and Device.screen.scaleBySize and Device.screen:scaleBySize(val)) or val end
+
+    local sw = Device.screen:getWidth()
+    local sh = Device.screen:getHeight()
+    local dialog_w = math.min(sw - sc(20), sc(340))
+
+    local ui_font_size = storefront_theme.face_label_size or 18
+    local title_font_size = storefront_theme.title_font_size or 22
+
+    local title_label = TextWidget:new{
+        text = _("Fetching Release Info"),
+        face = Font:getFace("cfont", title_font_size),
+        bold = true,
+        fgcolor = Blitbuffer.COLOR_BLACK,
+    }
+
+    local title_container = FrameContainer:new{
+        padding = sc(12),
+        bordersize = 0,
+        title_label,
+    }
+
+    local body_widget = TextBoxWidget:new{
+        text = message or _("Connecting to GitHub…\n\nPlease wait."),
+        face = Font:getFace("cfont", ui_font_size),
+        fgcolor = Blitbuffer.COLOR_BLACK,
+        width = dialog_w - sc(40),
+        alignment = "center",
+    }
+
+    local body_container = FrameContainer:new{
+        padding = sc(16),
+        bordersize = 0,
+        body_widget,
+    }
+
+    local card_padding = sc(6)
+    local card_border = storefront_theme.border_window or sc(2)
+    local inner_w = dialog_w - (card_padding * 2) - (card_border * 2)
+
+    local content_vg = VerticalGroup:new{
+        align = "center",
+        title_container,
+        LineWidget:new{
+            dimen = Geom:new{ w = inner_w, h = sc(1) },
+            background = Blitbuffer.COLOR_BLACK,
+        },
+        VerticalSpan:new{ width = sc(8) },
+        body_container,
+        VerticalSpan:new{ width = sc(8) },
+    }
+
+    local card = FrameContainer:new{
+        padding = sc(6),
+        radius = storefront_theme.radius_window or sc(12),
+        bordersize = storefront_theme.border_window or sc(2),
+        color = Blitbuffer.COLOR_BLACK,
+        background = storefront_theme.color_bg or Blitbuffer.COLOR_WHITE,
+        width = dialog_w,
+        content_vg,
+    }
+
+    local overlay = InputContainer:new{
+        dimen = Geom:new{ w = sw, h = sh },
+        CenterContainer:new{
+            dimen = Geom:new{ w = sw, h = sh },
+            card,
+        },
+    }
+
+    UIManager:show(overlay, "ui")
+    UIManager:forceRePaint()
+
+    return {
+        close = function()
+            UIManager:close(overlay, "ui")
+        end
+    }
+end
+
+local function showDeleteConfirmationDialog(display_name, is_plugin, plugin_instance, on_confirm)
+    local storefront_theme = require("storefront_theme")
+    local Device = require("device")
+    local sc = function(val) return (Device and Device.screen and Device.screen.scaleBySize and Device.screen:scaleBySize(val)) or val end
+
+    local sw = Device.screen:getWidth()
+    local sh = Device.screen:getHeight()
+    local dialog_w = math.min(sw - sc(20), sc(380))
+
+    local ui_font_size = storefront_theme.face_label_size or 18
+    local title_font_size = storefront_theme.title_font_size or 22
+
+    local title_text = string.format(is_plugin and _("Delete plugin '%s'?") or _("Delete patch '%s'?"), display_name)
+    local title_label = TextWidget:new{
+        text = title_text,
+        face = Font:getFace("cfont", title_font_size),
+        bold = true,
+        fgcolor = Blitbuffer.COLOR_BLACK,
+    }
+
+    local title_container = FrameContainer:new{
+        padding = sc(12),
+        bordersize = 0,
+        title_label,
+    }
+
+    local body_text = _("This action cannot be undone.\n\nChanges will take effect after restart.")
+    local body_widget = TextBoxWidget:new{
+        text = body_text,
+        face = Font:getFace("cfont", ui_font_size),
+        fgcolor = Blitbuffer.COLOR_BLACK,
+        width = dialog_w - sc(40),
+        alignment = "center",
+    }
+
+    local body_container = FrameContainer:new{
+        padding = sc(8),
+        bordersize = 0,
+        body_widget,
+    }
+
+    local delete_settings = false
+    local check_item = nil
+    local overlay
+
+    if is_plugin then
+        local function get_check_text()
+            local icon = delete_settings and "☑ " or "☐ "
+            return icon .. _("Also delete plugin settings")
+        end
+
+        local check_text_widget = TextWidget:new{
+            text = get_check_text(),
+            face = Font:getFace("cfont", ui_font_size),
+            fgcolor = Blitbuffer.COLOR_BLACK,
+        }
+
+        local check_frame = FrameContainer:new{
+            padding = sc(8),
+            bordersize = 0,
+            background = Blitbuffer.COLOR_WHITE,
+            check_text_widget,
+        }
+
+        check_item = InputContainer:new{
+            align = "center",
+            check_frame,
+        }
+
+        check_item.ges_events = {
+            Tap = {
+                GestureRange:new{
+                    ges = "tap",
+                    range = function()
+                        local dim = check_item.dimen
+                        if not dim then return Geom:new{ x = -1, y = -1, w = 1, h = 1 } end
+                        return Geom:new{
+                            x = dim.x or 0,
+                            y = dim.y or 0,
+                            w = check_frame:getSize().w or (dialog_w - sc(40)),
+                            h = check_frame:getSize().h or 0,
+                        }
+                    end
+                }
+            }
+        }
+
+        check_item.onTap = function()
+            delete_settings = not delete_settings
+            check_text_widget:setText(get_check_text())
+            UIManager:setDirty(overlay, "ui")
+            if delete_settings and not plugin_instance then
+                UIManager:show(InfoMessage:new{
+                    text = _("Plugin is not currently loaded, so settings cannot be deleted."),
+                    timeout = 6,
+                })
+            end
+            return true
+        end
+    end
+
+    local card_padding = sc(6)
+    local card_border = storefront_theme.border_window or sc(2)
+    local inner_w = dialog_w - (card_padding * 2) - (card_border * 2)
+
+    local cancel_btn = Button:new{
+        text = _("Cancel"),
+        bordersize = sc(1),
+        radius = storefront_theme.radius_btn or sc(18),
+        padding = sc(10),
+        width = math.floor((inner_w - sc(12)) / 2),
+        show_parent = overlay,
+        callback = function()
+            UIManager:close(overlay, "ui")
+        end,
+    }
+
+    local delete_btn = Button:new{
+        text = _("Delete"),
+        bordersize = sc(1),
+        radius = storefront_theme.radius_btn or sc(18),
+        padding = sc(10),
+        width = math.floor((inner_w - sc(12)) / 2),
+        show_parent = overlay,
+        callback = function()
+            UIManager:close(overlay, "ui")
+            on_confirm(delete_settings)
+        end,
+    }
+
+    local btn_row = HorizontalGroup:new{
+        align = "center",
+        cancel_btn,
+        HorizontalSpan:new{ width = sc(8) },
+        delete_btn,
+    }
+
+    local content_items = {
+        title_container,
+        LineWidget:new{
+            dimen = Geom:new{ w = inner_w, h = sc(1) },
+            background = Blitbuffer.COLOR_BLACK,
+        },
+        VerticalSpan:new{ width = sc(8) },
+        body_container,
+    }
+
+    if check_item then
+        table.insert(content_items, VerticalSpan:new{ width = sc(6) })
+        table.insert(content_items, check_item)
+    end
+
+    table.insert(content_items, VerticalSpan:new{ width = sc(12) })
+    table.insert(content_items, FrameContainer:new{ padding = sc(4), bordersize = 0, btn_row })
+
+    local content_vg = VerticalGroup:new{
+        align = "center",
+        unpack(content_items)
+    }
+
+    local card = FrameContainer:new{
+        padding = sc(6),
+        radius = storefront_theme.radius_window or sc(12),
+        bordersize = storefront_theme.border_window or sc(2),
+        color = Blitbuffer.COLOR_BLACK,
+        background = storefront_theme.color_bg or Blitbuffer.COLOR_WHITE,
+        width = dialog_w,
+        content_vg,
+    }
+
+    overlay = InputContainer:new{
+        dimen = Geom:new{ w = sw, h = sh },
+        key_events = {
+            Close = { { "Back" } }
+        },
+        CenterContainer:new{
+            dimen = Geom:new{ w = sw, h = sh },
+            card,
+        },
+    }
+
+    overlay.onClose = function()
+        UIManager:close(overlay, "ui")
+        return true
+    end
+
+    UIManager:show(overlay, "ui")
 end
 
 local function getIgnoredReleases()
@@ -4336,46 +4714,14 @@ function Storefront:deletePlugin(dirname, record)
     end
     local plugin = findInstalledPlugin(dirname)
     local display_name = plugin and (plugin.name or plugin.dirname) or dirname
-    
+
     local PluginLoader = require("pluginloader")
     local plugin_name = dirname:gsub("%.koplugin$", "")
     local plugin_instance = PluginLoader:getPluginInstance(plugin_name)
-    
-    local delete_settings = false
-    local confirm_box
-    confirm_box = ConfirmBox:new{
-        text = string.format(_("Delete plugin '%s'?\n\nThis action cannot be undone.\n\nChanges will take effect after restart."), display_name),
-        ok_text = _("Delete"),
-        ok_callback = function()
-            self:performPluginDeletion(dirname, record, delete_settings and plugin_instance)
-        end,
-        cancel_text = _("Cancel"),
-    }
-    
-    local check_button = CheckButton:new{
-        text = _("Also delete plugin settings"),
-        checked = false,
-        parent = confirm_box,
-        callback = function()
-            delete_settings = not delete_settings
-            if delete_settings and not plugin_instance then
-                local is_filemanager = self.ui and self.ui.file_chooser
-                local message
-                if is_filemanager then
-                    message = _("Plugin is not currently loaded, so settings cannot be deleted.\n\nThis plugin may only be available in Reader mode. Try deleting from a document if you want to delete settings.")
-                else
-                    message = _("Plugin is not currently loaded, so settings cannot be deleted.")
-                end
-                UIManager:show(InfoMessage:new{
-                    text = message,
-                    timeout = 8,
-                })
-            end
-        end,
-    }
-    confirm_box:addWidget(check_button)
-    
-    UIManager:show(confirm_box)
+
+    showDeleteConfirmationDialog(display_name, true, plugin_instance, function(delete_settings)
+        self:performPluginDeletion(dirname, record, delete_settings and plugin_instance)
+    end)
 end
 
 function Storefront:disablePatch(filename)
@@ -4417,32 +4763,25 @@ function Storefront:deletePatch(filename, record)
         return
     end
     local display_name = filename
-    
-    local confirm_box
-    confirm_box = ConfirmBox:new{
-        text = string.format(_("Delete patch '%s'?\n\nThis action cannot be undone.\n\nChanges will take effect after restart."), display_name),
-        ok_text = _("Delete"),
-        ok_callback = function()
-            local patch_path = PATCHES_ROOT .. "/" .. filename
-            local ok, err = os.remove(patch_path)
-            if ok then
-                if record then
-                    InstallStore.removePatch(filename)
-                end
-                showRestartConfirmation(string.format(_("Patch '%s' deleted."), display_name))
-                if self.patch_updates_menu then
-                    self:updatePatchUpdatesDialog()
-                end
-            else
-                UIManager:show(InfoMessage:new{
-                    text = string.format(_("Failed to delete patch: %s"), tostring(err)),
-                    timeout = 5,
-                })
+
+    showDeleteConfirmationDialog(display_name, false, nil, function()
+        local patch_path = PATCHES_ROOT .. "/" .. filename
+        local ok, err = os.remove(patch_path)
+        if ok then
+            if record then
+                InstallStore.removePatch(filename)
             end
-        end,
-        cancel_text = _("Cancel"),
-    }
-    UIManager:show(confirm_box)
+            showRestartConfirmation(string.format(_("Patch '%s' deleted."), display_name))
+            if self.patch_updates_menu then
+                self:updatePatchUpdatesDialog()
+            end
+        else
+            UIManager:show(InfoMessage:new{
+                text = string.format(_("Failed to delete patch: %s"), tostring(err)),
+                timeout = 5,
+            })
+        end
+    end)
 end
 
 function Storefront:checkSinglePlugin(record)
@@ -5618,54 +5957,208 @@ function Storefront:renderAssetListPage(repo, release, assets, page, on_select)
 end
 
 function Storefront:renderAssetPickerModal(repo, release, custom_assets, saved_ctx)
+    local storefront_theme = require("storefront_theme")
+    local sc = function(val) return (Device and Device.screen and Device.screen.scaleBySize and Device.screen:scaleBySize(val)) or val end
     local item_key = repo and repo.name or ""
-    local preferred_asset = InstallStore.getPreferredAsset(item_key)
+    local initial_preferred = InstallStore.getPreferredAsset(item_key)
 
-    local dialog
-    local buttons = {}
-    for _, asset in ipairs(custom_assets) do
-        local is_preferred = preferred_asset and (asset.name == preferred_asset or asset.name:find(preferred_asset, 1, true))
-        local indicator = is_preferred and "● " or "○ "
-        local size_fmt = asset.size and string.format(" (%d KB)", math.floor(asset.size / 1024)) or ""
-        local label = indicator .. asset.name .. size_fmt
-
-        local asset_ref = asset
-        table.insert(buttons, {
-            {
-                text = label,
-                align = "left",
-                callback = function()
-                    UIManager:close(dialog)
-                    self.pending_install_context = saved_ctx
-                    self:installPluginFromReleaseAsset(repo, release, asset_ref)
-                end,
-            }
-        })
+    local selected_asset = custom_assets and custom_assets[1]
+    if initial_preferred and custom_assets then
+        for _, a in ipairs(custom_assets) do
+            if a.name and (a.name == initial_preferred or a.name:find(initial_preferred, 1, true)) then
+                selected_asset = a
+                break
+            end
+        end
     end
 
-    table.insert(buttons, {
-        {
-            text = _("Direct Repo Zip"),
-            callback = function()
-                UIManager:close(dialog)
-                self.pending_install_context = saved_ctx
-                self:_installPluginFromRepoInternal(repo)
-            end,
-        },
-        {
-            text = _("Cancel"),
-            callback = function()
-                UIManager:close(dialog)
-            end,
-        }
-    })
+    local sw = Device.screen:getWidth()
+    local sh = Device.screen:getHeight()
+    local dialog_w = math.min(sw - sc(20), sc(420))
 
-    dialog = ButtonDialog:new{
-        title = string.format(_("Choose Build — %s"), repo and repo.name or "Plugin"),
-        title_align = "center",
-        buttons = buttons,
+    local ui_font_size = storefront_theme.face_label_size or 18
+    local title_font_size = storefront_theme.title_font_size or 22
+
+    local title_label = TextWidget:new{
+        text = string.format(_("Choose Build — %s"), repo and repo.name or "Plugin"),
+        face = Font:getFace("cfont", title_font_size),
+        bold = true,
+        fgcolor = Blitbuffer.COLOR_BLACK,
     }
-    UIManager:show(dialog)
+
+    local title_container = FrameContainer:new{
+        padding = sc(12),
+        bordersize = 0,
+        title_label,
+    }
+
+    local list_vg = VerticalGroup:new{ align = "left" }
+    local overlay
+    local row_widgets = {}
+
+    local function update_rows()
+        for _, rw in ipairs(row_widgets) do
+            local is_selected = selected_asset and rw.asset.name == selected_asset.name
+            local indicator = is_selected and "● " or "○ "
+            local size_fmt = rw.asset.size and string.format(" (%d KB)", math.floor(rw.asset.size / 1024)) or ""
+            local display_text = indicator .. rw.asset.name .. size_fmt
+
+            rw.text_widget:setText(display_text)
+            rw.frame.bordersize = is_selected and (storefront_theme.border_btn or sc(2)) or sc(1)
+        end
+        UIManager:setDirty(overlay, "ui")
+    end
+
+    local card_padding = sc(6)
+    local card_border = storefront_theme.border_window or sc(2)
+    local inner_w = dialog_w - (card_padding * 2) - (card_border * 2)
+
+    for _, asset in ipairs(custom_assets) do
+        local is_selected = selected_asset and asset.name == selected_asset.name
+        local indicator = is_selected and "● " or "○ "
+        local size_fmt = asset.size and string.format(" (%d KB)", math.floor(asset.size / 1024)) or ""
+        local display_text = indicator .. asset.name .. size_fmt
+
+        local text_w = TextBoxWidget:new{
+            text = display_text,
+            face = Font:getFace("cfont", ui_font_size),
+            fgcolor = Blitbuffer.COLOR_BLACK,
+            width = inner_w - sc(32),
+            alignment = "left",
+        }
+
+        local row_frame = FrameContainer:new{
+            padding = sc(10),
+            bordersize = is_selected and (storefront_theme.border_btn or sc(2)) or sc(1),
+            radius = sc(8),
+            background = Blitbuffer.COLOR_WHITE,
+            color = Blitbuffer.COLOR_BLACK,
+            width = inner_w - sc(12),
+            text_w,
+        }
+
+        local asset_ref = asset
+        table.insert(row_widgets, {
+            asset = asset_ref,
+            frame = row_frame,
+            text_widget = text_w,
+        })
+
+        local item = InputContainer:new{
+            align = "center",
+            row_frame
+        }
+
+        item.ges_events = {
+            Tap = {
+                GestureRange:new{
+                    ges = "tap",
+                    range = function()
+                        local dim = item.dimen
+                        if not dim then return Geom:new{ x = -1, y = -1, w = 1, h = 1 } end
+                        return Geom:new{
+                            x = dim.x or 0,
+                            y = dim.y or 0,
+                            w = row_frame:getSize().w or (inner_w - sc(12)),
+                            h = row_frame:getSize().h or 0,
+                        }
+                    end
+                }
+            }
+        }
+
+        item.onTap = function()
+            selected_asset = asset_ref
+            update_rows()
+            return true
+        end
+
+        table.insert(list_vg, item)
+        table.insert(list_vg, VerticalSpan:new{ width = sc(6) })
+    end
+
+    local install_btn = Button:new{
+        text = _("Install"),
+        text_font_color = Blitbuffer.COLOR_WHITE,
+        background = Blitbuffer.COLOR_BLACK,
+        bordersize = 0,
+        radius = storefront_theme.radius_btn or sc(18),
+        padding = sc(10),
+        width = math.floor((inner_w - sc(12)) / 2),
+        show_parent = overlay,
+        callback = function()
+            UIManager:close(overlay, "ui")
+            self.pending_install_context = saved_ctx
+            if selected_asset then
+                self:installPluginFromReleaseAsset(repo, release, selected_asset)
+            else
+                self:_installPluginFromRepoInternal(repo)
+            end
+        end,
+    }
+    if install_btn.label_widget then
+        install_btn.label_widget.fgcolor = Blitbuffer.COLOR_WHITE
+    end
+
+    local cancel_btn = Button:new{
+        text = _("Cancel"),
+        bordersize = sc(1),
+        radius = storefront_theme.radius_btn or sc(18),
+        padding = sc(10),
+        width = math.floor((inner_w - sc(12)) / 2),
+        show_parent = overlay,
+        callback = function()
+            UIManager:close(overlay, "ui")
+        end,
+    }
+
+    local btn_row = HorizontalGroup:new{
+        align = "center",
+        install_btn,
+        HorizontalSpan:new{ width = sc(8) },
+        cancel_btn,
+    }
+
+    local content_vg = VerticalGroup:new{
+        align = "center",
+        title_container,
+        LineWidget:new{
+            dimen = Geom:new{ w = inner_w, h = sc(1) },
+            background = Blitbuffer.COLOR_BLACK,
+        },
+        VerticalSpan:new{ width = sc(8) },
+        list_vg,
+        VerticalSpan:new{ width = sc(8) },
+        FrameContainer:new{ padding = sc(4), bordersize = 0, btn_row },
+    }
+
+    local card = FrameContainer:new{
+        padding = sc(6),
+        radius = storefront_theme.radius_window or sc(12),
+        bordersize = storefront_theme.border_window or sc(2),
+        color = Blitbuffer.COLOR_BLACK,
+        background = storefront_theme.color_bg or Blitbuffer.COLOR_WHITE,
+        width = dialog_w,
+        content_vg,
+    }
+
+    overlay = InputContainer:new{
+        dimen = Geom:new{ w = sw, h = sh },
+        key_events = {
+            Close = { { "Back" } }
+        },
+        CenterContainer:new{
+            dimen = Geom:new{ w = sw, h = sh },
+            card,
+        },
+    }
+
+    overlay.onClose = function()
+        UIManager:close(overlay, "ui")
+        return true
+    end
+
+    UIManager:show(overlay, "ui")
 end
 
 function Storefront:promptPluginInstallOptions(repo, release_override, force_show_picker)
@@ -5684,29 +6177,39 @@ function Storefront:promptPluginInstallOptions(repo, release_override, force_sho
     NetworkMgr:runWhenOnline(function()
         self.pending_install_context = saved_ctx
         local release, release_err
-        local catalog_release = release_override
+        local catalog_mode = GitHub.getCatalogMode and GitHub.getCatalogMode() or "static"
+        local catalog_release = (catalog_mode == "static") and (
+            release_override
             or (repo and repo.latest_release)
             or (repo and repo.data and repo.data.latest_release)
+        ) or nil
 
-        if catalog_release and catalog_release.assets and type(catalog_release.assets) == "table" and #catalog_release.assets > 0 then
+        local has_catalog_assets = catalog_release and type(catalog_release) == "table"
+            and catalog_release.assets and type(catalog_release.assets) == "table" and #catalog_release.assets > 0
+
+        if has_catalog_assets then
             release = catalog_release
         else
-            local progress = InfoMessage:new{ text = _("Fetching release info…"), timeout = 0 }
-            UIManager:show(progress)
-            UIManager:forceRePaint()
+            local progress = showFetchingProgress(_("Fetching release info…"))
             release, release_err = GitHub.fetchLatestRelease(owner, repo.name)
-            UIManager:close(progress)
+            if progress and progress.close then
+                progress.close()
+            end
         end
 
         local assets = release and release.assets
         local custom_assets = {}
+        local koplugin_assets = {}
 
         if type(assets) == "table" then
             for _, asset in ipairs(assets) do
                 local name = asset and asset.name
                 local url = asset and asset.browser_download_url
-                if name and url then
+                if name and url and name:lower():match("%.zip$") then
                     table.insert(custom_assets, asset)
+                    if name:lower():find("koplugin", 1, true) then
+                        table.insert(koplugin_assets, asset)
+                    end
                 end
             end
         end
@@ -5714,11 +6217,12 @@ function Storefront:promptPluginInstallOptions(repo, release_override, force_sho
         local item_key = repo.name
         local preferred_asset = InstallStore.getPreferredAsset(item_key)
 
-        -- If preferred asset exists and we aren't forcing the picker dialog, auto-match the preferred asset
-        if #custom_assets > 1 and preferred_asset and not force_show_picker then
+        -- For Update/Install actions with an existing install: if an identical filename match exists, update automatically without showing options
+        if preferred_asset and not force_show_picker then
             local matched_asset = nil
-            for _, asset in ipairs(custom_assets) do
-                if asset.name and (asset.name == preferred_asset or asset.name:find(preferred_asset, 1, true)) then
+            local target_list = (#koplugin_assets > 0) and koplugin_assets or custom_assets
+            for _, asset in ipairs(target_list) do
+                if asset.name and (asset.name == preferred_asset or asset.name:lower() == preferred_asset:lower()) then
                     matched_asset = asset
                     break
                 end
@@ -5730,8 +6234,22 @@ function Storefront:promptPluginInstallOptions(repo, release_override, force_sho
             end
         end
 
-        -- If multiple assets exist or picker forced, present the Asset Picker Modal Card
-        if #custom_assets > 1 or force_show_picker then
+        -- If exactly ONE asset contains "koplugin" in its filename, install it automatically
+        if #koplugin_assets == 1 then
+            self.pending_install_context = saved_ctx
+            self:installPluginFromReleaseAsset(repo, release, koplugin_assets[1])
+            return
+        end
+
+        -- If MULTIPLE assets contain "koplugin", show picker card for those koplugin assets
+        if #koplugin_assets > 1 then
+            self:renderAssetPickerModal(repo, release, koplugin_assets, saved_ctx)
+            return
+        end
+
+        -- Fallback to general .zip assets:
+        -- Only present the Asset Picker Modal Card if there are MULTIPLE assets to choose from (> 1)
+        if #custom_assets > 1 then
             self:renderAssetPickerModal(repo, release, custom_assets, saved_ctx)
             return
         end
