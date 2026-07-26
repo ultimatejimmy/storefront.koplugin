@@ -60,6 +60,12 @@ function Logger.warn(msg)
     writeLog("WARN", msg)
 end
 
+function Logger.debug(msg)
+    if Logger.debug_enabled then
+        writeLog("DEBUG", msg)
+    end
+end
+
 function Logger.err(msg)
     writeLog("ERROR", msg)
 end

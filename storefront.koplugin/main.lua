@@ -2129,7 +2129,9 @@ function Storefront:collectUpdateSummary()
         updates = 0,
     }
 
-    StorefrontLogger.info(string.format("UPDATE SCAN: checking %d installed plugins", #installed))
+    if StorefrontLogger and StorefrontLogger.debug then
+        StorefrontLogger.debug(string.format("UPDATE SCAN: checking %d installed plugins", #installed))
+    end
 
     local repo_map = {}
 
@@ -2212,10 +2214,12 @@ function Storefront:collectUpdateSummary()
                         or isVersionNewer(cat_tag, existing_tag)
 
                     if should_use_catalog then
-                        StorefrontLogger.info(string.format(
-                            "UPDATE SCAN catalog override: %s  old_tag=%s  cat_tag=%s",
-                            tostring(plugin.dirname), tostring(existing_tag), tostring(cat_tag)
-                        ))
+                        if StorefrontLogger and StorefrontLogger.debug then
+                            StorefrontLogger.debug(string.format(
+                                "UPDATE SCAN catalog override: %s  old_tag=%s  cat_tag=%s",
+                                tostring(plugin.dirname), tostring(existing_tag), tostring(cat_tag)
+                            ))
+                        end
                         remote = {
                             remote_version = remote and remote.remote_version,
                             remote_repo_ts = remote_repo_ts,
@@ -2253,13 +2257,15 @@ function Storefront:collectUpdateSummary()
             if release_tag then
                 local release_version = parseVersionFromTag(release_tag)
 
-                StorefrontLogger.info(string.format(
-                    "UPDATE SCAN plugin: %s  local=%s  tag=%s  parsed_remote=%s",
-                    tostring(plugin.dirname),
-                    tostring(local_version),
-                    tostring(release_tag),
-                    tostring(release_version)
-                ))
+                if StorefrontLogger and StorefrontLogger.debug then
+                    StorefrontLogger.debug(string.format(
+                        "UPDATE SCAN plugin: %s  local=%s  tag=%s  parsed_remote=%s",
+                        tostring(plugin.dirname),
+                        tostring(local_version),
+                        tostring(release_tag),
+                        tostring(release_version)
+                    ))
+                end
 
                 if release_version and local_version then
                     has_update = isVersionNewer(release_version, local_version)
@@ -2293,12 +2299,14 @@ function Storefront:collectUpdateSummary()
                 local remote_version = remote.remote_version
                 local remote_repo_ts = remote.remote_repo_ts or 0
 
-                StorefrontLogger.info(string.format(
-                    "UPDATE SCAN plugin: %s  local=%s  remote_version=%s  (no tag)",
-                    tostring(plugin.dirname),
-                    tostring(local_version),
-                    tostring(remote_version)
-                ))
+                if StorefrontLogger and StorefrontLogger.debug then
+                    StorefrontLogger.debug(string.format(
+                        "UPDATE SCAN plugin: %s  local=%s  remote_version=%s  (no tag)",
+                        tostring(plugin.dirname),
+                        tostring(local_version),
+                        tostring(remote_version)
+                    ))
+                end
 
                 if remote_version and local_version then
                     has_update = isVersionNewer(remote_version, local_version)
@@ -2307,13 +2315,15 @@ function Storefront:collectUpdateSummary()
                 end
             end
         else
-            StorefrontLogger.info(string.format(
-                "UPDATE SCAN plugin: %s  local=%s  tracked=%s  has_remote=%s",
-                tostring(plugin.dirname),
-                tostring(local_version),
-                tostring(tracked and (record.owner .. "/" .. record.repo) or "no"),
-                tostring(remote ~= nil)
-            ))
+            if StorefrontLogger and StorefrontLogger.debug then
+                StorefrontLogger.debug(string.format(
+                    "UPDATE SCAN plugin: %s  local=%s  tracked=%s  has_remote=%s",
+                    tostring(plugin.dirname),
+                    tostring(local_version),
+                    tostring(tracked and (record.owner .. "/" .. record.repo) or "no"),
+                    tostring(remote ~= nil)
+                ))
+            end
         end
 
         if has_update then
@@ -3607,13 +3617,18 @@ function Storefront:_scanUpdatesForDirectApi(tracked)
         
         StorefrontLogger.action(string.format("REMOTE UPDATE CHECK FINISHED: %d records processed", #tracked))
         for dirname, data in pairs(remote_info_result) do
-            StorefrontLogger.info(string.format(
+            local msg = string.format(
                 "REMOTE UPDATE CHECK RECORD: %s -> tag=%s, remote_version=%s, err=%s",
                 tostring(dirname),
                 tostring(data.release_tag_name or "-"),
                 tostring(data.remote_version or "-"),
                 tostring(data.error or "none")
-            ))
+            )
+            if data.error then
+                StorefrontLogger.warn(msg)
+            else
+                StorefrontLogger.debug(msg)
+            end
         end
 
         invalidateInstalledPluginsCache()

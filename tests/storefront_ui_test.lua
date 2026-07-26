@@ -140,6 +140,7 @@ package.loaded["logger"] = {
 package.loaded["storefront_logger"] = {
     log = function() end,
     info = function() end,
+    debug = function() end,
     action = function() end,
     warn = function() end,
     err = function() end,
