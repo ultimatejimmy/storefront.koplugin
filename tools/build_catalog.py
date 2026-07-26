@@ -163,12 +163,20 @@ def process_single_repo(repo_item, is_patch):
         if rel and type(rel) == dict and "tag_name" in rel:
             tag_name = rel.get("tag_name", "")
             assets = rel.get("assets", [])
+            parsed_assets = []
             download_url = None
             for asset in assets:
                 asset_name = asset.get("name", "")
-                if asset_name.endswith(".zip"):
-                    download_url = asset.get("browser_download_url")
-                    break
+                url = asset.get("browser_download_url", "")
+                if asset_name and url:
+                    parsed_assets.append({
+                        "name": asset_name,
+                        "browser_download_url": url,
+                        "size": asset.get("size", 0),
+                        "content_type": asset.get("content_type", ""),
+                    })
+                    if not download_url and asset_name.endswith(".zip"):
+                        download_url = url
             if not download_url and "zipball_url" in rel:
                 download_url = rel.get("zipball_url")
                 
@@ -178,6 +186,7 @@ def process_single_repo(repo_item, is_patch):
                 "download_url": download_url,
                 "name": rel.get("name") or "",
                 "body": rel.get("body") or "",
+                "assets": parsed_assets,
             }
     
     if is_patch and (not is_fork or stars > 0):

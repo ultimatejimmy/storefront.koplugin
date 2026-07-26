@@ -395,16 +395,32 @@ function StorefrontDetailsDialog:init()
                     self.Storefront:installPatchFromRepo(self.repo, self.patch)
                 else
                     local rel = (self.update_item and (self.update_item.remote or self.update_item.remote_entry)) or self.repo.latest_release
+                    local item_key = (self.repo and self.repo.name) or ""
+                    local preferred_asset = InstallStore.getPreferredAsset(item_key)
                     local asset = nil
                     if rel and type(rel) == "table" then
                         if rel.assets and type(rel.assets) == "table" and #rel.assets > 0 then
-                            for _, a in ipairs(rel.assets) do
-                                if a.name and a.name:match("%.zip$") and a.browser_download_url then
-                                    asset = a
-                                    break
+                            if preferred_asset then
+                                for _, a in ipairs(rel.assets) do
+                                    if a.name and (a.name == preferred_asset or a.name:find(preferred_asset, 1, true)) then
+                                        asset = a
+                                        break
+                                    end
                                 end
                             end
-                            if not asset then asset = rel.assets[1] end
+                            if not asset and #rel.assets > 1 and self.Storefront and type(self.Storefront.promptPluginInstallOptions) == "function" then
+                                self.Storefront:promptPluginInstallOptions(self.repo, rel)
+                                return
+                            end
+                            if not asset then
+                                for _, a in ipairs(rel.assets) do
+                                    if a.name and a.name:match("%.zip$") and a.browser_download_url then
+                                        asset = a
+                                        break
+                                    end
+                                end
+                                if not asset then asset = rel.assets[1] end
+                            end
                         elseif rel.zipball_url then
                             asset = { name = (rel.tag_name or "release") .. ".zip", browser_download_url = rel.zipball_url }
                         elseif rel.tag_name then
@@ -561,7 +577,12 @@ function StorefrontDetailsDialog:init()
                 if self.patch then
                     self.Storefront:installPatchFromRepo(self.repo, self.patch)
                 else
-                    self.Storefront:installPluginFromRepo(self.repo)
+                    local rel = self.repo and (self.repo.latest_release or (self.repo.data and self.repo.data.latest_release))
+                    if rel and type(rel) == "table" and rel.assets and type(rel.assets) == "table" and #rel.assets > 1 and self.Storefront and type(self.Storefront.promptPluginInstallOptions) == "function" then
+                        self.Storefront:promptPluginInstallOptions(self.repo, rel)
+                    else
+                        self.Storefront:installPluginFromRepo(self.repo)
+                    end
                 end
             end,
         }
@@ -1493,15 +1514,31 @@ function StorefrontVersionDetailsDialog:init()
             self:onClose()
             if self.parent_details then self.parent_details:onClose() end
 
+            local item_key = self.repo_name or ""
+            local preferred_asset = InstallStore.getPreferredAsset(item_key)
             local asset = nil
             if rel.assets and type(rel.assets) == "table" and #rel.assets > 0 then
-                for _, a in ipairs(rel.assets) do
-                    if a.name and a.name:match("%.zip$") and a.browser_download_url then
-                        asset = a
-                        break
+                if preferred_asset then
+                    for _, a in ipairs(rel.assets) do
+                        if a.name and (a.name == preferred_asset or a.name:find(preferred_asset, 1, true)) then
+                            asset = a
+                            break
+                        end
                     end
                 end
-                if not asset then asset = rel.assets[1] end
+                if not asset and #rel.assets > 1 and self.Storefront and type(self.Storefront.promptPluginInstallOptions) == "function" then
+                    self.Storefront:promptPluginInstallOptions(self.repo, rel)
+                    return
+                end
+                if not asset then
+                    for _, a in ipairs(rel.assets) do
+                        if a.name and a.name:match("%.zip$") and a.browser_download_url then
+                            asset = a
+                            break
+                        end
+                    end
+                    if not asset then asset = rel.assets[1] end
+                end
             elseif rel.zipball_url then
                 asset = { name = (rel.tag_name or "release") .. ".zip", browser_download_url = rel.zipball_url }
             elseif rel.tag_name then

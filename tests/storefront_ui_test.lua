@@ -762,6 +762,21 @@ if ok_browser then
         check("4-part version update 26.7.24 -> 26.7.24.4 detected",
             four_part_items[1] and four_part_items[1].version_transition, "26.7.24 → 26.7.24.4")
 
+        -- Test renderAssetPickerModal execution
+        local asset_modal_ok, asset_modal_err = pcall(function()
+            MainStorefront:renderAssetPickerModal(
+                { name = "rakuyomi", owner = "tachibana-shin" },
+                { tag_name = "v1.39.4" },
+                {
+                    { name = "rakuyomi-kindle.zip", browser_download_url = "https://example.com/k.zip", size = 460297 },
+                    { name = "rakuyomi-aarch64.zip", browser_download_url = "https://example.com/a.zip", size = 455554 },
+                },
+                nil
+            )
+        end)
+        if not asset_modal_ok then print("Asset Modal Error:", asset_modal_err) end
+        check("renderAssetPickerModal executes without error", asset_modal_ok, true)
+
         -- Cleanup
         MainStorefront.collectUpdateSummary      = orig_collect_plugin
         MainStorefront.collectPatchUpdateSummary = orig_collect_patch

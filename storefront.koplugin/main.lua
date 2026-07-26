@@ -5617,12 +5617,63 @@ function Storefront:renderAssetListPage(repo, release, assets, page, on_select)
     UIManager:show(dialog)
 end
 
-function Storefront:promptPluginInstallOptions(repo, release_override)
+function Storefront:renderAssetPickerModal(repo, release, custom_assets, saved_ctx)
+    local item_key = repo and repo.name or ""
+    local preferred_asset = InstallStore.getPreferredAsset(item_key)
+
+    local dialog
+    local buttons = {}
+    for _, asset in ipairs(custom_assets) do
+        local is_preferred = preferred_asset and (asset.name == preferred_asset or asset.name:find(preferred_asset, 1, true))
+        local indicator = is_preferred and "● " or "○ "
+        local size_fmt = asset.size and string.format(" (%d KB)", math.floor(asset.size / 1024)) or ""
+        local label = indicator .. asset.name .. size_fmt
+
+        local asset_ref = asset
+        table.insert(buttons, {
+            {
+                text = label,
+                align = "left",
+                callback = function()
+                    UIManager:close(dialog)
+                    self.pending_install_context = saved_ctx
+                    self:installPluginFromReleaseAsset(repo, release, asset_ref)
+                end,
+            }
+        })
+    end
+
+    table.insert(buttons, {
+        {
+            text = _("Direct Repo Zip"),
+            callback = function()
+                UIManager:close(dialog)
+                self.pending_install_context = saved_ctx
+                self:_installPluginFromRepoInternal(repo)
+            end,
+        },
+        {
+            text = _("Cancel"),
+            callback = function()
+                UIManager:close(dialog)
+            end,
+        }
+    })
+
+    dialog = ButtonDialog:new{
+        title = string.format(_("Choose Build — %s"), repo and repo.name or "Plugin"),
+        title_align = "center",
+        buttons = buttons,
+    }
+    UIManager:show(dialog)
+end
+
+function Storefront:promptPluginInstallOptions(repo, release_override, force_show_picker)
     if not repo then
         return
     end
 
-    local owner = repo.owner or (repo.data and repo.data.owner and repo.data.owner.login)
+    local owner = repo.owner or (repo.data and repo.data.owner and (type(repo.data.owner) == "string" and repo.data.owner or repo.data.owner.login))
     if not owner or not repo.name then
         UIManager:show(InfoMessage:new{ text = _("Missing repository metadata for installation."), timeout = 4 })
         return
@@ -5633,8 +5684,12 @@ function Storefront:promptPluginInstallOptions(repo, release_override)
     NetworkMgr:runWhenOnline(function()
         self.pending_install_context = saved_ctx
         local release, release_err
-        if release_override then
-            release = release_override
+        local catalog_release = release_override
+            or (repo and repo.latest_release)
+            or (repo and repo.data and repo.data.latest_release)
+
+        if catalog_release and catalog_release.assets and type(catalog_release.assets) == "table" and #catalog_release.assets > 0 then
+            release = catalog_release
         else
             local progress = InfoMessage:new{ text = _("Fetching release info…"), timeout = 0 }
             UIManager:show(progress)
@@ -5643,21 +5698,9 @@ function Storefront:promptPluginInstallOptions(repo, release_override)
             UIManager:close(progress)
         end
 
-        local dialog
-        local buttons = {}
-
-        table.insert(buttons, {
-            text = _("Direct download from repo"),
-            callback = function()
-                UIManager:close(dialog)
-                self.pending_install_context = saved_ctx
-                self:installPluginFromRepo(repo)
-            end,
-        })
-
         local assets = release and release.assets
         local custom_assets = {}
-        
+
         if type(assets) == "table" then
             for _, asset in ipairs(assets) do
                 local name = asset and asset.name
@@ -5667,171 +5710,52 @@ function Storefront:promptPluginInstallOptions(repo, release_override)
                 end
             end
         end
-        
-        if #custom_assets > 0 then
-            if #custom_assets > ASSETS_PAGE_SIZE then
-                -- Too many assets to list inline — open a separate paginated picker.
-                table.insert(buttons, {
-                    text = string.format(_("Choose asset… (%d available)"), #custom_assets),
-                    callback = function()
-                        UIManager:close(dialog)
-                        self.pending_install_context = saved_ctx
-                        self:renderAssetListPage(repo, release, custom_assets, 1, function(asset)
-                            self.pending_install_context = saved_ctx
-                            self:installPluginFromReleaseAsset(repo, release, asset)
-                        end)
-                    end,
-                })
-            else
-                for _, asset in ipairs(custom_assets) do
-                    table.insert(buttons, {
-                        text = asset.name,
-                        callback = function()
-                            UIManager:close(dialog)
-                            self.pending_install_context = saved_ctx
-                            self:installPluginFromReleaseAsset(repo, release, asset)
-                        end,
-                    })
+
+        local item_key = repo.name
+        local preferred_asset = InstallStore.getPreferredAsset(item_key)
+
+        -- If preferred asset exists and we aren't forcing the picker dialog, auto-match the preferred asset
+        if #custom_assets > 1 and preferred_asset and not force_show_picker then
+            local matched_asset = nil
+            for _, asset in ipairs(custom_assets) do
+                if asset.name and (asset.name == preferred_asset or asset.name:find(preferred_asset, 1, true)) then
+                    matched_asset = asset
+                    break
                 end
             end
-        elseif release and release.zipball_url then
+            if matched_asset then
+                self.pending_install_context = saved_ctx
+                self:installPluginFromReleaseAsset(repo, release, matched_asset)
+                return
+            end
+        end
+
+        -- If multiple assets exist or picker forced, present the Asset Picker Modal Card
+        if #custom_assets > 1 or force_show_picker then
+            self:renderAssetPickerModal(repo, release, custom_assets, saved_ctx)
+            return
+        end
+
+        -- Single asset present -> install directly
+        if #custom_assets == 1 then
+            self.pending_install_context = saved_ctx
+            self:installPluginFromReleaseAsset(repo, release, custom_assets[1])
+            return
+        end
+
+        -- Fallback to source archive or direct repo download
+        if release and release.zipball_url then
             local tag_name = release.tag_name or "latest"
             local source_code_name = string.format("Source code (%s.zip)", tag_name)
-            table.insert(buttons, {
-                text = source_code_name,
-                callback = function()
-                    UIManager:close(dialog)
-                    self.pending_install_context = saved_ctx
-                    local source_asset = {
-                        name = source_code_name,
-                        browser_download_url = release.zipball_url,
-                    }
-                    self:installPluginFromReleaseAsset(repo, release, source_asset)
-                end,
+            self.pending_install_context = saved_ctx
+            self:installPluginFromReleaseAsset(repo, release, {
+                name = source_code_name,
+                browser_download_url = release.zipball_url,
             })
+        else
+            self.pending_install_context = saved_ctx
+            self:_installPluginFromRepoInternal(repo)
         end
-
-        local show_notes = release ~= nil
-        if show_notes then
-            table.insert(buttons, {
-                text = _("View release notes"),
-                callback = function()
-                    local notes_dialog = ConfirmBox:new{
-                        text = _("Release notes"),
-                        cancel_text = _("Close"),
-                        no_ok_button = true,
-                    }
-                    notes_dialog:addWidget(makeScrollableTextBoxForDialog(notes_dialog, renderReleaseNotesText(repo, release)))
-                    UIManager:show(notes_dialog)
-                end,
-            })
-        end
-
-        -- Add a "Full changelog" button only when the fetched release is
-        -- strictly newer than the currently installed version of this plugin.
-        -- We search install records to find a match even when not in update mode.
-        do
-            local installed_ver = nil
-            local installed_tag = nil
-            local ctx_plugin = self.pending_install_context and self.pending_install_context.plugin
-            if ctx_plugin then
-                installed_ver = ctx_plugin.version
-                local ctx_rec = InstallStore.get(ctx_plugin.dirname)
-                installed_tag = ctx_rec and ctx_rec.installed_tag
-            else
-                local all_records = InstallStore.list()
-                for dirname, rec in pairs(all_records) do
-                    if type(rec) == "table" and rec.owner == owner and rec.repo == repo.name then
-                        local p = findInstalledPlugin(dirname)
-                        installed_ver = (p and p.version) or rec.installed_version
-                        installed_tag = rec.installed_tag
-                        break
-                    end
-                end
-            end
-
-            local release_ver = release and parseVersionFromTag(release.tag_name)
-            if installed_ver and release_ver and isVersionNewer(release_ver, installed_ver) then
-                table.insert(buttons, {
-                    text = _("Full changelog"),
-                    callback = function()
-                        UIManager:close(dialog)
-                        self:showFullChangelog(owner, repo, installed_ver, release, installed_tag)
-                    end,
-                })
-            end
-        end
-
-        -- Add "Ignore This Release" button only when showing the latest release
-        -- (not when user manually selected a different release), when it's
-        -- an update (newer than installed version), and when it's not already ignored.
-        if release and release.tag_name and not release_override then
-            local ctx_plugin = self.pending_install_context and self.pending_install_context.plugin
-            local installed_ver = nil
-            if ctx_plugin then
-                installed_ver = ctx_plugin.version
-            else
-                local all_records = InstallStore.list()
-                for dirname, rec in pairs(all_records) do
-                    if type(rec) == "table" and rec.owner == owner and rec.repo == repo.name then
-                        local p = findInstalledPlugin(dirname)
-                        installed_ver = (p and p.version) or rec.installed_version
-                        break
-                    end
-                end
-            end
-            
-            local release_ver = parseVersionFromTag(release.tag_name)
-            local is_update = installed_ver and release_ver and isVersionNewer(release_ver, installed_ver)
-            local is_ignored = isReleaseIgnored(owner, repo.name, release.tag_name)
-            
-            if is_update and not is_ignored then
-                table.insert(buttons, {
-                    text = _("Ignore this release"),
-                    callback = function()
-                        ignoreRelease(owner, repo.name, release.tag_name)
-                        UIManager:close(dialog)
-                        UIManager:show(InfoMessage:new{
-                            text = string.format(_("Release %s will be ignored until a newer version is available."), release.tag_name),
-                            timeout = 3,
-                        })
-                    end,
-                })
-            end
-        end
-
-        -- Always offer a way to switch to a different release; the release
-        -- list itself handles the case where no releases are available.
-        table.insert(buttons, {
-            text = _("Other releases…"),
-            callback = function()
-                UIManager:close(dialog)
-                self:showReleaseListDialog(repo, release)
-            end,
-        })
-
-        -- `buttons` always contains at least direct download + other releases
-        -- so we now compare against 2 (was 1 before "Other releases" was added)
-        -- to decide whether the user effectively has nothing release-related.
-        if release_err and #buttons == 2 and not release_override then
-            UIManager:show(InfoMessage:new{ text = _("Could not fetch latest release. You can still use direct repo download."), timeout = 6 })
-        elseif #buttons == 2 and not release_override then
-            UIManager:show(InfoMessage:new{ text = _("No release assets found. You can still use direct repo download."), timeout = 5 })
-        end
-
-        local button_rows = {}
-        for _, button in ipairs(buttons) do
-            table.insert(button_rows, { button })
-        end
-
-        dialog = ConfirmBox:new{
-            text = buildDownloadOptionsTitle(release, owner, repo.name),
-            cancel_text = _("Cancel"),
-            no_ok_button = true,
-            keep_dialog_open = true,
-            other_buttons = button_rows,
-        }
-        UIManager:show(dialog)
     end)
 end
 
@@ -6047,6 +5971,10 @@ end
 function Storefront:installPluginFromReleaseAsset(repo, release, asset)
     if not repo or not asset then
         return
+    end
+
+    if asset.name and repo and repo.name then
+        InstallStore.setPreferredAsset(repo.name, asset.name)
     end
 
     local url = asset.browser_download_url
@@ -9240,9 +9168,7 @@ function Storefront:installPluginFromRepo(repo)
         return
     end
 
-    NetworkMgr:runWhenOnline(function()
-        self:_installPluginFromRepoInternal(repo)
-    end)
+    self:promptPluginInstallOptions(repo)
 end
 
 function Storefront:_installPluginFromRepoInternal(repo)

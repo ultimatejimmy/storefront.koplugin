@@ -221,5 +221,18 @@ function InstallStore.toggleReleaseIgnored(item_key, tag_name)
     return InstallStore.setItemOptions(item_key, opts)
 end
 
+function InstallStore.getPreferredAsset(item_key)
+    if not item_key or item_key == "" then return nil end
+    local opts = InstallStore.getItemOptions(item_key)
+    return opts.preferred_asset
+end
+
+function InstallStore.setPreferredAsset(item_key, asset_name)
+    if not item_key or item_key == "" then return false end
+    local opts = InstallStore.getItemOptions(item_key)
+    opts.preferred_asset = asset_name
+    return InstallStore.setItemOptions(item_key, opts)
+end
+
 return InstallStore
 

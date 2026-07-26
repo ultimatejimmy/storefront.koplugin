@@ -128,7 +128,58 @@
       "default_branch": "main",
       "pushed_at": "2026-07-22T13:45:46Z",
       "updated_at": "2026-07-22T13:50:55Z",
-      "html_url": "https://github.com/tachibana-shin/rakuyomi"
+      "html_url": "https://github.com/tachibana-shin/rakuyomi",
+      "latest_release": {
+        "tag_name": "v1.39.4",
+        "published_at": "2026-07-22T13:45:46Z",
+        "download_url": "https://github.com/tachibana-shin/rakuyomi/releases/download/v1.39.4/rakuyomi-aarch64.zip",
+        "name": "v1.39.4",
+        "body": "Latest build releases for Rakuyomi",
+        "assets": [
+          {
+            "name": "rakuyomi-aarch64.zip",
+            "browser_download_url": "https://github.com/tachibana-shin/rakuyomi/releases/download/v1.39.4/rakuyomi-aarch64.zip",
+            "size": 455554,
+            "content_type": "application/zip"
+          },
+          {
+            "name": "rakuyomi-android.zip",
+            "browser_download_url": "https://github.com/tachibana-shin/rakuyomi/releases/download/v1.39.4/rakuyomi-android.zip",
+            "size": 650159,
+            "content_type": "application/zip"
+          },
+          {
+            "name": "rakuyomi-desktop.zip",
+            "browser_download_url": "https://github.com/tachibana-shin/rakuyomi/releases/download/v1.39.4/rakuyomi-desktop.zip",
+            "size": 479970,
+            "content_type": "application/zip"
+          },
+          {
+            "name": "rakuyomi-kindle.zip",
+            "browser_download_url": "https://github.com/tachibana-shin/rakuyomi/releases/download/v1.39.4/rakuyomi-kindle.zip",
+            "size": 460297,
+            "content_type": "application/zip"
+          },
+          {
+            "name": "rakuyomi-kindlea9.zip",
+            "browser_download_url": "https://github.com/tachibana-shin/rakuyomi/releases/download/v1.39.4/rakuyomi-kindlea9.zip",
+            "size": 459929,
+            "content_type": "application/zip"
+          },
+          {
+            "name": "rakuyomi-kindlehf.zip",
+            "browser_download_url": "https://github.com/tachibana-shin/rakuyomi/releases/download/v1.39.4/rakuyomi-kindlehf.zip",
+            "size": 459927,
+            "content_type": "application/zip"
+          },
+          {
+            "name": "rakuyomi-macos.zip",
+            "browser_download_url": "https://github.com/tachibana-shin/rakuyomi/releases/download/v1.39.4/rakuyomi-macos.zip",
+            "size": 474786,
+            "content_type": "application/zip"
+          }
+        ]
+      }
     },
     {
       "id": 1229563695,
