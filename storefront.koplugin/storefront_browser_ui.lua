@@ -249,13 +249,14 @@ function StorefrontBrowserDialog:init()
     self.height = self.screen_h
     self.dimen = Geom:new{ x = 0, y = 0, w = self.screen_w, h = self.screen_h }
 
+    self.key_events = self.key_events or {}
+    self.key_events.NextPage = { { Input.group.PgFwd } }
+    self.key_events.PrevPage = { { Input.group.PgBack } }
     if Device:hasKeys() then
         self.key_events.Close = { { Input.group.Back } }
         if Device:hasFewKeys() then
             self.key_events.Close = { { "Left" } }
         end
-        self.key_events.NextPage = { { Input.group.PgFwd } }
-        self.key_events.PrevPage = { { Input.group.PgBack } }
         self.key_events.ShowMenu = { { "Menu" } }
     end
     if Device:hasKeyboard() then
@@ -264,6 +265,14 @@ function StorefrontBrowserDialog:init()
         self.key_events.HotkeySort = { { "S" } }
         self.key_events.HotkeySwitchTab = { { "T" } }
     end
+
+    self.ges_events = self.ges_events or {}
+    self.ges_events.Swipe = {
+        GestureRange:new{
+            ges = "swipe",
+            range = function() return self.dimen end,
+        }
+    }
 
     local storefront_theme = require("storefront_theme")
     local sc = function(val) return Device.screen:scaleBySize(val) end
@@ -765,6 +774,16 @@ function StorefrontBrowserDialog:onPrevPage()
         self.on_prev_page()
     end
     return true
+end
+
+function StorefrontBrowserDialog:onSwipe(arg, ges_ev)
+    local direction = ges_ev and ges_ev.direction
+    if direction == "left" then
+        return self:onNextPage()
+    elseif direction == "right" then
+        return self:onPrevPage()
+    end
+    return false
 end
 
 function StorefrontBrowserDialog:onShowMenu()

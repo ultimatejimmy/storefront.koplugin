@@ -63,10 +63,20 @@ function StorefrontDetailsDialog:init()
     -- Full-screen dimen
     self.dimen = Geom:new{ x = 0, y = 0, w = self.screen_w, h = self.screen_h }
 
-    -- Hardware back key closes the dialog
+    self.key_events = self.key_events or {}
+    self.key_events.NextPage = { { Input.group.PgFwd } }
+    self.key_events.PrevPage = { { Input.group.PgBack } }
     if Device:hasKeys() then
         self.key_events.Close = { { Input.group.Back } }
     end
+
+    self.ges_events = self.ges_events or {}
+    self.ges_events.Swipe = {
+        GestureRange:new{
+            ges = "swipe",
+            range = function() return self.dimen end,
+        }
+    }
 
     -- -----------------------------------------------------------------------
     -- 1. Back button (software)
@@ -955,6 +965,8 @@ td { vertical-align: top; }
     updatePagination = function()
         pagination_box[1] = buildPaginationControls()
     end
+    self._html_box = html_box
+    self._updatePagination = updatePagination
 
     loadContent = function(tab_name)
         self.load_req_id = (self.load_req_id or 0) + 1
@@ -1405,6 +1417,65 @@ function StorefrontDetailsDialog:onLinkTap(href)
     return false
 end
 
+function StorefrontDetailsDialog:onNextPage()
+    if self.active_tab == "versions" then
+        if self.versions_page and self.versions_page < (self.versions_total_pages or 1) then
+            self.versions_page = self.versions_page + 1
+            if self.loadContent then self.loadContent("versions") end
+            return true
+        end
+    else
+        local html_box = self._html_box
+        if html_box then
+            local total = html_box.page_count or 1
+            local cur = html_box.page_number or 1
+            if cur < total then
+                html_box.page_number = cur + 1
+                if rawget(html_box, "_bb") then html_box._bb = nil end
+                if rawget(html_box, "bb") then html_box.bb = nil end
+                if self._updatePagination then self._updatePagination() end
+                UIManager:setDirty(self, "ui")
+                return true
+            end
+        end
+    end
+    return false
+end
+
+function StorefrontDetailsDialog:onPrevPage()
+    if self.active_tab == "versions" then
+        if self.versions_page and self.versions_page > 1 then
+            self.versions_page = self.versions_page - 1
+            if self.loadContent then self.loadContent("versions") end
+            return true
+        end
+    else
+        local html_box = self._html_box
+        if html_box then
+            local cur = html_box.page_number or 1
+            if cur > 1 then
+                html_box.page_number = cur - 1
+                if rawget(html_box, "_bb") then html_box._bb = nil end
+                if rawget(html_box, "bb") then html_box.bb = nil end
+                if self._updatePagination then self._updatePagination() end
+                UIManager:setDirty(self, "ui")
+                return true
+            end
+        end
+    end
+    return false
+end
+
+function StorefrontDetailsDialog:onSwipe(arg, ges_ev)
+    local direction = ges_ev and ges_ev.direction
+    if direction == "left" then
+        return self:onNextPage()
+    elseif direction == "right" then
+        return self:onPrevPage()
+    end
+    return false
+end
+
 function StorefrontDetailsDialog:onClose()
     self.is_closed = true
     UIManager:close(self, "ui")
@@ -1436,9 +1507,20 @@ function StorefrontVersionDetailsDialog:init()
 
     self.dimen = Geom:new{ x = 0, y = 0, w = self.screen_w, h = self.screen_h }
 
+    self.key_events = self.key_events or {}
+    self.key_events.NextPage = { { Input.group.PgFwd } }
+    self.key_events.PrevPage = { { Input.group.PgBack } }
     if Device:hasKeys() then
         self.key_events.Close = { { Input.group.Back } }
     end
+
+    self.ges_events = self.ges_events or {}
+    self.ges_events.Swipe = {
+        GestureRange:new{
+            ges = "swipe",
+            range = function() return self.dimen end,
+        }
+    }
 
     local back_btn = Button:new{
         text = "< Back",
@@ -1665,6 +1747,8 @@ a.plain-link { color: #000000 !important; text-decoration: none !important; }
         if rawget(html_box, "bb") then html_box.bb = nil end
         UIManager:setDirty(self, "ui")
     end
+    self._html_box = html_box
+    self._updatePagination = updatePagination
 
     prev_btn = Button:new{
         text = _("< Prev"),
@@ -1746,6 +1830,49 @@ a.plain-link { color: #000000 !important; text-decoration: none !important; }
         height = self.screen_h,
         content_group,
     }
+end
+
+function StorefrontVersionDetailsDialog:onNextPage()
+    local html_box = self._html_box
+    if html_box then
+        local total = html_box.page_count or 1
+        local cur = html_box.page_number or 1
+        if cur < total then
+            html_box.page_number = cur + 1
+            if rawget(html_box, "_bb") then html_box._bb = nil end
+            if rawget(html_box, "bb") then html_box.bb = nil end
+            if self._updatePagination then self._updatePagination() end
+            UIManager:setDirty(self, "ui")
+            return true
+        end
+    end
+    return false
+end
+
+function StorefrontVersionDetailsDialog:onPrevPage()
+    local html_box = self._html_box
+    if html_box then
+        local cur = html_box.page_number or 1
+        if cur > 1 then
+            html_box.page_number = cur - 1
+            if rawget(html_box, "_bb") then html_box._bb = nil end
+            if rawget(html_box, "bb") then html_box.bb = nil end
+            if self._updatePagination then self._updatePagination() end
+            UIManager:setDirty(self, "ui")
+            return true
+        end
+    end
+    return false
+end
+
+function StorefrontVersionDetailsDialog:onSwipe(arg, ges_ev)
+    local direction = ges_ev and ges_ev.direction
+    if direction == "left" then
+        return self:onNextPage()
+    elseif direction == "right" then
+        return self:onPrevPage()
+    end
+    return false
 end
 
 function StorefrontVersionDetailsDialog:onClose()
