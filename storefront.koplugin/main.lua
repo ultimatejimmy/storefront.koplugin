@@ -2080,7 +2080,7 @@ function Storefront:autoMatchInstalled()
 end
 
 function Storefront:collectPatchUpdateSummary()
-    invalidateInstalledPluginsCache()
+    self:ensurePatchUpdatesState()
     local current_generation = InstallStore.getGeneration and InstallStore.getGeneration() or 0
     local remote_info_key = self.patch_updates_state and self.patch_updates_state.last_checked
     
@@ -2091,7 +2091,6 @@ function Storefront:collectPatchUpdateSummary()
     end
 
     self:autoMatchInstalled()
-    self:ensurePatchUpdatesState()
     local summary = buildPatchSummary(self.patch_updates_state.remote_info)
     
     StorefrontLogger.info(string.format(
@@ -2119,7 +2118,7 @@ function Storefront:getPatchUpdatesSummaryText(summary)
 end
 
 function Storefront:collectUpdateSummary()
-    invalidateInstalledPluginsCache()
+    self:ensureUpdatesState()
     local current_generation = InstallStore.getGeneration and InstallStore.getGeneration() or 0
     local remote_info_key = self.updates_state and self.updates_state.last_checked
 
