@@ -810,8 +810,16 @@ if ok_browser then
             browser_dialog:onSwipe(nil, { direction = "left" })
             check("onSwipe left triggers onNextPage", next_called, true)
 
+            prev_called, next_called = false, false
+            browser_dialog:onSwipe(nil, { direction = "west" })
+            check("onSwipe west triggers onNextPage", next_called, true)
+
             browser_dialog:onSwipe(nil, { direction = "right" })
             check("onSwipe right triggers onPrevPage", prev_called, true)
+
+            prev_called, next_called = false, false
+            browser_dialog:onSwipe(nil, { direction = "east" })
+            check("onSwipe east triggers onPrevPage", prev_called, true)
         end
 
         -- Test StorefrontDetailsDialog page turn key events & swipe gestures
@@ -852,6 +860,12 @@ if ok_browser then
 
             details:onSwipe(nil, { direction = "right" })
             check("Details onSwipe right decrements page_number to 1", details._html_box.page_number == 1, true)
+
+            details:onSwipe(nil, { direction = "west" })
+            check("Details onSwipe west advances page_number to 2", details._html_box.page_number == 2, true)
+
+            details:onSwipe(nil, { direction = "east" })
+            check("Details onSwipe east decrements page_number to 1", details._html_box.page_number == 1, true)
 
             -- Test versions sub-tab page turning
             details.active_tab = "versions"

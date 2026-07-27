@@ -250,13 +250,24 @@ function StorefrontBrowserDialog:init()
     self.dimen = Geom:new{ x = 0, y = 0, w = self.screen_w, h = self.screen_h }
 
     self.key_events = self.key_events or {}
-    self.key_events.NextPage = { { Input.group.PgFwd } }
-    self.key_events.PrevPage = { { Input.group.PgBack } }
+    self.key_events.NextPage = {
+        { Input.group.PgFwd },
+        { "Right" },
+        { "PageDown" },
+        { "Down" },
+    }
+    self.key_events.PrevPage = {
+        { Input.group.PgBack },
+        { "Left" },
+        { "PageUp" },
+        { "Up" },
+    }
+    -- Disable FocusManager D-Pad horizontal movement so Left/Right arrow keys trigger PrevPage/NextPage
+    self.key_events.FocusRight = nil
+    self.key_events.FocusLeft = nil
+
     if Device:hasKeys() then
         self.key_events.Close = { { Input.group.Back } }
-        if Device:hasFewKeys() then
-            self.key_events.Close = { { "Left" } }
-        end
         self.key_events.ShowMenu = { { "Menu" } }
     end
     if Device:hasKeyboard() then
@@ -569,6 +580,7 @@ function StorefrontBrowserDialog:init()
         bordersize = 0,
         padding = 0,
         scroll_bar_width = 0,
+        ignore_events = { "swipe" },
         self.list_container,
     }
     self.cropping_widget = self.list_scroller
@@ -777,10 +789,11 @@ function StorefrontBrowserDialog:onPrevPage()
 end
 
 function StorefrontBrowserDialog:onSwipe(arg, ges_ev)
-    local direction = ges_ev and ges_ev.direction
-    if direction == "left" then
+    local ev = (type(arg) == "table" and arg) or (type(ges_ev) == "table" and ges_ev)
+    local direction = ev and ev.direction
+    if direction == "left" or direction == "west" then
         return self:onNextPage()
-    elseif direction == "right" then
+    elseif direction == "right" or direction == "east" then
         return self:onPrevPage()
     end
     return false
