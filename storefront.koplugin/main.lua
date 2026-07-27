@@ -720,13 +720,13 @@ function Storefront:refreshPatchUpdates()
 end
 
 function Storefront:_refreshPatchUpdatesInternal(records)
+    if not self.browser_menu then return end
     records = records or {}
     self:ensurePatchUpdatesState()
     local single_context = self.patch_updates_state.single_check_context
         and self.patch_updates_state.single_check_context.filename
     self.patch_updates_state.single_check_context = nil
-    local progress = InfoMessage:new{ text = _("Checking patch updates…"), timeout = 0 }
-    UIManager:show(progress)
+    local progress = self:showProgressMessage(_("Checking patch updates…"))
     UIManager:forceRePaint()
     local remote_info = self.patch_updates_state.remote_info or {}
     local repo_cache = {}
@@ -757,6 +757,7 @@ function Storefront:_refreshPatchUpdatesInternal(records)
     end
 
     for _, record in ipairs(records) do
+        if not self.browser_menu then break end
         local repo = buildPatchRepoDescriptor(record)
         local entry
         local err
@@ -780,7 +781,8 @@ function Storefront:_refreshPatchUpdatesInternal(records)
         }
     end
 
-    UIManager:close(progress)
+    self:dismissProgressMessage(progress)
+    if not self.browser_menu then return end
     self.patch_updates_state.remote_info = remote_info
 
     local summary = self:collectPatchUpdateSummary()
@@ -3679,11 +3681,12 @@ function Storefront:_scanUpdatesForDirectApi(tracked)
 end
 
 function Storefront:_checkAllUpdatesInternal(records)
+    if not self.browser_menu then return end
     self:ensureUpdatesState()
-    local progress = InfoMessage:new{ text = _("Checking plugin updates…"), timeout = 0 }
-    UIManager:show(progress)
+    local progress = self:showProgressMessage(_("Checking plugin updates…"))
     local remote_info = self.updates_state.remote_info or {}
     for _, record in ipairs(records) do
+        if not self.browser_menu then break end
         local remote_version, remote_repo_ts, err, release_tag_name = self:fetchRemoteVersionForRecord(record)
         local prev = remote_info[record.dirname] or {}
         remote_info[record.dirname] = {
@@ -3694,7 +3697,8 @@ function Storefront:_checkAllUpdatesInternal(records)
             last_checked = os.time(),
         }
     end
-    UIManager:close(progress)
+    self:dismissProgressMessage(progress)
+    if not self.browser_menu then return end
     self.updates_state.remote_info = remote_info
     self.updates_state.last_checked = os.time()
     invalidateInstalledPluginsCache()
@@ -8300,7 +8304,30 @@ function Storefront:buildBrowserEntries()
     return items, total_pages
 end
 
+function Storefront:showProgressMessage(text, args)
+    self:dismissProgressMessage()
+    args = args or {}
+    args.text = text
+    args.timeout = args.timeout or 0
+    local progress = InfoMessage:new(args)
+    self._active_progress_info = progress
+    UIManager:show(progress)
+    return progress
+end
+
+function Storefront:dismissProgressMessage(target)
+    if target and target ~= self._active_progress_info then
+        pcall(function() UIManager:close(target) end)
+    end
+    if self._active_progress_info then
+        local p = self._active_progress_info
+        self._active_progress_info = nil
+        pcall(function() UIManager:close(p) end)
+    end
+end
+
 function Storefront:closeBrowserMenu()
+    self:dismissProgressMessage()
     if self.browser_menu then
         UIManager:close(self.browser_menu)
         self.browser_menu = nil
@@ -8755,6 +8782,7 @@ function Storefront:showBrowser(kind)
                 self.browser_state.scroll_offset = normalizeScrollOffset(offset)
             end
             self:saveBrowserState()
+            self:dismissProgressMessage()
             self.browser_menu = nil
         end,
     }

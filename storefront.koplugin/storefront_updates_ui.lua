@@ -305,11 +305,10 @@ function StorefrontUpdatesUi:init(StorefrontClass)
         self:saveUpdatesState()
 
         UIManager:nextTick(function()
-            local progress = InfoMessage:new{ text = _("Checking updates…"), timeout = 0 }
-            UIManager:show(progress)
-            UIManager:forceRePaint()
+            if not self.browser_menu then
+                return
+            end
 
-            -- wifi already confirmed on above; call directly to avoid runWhenOnline prompting
             -- Check plugins
             local installed_plugins = self:listInstalledPlugins()
             local records = self:getInstallRecordsMap()
@@ -333,17 +332,24 @@ function StorefrontUpdatesUi:init(StorefrontClass)
             end
 
             -- Run the checks
-            pcall(function()
-                self:_checkAllUpdatesInternal(plugin_repos)
-            end)
-            pcall(function()
-                self:_refreshPatchUpdatesInternal(patch_repos)
-            end)
+            if #plugin_repos > 0 and self.browser_menu then
+                pcall(function()
+                    self:_checkAllUpdatesInternal(plugin_repos)
+                end)
+            end
+            if #patch_repos > 0 and self.browser_menu then
+                pcall(function()
+                    self:_refreshPatchUpdatesInternal(patch_repos)
+                end)
+            end
 
-            UIManager:close(progress)
-            UIManager:nextTick(function()
-                self:reopenBrowser()
-            end)
+            if self.browser_menu then
+                UIManager:nextTick(function()
+                    if self.browser_menu then
+                        self:softRefreshCurrentBrowserView()
+                    end
+                end)
+            end
         end)
     end
 end
