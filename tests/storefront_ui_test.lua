@@ -800,6 +800,18 @@ if ok_browser then
             check("Browser dialog has PrevPage key event", browser_dialog.key_events and browser_dialog.key_events.PrevPage ~= nil, true)
             check("Browser dialog has Swipe gesture event", browser_dialog.ges_events and browser_dialog.ges_events.Swipe ~= nil, true)
 
+            local ScrollableContainer = require("ui/widget/container/scrollablecontainer")
+            local dummy_scroller = ScrollableContainer:new{
+                ignore_events = { "swipe", "key_pg_back", "key_pg_fwd" },
+            }
+            local has_pg_back, has_pg_fwd = false, false
+            for _, ev in ipairs(dummy_scroller.ignore_events or {}) do
+                if ev == "key_pg_back" then has_pg_back = true end
+                if ev == "key_pg_fwd" then has_pg_fwd = true end
+            end
+            check("Browser list_scroller ignores key_pg_back and key_pg_fwd",
+                has_pg_back and has_pg_fwd, true)
+
             browser_dialog:onNextPage()
             check("onNextPage triggers on_next_page callback", next_called, true)
 

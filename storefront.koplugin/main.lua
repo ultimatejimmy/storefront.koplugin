@@ -5566,7 +5566,10 @@ function Storefront:_installPatchFromRepoInternal(repo, patch)
     end
     local target_path = patches_dir .. "/" .. patch.filename
     local temp_path = target_path .. ".download"
-    local progress = InfoMessage:new{ text = _("Downloading patch…"), timeout = 0 }
+    local progress = InfoMessage:new{
+        text = string.format(_("Downloading patch \"%s\"…"), patch.filename or _("patch")),
+        timeout = 0,
+    }
     UIManager:show(progress)
     local ok, download_err = downloadToFile(url, temp_path)
     UIManager:close(progress)
@@ -6544,7 +6547,17 @@ function Storefront:installPluginFromReleaseAsset(repo, release, asset)
         local safe_name = tostring(asset.name or (repo.name .. "-asset.zip")):gsub("[^%w_%-%.]", "_")
         local zip_path = string.format("%s/%s-%d.zip", downloads_dir, safe_name, os.time())
 
-        local progress = InfoMessage:new{ text = _("Downloading release asset…"), timeout = 0 }
+        local size_str = (asset.size and asset.size > 0)
+            and string.format(" (%d KB)", math.floor(asset.size / 1024))
+            or ""
+        local progress = InfoMessage:new{
+            text = string.format(
+                _("Downloading %s%s…\nThis may take a moment."),
+                tostring(asset.name or _("release asset")),
+                size_str
+            ),
+            timeout = 0,
+        }
         UIManager:show(progress)
         local ok, err = downloadToFile(url, zip_path)
         UIManager:close(progress)
@@ -6587,7 +6600,7 @@ function Storefront:installPluginFromReleaseAsset(repo, release, asset)
         end
 
         local function proceedWithInstall(dest_root)
-            local install_progress = InfoMessage:new{ text = _("Installing plugin…"), timeout = 0 }
+            local install_progress = InfoMessage:new{ text = _("Extracting and installing plugin…\nPlease wait."), timeout = 0 }
             UIManager:show(install_progress)
             local ok_extract, dest_or_err = extractPluginToUserDir(reader, info, dest_root)
             reader:close()
@@ -9756,7 +9769,7 @@ function Storefront:_installPluginFromRepoInternal(repo)
     local zip_path = string.format("%s/%s-%d.zip", downloads_dir, repo.name, os.time())
 
     local progress = InfoMessage:new{
-        text = _("Downloading plugin archive…"),
+        text = _("Downloading plugin source archive…\nThis may take a moment for large repositories."),
         timeout = 0,
     }
     UIManager:show(progress)
@@ -9805,7 +9818,7 @@ function Storefront:_installPluginFromRepoInternal(repo)
 
     local function proceedWithInstall(dest_root)
         local install_progress = InfoMessage:new{
-            text = _("Installing plugin…"),
+            text = _("Extracting and installing plugin…\nPlease wait."),
             timeout = 0,
         }
         UIManager:show(install_progress)

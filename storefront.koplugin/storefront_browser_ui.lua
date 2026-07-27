@@ -580,7 +580,7 @@ function StorefrontBrowserDialog:init()
         bordersize = 0,
         padding = 0,
         scroll_bar_width = 0,
-        ignore_events = { "swipe" },
+        ignore_events = { "swipe", "key_pg_back", "key_pg_fwd" },
         self.list_container,
     }
     self.cropping_widget = self.list_scroller
