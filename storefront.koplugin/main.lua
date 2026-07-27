@@ -138,6 +138,8 @@ local function showRestartConfirmation(message)
     local ui_font_size = storefront_theme.face_label_size or 18
     local title_font_size = storefront_theme.title_font_size or 22
 
+    local overlay
+
     local title_label = TextWidget:new{
         text = _("Restart Required"),
         face = Font:getFace("cfont", title_font_size),
@@ -176,9 +178,8 @@ local function showRestartConfirmation(message)
         radius = storefront_theme.radius_btn or sc(18),
         padding = sc(10),
         width = math.floor((inner_w - sc(12)) / 2),
-        show_parent = overlay,
         callback = function()
-            UIManager:close(overlay, "ui")
+            if overlay then UIManager:close(overlay, "ui") end
         end,
     }
 
@@ -188,9 +189,8 @@ local function showRestartConfirmation(message)
         radius = storefront_theme.radius_btn or sc(18),
         padding = sc(10),
         width = math.floor((inner_w - sc(12)) / 2),
-        show_parent = overlay,
         callback = function()
-            UIManager:close(overlay, "ui")
+            if overlay then UIManager:close(overlay, "ui") end
             UIManager:restartKOReader()
         end,
     }
@@ -235,6 +235,9 @@ local function showRestartConfirmation(message)
             card,
         },
     }
+
+    later_btn.show_parent = overlay
+    now_btn.show_parent = overlay
 
     overlay.onClose = function()
         UIManager:close(overlay, "ui")
@@ -340,11 +343,13 @@ local function showDeleteConfirmationDialog(display_name, is_plugin, plugin_inst
     local title_font_size = storefront_theme.title_font_size or 22
 
     local title_text = string.format(is_plugin and _("Delete plugin '%s'?") or _("Delete patch '%s'?"), display_name)
-    local title_label = TextWidget:new{
+    local title_label = TextBoxWidget:new{
         text = title_text,
         face = Font:getFace("cfont", title_font_size),
         bold = true,
         fgcolor = Blitbuffer.COLOR_BLACK,
+        width = dialog_w - sc(32),
+        alignment = "center",
     }
 
     local title_container = FrameContainer:new{
@@ -378,10 +383,12 @@ local function showDeleteConfirmationDialog(display_name, is_plugin, plugin_inst
             return icon .. _("Also delete plugin settings")
         end
 
-        local check_text_widget = TextWidget:new{
+        local check_text_widget = TextBoxWidget:new{
             text = get_check_text(),
             face = Font:getFace("cfont", ui_font_size),
             fgcolor = Blitbuffer.COLOR_BLACK,
+            width = dialog_w - sc(40),
+            alignment = "center",
         }
 
         local check_frame = FrameContainer:new{
@@ -1042,8 +1049,8 @@ local function isDefaultPatch(patch)
     return false
 end
 
-function Storefront:togglePluginDisabled(dirname)
-    if not dirname or dirname == "" then return end
+function Storefront:togglePluginDisabled(dirname, skip_prompt)
+    if not dirname or dirname == "" then return false, "" end
     local plugins_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
     local plugin_name = dirname:gsub("%.koplugin$", "")
     local currently_disabled = plugins_disabled[plugin_name] == true
@@ -1055,14 +1062,20 @@ function Storefront:togglePluginDisabled(dirname)
     G_reader_settings:saveSetting("plugins_disabled", plugins_disabled)
     G_reader_settings:flush()
 
-    local action_str = currently_disabled and _("enabled") or _("disabled")
-    showRestartConfirmation(string.format(_("Plugin %s has been %s."), plugin_name, action_str))
+    local is_now_disabled = not currently_disabled
+    if not skip_prompt then
+        self:reopenBrowser(nil, function()
+            local action_str = currently_disabled and _("enabled") or _("disabled")
+            showRestartConfirmation(string.format(_("Plugin %s has been %s."), plugin_name, action_str))
+        end)
+    end
+    return is_now_disabled, plugin_name
 end
 
-function Storefront:togglePatchDisabled(filename)
-    if not filename or filename == "" then return end
+function Storefront:togglePatchDisabled(filename, skip_prompt)
+    if not filename or filename == "" then return false, "" end
     local old_path = PATCHES_ROOT .. "/" .. filename
-    if lfs.attributes(old_path, "mode") ~= "file" then return end
+    if lfs.attributes(old_path, "mode") ~= "file" then return false, "" end
 
     local new_filename
     local is_disabled = isPatchDisabled(filename)
@@ -1082,17 +1095,21 @@ function Storefront:togglePatchDisabled(filename)
             rec.filename = new_filename
             InstallStore.upsertPatch(new_filename, rec)
         end
-        local status_str = is_disabled and _("enabled") or _("disabled")
-        UIManager:show(InfoMessage:new{
-            text = string.format(_("Patch %s %s."), new_filename, status_str),
-            timeout = 3,
-        })
+        local is_now_disabled = not is_disabled
+        if not skip_prompt then
+            self:reopenBrowser(nil, function()
+                local status_str = is_disabled and _("enabled") or _("disabled")
+                showRestartConfirmation(string.format(_("Patch %s has been %s."), new_filename, status_str))
+            end)
+        end
+        return is_now_disabled, new_filename
     else
         logger.warn("Storefront: failed to rename patch file", err)
         UIManager:show(InfoMessage:new{
             text = _("Failed to toggle patch status."),
             timeout = 3,
         })
+        return is_disabled, filename
     end
 end
 
@@ -2067,7 +2084,7 @@ function Storefront:autoMatchInstalled()
 end
 
 function Storefront:collectPatchUpdateSummary()
-    invalidateInstalledPluginsCache()
+    self:ensurePatchUpdatesState()
     local current_generation = InstallStore.getGeneration and InstallStore.getGeneration() or 0
     local remote_info_key = self.patch_updates_state and self.patch_updates_state.last_checked
     
@@ -2078,7 +2095,6 @@ function Storefront:collectPatchUpdateSummary()
     end
 
     self:autoMatchInstalled()
-    self:ensurePatchUpdatesState()
     local summary = buildPatchSummary(self.patch_updates_state.remote_info)
     
     StorefrontLogger.info(string.format(
@@ -2106,7 +2122,7 @@ function Storefront:getPatchUpdatesSummaryText(summary)
 end
 
 function Storefront:collectUpdateSummary()
-    invalidateInstalledPluginsCache()
+    self:ensureUpdatesState()
     local current_generation = InstallStore.getGeneration and InstallStore.getGeneration() or 0
     local remote_info_key = self.updates_state and self.updates_state.last_checked
 
@@ -3263,28 +3279,22 @@ function Storefront:checkAllUpdates()
     end
 
     NetworkMgr:runWhenOnline(function()
-        local info = InfoMessage:new{
-            text = _("Refreshing catalog cache…"),
-            timeout = 0,
-            dismissable = false,
-        }
-        UIManager:show(info)
-        UIManager:forceRePaint()
+        local Toast = require("storefront_toast")
+        Toast.show(_("Refreshing catalog..."), 1.5)
         StorefrontLogger.info("Storefront UI: manual refresh triggered, fetching catalog cache...")
 
         local CatalogClient = require("storefront_net_catalog")
         CatalogClient.fetchAndUpdateCacheAsync(nil, function(ok, err)
-            UIManager:close(info)
             if ok then
                 StorefrontLogger.info("Storefront UI: manual refresh succeeded, populating remote info.")
                 self:populateRemoteInfoFromCatalog()
                 self:updateUpdatesDialog()
                 UIManager:setDirty(nil, "full")
                 self:softRefreshCurrentBrowserView()
-                UIManager:show(InfoMessage:new{ text = _("Catalog refreshed successfully."), timeout = 3 })
+                Toast.show(_("Catalog refreshed successfully."), 3)
             else
                 StorefrontLogger.warn("Storefront UI: manual refresh failed: " .. tostring(err))
-                UIManager:show(InfoMessage:new{ text = _("Catalog refresh failed: ") .. tostring(err), timeout = 3 })
+                Toast.show(_("Catalog refresh failed: ") .. tostring(err), 4)
             end
         end)
     end)
@@ -7762,7 +7772,7 @@ function Storefront:calculateDynamicPageSize(tab_name)
     local screen_h = Device.screen:getHeight()
     local sc = function(val) return Device.screen:scaleBySize(val) end
     
-    local title_height = sc(64)
+    local title_height = sc(56)
     local tab_bar_height = sc(38)
     local footer_height = sc(56)
     
@@ -7770,37 +7780,28 @@ function Storefront:calculateDynamicPageSize(tab_name)
         or (tab_name == "Plugins" and self.browser_state and self.browser_state.show_filter_bar_plugins == true)
         or (tab_name == "Patches" and self.browser_state and self.browser_state.show_filter_bar_patches == true)
     local toolbar_height = 0
-    if has_toolbar then
-        toolbar_height = sc(36) + Size.span.vertical_default
-    end
-    
-    -- One divider below the tab bar, plus one more below the toolbar if present
     local divider_height = Size.line.thin + Size.span.vertical_default
     if has_toolbar then
+        toolbar_height = sc(40) + Size.span.vertical_default
         divider_height = divider_height + Size.line.thin + Size.span.vertical_default
     end
 
-    -- list_container has padding = Size.padding.default on all sides,
-    -- consuming vertical space at the top and bottom of the scroll area
-    local list_padding = 2 * Size.padding.default
-    
-    local body_height = screen_h - title_height - tab_bar_height - toolbar_height - divider_height - footer_height - list_padding
+    local body_height = screen_h - title_height - tab_bar_height - toolbar_height - divider_height - footer_height
     if body_height < math.floor(screen_h * 0.5) then
         body_height = math.floor(screen_h * 0.5)
     end
     
-    local item_height
+    local slot_height, container_padding
     if tab_name == "Plugins" or tab_name == "Patches" or tab_name == "Installed" then
-        item_height = sc(102)
+        slot_height = sc(94)
+        container_padding = sc(20)
     else -- Updates
-        item_height = sc(82)
+        slot_height = sc(72)
+        container_padding = sc(20)
     end
 
-    -- Each item slot includes the item itself plus a separator (thin line between
-    -- items, VerticalSpan after the last). Use VerticalSpan as the conservative value.
-    local slot_height = item_height + Size.span.vertical_default
-    
-    return math.max(1, math.floor(body_height / slot_height))
+    local avail_for_items = body_height - container_padding
+    return math.max(1, math.floor(avail_for_items / slot_height))
 end
 
 function Storefront:ensureInstalledState()
@@ -7936,7 +7937,6 @@ function Storefront:buildInstalledEntries()
                     dirname = plugin.dirname,
                     on_badge_tap = function()
                         self:togglePluginDisabled(plugin.dirname)
-                        self:reopenBrowser()
                     end,
                     callback = function()
                         local DetailsDialog = require("storefront_details_dialog")
@@ -8011,7 +8011,6 @@ function Storefront:buildInstalledEntries()
                     filename = patch.filename,
                     on_badge_tap = function()
                         self:togglePatchDisabled(patch.filename)
-                        self:reopenBrowser()
                     end,
                     callback = function()
                         local DetailsDialog = require("storefront_details_dialog")
@@ -8294,12 +8293,15 @@ function Storefront:computePageFlipFocus(dialog, forward)
     return nil
 end
 
-function Storefront:reopenBrowser(kind)
+function Storefront:reopenBrowser(kind, callback)
     if self.browser_state and self.browser_state.scroll_offset == nil then
         self:resetBrowserScrollState()
     end
     UIManager:nextTick(function()
         self:showBrowser(kind)
+        if callback then
+            UIManager:nextTick(callback)
+        end
     end)
 end
 
@@ -8334,25 +8336,9 @@ function Storefront:browserRefresh()
     local kind = self.browser_state.kind or "plugin"
     self:resetBrowserScrollState()
     self:resetFiltersForRefresh()
-    self:closeBrowserMenu()
     NetworkMgr:runWhenOnline(function()
-        UIManager:nextTick(function()
-            local start_notice = InfoMessage:new{
-                text = _("Caching started, please wait…"),
-                timeout = 5,
-            }
-            UIManager:show(start_notice)
-            UIManager:nextTick(function()
-                self:refreshCache(kind)
-                UIManager:nextTick(function()
-                    self:showBrowser(kind)
-                    UIManager:nextTick(function()
-                        if self.browser_menu then
-                            UIManager:setDirty(self.browser_menu)
-                        end
-                    end)
-                end)
-            end)
+        self:refreshCache(kind, function(ok)
+            self:softRefreshCurrentBrowserView()
         end)
     end)
 end
@@ -10286,8 +10272,9 @@ function Storefront:fetchAndStore(kind, topics, label, name_queries)
     return #collected
 end
 
-function Storefront:refreshCache(kind)
+function Storefront:refreshCache(kind, callback)
     if self.is_refreshing then
+        if callback then callback(false, "Already refreshing") end
         return
     end
     self:ensureBrowserState()
@@ -10297,27 +10284,46 @@ function Storefront:refreshCache(kind)
     self.patch_cache = {}
     self._repo_descriptors_cache = nil
     StorefrontLogger.info(string.format("CACHE REFRESH starting (kind=%s)", tostring(kind)))
-    local progress = InfoMessage:new{ text = _("Refreshing Storefront cache..."), timeout = 0 }
-    UIManager:show(progress)
 
-    local summary
-    local ok, err = pcall(function()
-        local CatalogClient = require("storefront_net_catalog")
-        if not GitHub.isDirectApiEnabled() then
-            logger.info("Storefront: refreshing via static catalog feed")
-            local catalog_ok, catalog_err = CatalogClient.fetchAndUpdateCache()
+    local Toast = require("storefront_toast")
+    local progress_toast = Toast.show(_("Refreshing catalog..."), 1.5)
+
+    local finishRefresh = function(ok, summary_msg, err_msg)
+        self.is_refreshing = false
+        if progress_toast and progress_toast.close then
+            pcall(function() progress_toast:close() end)
+        end
+        if ok then
+            StorefrontLogger.info(string.format("CACHE REFRESH complete: %s", tostring(summary_msg)))
+            Toast.show(summary_msg or _("Storefront cache refreshed."), 3)
+        else
+            local message = tostring(err_msg or "Unknown error")
+            StorefrontLogger.err(string.format("CACHE REFRESH failed: %s", message))
+            Toast.show(_("Storefront refresh failed: ") .. message, 4)
+        end
+        if callback then callback(ok, summary_msg or err_msg) end
+    end
+
+    local CatalogClient = require("storefront_net_catalog")
+    if not GitHub.isDirectApiEnabled() then
+        logger.info("Storefront: refreshing via static catalog feed (async)")
+        CatalogClient.fetchAndUpdateCacheAsync(nil, function(catalog_ok, catalog_err)
             if catalog_ok then
                 local p_count = Cache.countRepos("plugin")
                 local pt_count = Cache.countRepos("patch")
-                summary = string.format(_("Catalog updated: %d plugins, %d patches."), p_count, pt_count)
+                local summary = string.format(_("Catalog updated: %d plugins, %d patches."), p_count, pt_count)
                 StorefrontSettings:saveSetting("status_text", summary)
                 StorefrontSettings:flush()
-                return
+                finishRefresh(true, summary, nil)
             else
-                logger.warn("Storefront static catalog update failed, falling back to direct API", catalog_err)
+                logger.warn("Storefront static catalog update failed:", catalog_err)
+                finishRefresh(false, nil, catalog_err)
             end
-        end
+        end)
+        return
+    end
 
+    local ok, err = pcall(function()
         local refresh_plugins = (kind == "plugin") or (kind == "all")
         local refresh_patches = (kind == "patch") or (kind == "all")
         local summary_parts = {}
@@ -10330,24 +10336,17 @@ function Storefront:refreshCache(kind)
             self:refreshPatchFileListings()
             table.insert(summary_parts, string.format(_("Cached %s patch repositories."), tostring(patch_total)))
         end
-        summary = table.concat(summary_parts, " ")
+        local summary = table.concat(summary_parts, " ")
         if summary == "" then
             summary = _("Storefront cache refreshed.")
         end
         StorefrontSettings:saveSetting("status_text", summary)
         StorefrontSettings:flush()
+        finishRefresh(true, summary, nil)
     end)
 
-    UIManager:close(progress)
-    self.is_refreshing = false
-
-    if ok then
-        StorefrontLogger.info(string.format("CACHE REFRESH complete: %s", tostring(summary)))
-        UIManager:show(InfoMessage:new{ text = summary or _("Storefront cache refreshed."), timeout = 5 })
-    else
-        local message = tostring(err)
-        StorefrontLogger.err(string.format("CACHE REFRESH failed: %s", message))
-        UIManager:show(InfoMessage:new{ text = _("Storefront refresh failed: ") .. message, timeout = 6 })
+    if not ok then
+        finishRefresh(false, nil, err)
     end
 end
 
@@ -10427,6 +10426,26 @@ function Storefront:init()
                 else
                     logger.warn("Storefront init: background catalog update failed: " .. tostring(err))
                     StorefrontLogger.warn("Storefront init: background catalog update failed: " .. tostring(err))
+                    if Storefront.instance and not Storefront.instance._init_catalog_retried then
+                        Storefront.instance._init_catalog_retried = true
+                        local UIManager = require("ui/uimanager")
+                        UIManager:scheduleIn(60, function()
+                            logger.info("Storefront init: retrying background catalog update after delay...")
+                            if StorefrontLogger then StorefrontLogger.info("Storefront init: retrying background catalog update after delay...") end
+                            CatalogClient.fetchAndUpdateCacheAsync(nil, function(retry_ok, retry_err)
+                                if retry_ok then
+                                    logger.info("Storefront init: background catalog update retry succeeded")
+                                    if StorefrontLogger then StorefrontLogger.info("Storefront init: background catalog update retry succeeded") end
+                                    if Storefront.instance and Storefront.instance.browser_menu then
+                                        Storefront.instance:reopenBrowser()
+                                    end
+                                else
+                                    logger.warn("Storefront init: background catalog update retry failed: " .. tostring(retry_err))
+                                    if StorefrontLogger then StorefrontLogger.warn("Storefront init: background catalog update retry failed: " .. tostring(retry_err)) end
+                                end
+                            end)
+                        end)
+                    end
                 end
             end)
         else

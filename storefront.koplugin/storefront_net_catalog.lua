@@ -187,7 +187,7 @@ function CatalogClient.fetchCatalogToFile(url_to_fetch, dest_path)
                 }
                 return c
             end)
-            file:close()
+            pcall(function() file:close() end)
             socketutil:reset_timeout()
 
             local code = tonumber(res_code) or 0
@@ -363,23 +363,22 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback)
     os.remove(staging_patches_file)
 
     if not (ok_ffi and ffiutil and ffiutil.runInSubProcess) then
-        logger.warn("Storefront: ffiutil.runInSubProcess unavailable, falling back to sync fetch")
-        local ok, err = CatalogClient.fetchAndUpdateCache(target_url)
-        if callback then callback(ok, err) end
+        logger.warn("Storefront: ffiutil.runInSubProcess unavailable, skipping background catalog update")
+        if StorefrontLogger then StorefrontLogger.warn("Storefront: ffiutil.runInSubProcess unavailable, skipping background catalog update") end
+        if callback then callback(false, "ffiutil.runInSubProcess unavailable") end
         return
     end
 
     -- Run download AND JSON decoding AND disk writing inside child subprocess
-    local pid = ffiutil.runInSubProcess(function(pid, child_write_fd)
+    local pid, parent_read_fd = ffiutil.runInSubProcess(function(pid, child_write_fd)
         local ok, err = xpcall(function()
-            pcall(require, "socketutil")
             local ok_dl, dl_err = CatalogClient.fetchCatalogToFile(target_url, staging_raw_catalog)
             if not ok_dl then
                 if child_write_fd then ffiutil.writeToFD(child_write_fd, "ERR_DOWNLOAD: " .. tostring(dl_err), true) end
                 return
             end
 
-            local f = io.open(staging_raw_catalog, "r")
+            local f = io.open(staging_raw_catalog, "rb")
             if not f then
                 if child_write_fd then ffiutil.writeToFD(child_write_fd, "ERR_NOFILE", true) end
                 return
@@ -410,8 +409,8 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback)
 
     if not pid then
         logger.warn("Storefront: failed to launch background process for catalog fetch")
-        local sync_ok, sync_err = CatalogClient.fetchAndUpdateCache(target_url)
-        if callback then callback(sync_ok, sync_err) end
+        if StorefrontLogger then StorefrontLogger.warn("Storefront: failed to launch background process for catalog fetch") end
+        if callback then callback(false, "Failed to launch background process") end
         return
     end
 
@@ -421,19 +420,26 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback)
     poll_func = function()
         if CatalogClient._async_pid ~= pid then
             -- Fetch was cancelled or superseded
+            if parent_read_fd and (ffiutil.readAllFromFD or ffiutil.readFromFD) then
+                local close_func = ffiutil.readAllFromFD or ffiutil.readFromFD
+                close_func(parent_read_fd)
+            end
             return
         end
 
         if ffiutil.isSubProcessDone(pid) then
             CatalogClient._async_pid = nil
 
-            local raw_msg = ffiutil.readFromFD and ffiutil.readFromFD(pid)
+            local read_func = ffiutil.readAllFromFD or ffiutil.readFromFD
+            local raw_msg = (read_func and parent_read_fd) and read_func(parent_read_fd) or (read_func and read_func(pid))
             local child_msg = (type(raw_msg) == "string" and raw_msg ~= "") and raw_msg or "SUBPROCESS_NO_MSG"
             logger.info("Storefront: catalog subprocess finished with msg:", tostring(child_msg))
             if StorefrontLogger then StorefrontLogger.info("Storefront: catalog subprocess finished with msg: " .. tostring(child_msg)) end
 
             local function safeReplace(src, dest)
-                if not util.fileExists(src) then return false end
+                local f_test = io.open(src, "rb")
+                if not f_test then return false end
+                f_test:close()
                 os.remove(dest)
                 local ok_ren = os.rename(src, dest)
                 if ok_ren then return true end
@@ -458,18 +464,15 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback)
                 if StorefrontLogger then StorefrontLogger.info("Storefront: background catalog update finished and cache swap complete") end
                 if callback then callback(true, nil) end
             else
-                logger.warn("Storefront catalog async fetch failed (msg: " .. tostring(child_msg) .. "), falling back to sync fetch")
-                if StorefrontLogger then StorefrontLogger.warn("Storefront catalog async fetch failed (msg: " .. tostring(child_msg) .. "), falling back to sync fetch") end
-                local sync_ok, sync_err = CatalogClient.fetchAndUpdateCache(target_url)
-                if type(sync_err) == "table" then
-                    local dump = ""
-                    for k,v in pairs(sync_err) do
-                        dump = dump .. tostring(k) .. "=" .. tostring(v) .. ", "
-                    end
-                    if StorefrontLogger then StorefrontLogger.warn("DEBUG sync_err table: " .. dump) end
-                    sync_err = "Table Error: " .. dump
-                end
-                if callback then callback(sync_ok, sync_err) end
+                os.remove(staging_plugins_file)
+                os.remove(staging_patches_file)
+                os.remove(staging_raw_catalog)
+
+                local err_msg = "Catalog async fetch failed (msg: " .. tostring(child_msg) .. ")"
+                logger.warn("Storefront " .. err_msg .. ", preserving existing catalog cache")
+                if StorefrontLogger then StorefrontLogger.warn("Storefront " .. err_msg .. ", preserving existing catalog cache") end
+
+                if callback then callback(false, child_msg or "async fetch failed") end
             end
         else
             UIManager:scheduleIn(1.0, poll_func)

@@ -300,9 +300,8 @@ function StorefrontBrowserDialog:init()
         icon = "appbar.search",
         width = btn_w,
         height = btn_h,
-        bordersize = sc(1),
-        radius = storefront_theme.radius_spec_btn,
-        background = Blitbuffer.COLOR_WHITE,
+        bordersize = 0,
+        background = nil,
         callback = function()
             if self.on_filter then self.on_filter() end
         end,
@@ -312,9 +311,8 @@ function StorefrontBrowserDialog:init()
         icon = "appbar.settings",
         width = btn_w,
         height = btn_h,
-        bordersize = sc(1),
-        radius = storefront_theme.radius_spec_btn,
-        background = Blitbuffer.COLOR_WHITE,
+        bordersize = 0,
+        background = nil,
         callback = function()
             if self.on_settings_tap then self.on_settings_tap() end
         end,
@@ -329,6 +327,8 @@ function StorefrontBrowserDialog:init()
         width = sc(24),
         height = sc(24),
         padding = sc(12),
+        bordersize = 0,
+        background = nil,
         allow_flash = false,
         show_parent = self,
         callback = function()
