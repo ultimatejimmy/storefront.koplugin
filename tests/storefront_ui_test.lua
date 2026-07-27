@@ -209,12 +209,15 @@ package.loaded["datastorage"] = {
     getDataDir = function(self) return "/tmp/koreader_test_data" end,
 }
 
+local _luasettings_db = {}
 package.loaded["luasettings"] = {
     open = function(self, path)
-        local store = { data = {} }
-        function store:readSetting(key) return self.data[key] end
-        function store:saveSetting(key, val) self.data[key] = val; return true end
-        function store:delSetting(key) self.data[key] = nil end
+        _luasettings_db[path] = _luasettings_db[path] or {}
+        local db = _luasettings_db[path]
+        local store = {}
+        function store:readSetting(key) return db[key] end
+        function store:saveSetting(key, val) db[key] = val; return true end
+        function store:delSetting(key) db[key] = nil end
         function store:flush() return true end
         return store
     end,
@@ -959,6 +962,28 @@ if ok_browser then
         local sum1 = MainStorefront:collectUpdateSummary()
         local sum2 = MainStorefront:collectUpdateSummary()
         check("collectUpdateSummary returns cached summary object on repeated call", sum1 == sum2, true)
+
+        -- Test isDefaultPlugin and autoMatchInstalled for core KOReader plugins (Issue #43)
+        check("isDefaultPlugin identifies autowarmth as core/default", MainStorefront.isDefaultPlugin({ dirname = "autowarmth.koplugin", root = "plugins" }), true)
+        check("isDefaultPlugin identifies cloudstorage as core/default", MainStorefront.isDefaultPlugin({ dirname = "cloudstorage.koplugin", root = "plugins" }), true)
+
+        -- Test autoMatchInstalled scrubs stale records for core plugins
+        local InstallStore = require("storefront_installs")
+        InstallStore.upsert("autowarmth.koplugin", {
+            owner = "Martus0",
+            repo = "autowarmth.koplugin",
+            is_auto_matched = true,
+        })
+        check("InstallStore recorded stale auto-match record", InstallStore.get("autowarmth.koplugin") ~= nil, true)
+        MainStorefront._auto_matched_gen = nil
+        local orig_list_p = MainStorefront.listInstalledPlugins
+        MainStorefront.listInstalledPlugins = function()
+            return { { dirname = "autowarmth.koplugin", root = "plugins" } }
+        end
+        MainStorefront:autoMatchInstalled()
+        MainStorefront.listInstalledPlugins = orig_list_p
+        local rec_check = InstallStore.get("autowarmth.koplugin") or InstallStore.get("autowarmth")
+        check("autoMatchInstalled scrubbed stale auto-match record for autowarmth", rec_check == nil, true)
 
         -- Restore mock
         package.loaded["ffi/util"].readAllFromFD = orig_readAllFromFD

@@ -929,9 +929,11 @@ local CORE_KOREADER_PLUGINS = {
     ["autostandby.koplugin"] = true,
     ["autosuspend.koplugin"] = true,
     ["autoturn.koplugin"] = true,
+    ["autowarmth.koplugin"] = true,
     ["batterystat.koplugin"] = true,
     ["bookshortcuts.koplugin"] = true,
     ["calibre.koplugin"] = true,
+    ["cloudstorage.koplugin"] = true,
     ["coverbrowser.koplugin"] = true,
     ["coverimage.koplugin"] = true,
     ["docsettingtweak.koplugin"] = true,
@@ -1959,6 +1961,22 @@ local function extractAuthorFromPlugin(plugin)
 end
 
 function Storefront:autoMatchInstalled()
+    -- 1. Plugins
+    local records = getInstallRecordsMap()
+
+    -- Scrub any stale auto-matched records for core bundled plugins
+    for plugin_key, _ in pairs(CORE_KOREADER_PLUGINS) do
+        local clean = plugin_key:gsub("%.koplugin$", "")
+        local rec1 = InstallStore.get(plugin_key)
+        if rec1 and rec1.is_auto_matched then
+            InstallStore.remove(plugin_key)
+        end
+        local rec2 = InstallStore.get(clean)
+        if rec2 and rec2.is_auto_matched then
+            InstallStore.remove(clean)
+        end
+    end
+
     local current_gen = InstallStore.getGeneration and InstallStore.getGeneration() or 0
     if self._auto_matched_gen == current_gen then
         return
@@ -1966,9 +1984,9 @@ function Storefront:autoMatchInstalled()
     self._auto_matched_gen = current_gen
     StorefrontLogger.info("AUTO-MATCH starting for installed plugins and patches")
 
-    -- 1. Plugins
-    local records = getInstallRecordsMap()
-    local installed_plugins = listInstalledPlugins()
+    local installed_plugins = self:listInstalledPlugins()
+    records = getInstallRecordsMap()
+
     local unmatched_plugins = {}
     for _, plugin in ipairs(installed_plugins) do
         local record = records[plugin.dirname]
@@ -2010,44 +2028,54 @@ function Storefront:autoMatchInstalled()
         end
 
         for _, plugin in ipairs(unmatched_plugins) do
-            local author = extractAuthorFromPlugin(plugin)
             local clean_dirname = plugin.dirname:gsub("%.koplugin$", ""):lower()
-            local repo
-            if author then
-                local norm_author = author:lower()
-                for _, candidate in ipairs(cached_plugins) do
-                    if candidate.name then
-                        local candidate_clean = candidate.name:gsub("%.koplugin$", ""):lower()
-                        if candidate_clean == clean_dirname or candidate.name:lower() == plugin.dirname:lower() then
-                            local ca_owner = (candidate.owner or (candidate.data and candidate.data.owner and candidate.data.owner.login) or ""):lower()
-                            if ca_owner == norm_author then
-                                repo = candidate
-                                break
+            local koplugin_key = clean_dirname .. ".koplugin"
+
+            -- Skip auto-matching if it's a core KOReader plugin
+            local is_core = CORE_KOREADER_PLUGINS[koplugin_key] or CORE_KOREADER_PLUGINS[clean_dirname]
+            if not is_core and isDefaultPlugin(plugin) then
+                is_core = true
+            end
+
+            if not is_core then
+                local author = extractAuthorFromPlugin(plugin)
+                local repo
+                if author then
+                    local norm_author = author:lower()
+                    for _, candidate in ipairs(cached_plugins) do
+                        if candidate.name then
+                            local candidate_clean = candidate.name:gsub("%.koplugin$", ""):lower()
+                            if candidate_clean == clean_dirname or candidate.name:lower() == plugin.dirname:lower() then
+                                local ca_owner = (candidate.owner or (candidate.data and candidate.data.owner and candidate.data.owner.login) or ""):lower()
+                                if ca_owner == norm_author then
+                                    repo = candidate
+                                    break
+                                end
                             end
                         end
                     end
                 end
-            end
 
-            if not repo then
-                repo = name_map[clean_dirname] or name_map[plugin.dirname:lower()]
-            end
+                if not repo then
+                    repo = name_map[clean_dirname] or name_map[plugin.dirname:lower()]
+                end
 
-            if repo then
-                local existing_rec = records[plugin.dirname]
-                local matched_at = (existing_rec and existing_rec.matched_at) or os.time()
-                local record = {
-                    owner = repo.owner,
-                    repo = repo.name,
-                    repo_full_name = repo.full_name,
-                    repo_description = repo.description,
-                    repo_id = repo.repo_id,
-                    branch = repo.data and repo.data.default_branch or "main",
-                    matched_at = matched_at,
-                    is_auto_matched = true,
-                }
-                InstallStore.upsert(plugin.dirname, record)
-                StorefrontLogger.action(string.format("AUTO-MATCHED plugin %s -> %s", tostring(plugin.dirname), tostring(repo.full_name or repo.name)))
+                if repo then
+                    local existing_rec = records[plugin.dirname]
+                    local matched_at = (existing_rec and existing_rec.matched_at) or os.time()
+                    local record = {
+                        owner = repo.owner,
+                        repo = repo.name,
+                        repo_full_name = repo.full_name,
+                        repo_description = repo.description,
+                        repo_id = repo.repo_id,
+                        branch = repo.data and repo.data.default_branch or "main",
+                        matched_at = matched_at,
+                        is_auto_matched = true,
+                    }
+                    InstallStore.upsert(plugin.dirname, record)
+                    StorefrontLogger.action(string.format("AUTO-MATCHED plugin %s -> %s", tostring(plugin.dirname), tostring(repo.full_name or repo.name)))
+                end
             end
         end
     end
