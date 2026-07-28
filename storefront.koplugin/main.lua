@@ -129,39 +129,10 @@ end
 local G_storefront_batch_updating = false
 
 local function showRestartConfirmation(message)
-<<<<<<< HEAD
-    local ConfirmBox = require("ui/widget/confirmbox")
-=======
     if G_storefront_batch_updating then
         return
     end
-    local storefront_theme = require("storefront_theme")
-    local Device = require("device")
-    local sc = function(val) return (Device and Device.screen and Device.screen.scaleBySize and Device.screen:scaleBySize(val)) or val end
-
-    local sw = Device.screen:getWidth()
-    local sh = Device.screen:getHeight()
-    local dialog_w = math.min(sw - sc(20), sc(380))
-
-    local ui_font_size = storefront_theme.face_label_size or 18
-    local title_font_size = storefront_theme.title_font_size or 22
-
-    local overlay
-
-    local title_label = TextWidget:new{
-        text = _("Restart Required"),
-        face = Font:getFace("cfont", title_font_size),
-        bold = true,
-        fgcolor = Blitbuffer.COLOR_BLACK,
-    }
-
-    local title_container = FrameContainer:new{
-        padding = sc(12),
-        bordersize = 0,
-        title_label,
-    }
-
->>>>>>> main
+    local ConfirmBox = require("ui/widget/confirmbox")
     local body_text = string.format("%s\n\n%s", message or "", _("This will take effect on next restart."))
     UIManager:show(ConfirmBox:new{
         text = body_text,
