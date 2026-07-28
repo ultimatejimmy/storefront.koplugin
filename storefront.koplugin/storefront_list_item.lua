@@ -61,11 +61,24 @@ local function getCustomFontFace(entry_name, font_family, font_file)
                     break
                 end
             end
+            local fallback_path = nil
             for file in lfs.dir(rp) do
                 if file ~= "." and file ~= ".." and (file:match("%.ttf$") or file:match("%.otf$")) then
-                    found_path = rp .. "/" .. file
-                    break
+                    local lfile = file:lower()
+                    if lfile:find("regular") then
+                        found_path = rp .. "/" .. file
+                        break
+                    elseif not lfile:find("italic") and not lfile:find("bold") and not lfile:find("oblique") then
+                        fallback_path = rp .. "/" .. file
+                    elseif not fallback_path then
+                        fallback_path = rp .. "/" .. file
+                    end
                 end
+            end
+            if found_path then break end
+            if fallback_path then
+                found_path = fallback_path
+                break
             end
         end
         if found_path then break end
@@ -73,9 +86,49 @@ local function getCustomFontFace(entry_name, font_family, font_file)
 
     local face = nil
     if found_path then
-        local ok, res = pcall(Font.getFace, Font, found_path, 22)
-        if ok and res then
-            face = res
+        local ok_ft, Freetype = pcall(require, "ffi/freetype")
+        if ok_ft and Freetype then
+            local scaled_size = Device.screen:scaleBySize(22)
+            local ok, ftsize = pcall(Freetype.newFaceSize, found_path, scaled_size)
+            if ok and ftsize then
+                local basename = found_path:match("([^/\\]+)$") or found_path
+                face = {
+                    orig_font  = basename,
+                    realname   = basename,
+                    size       = scaled_size,
+                    orig_size  = 22,
+                    ftsize     = ftsize,
+                    hash       = found_path .. scaled_size,
+                    is_real_bold = false,
+                    hb_features = { "+kern", "+liga" },
+                }
+                face.getFallbackFont = function(num)
+                    if not num or num == 0 then
+                        if not face.embolden_half_strength then
+                            pcall(function()
+                                face.embolden_half_strength = face.ftsize:getEmboldenHalfStrength(3/8)
+                            end)
+                        end
+                        return face
+                    end
+                    local fb_name = Font.fallbacks and Font.fallbacks[num]
+                    if fb_name then
+                        local ok_fb, fb_face = pcall(Font.getFace, Font, fb_name, 22)
+                        if ok_fb and fb_face then
+                            return fb_face
+                        end
+                    end
+                    return false
+                end
+            end
+        end
+        -- fallback: try Font:getFace with just the basename (works if font is installed)
+        if not face then
+            local basename = found_path:match("([^/\\]+)$")
+            if basename then
+                local ok, res = pcall(Font.getFace, Font, basename, 22)
+                if ok and res then face = res end
+            end
         end
     end
 

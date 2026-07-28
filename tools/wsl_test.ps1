@@ -62,6 +62,12 @@ function Run-Workflow {
         Write-Host " FAILED" -ForegroundColor Red
         return $false
     }
+    # Sync assets folder (fonts, icons, etc.) separately since it lives outside PluginDir
+    wsl rsync -av --delete "./assets/" "$WSLDest/assets/"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host " FAILED (assets sync)" -ForegroundColor Red
+        return $false
+    }
     Write-Host " SUCCESS" -ForegroundColor Green
 
     # 2. Unit Tests

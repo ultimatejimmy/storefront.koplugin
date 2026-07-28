@@ -366,7 +366,14 @@ local function showDeleteConfirmationDialog(display_name, is_plugin, plugin_inst
     local ui_font_size = storefront_theme.face_label_size or 18
     local title_font_size = storefront_theme.title_font_size or 22
 
-    local title_text = string.format(is_plugin and _("Delete plugin '%s'?") or _("Delete patch '%s'?"), display_name)
+    local title_text
+    if is_plugin == "font" or is_plugin == "fonts" then
+        title_text = string.format(_("Delete font '%s'?"), display_name)
+    elseif is_plugin == "patch" or is_plugin == "patches" or is_plugin == false then
+        title_text = string.format(_("Delete patch '%s'?"), display_name)
+    else
+        title_text = string.format(_("Delete plugin '%s'?"), display_name)
+    end
     local title_label = TextBoxWidget:new{
         text = title_text,
         face = Font:getFace("NotoSerif-Regular.ttf", title_font_size),
@@ -401,7 +408,7 @@ local function showDeleteConfirmationDialog(display_name, is_plugin, plugin_inst
     local check_item = nil
     local overlay
 
-    if is_plugin then
+    if is_plugin == true then
         local function get_check_text()
             local icon = delete_settings and "☑ " or "☐ "
             return icon .. _("Also delete plugin settings")
@@ -1769,9 +1776,55 @@ end
 local function listInstalledFonts()
     local font_map = InstallStore.listFonts and InstallStore.listFonts() or {}
     local result = {}
+    local seen = {}
+
     for _, rec in pairs(font_map) do
+        local key = (rec.font_name or rec.repo or ""):lower()
+        if key ~= "" then
+            seen[key] = true
+        end
         table.insert(result, rec)
     end
+
+    -- Scan filesystem fonts directory for manually added/moved fonts
+    local ok_ds, DataStorage = pcall(require, "datastorage")
+    local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
+    if ok_ds and ok_lfs then
+        local fonts_root = DataStorage:getDataDir() .. "/fonts"
+        if lfs.attributes(fonts_root, "mode") == "directory" then
+            for file in lfs.dir(fonts_root) do
+                if file ~= "." and file ~= ".." then
+                    local p = fonts_root .. "/" .. file
+                    local mode = lfs.attributes(p, "mode")
+                    if mode == "directory" then
+                        -- Subfolder font (e.g., fonts/Libron or fonts/NV Newsreader)
+                        local key = file:lower()
+                        if not seen[key] then
+                            -- Ensure folder contains at least one font file
+                            local has_font = false
+                            for subf in lfs.dir(p) do
+                                if subf:match("%.ttf$") or subf:match("%.otf$") then
+                                    has_font = true
+                                    break
+                                end
+                            end
+                            if has_font then
+                                seen[key] = true
+                                table.insert(result, {
+                                    font_name = file,
+                                    repo = file,
+                                    full_name = file,
+                                    installed_at = os.time(),
+                                    version = "1.0",
+                                })
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
     return result
 end
 
@@ -5061,8 +5114,11 @@ function Storefront:installFontFromRepo(repo)
 end
 
 function Storefront:_installFontFromRepoInternal(repo)
+    -- Use repo.name as the asset folder key (matches catalog.json and assets/fonts/ subdirs)
+    -- repo.font_family is the display name; repo.name is the folder name.
+    local asset_folder_name = repo.name or repo.font_family or repo.full_name
     local font_name = repo.font_family or repo.name or repo.full_name
-    if not font_name or font_name == "" then
+    if not font_name or font_name == "" or not asset_folder_name or asset_folder_name == "" then
         UIManager:show(InfoMessage:new{ text = _("Missing font metadata."), timeout = 4 })
         return
     end
@@ -5081,6 +5137,17 @@ function Storefront:_installFontFromRepoInternal(repo)
         lfs.mkdir(font_target_dir)
     end
 
+    -- Also check base KOReader ./fonts directory if distinct from DataStorage fonts
+    local base_fonts_root = "fonts"
+    local base_fonts_target = nil
+    if lfs.attributes(base_fonts_root, "mode") == "directory" then
+        local real_data_fonts = ffiutil and ffiutil.realpath and ffiutil.realpath(fonts_root) or fonts_root
+        local real_base_fonts = ffiutil and ffiutil.realpath and ffiutil.realpath(base_fonts_root) or base_fonts_root
+        if real_data_fonts ~= real_base_fonts then
+            base_fonts_target = base_fonts_root
+        end
+    end
+
     -- Find bundled font source directory or files
     local info = debug.getinfo(1, "S")
     local script_dir = info and info.source and info.source:match("^@(.*[/\\])") or ""
@@ -5090,12 +5157,27 @@ function Storefront:_installFontFromRepoInternal(repo)
 
     local candidate_src_dirs = {}
     if script_dir ~= "" then
-        table.insert(candidate_src_dirs, script_dir .. "/assets/fonts/" .. font_name)
-        table.insert(candidate_src_dirs, script_dir .. "/../assets/fonts/" .. font_name)
+        table.insert(candidate_src_dirs, script_dir .. "/assets/fonts/" .. asset_folder_name)
+        table.insert(candidate_src_dirs, script_dir .. "/../assets/fonts/" .. asset_folder_name)
     end
-    table.insert(candidate_src_dirs, DataStorage:getDataDir() .. "/plugins/storefront.koplugin/assets/fonts/" .. font_name)
-    table.insert(candidate_src_dirs, DataStorage:getDataDir() .. "/plugins/storefront.koplugin/storefront.koplugin/assets/fonts/" .. font_name)
-    table.insert(candidate_src_dirs, "assets/fonts/" .. font_name)
+    table.insert(candidate_src_dirs, DataStorage:getDataDir() .. "/plugins/storefront.koplugin/assets/fonts/" .. asset_folder_name)
+    table.insert(candidate_src_dirs, DataStorage:getDataDir() .. "/plugins/storefront.koplugin/storefront.koplugin/assets/fonts/" .. asset_folder_name)
+    table.insert(candidate_src_dirs, "assets/fonts/" .. asset_folder_name)
+
+    local function copySingleFile(src_file, dst_file)
+        local sf = io.open(src_file, "rb")
+        if sf then
+            local content = sf:read("*all")
+            sf:close()
+            local df = io.open(dst_file, "wb")
+            if df then
+                df:write(content)
+                df:close()
+                return true
+            end
+        end
+        return false
+    end
 
     local copied_files = 0
     for _, src_dir in ipairs(candidate_src_dirs) do
@@ -5105,17 +5187,24 @@ function Storefront:_installFontFromRepoInternal(repo)
             for file in lfs.dir(real_src) do
                 if file ~= "." and file ~= ".." and (file:match("%.ttf$") or file:match("%.otf$")) then
                     local src_file = real_src .. "/" .. file
-                    local dst_file = font_target_dir .. "/" .. file
-                    local sf = io.open(src_file, "rb")
-                    if sf then
-                        local content = sf:read("*all")
-                        sf:close()
-                        local df = io.open(dst_file, "wb")
-                        if df then
-                            df:write(content)
-                            df:close()
-                            copied_files = copied_files + 1
+                    -- 1. Copy into subfolder (e.g., fonts/FontName/Font.ttf)
+                    local dst_subfolder = font_target_dir .. "/" .. file
+                    if copySingleFile(src_file, dst_subfolder) then
+                        copied_files = copied_files + 1
+                    end
+                    -- 2. Copy flat into fonts_root (e.g., fonts/Font.ttf) so KOReader flat scanners find it directly
+                    local dst_flat = fonts_root .. "/" .. file
+                    copySingleFile(src_file, dst_flat)
+
+                    -- 3. Copy into base KOReader ./fonts directory if distinct
+                    if base_fonts_target then
+                        local dst_base_flat = base_fonts_target .. "/" .. file
+                        copySingleFile(src_file, dst_base_flat)
+                        local base_sub = base_fonts_target .. "/" .. font_name
+                        if lfs.attributes(base_sub, "mode") ~= "directory" then
+                            lfs.mkdir(base_sub)
                         end
+                        copySingleFile(src_file, base_sub .. "/" .. file)
                     end
                 end
             end
@@ -5128,6 +5217,20 @@ function Storefront:_installFontFromRepoInternal(repo)
     if copied_files == 0 then
         UIManager:show(InfoMessage:new{ text = string.format(_("Bundled font files not found for %s."), font_name), timeout = 5 })
         return
+    end
+
+    -- Invalidate KOReader's font cache files on disk so KOReader rescans fonts on boot
+    local fontinfo_cache1 = DataStorage:getDataDir() .. "/cache/fontlist/fontinfo.dat"
+    local fontinfo_cache2 = DataStorage:getDataDir() .. "/cache/fontinfo.dat"
+    os.remove(fontinfo_cache1)
+    os.remove(fontinfo_cache2)
+
+    -- Invalidate in-memory FontList cache
+    local ok_fl, FontList = pcall(require, "fontlist")
+    if ok_fl and FontList then
+        FontList.fontlist = {}
+        FontList.fontinfo = nil
+        FontList.fontnames = {}
     end
 
     local ok_font, Font = pcall(require, "ui/font")
@@ -5152,18 +5255,40 @@ function Storefront:deleteFont(font_name, record)
         return
     end
     local display_name = font_name
-    showDeleteConfirmationDialog(display_name, false, nil, function()
+    showDeleteConfirmationDialog(display_name, "font", nil, function()
         local fonts_root = DataStorage:getDataDir() .. "/fonts"
         local font_dir = fonts_root .. "/" .. font_name
-        local util = require("util")
+        local ffiutil = require("ffi/util")
         local lfs = require("libs/libkoreader-lfs")
 
         if lfs.attributes(font_dir, "mode") == "directory" then
-            util.purgeDir(font_dir)
-            lfs.rmdir(font_dir)
+            -- Remove any files inside the subfolder, then the subfolder
+            for file in lfs.dir(font_dir) do
+                if file ~= "." and file ~= ".." then
+                    os.remove(font_dir .. "/" .. file)
+                    -- Also remove corresponding flat file in fonts_root
+                    os.remove(fonts_root .. "/" .. file)
+                end
+            end
+            if ffiutil and ffiutil.purgeDir then
+                pcall(ffiutil.purgeDir, font_dir)
+            end
+            pcall(lfs.rmdir, font_dir)
         else
             os.remove(fonts_root .. "/" .. font_name .. ".ttf")
             os.remove(fonts_root .. "/" .. font_name .. ".otf")
+        end
+
+        -- Invalidate font cache files on disk
+        os.remove(DataStorage:getDataDir() .. "/cache/fontlist/fontinfo.dat")
+        os.remove(DataStorage:getDataDir() .. "/cache/fontinfo.dat")
+
+        -- Invalidate in-memory FontList cache
+        local ok_fl, FontList = pcall(require, "fontlist")
+        if ok_fl and FontList then
+            FontList.fontlist = {}
+            FontList.fontinfo = nil
+            FontList.fontnames = {}
         end
 
         InstallStore.removeFont(font_name)

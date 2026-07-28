@@ -35,6 +35,7 @@ local json_null = (ok_json and json and json.null) or nil
 
 local ffiutil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
+local DataStorage = require("datastorage")
 
 local function getAssetPath(filename)
     local info = debug.getinfo(1, "S")
@@ -305,8 +306,35 @@ function StorefrontDetailsDialog:init()
     if self.kind == "font" then
         local font_map = InstallStore.listFonts and InstallStore.listFonts() or {}
         local font_name = self.repo and (self.repo.name or self.repo.font_family)
+        local font_file = self.repo and self.repo.font_file
         if font_name and (font_map[font_name] or font_map[font_name:lower()]) then
             is_installed = true
+        end
+        -- Also check filesystem: font may have been manually installed or moved
+        if not is_installed and font_name then
+            local ok_ds, DataStorage = pcall(require, "datastorage")
+            local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
+            if ok_ds and ok_lfs then
+                local fonts_root = DataStorage:getDataDir() .. "/fonts"
+                -- Check named subfolder
+                local font_dir = fonts_root .. "/" .. font_name
+                if lfs.attributes(font_dir, "mode") == "directory" then
+                    -- Check if it has at least one font file
+                    for f in lfs.dir(font_dir) do
+                        if f:match("%.ttf$") or f:match("%.otf$") then
+                            is_installed = true
+                            break
+                        end
+                    end
+                end
+                -- Check flat font_file in fonts_root
+                if not is_installed and font_file then
+                    local flat_path = fonts_root .. "/" .. font_file
+                    if lfs.attributes(flat_path, "mode") == "file" then
+                        is_installed = true
+                    end
+                end
+            end
         end
     elseif self.patch then
         local patch_map = InstallStore.listPatches() or {}
@@ -1059,11 +1087,31 @@ td { vertical-align: top; }
             for _, dir in ipairs(search_dirs) do
                 local rp = ffiutil.realpath and ffiutil.realpath(dir) or dir
                 if rp and lfs.attributes(rp, "mode") == "directory" then
-                    for file in lfs.dir(rp) do
-                        if file ~= "." and file ~= ".." and (file:match("%.ttf$") or file:match("%.otf$")) then
-                            loaded_font_path = rp .. "/" .. file
+                    if font_file and font_file ~= "" then
+                        local exact_p = rp .. "/" .. font_file
+                        if lfs.attributes(exact_p, "mode") == "file" then
+                            loaded_font_path = exact_p
                             break
                         end
+                    end
+                    local fallback_path = nil
+                    for file in lfs.dir(rp) do
+                        if file ~= "." and file ~= ".." and (file:match("%.ttf$") or file:match("%.otf$")) then
+                            local lfile = file:lower()
+                            if lfile:find("regular") then
+                                loaded_font_path = rp .. "/" .. file
+                                break
+                            elseif not lfile:find("italic") and not lfile:find("bold") and not lfile:find("oblique") then
+                                fallback_path = rp .. "/" .. file
+                            elseif not fallback_path then
+                                fallback_path = rp .. "/" .. file
+                            end
+                        end
+                    end
+                    if loaded_font_path then break end
+                    if fallback_path then
+                        loaded_font_path = fallback_path
+                        break
                     end
                 end
                 if loaded_font_path then break end
@@ -1073,14 +1121,14 @@ td { vertical-align: top; }
             local css_family_name = font_family
             if loaded_font_path then
                 css_family_name = "CustomPreviewFont"
+                -- mupdf expects bare absolute paths in url() - not file:// URIs
                 local safe_url = loaded_font_path:gsub("'", "%%27")
-                if safe_url:sub(1, 1) == "/" then
-                    safe_url = "file://" .. safe_url
-                end
                 custom_font_face_rule = string.format("\n@font-face { font-family: 'CustomPreviewFont'; src: url('%s'); }", safe_url)
             end
 
-            local specimen_css = readme_css .. custom_font_face_rule .. string.format("\n.specimen-text { font-family: '%s', serif, sans-serif !important; }", css_family_name)
+            local specimen_css = readme_css .. custom_font_face_rule .. string.format(
+                "\n.specimen-text, .specimen-text * { font-family: '%s', serif, sans-serif !important; }",
+                css_family_name)
 
             local specimen_html = string.format([[
 <div class="specimen-text">

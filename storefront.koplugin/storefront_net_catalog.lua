@@ -1,4 +1,3 @@
-local http = require("socket.http")
 local json = require("json")
 local logger = require("logger")
 local Cache = require("storefront_cache")
@@ -6,6 +5,15 @@ local DataStorage = require("datastorage")
 local LuaSettings = require("luasettings")
 local ok_log, StorefrontLogger = pcall(require, "storefront_logger")
 if not ok_log then StorefrontLogger = nil end
+
+-- Pick the right http module based on URL scheme
+local function getHttpModule(url)
+    if url and url:match("^https://") then
+        local ok, https = pcall(require, "ssl.https")
+        if ok and https then return https end
+    end
+    return require("socket.http")
+end
 
 local ok_cfg, StorefrontConfig = pcall(require, "storefront_config")
 if not ok_cfg then
@@ -58,8 +66,6 @@ local FALLBACK_CATALOG_URL = "https://raw.githubusercontent.com/ultimatejimmy/st
 
 function CatalogClient.fetchCatalog(url_to_fetch)
     local socketutil = require("socketutil")
-    local socket = require("socket")
-    local http = require("socket.http")
 
     local urls_to_try = {}
     if url_to_fetch then
@@ -78,15 +84,19 @@ function CatalogClient.fetchCatalog(url_to_fetch)
             ["User-Agent"] = USER_AGENT,
         }
 
+        local http_req = getHttpModule(target_url)
         socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+        -- ssl.https does not support redirect=true; socket.http does
+        local is_https = target_url:match("^https://") ~= nil
         local ok_req, res_code = pcall(function()
-            local _, c = http.request{
+            local params = {
                 url = target_url,
                 method = "GET",
                 headers = headers,
                 sink = newTableSink(response_body),
-                redirect = true,
             }
+            if not is_https then params.redirect = true end
+            local _, c = http_req.request(params)
             return c
         end)
         socketutil:reset_timeout()
@@ -102,17 +112,11 @@ function CatalogClient.fetchCatalog(url_to_fetch)
                 last_err = "JSON decode error"
             end
         else
-            local err_str = "Unknown error"
+            local err_str
             if not ok_req then
                 err_str = "pcall failed: " .. tostring(res_code)
             elseif tonumber(res_code) then
                 err_str = "HTTP " .. tostring(res_code)
-            elseif type(res_code) == "table" then
-                local dump = "TableError{"
-                for k, v in pairs(res_code) do
-                    dump = dump .. tostring(k) .. "=" .. tostring(v) .. ", "
-                end
-                err_str = dump .. "}"
             else
                 err_str = tostring(res_code)
             end
@@ -158,9 +162,6 @@ end
 
 function CatalogClient.fetchCatalogToFile(url_to_fetch, dest_path)
     local socketutil = require("socketutil")
-    local socket = require("socket")
-    local http = require("socket.http")
-    local ltn12 = require("ltn12")
 
     local urls_to_try = {}
     if url_to_fetch then
@@ -173,22 +174,29 @@ function CatalogClient.fetchCatalogToFile(url_to_fetch, dest_path)
     local last_err = "No catalog URLs attempted"
     for _, target_url in ipairs(urls_to_try) do
         logger.info("Storefront: fetching catalog to file from", target_url)
-        local file, err = io.open(dest_path, "w")
-        if file then
-            socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+        local file, f_err = io.open(dest_path, "wb")
+        if not file then
+            logger.err("Storefront: failed to open dest_path for writing", f_err)
+            last_err = "failed to open dest_path"
+        else
+            local http_req = getHttpModule(target_url)
+            local is_https = target_url:match("^https://") ~= nil
             local headers = {
                 ["Accept"] = "application/json",
                 ["User-Agent"] = USER_AGENT,
             }
 
+            socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
             local ok_req, res_code = pcall(function()
-                local _, c = http.request{
+                local params = {
                     url = target_url,
                     method = "GET",
                     headers = headers,
                     sink = socketutil.file_sink(file),
-                    redirect = true,
                 }
+                -- ssl.https does not support redirect=true
+                if not is_https then params.redirect = true end
+                local _, c = http_req.request(params)
                 return c
             end)
             pcall(function() file:close() end)
@@ -199,26 +207,17 @@ function CatalogClient.fetchCatalogToFile(url_to_fetch, dest_path)
                 return true, nil
             else
                 os.remove(dest_path)
-                local err_str = "Unknown error"
+                local err_str
                 if not ok_req then
                     err_str = "pcall failed: " .. tostring(res_code)
                 elseif tonumber(res_code) then
                     err_str = "HTTP " .. tostring(res_code)
-                elseif type(res_code) == "table" then
-                    local dump = "TableError{"
-                    for k, v in pairs(res_code) do
-                        dump = dump .. tostring(k) .. "=" .. tostring(v) .. ", "
-                    end
-                    err_str = dump .. "}"
                 else
                     err_str = tostring(res_code)
                 end
                 logger.warn("Storefront catalog fetch to file error from", target_url, err_str)
                 last_err = err_str
             end
-        else
-            logger.err("Storefront: failed to open dest_path for writing", err)
-            last_err = "failed to open dest_path"
         end
     end
 
@@ -243,8 +242,27 @@ function CatalogClient.processCatalogDataToStaging(catalog_data, staging_plugins
     
     local plugins = catalog_data.plugins or {}
     local patches = catalog_data.patches or {}
-    local fonts   = catalog_data.fonts or {}
     local fetched_at = os.time()
+
+    -- Fonts are always sourced from the local bundled catalog.json, not the remote feed.
+    -- The remote catalog (ultimatejimmy.github.io) only contains plugins and patches.
+    local fonts = {}
+    local bundled_path = CatalogClient.getBundledCatalogPath()
+    if bundled_path then
+        local bf = io.open(bundled_path, "rb")
+        if bf then
+            local bc = bf:read("*all")
+            bf:close()
+            local ok_b, bundled = pcall(json.decode, bc)
+            if ok_b and type(bundled) == "table" and type(bundled.fonts) == "table" then
+                fonts = bundled.fonts
+            end
+        end
+    end
+    -- Fall back to fonts in the remote data if bundled has none (shouldn't normally happen)
+    if #fonts == 0 then
+        fonts = catalog_data.fonts or {}
+    end
 
     local function getOwnerLogin(owner)
         if type(owner) == "string" then return owner

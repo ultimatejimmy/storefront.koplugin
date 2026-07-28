@@ -441,6 +441,30 @@ if ok_browser then
             end
         end)
         check("Details dialog page_number reset test executed", page_reset_ok, true)
+
+        -- Test Font details dialog instantiation & paint
+        local font_details_ok, font_details_err = pcall(function()
+            local details = StorefrontDetailsDialog:new{
+                Storefront = full_dummy_storefront,
+                repo = {
+                    name = "Bitter",
+                    full_name = "google/bitter",
+                    font_family = "Bitter",
+                    font_file = "NV_Bitter-Regular.ttf",
+                    kind = "font",
+                    stars = 100,
+                },
+                kind = "font",
+            }
+            details:init()
+            if details.paintTo then
+                details:paintTo(dummy_bb, 0, 0)
+            end
+        end)
+        check("Font details dialog loaded and painted successfully", font_details_ok, true)
+        if not font_details_ok then
+            print("Font details error was:", font_details_err)
+        end
     end
 
     do
