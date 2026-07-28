@@ -985,6 +985,28 @@ if ok_browser then
         local rec_check = InstallStore.get("autowarmth.koplugin") or InstallStore.get("autowarmth")
         check("autoMatchInstalled scrubbed stale auto-match record for autowarmth", rec_check == nil, true)
 
+        -- Test updateAllAvailable when no updates pending
+        local msg_shown = nil
+        local InfoMessage = require("storefront_toast")
+        local orig_toast_new = InfoMessage.new
+        InfoMessage.new = function(...)
+            local args = {...}
+            local opts = args[1] == InfoMessage and args[2] or args[1]
+            if type(opts) == "table" then
+                msg_shown = opts.text
+            elseif type(opts) == "string" then
+                msg_shown = opts
+            end
+            return orig_toast_new(...)
+        end
+        MainStorefront._cached_plugin_summary = { data = {}, updates = 0 }
+        MainStorefront._cached_patch_summary = { data = {}, updates = 0 }
+        MainStorefront:updateAllAvailable()
+        MainStorefront._cached_plugin_summary = nil
+        MainStorefront._cached_patch_summary = nil
+        InfoMessage.new = orig_toast_new
+        check("updateAllAvailable shows up-to-date message when queue is empty", msg_shown ~= nil and msg_shown:find("up to date") ~= nil, true)
+
         -- Restore mock
         package.loaded["ffi/util"].readAllFromFD = orig_readAllFromFD
 

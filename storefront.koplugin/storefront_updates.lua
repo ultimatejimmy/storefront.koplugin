@@ -155,6 +155,18 @@ function StorefrontUpdatesDialog:init()
         show_parent = self,
     }
 
+    self.update_all_button = Button:new{
+        text = _("Update All"),
+        menu_style = true,
+        callback = function()
+            if self.on_update_all then
+                self.on_update_all()
+            elseif self.Storefront and self.Storefront.updateAllAvailable then
+                self.Storefront:updateAllAvailable()
+            end
+        end,
+    }
+
     self.check_button = Button:new{
         text = _("Check all updates"),
         menu_style = true,
@@ -196,6 +208,7 @@ function StorefrontUpdatesDialog:init()
     }
 
     self.controls = HorizontalGroup:new{
+        self.update_all_button,
         self.check_button,
         self.filter_button,
         self.match_button,
@@ -291,7 +304,7 @@ function StorefrontUpdatesDialog:_rebuildLayout()
     end
 
     local controls_row = {}
-    for _, btn in ipairs({ self.check_button, self.filter_button, self.match_button, self.switch_button }) do
+    for _, btn in ipairs({ self.update_all_button, self.check_button, self.filter_button, self.match_button, self.switch_button }) do
         if btn then
             table.insert(controls_row, btn)
         end
