@@ -1766,6 +1766,19 @@ function Storefront:listInstalledPatches()
     return listInstalledPatches()
 end
 
+local function listInstalledFonts()
+    local font_map = InstallStore.listFonts and InstallStore.listFonts() or {}
+    local result = {}
+    for _, rec in pairs(font_map) do
+        table.insert(result, rec)
+    end
+    return result
+end
+
+function Storefront:listInstalledFonts()
+    return listInstalledFonts()
+end
+
 local function findInstalledPlugin(dirname)
     if not dirname or dirname == "" then
         return nil

@@ -1073,7 +1073,11 @@ td { vertical-align: top; }
             local css_family_name = font_family
             if loaded_font_path then
                 css_family_name = "CustomPreviewFont"
-                custom_font_face_rule = string.format("\n@font-face { font-family: 'CustomPreviewFont'; src: url('%s'); }", loaded_font_path)
+                local safe_url = loaded_font_path:gsub("'", "%%27")
+                if safe_url:sub(1, 1) == "/" then
+                    safe_url = "file://" .. safe_url
+                end
+                custom_font_face_rule = string.format("\n@font-face { font-family: 'CustomPreviewFont'; src: url('%s'); }", safe_url)
             end
 
             local specimen_css = readme_css .. custom_font_face_rule .. string.format("\n.specimen-text { font-family: '%s', serif, sans-serif !important; }", css_family_name)
@@ -1107,7 +1111,16 @@ td { vertical-align: top; }
 </div>
 ]], font_family, font_cat, font_lic, font_author)
 
-            html_box:setContent(specimen_html, specimen_css, sc(16))
+            local ok_set, set_err = pcall(function()
+                html_box:setContent(specimen_html, specimen_css, sc(16))
+            end)
+            if not ok_set then
+                logger.warn("Storefront Details: font specimen setContent failed", set_err)
+                local fallback_css = readme_css .. string.format("\n.specimen-text { font-family: '%s', serif, sans-serif !important; }", font_family)
+                pcall(function()
+                    html_box:setContent(specimen_html, fallback_css, sc(16))
+                end)
+            end
             updatePagination()
             return
         end
