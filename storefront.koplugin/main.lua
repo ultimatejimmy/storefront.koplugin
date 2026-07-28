@@ -1666,9 +1666,6 @@ local function parseVersionFromTag(tag_name)
     local raw_version = cleaned:match("^(%d+[%d%.]*)")
     if raw_version and raw_version ~= "" then
         local version = raw_version:gsub("%.$", "")
-        if isDateBasedVersion(version) then
-            return nil
-        end
         return version
     end
     
@@ -1836,13 +1833,16 @@ local function listInstalledPlugins()
                     local meta = loadPluginMeta(root, entry)
                     local plugin_path = root .. "/" .. entry
                     local attr = lfs.attributes(plugin_path)
+                    local install_map = (InstallStore and InstallStore.list and InstallStore.list()) or {}
+                    local rec = install_map[entry] or install_map[entry:gsub("%.koplugin$", "")]
+                    local rec_ver = rec and (rec.version or rec.installed_version or (rec.installed_tag and rec.installed_tag:gsub("^[vV]", "")))
                     local plugin = {
                         dirname = entry,
                         meta = meta,
                         fullname = meta and (meta.fullname or meta.name),
                         shortname = meta and meta.name,
                         name = getPluginDisplayName(meta, entry),
-                        version = meta and meta.version or nil,
+                        version = (meta and meta.version and meta.version ~= "") and meta.version or rec_ver,
                         root = root,
                         path = plugin_path,
                         meta_path_hint = entry .. "/_meta.lua",
@@ -1895,7 +1895,20 @@ local function findInstalledPatch(filename)
     end
 end
 
-local function getInstallRecordsMap()
+local function getInstallRecordsMap(sf)
+    if sf and type(sf) == "table" and type(sf.getInstallRecordsMap) == "function" and sf.getInstallRecordsMap ~= Storefront.getInstallRecordsMap then
+        return sf:getInstallRecordsMap()
+    end
+    local ok, records = pcall(function()
+        return InstallStore.list()
+    end)
+    if not ok or type(records) ~= "table" then
+        return {}
+    end
+    return records
+end
+
+function Storefront:getInstallRecordsMap()
     local ok, records = pcall(function()
         return InstallStore.list()
     end)
@@ -2095,6 +2108,12 @@ function Storefront:autoMatchInstalled()
     -- 1. Plugins
     local records = getInstallRecordsMap()
 
+    local current_gen = InstallStore.getGeneration and InstallStore.getGeneration() or 0
+    if self._auto_matched_gen == current_gen then
+        return
+    end
+    self._auto_matched_gen = current_gen
+
     -- Scrub any stale auto-matched records for core bundled plugins
     for plugin_key, _ in pairs(CORE_KOREADER_PLUGINS) do
         local clean = plugin_key:gsub("%.koplugin$", "")
@@ -2107,16 +2126,10 @@ function Storefront:autoMatchInstalled()
             InstallStore.remove(clean)
         end
     end
-
-    local current_gen = InstallStore.getGeneration and InstallStore.getGeneration() or 0
-    if self._auto_matched_gen == current_gen then
-        return
-    end
-    self._auto_matched_gen = current_gen
     StorefrontLogger.info("AUTO-MATCH starting for installed plugins and patches")
 
     local installed_plugins = self:listInstalledPlugins()
-    records = getInstallRecordsMap()
+    local records = getInstallRecordsMap()
 
     local unmatched_plugins = {}
     for _, plugin in ipairs(installed_plugins) do
@@ -2203,6 +2216,10 @@ function Storefront:autoMatchInstalled()
                         branch = repo.data and repo.data.default_branch or "main",
                         matched_at = matched_at,
                         is_auto_matched = true,
+                        version = existing_rec and existing_rec.version or nil,
+                        installed_version = existing_rec and existing_rec.installed_version or nil,
+                        installed_tag = existing_rec and existing_rec.installed_tag or nil,
+                        tag_name = existing_rec and existing_rec.tag_name or nil,
                     }
                     InstallStore.upsert(plugin.dirname, record)
                     StorefrontLogger.action(string.format("AUTO-MATCHED plugin %s -> %s", tostring(plugin.dirname), tostring(repo.full_name or repo.name)))
@@ -2293,8 +2310,8 @@ function Storefront:collectUpdateSummary()
 
     self:autoMatchInstalled()
     self:ensureUpdatesState()
-    local records = getInstallRecordsMap()
-    local installed = listInstalledPlugins()
+    local records = getInstallRecordsMap(self)
+    local installed = self:listInstalledPlugins()
     local remote_info = self.updates_state.remote_info or {}
     local data = {}
     local summary = {
@@ -2356,6 +2373,12 @@ function Storefront:collectUpdateSummary()
         end
 
         local remote = remote_info[plugin.dirname]
+        if not remote and record and record.repo then
+            remote = remote_info[record.repo]
+                or remote_info[record.repo .. ".koplugin"]
+                or remote_info[record.repo:lower()]
+                or remote_info[record.repo:lower() .. ".koplugin"]
+        end
         -- A remote entry with an error is still usable if it has a release_tag_name.
         -- Only treat it as unchecked if it has NO version info at all.
         local has_checked_info = remote and (remote.release_tag_name or remote.remote_version) and not (remote.error and not remote.release_tag_name)
@@ -2367,7 +2390,7 @@ function Storefront:collectUpdateSummary()
             if record.repo_id then
                 cached_repo = Cache.getRepo(record.repo_id)
             end
-            if not cached_repo and record.owner and record.repo then
+            if not cached_repo and record.owner and record.repo and Cache and Cache.getRepoByName then
                 cached_repo = Cache.getRepoByName(record.owner, record.repo)
             end
             if cached_repo then
@@ -2417,6 +2440,9 @@ function Storefront:collectUpdateSummary()
             end
         end
         local local_version = plugin.version
+        if (not local_version or local_version == "") and record then
+            local_version = record.installed_version or record.version or record.tag_name
+        end
         local local_latest_ts = plugin.latest_mtime
         if not local_latest_ts or local_latest_ts == 0 then
             local_latest_ts = getLatestModificationTimestamp(plugin.path)
@@ -5624,10 +5650,14 @@ function Storefront:rememberInstall(info, repo)
         meta_path = sanitizeMetaPath(derivePluginRepoPath(info.plugin_root), info.plugin_dirname)
     end
     meta_path = meta_path or (info.plugin_dirname .. "/_meta.lua")
+    local version = info.plugin_version
+    if (not version or version == "") and info.plugin_release_tag then
+        version = info.plugin_release_tag:gsub("^[vV]", "")
+    end
     local record = buildInstallRecordFields(
         info.plugin_dirname,
         info.plugin_name,
-        info.plugin_version,
+        version,
         repo,
         meta_path,
         info.plugin_release_tag
@@ -6495,6 +6525,8 @@ function Storefront:renderAssetPickerModal(repo, release, custom_assets, saved_c
                 local cb = saved_ctx.batch_callback
                 saved_ctx.batch_callback = nil
                 cb(false, "Cancelled asset selection")
+            else
+                self.pending_install_context = nil
             end
         end,
     }
@@ -6564,29 +6596,38 @@ function Storefront:promptPluginInstallOptions(repo, release_override, force_sho
     NetworkMgr:runWhenOnline(function()
         self.pending_install_context = saved_ctx
         local release, release_err
-        local catalog_mode = GitHub.getCatalogMode and GitHub.getCatalogMode() or "static"
-        local catalog_repo = Cache.getRepo and (
-            Cache.getRepo("plugin", repo.full_name or repo.name)
-            or (repo.owner and repo.name and Cache.getRepo("plugin", repo.owner .. "/" .. repo.name))
-        )
-        local catalog_release = (catalog_mode == "static") and (
-            release_override
-            or (repo and repo.latest_release)
-            or (repo and repo.data and repo.data.latest_release)
-            or (catalog_repo and catalog_repo.latest_release)
-            or (catalog_repo and catalog_repo.data and catalog_repo.data.latest_release)
-        ) or nil
-
-        local has_catalog_assets = catalog_release and type(catalog_release) == "table"
-            and catalog_release.assets and type(catalog_release.assets) == "table" and #catalog_release.assets > 0
-
-        if has_catalog_assets then
-            release = catalog_release
+        if release_override and type(release_override) == "table" then
+            release = release_override
+            if (not release.assets or #release.assets == 0) and release.tag_name then
+                local full_release = GitHub.fetchReleaseByTag and GitHub.fetchReleaseByTag(owner, repo.name, release.tag_name)
+                if full_release and type(full_release) == "table" and full_release.assets and #full_release.assets > 0 then
+                    release = full_release
+                end
+            end
         else
-            local progress = showFetchingProgress(_("Fetching release info…"))
-            release, release_err = GitHub.fetchLatestRelease(owner, repo.name)
-            if progress and progress.close then
-                progress.close()
+            local catalog_mode = GitHub.getCatalogMode and GitHub.getCatalogMode() or "static"
+            local catalog_repo = Cache.getRepo and (
+                Cache.getRepo("plugin", repo.full_name or repo.name)
+                or (repo.owner and repo.name and Cache.getRepo("plugin", repo.owner .. "/" .. repo.name))
+            )
+            local catalog_release = (catalog_mode == "static") and (
+                (repo and repo.latest_release)
+                or (repo and repo.data and repo.data.latest_release)
+                or (catalog_repo and catalog_repo.latest_release)
+                or (catalog_repo and catalog_repo.data and catalog_repo.data.latest_release)
+            ) or nil
+
+            local has_catalog_assets = catalog_release and type(catalog_release) == "table"
+                and catalog_release.assets and type(catalog_release.assets) == "table" and #catalog_release.assets > 0
+
+            if has_catalog_assets then
+                release = catalog_release
+            else
+                local progress = showFetchingProgress(_("Fetching release info…"))
+                release, release_err = GitHub.fetchLatestRelease(owner, repo.name)
+                if progress and progress.close then
+                    progress.close()
+                end
             end
         end
 
@@ -6605,6 +6646,10 @@ function Storefront:promptPluginInstallOptions(repo, release_override, force_sho
                     end
                 end
             end
+        end
+
+        if release_override then
+            force_show_picker = true
         end
 
         local item_key = repo.name
@@ -6654,14 +6699,16 @@ function Storefront:promptPluginInstallOptions(repo, release_override, force_sho
             return
         end
 
-        -- Fallback to source archive or direct repo download
-        if release and release.zipball_url then
-            local tag_name = release.tag_name or "latest"
-            local source_code_name = string.format("Source code (%s.zip)", tag_name)
+        -- Fallback to source archive or direct repo download for this specific release tag
+        local tag_name = (release and release.tag_name and release.tag_name ~= "") and release.tag_name or nil
+        local download_url = (release and release.zipball_url) or (tag_name and string.format("https://github.com/%s/%s/archive/refs/tags/%s.zip", owner, repo.name, tag_name))
+        
+        if download_url then
+            local source_code_name = string.format("Source code (%s.zip)", tag_name or "latest")
             self.pending_install_context = saved_ctx
-            self:installPluginFromReleaseAsset(repo, release, {
+            self:installPluginFromReleaseAsset(repo, release or { tag_name = tag_name }, {
                 name = source_code_name,
-                browser_download_url = release.zipball_url,
+                browser_download_url = download_url,
             })
         else
             self.pending_install_context = saved_ctx
@@ -6820,9 +6867,8 @@ function Storefront:renderReleaseListPage(repo, releases, page, current_release,
                 background = Blitbuffer.COLOR_WHITE,
                 callback = function()
                     UIManager:close(dialog)
-                    -- Close the release list, then reopen Download options for
-                    -- the chosen release.
-                    self:promptPluginInstallOptions(repo, release)
+                    -- Close the release list, then reopen Download options for the chosen release.
+                    self:promptPluginInstallOptions(repo, release, true)
                 end,
             },
         })
@@ -6866,6 +6912,9 @@ function Storefront:renderReleaseListPage(repo, releases, page, current_release,
             background = Blitbuffer.COLOR_WHITE,
             callback = function()
                 UIManager:close(dialog)
+                if self.pending_install_context and not self.pending_install_context.batch_callback then
+                    self.pending_install_context = nil
+                end
             end,
         },
     })
@@ -6960,6 +7009,9 @@ function Storefront:installPluginFromReleaseAsset(repo, release, asset)
         -- Store the release tag so it gets persisted in the install record.
         if release and release.tag_name and release.tag_name ~= "" then
             info.plugin_release_tag = release.tag_name
+        end
+        if (not info.plugin_version or info.plugin_version == "") and info.plugin_release_tag then
+            info.plugin_version = info.plugin_release_tag:gsub("^[vV]", "")
         end
 
         if self.pending_install_context and self.pending_install_context.mode == "update" then
@@ -9001,13 +9053,16 @@ function Storefront:showBrowser(kind)
         self:closeBrowserMenu()
     end
     local current_tab = self.browser_state.tab or "Plugins"
-    self:maybeAutoCheckUpdates()
+    
+    -- Schedule deferred update and catalog background checks AFTER opening UI (zero launch delay)
+    UIManager:nextTick(function()
+        pcall(function() self:maybeAutoCheckUpdates() end)
+    end)
 
-    -- Schedule deferred background catalog check 0.5s AFTER opening UI (zero launch delay)
     local now = os.time()
     if not self._last_catalog_check_time or (now - self._last_catalog_check_time) >= MIN_CATALOG_CHECK_INTERVAL then
         UIManager:scheduleIn(0.5, function()
-            self:maybeCheckCatalogBackground()
+            pcall(function() self:maybeCheckCatalogBackground() end)
         end)
     end
 
@@ -10435,6 +10490,8 @@ function Storefront:handlePostInstall(info, repo)
         local ok_meta, meta = pcall(dofile, meta_path)
         if ok_meta and type(meta) == "table" and meta.version then
             info.plugin_version = meta.version
+        elseif info.plugin_release_tag and info.plugin_release_tag ~= "" then
+            info.plugin_version = info.plugin_release_tag:gsub("^[vV]", "")
         end
     end
 
@@ -10455,7 +10512,9 @@ function Storefront:handlePostInstall(info, repo)
                 self:ensureUpdatesState()
                 local cached = self.updates_state.remote_info[info.plugin_dirname] or {}
                 if info.plugin_version and info.plugin_version ~= "" then
-                    cached.remote_version = info.plugin_version
+                    if not cached.release_tag_name or (info.plugin_release_tag and info.plugin_release_tag == cached.release_tag_name) then
+                        cached.remote_version = info.plugin_version
+                    end
                 end
                 cached.last_checked = os.time()
                 cached.error = nil

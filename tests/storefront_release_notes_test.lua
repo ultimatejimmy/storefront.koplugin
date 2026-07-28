@@ -10,6 +10,7 @@ local function check(label, condition)
         failures = failures + 1
         print("FAIL", label)
     end
+    io.stdout:flush()
 end
 
 -- Mock dependencies for headless testing

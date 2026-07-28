@@ -189,7 +189,7 @@ function StorefrontListItem:init()
         local text_w = content_inner - right_reserve
 
         -- Line 1: Name
-        local name_face = Font:getFace("NotoSerif-Bold.ttf", 22)
+        local name_face = Font:getFace("cfont", 22)
         local name_w = TextWidget:new{
             text = name_text,
             face = name_face,

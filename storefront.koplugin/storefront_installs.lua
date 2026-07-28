@@ -99,6 +99,9 @@ local function isRecordEqual(a, b)
        and a.sha == b.sha
        and a.path == b.path
        and a.is_auto_matched == b.is_auto_matched
+       and a.version == b.version
+       and a.installed_version == b.installed_version
+       and a.tag_name == b.tag_name
 end
 
 function InstallStore.upsert(plugin_id, record)
@@ -137,6 +140,9 @@ function InstallStore.remove(plugin_id)
         return false
     end
     local data = readStore()
+    if data.plugins[plugin_id] == nil then
+        return true
+    end
     data.plugins[plugin_id] = nil
     return writeStore(data)
 end
@@ -146,6 +152,9 @@ function InstallStore.removePatch(filename)
         return false
     end
     local data = readStore()
+    if data.patches[filename] == nil then
+        return true
+    end
     data.patches[filename] = nil
     return writeStore(data)
 end

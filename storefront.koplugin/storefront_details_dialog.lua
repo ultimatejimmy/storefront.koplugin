@@ -172,7 +172,7 @@ function StorefrontDetailsDialog:init()
 
     local rec = getInstallRecord()
     if not version_str and rec then
-        version_str = rec.version or rec.tag_name or rec.release_tag_name or (rec.sha and ("sha:" .. rec.sha:sub(1, 7)))
+        version_str = rec.version or rec.installed_version or rec.installed_tag or rec.tag_name or rec.release_tag_name or (rec.sha and ("sha:" .. rec.sha:sub(1, 7)))
     end
 
     if not version_str and self.Storefront then
