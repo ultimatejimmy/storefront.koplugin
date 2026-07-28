@@ -264,6 +264,24 @@ function GitHubClient.fetchLatestRelease(owner, repo)
     return parsed, nil
 end
 
+function GitHubClient.fetchReleaseByTag(owner, repo, tag)
+    if not owner or not repo or not tag then
+        return nil, "missing parameters"
+    end
+    local path = string.format("/repos/%s/%s/releases/tags/%s", owner, repo, tag)
+    local code, body = request(path)
+    if code ~= 200 then
+        logger.warn("GitHub fetch release by tag error", owner .. "/" .. repo, tag, code, body)
+        return nil, { code = code, body = body }
+    end
+    local ok, parsed = pcall(json.decode, body)
+    if not ok then
+        logger.warn("GitHub fetch release by tag decode error", parsed)
+        return nil, "decode"
+    end
+    return parsed, nil
+end
+
 -- Fetch all releases of a repository (sorted from newest to oldest by GitHub).
 -- Pagination is performed transparently up to `max_pages` to avoid hammering
 -- the API for repositories with hundreds of releases.

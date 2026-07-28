@@ -24,6 +24,7 @@ local function check(label, got, expected)
         failures = failures + 1
         print("FAIL", label, "expected=", tostring(expected), "got=", tostring(got))
     end
+    io.stdout:flush()
 end
 
 local function freshModule()

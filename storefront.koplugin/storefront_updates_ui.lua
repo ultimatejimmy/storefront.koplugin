@@ -247,18 +247,6 @@ function StorefrontUpdatesUi:init(StorefrontClass)
         }
         end
 
-        local display_total = #merged
-        local page_size = self:calculateDynamicPageSize("Updates")
-        local total_pages = math.max(1, math.ceil(display_total / page_size))
-        local page = math.min(math.max(self.browser_state.page or 1, 1), total_pages)
-        if self.browser_state.page ~= page then
-            self.browser_state.page = page
-            self:saveBrowserState()
-        end
-
-        local start_index = (page - 1) * page_size + 1
-        local end_index = math.min(display_total, start_index + page_size - 1)
-
         local items = {}
         if display_total == 0 then
             table.insert(items, {
@@ -272,15 +260,10 @@ function StorefrontUpdatesUi:init(StorefrontClass)
                     self:clearSearchAndFilters()
                 end,
             })
-        else
-            for i = start_index, end_index do
-                local entry = merged[i]
-                entry.separator = true
-                table.insert(items, entry)
-            end
+            return items, 1
         end
 
-        return items, total_pages
+        return self:paginateEntries(merged, "Updates")
     end
 
     function StorefrontClass:maybeAutoCheckUpdates()

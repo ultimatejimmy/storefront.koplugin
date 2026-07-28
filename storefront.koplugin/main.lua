@@ -1658,9 +1658,6 @@ local function parseVersionFromTag(tag_name)
     local raw_version = cleaned:match("^(%d+[%d%.]*)")
     if raw_version and raw_version ~= "" then
         local version = raw_version:gsub("%.$", "")
-        if isDateBasedVersion(version) then
-            return nil
-        end
         return version
     end
     
@@ -1828,13 +1825,16 @@ local function listInstalledPlugins()
                     local meta = loadPluginMeta(root, entry)
                     local plugin_path = root .. "/" .. entry
                     local attr = lfs.attributes(plugin_path)
+                    local install_map = (InstallStore and InstallStore.list and InstallStore.list()) or {}
+                    local rec = install_map[entry] or install_map[entry:gsub("%.koplugin$", "")]
+                    local rec_ver = rec and (rec.version or rec.installed_version or (rec.installed_tag and rec.installed_tag:gsub("^[vV]", "")))
                     local plugin = {
                         dirname = entry,
                         meta = meta,
                         fullname = meta and (meta.fullname or meta.name),
                         shortname = meta and meta.name,
                         name = getPluginDisplayName(meta, entry),
-                        version = meta and meta.version or nil,
+                        version = (meta and meta.version and meta.version ~= "") and meta.version or rec_ver,
                         root = root,
                         path = plugin_path,
                         meta_path_hint = entry .. "/_meta.lua",
@@ -1946,7 +1946,20 @@ local function findInstalledPatch(filename)
     end
 end
 
-local function getInstallRecordsMap()
+local function getInstallRecordsMap(sf)
+    if sf and type(sf) == "table" and type(sf.getInstallRecordsMap) == "function" and sf.getInstallRecordsMap ~= Storefront.getInstallRecordsMap then
+        return sf:getInstallRecordsMap()
+    end
+    local ok, records = pcall(function()
+        return InstallStore.list()
+    end)
+    if not ok or type(records) ~= "table" then
+        return {}
+    end
+    return records
+end
+
+function Storefront:getInstallRecordsMap()
     local ok, records = pcall(function()
         return InstallStore.list()
     end)
@@ -2146,6 +2159,12 @@ function Storefront:autoMatchInstalled()
     -- 1. Plugins
     local records = getInstallRecordsMap()
 
+    local current_gen = InstallStore.getGeneration and InstallStore.getGeneration() or 0
+    if self._auto_matched_gen == current_gen then
+        return
+    end
+    self._auto_matched_gen = current_gen
+
     -- Scrub any stale auto-matched records for core bundled plugins
     for plugin_key, _ in pairs(CORE_KOREADER_PLUGINS) do
         local clean = plugin_key:gsub("%.koplugin$", "")
@@ -2158,16 +2177,10 @@ function Storefront:autoMatchInstalled()
             InstallStore.remove(clean)
         end
     end
-
-    local current_gen = InstallStore.getGeneration and InstallStore.getGeneration() or 0
-    if self._auto_matched_gen == current_gen then
-        return
-    end
-    self._auto_matched_gen = current_gen
     StorefrontLogger.info("AUTO-MATCH starting for installed plugins and patches")
 
     local installed_plugins = self:listInstalledPlugins()
-    records = getInstallRecordsMap()
+    local records = getInstallRecordsMap()
 
     local unmatched_plugins = {}
     for _, plugin in ipairs(installed_plugins) do
@@ -2254,6 +2267,10 @@ function Storefront:autoMatchInstalled()
                         branch = repo.data and repo.data.default_branch or "main",
                         matched_at = matched_at,
                         is_auto_matched = true,
+                        version = existing_rec and existing_rec.version or nil,
+                        installed_version = existing_rec and existing_rec.installed_version or nil,
+                        installed_tag = existing_rec and existing_rec.installed_tag or nil,
+                        tag_name = existing_rec and existing_rec.tag_name or nil,
                     }
                     InstallStore.upsert(plugin.dirname, record)
                     StorefrontLogger.action(string.format("AUTO-MATCHED plugin %s -> %s", tostring(plugin.dirname), tostring(repo.full_name or repo.name)))
@@ -2344,8 +2361,8 @@ function Storefront:collectUpdateSummary()
 
     self:autoMatchInstalled()
     self:ensureUpdatesState()
-    local records = getInstallRecordsMap()
-    local installed = listInstalledPlugins()
+    local records = getInstallRecordsMap(self)
+    local installed = self:listInstalledPlugins()
     local remote_info = self.updates_state.remote_info or {}
     local data = {}
     local summary = {
@@ -2407,6 +2424,12 @@ function Storefront:collectUpdateSummary()
         end
 
         local remote = remote_info[plugin.dirname]
+        if not remote and record and record.repo then
+            remote = remote_info[record.repo]
+                or remote_info[record.repo .. ".koplugin"]
+                or remote_info[record.repo:lower()]
+                or remote_info[record.repo:lower() .. ".koplugin"]
+        end
         -- A remote entry with an error is still usable if it has a release_tag_name.
         -- Only treat it as unchecked if it has NO version info at all.
         local has_checked_info = remote and (remote.release_tag_name or remote.remote_version) and not (remote.error and not remote.release_tag_name)
@@ -2418,7 +2441,7 @@ function Storefront:collectUpdateSummary()
             if record.repo_id then
                 cached_repo = Cache.getRepo(record.repo_id)
             end
-            if not cached_repo and record.owner and record.repo then
+            if not cached_repo and record.owner and record.repo and Cache and Cache.getRepoByName then
                 cached_repo = Cache.getRepoByName(record.owner, record.repo)
             end
             if cached_repo then
@@ -2468,6 +2491,9 @@ function Storefront:collectUpdateSummary()
             end
         end
         local local_version = plugin.version
+        if (not local_version or local_version == "") and record then
+            local_version = record.installed_version or record.version or record.tag_name
+        end
         local local_latest_ts = plugin.latest_mtime
         if not local_latest_ts or local_latest_ts == 0 then
             local_latest_ts = getLatestModificationTimestamp(plugin.path)
@@ -5868,10 +5894,14 @@ function Storefront:rememberInstall(info, repo)
         meta_path = sanitizeMetaPath(derivePluginRepoPath(info.plugin_root), info.plugin_dirname)
     end
     meta_path = meta_path or (info.plugin_dirname .. "/_meta.lua")
+    local version = info.plugin_version
+    if (not version or version == "") and info.plugin_release_tag then
+        version = info.plugin_release_tag:gsub("^[vV]", "")
+    end
     local record = buildInstallRecordFields(
         info.plugin_dirname,
         info.plugin_name,
-        info.plugin_version,
+        version,
         repo,
         meta_path,
         info.plugin_release_tag
@@ -6739,6 +6769,8 @@ function Storefront:renderAssetPickerModal(repo, release, custom_assets, saved_c
                 local cb = saved_ctx.batch_callback
                 saved_ctx.batch_callback = nil
                 cb(false, "Cancelled asset selection")
+            else
+                self.pending_install_context = nil
             end
         end,
     }
@@ -6808,29 +6840,38 @@ function Storefront:promptPluginInstallOptions(repo, release_override, force_sho
     NetworkMgr:runWhenOnline(function()
         self.pending_install_context = saved_ctx
         local release, release_err
-        local catalog_mode = GitHub.getCatalogMode and GitHub.getCatalogMode() or "static"
-        local catalog_repo = Cache.getRepo and (
-            Cache.getRepo("plugin", repo.full_name or repo.name)
-            or (repo.owner and repo.name and Cache.getRepo("plugin", repo.owner .. "/" .. repo.name))
-        )
-        local catalog_release = (catalog_mode == "static") and (
-            release_override
-            or (repo and repo.latest_release)
-            or (repo and repo.data and repo.data.latest_release)
-            or (catalog_repo and catalog_repo.latest_release)
-            or (catalog_repo and catalog_repo.data and catalog_repo.data.latest_release)
-        ) or nil
-
-        local has_catalog_assets = catalog_release and type(catalog_release) == "table"
-            and catalog_release.assets and type(catalog_release.assets) == "table" and #catalog_release.assets > 0
-
-        if has_catalog_assets then
-            release = catalog_release
+        if release_override and type(release_override) == "table" then
+            release = release_override
+            if (not release.assets or #release.assets == 0) and release.tag_name then
+                local full_release = GitHub.fetchReleaseByTag and GitHub.fetchReleaseByTag(owner, repo.name, release.tag_name)
+                if full_release and type(full_release) == "table" and full_release.assets and #full_release.assets > 0 then
+                    release = full_release
+                end
+            end
         else
-            local progress = showFetchingProgress(_("Fetching release info…"))
-            release, release_err = GitHub.fetchLatestRelease(owner, repo.name)
-            if progress and progress.close then
-                progress.close()
+            local catalog_mode = GitHub.getCatalogMode and GitHub.getCatalogMode() or "static"
+            local catalog_repo = Cache.getRepo and (
+                Cache.getRepo("plugin", repo.full_name or repo.name)
+                or (repo.owner and repo.name and Cache.getRepo("plugin", repo.owner .. "/" .. repo.name))
+            )
+            local catalog_release = (catalog_mode == "static") and (
+                (repo and repo.latest_release)
+                or (repo and repo.data and repo.data.latest_release)
+                or (catalog_repo and catalog_repo.latest_release)
+                or (catalog_repo and catalog_repo.data and catalog_repo.data.latest_release)
+            ) or nil
+
+            local has_catalog_assets = catalog_release and type(catalog_release) == "table"
+                and catalog_release.assets and type(catalog_release.assets) == "table" and #catalog_release.assets > 0
+
+            if has_catalog_assets then
+                release = catalog_release
+            else
+                local progress = showFetchingProgress(_("Fetching release info…"))
+                release, release_err = GitHub.fetchLatestRelease(owner, repo.name)
+                if progress and progress.close then
+                    progress.close()
+                end
             end
         end
 
@@ -6849,6 +6890,10 @@ function Storefront:promptPluginInstallOptions(repo, release_override, force_sho
                     end
                 end
             end
+        end
+
+        if release_override then
+            force_show_picker = true
         end
 
         local item_key = repo.name
@@ -6898,14 +6943,16 @@ function Storefront:promptPluginInstallOptions(repo, release_override, force_sho
             return
         end
 
-        -- Fallback to source archive or direct repo download
-        if release and release.zipball_url then
-            local tag_name = release.tag_name or "latest"
-            local source_code_name = string.format("Source code (%s.zip)", tag_name)
+        -- Fallback to source archive or direct repo download for this specific release tag
+        local tag_name = (release and release.tag_name and release.tag_name ~= "") and release.tag_name or nil
+        local download_url = (release and release.zipball_url) or (tag_name and string.format("https://github.com/%s/%s/archive/refs/tags/%s.zip", owner, repo.name, tag_name))
+        
+        if download_url then
+            local source_code_name = string.format("Source code (%s.zip)", tag_name or "latest")
             self.pending_install_context = saved_ctx
-            self:installPluginFromReleaseAsset(repo, release, {
+            self:installPluginFromReleaseAsset(repo, release or { tag_name = tag_name }, {
                 name = source_code_name,
-                browser_download_url = release.zipball_url,
+                browser_download_url = download_url,
             })
         else
             self.pending_install_context = saved_ctx
@@ -7064,9 +7111,8 @@ function Storefront:renderReleaseListPage(repo, releases, page, current_release,
                 background = Blitbuffer.COLOR_WHITE,
                 callback = function()
                     UIManager:close(dialog)
-                    -- Close the release list, then reopen Download options for
-                    -- the chosen release.
-                    self:promptPluginInstallOptions(repo, release)
+                    -- Close the release list, then reopen Download options for the chosen release.
+                    self:promptPluginInstallOptions(repo, release, true)
                 end,
             },
         })
@@ -7110,6 +7156,9 @@ function Storefront:renderReleaseListPage(repo, releases, page, current_release,
             background = Blitbuffer.COLOR_WHITE,
             callback = function()
                 UIManager:close(dialog)
+                if self.pending_install_context and not self.pending_install_context.batch_callback then
+                    self.pending_install_context = nil
+                end
             end,
         },
     })
@@ -7204,6 +7253,9 @@ function Storefront:installPluginFromReleaseAsset(repo, release, asset)
         -- Store the release tag so it gets persisted in the install record.
         if release and release.tag_name and release.tag_name ~= "" then
             info.plugin_release_tag = release.tag_name
+        end
+        if (not info.plugin_version or info.plugin_version == "") and info.plugin_release_tag then
+            info.plugin_version = info.plugin_release_tag:gsub("^[vV]", "")
         end
 
         if self.pending_install_context and self.pending_install_context.mode == "update" then
@@ -8401,6 +8453,12 @@ function Storefront:makePatchMenuItem(repo, patch)
     }
 end
 
+local function getAssetPath(filename)
+    local info = debug.getinfo(1, "S")
+    local dir = info.source:match("^@(.*[/\\])") or ""
+    return dir .. "assets/" .. filename
+end
+
 function Storefront:calculateDynamicPageSize(tab_name)
     local screen_h = Device.screen:getHeight()
     local screen_w = Device.screen:getWidth()
@@ -8439,14 +8497,17 @@ function Storefront:calculateDynamicPageSize(tab_name)
     -- Measure a sample StorefrontListItem widget dynamically for exact pixel height on current device/scaling
     local item_w = screen_w - 2 * pad
     local sample_entry
-    if tab_name == "Updates" then
+    if tab_name == "Updates" or tab_name == "Installed" then
         sample_entry = {
             name = "Sample Plugin Name",
-            kind_label = "Plugin",
-            version_transition = "1.0.0 -> 2.0.0",
+            updated = "2026-07-27",
+            kind_label = "Plugin · Default",
             is_entry = true,
-            is_update_item = true,
-            badge = "Update",
+            is_installed_item = (tab_name == "Installed"),
+            is_update_item = (tab_name == "Updates"),
+            version_transition = (tab_name == "Updates") and "1.0.0 -> 2.0.0" or nil,
+            badge_icon = (tab_name == "Installed") and getAssetPath("check-square.svg") or nil,
+            badge = (tab_name == "Updates") and _("Update") or nil,
         }
     else
         sample_entry = {
@@ -8466,18 +8527,119 @@ function Storefront:calculateDynamicPageSize(tab_name)
         width = item_w,
     }
     local item_h = sample_widget:getSize().h
-    if not item_h or item_h <= 0 then
-        item_h = (tab_name == "Updates") and (sc(54) + 2 * pad) or (sc(78) + 2 * pad)
-    end
-
-    -- List container padding inside list_scroller (top & bottom = 2 * pad)
     local container_padding = 2 * pad
-
-    -- Each item slot includes item frame height and thin separator line between items
     local slot_total = item_h + thin
     local avail_height = body_height - container_padding + thin
 
     return math.max(1, math.floor(avail_height / slot_total))
+end
+
+function Storefront:calculateAvailableListHeight(tab_name)
+    local screen_h = Device.screen:getHeight()
+    local sc = function(val) return Device.screen:scaleBySize(val) end
+    
+    local pad = Size.padding.default
+    local thin = Size.line.thin
+    local span = Size.span.vertical_default
+
+    -- Header height: header_group buttons are sc(48) high inside FrameContainer with pad top & bottom
+    local title_height = sc(48) + 2 * pad
+
+    -- Tab bar height: text font 18 (~sc(22)) + VerticalSpan(sc(4)) + underline(sc(3)) + padding_top(sc(12))
+    local tab_font_h = sc(22)
+    local tab_bar_height = sc(12) + tab_font_h + sc(4) + sc(3)
+
+    -- Footer height: CenterContainer h=sc(48) + padding_top(sc(4)) + padding_bottom(sc(4))
+    local footer_height = sc(48) + sc(8)
+
+    local has_toolbar = (tab_name == "Installed" and self.browser_state and self.browser_state.show_filter_bar_installed ~= false)
+        or (tab_name == "Plugins" and self.browser_state and self.browser_state.show_filter_bar_plugins == true)
+        or (tab_name == "Patches" and self.browser_state and self.browser_state.show_filter_bar_patches == true)
+
+    local toolbar_height = 0
+    local divider_height = thin + span
+    if has_toolbar then
+        local btn_font_h = sc(18)
+        toolbar_height = (btn_font_h + sc(26)) + span
+        divider_height = divider_height + thin + span
+    end
+
+    local body_height = screen_h - title_height - tab_bar_height - footer_height - toolbar_height - divider_height
+    if body_height < math.floor(screen_h * 0.5) then
+        body_height = math.floor(screen_h * 0.5)
+    end
+
+    local container_padding = 2 * pad
+    return body_height - container_padding + thin
+end
+
+function Storefront:paginateEntries(items, tab_name)
+    if not items or #items == 0 then
+        return {}, 1
+    end
+
+    local avail_height = self:calculateAvailableListHeight(tab_name)
+    local screen_w = Device.screen:getWidth()
+    local pad = Size.padding.default
+    local thin = Size.line.thin
+    local item_w = screen_w - 2 * pad
+
+    local pages = {}
+    local current_page = {}
+    local current_h = 0
+
+    for i, entry in ipairs(items) do
+        local item_h
+        if entry.is_entry then
+            local sample_widget = StorefrontListItem:new{
+                entry = entry,
+                width = item_w,
+            }
+            item_h = sample_widget:getSize().h
+        elseif entry.is_clear_button then
+            item_h = Device.screen:scaleBySize(36)
+        else
+            local face = Font:getFace("smallinfofont")
+            local text_box = TextBoxWidget:new{
+                text = entry.text or "",
+                width = item_w - 2 * pad,
+                face = face,
+                alignment = "left",
+                justified = false,
+                height_adjust = true,
+            }
+            item_h = text_box:getSize().h + 2 * pad
+        end
+
+        local slot_h = (item_h and item_h > 0 and item_h or Device.screen:scaleBySize(60)) + thin
+
+        if #current_page > 0 and (current_h + slot_h > avail_height) then
+            table.insert(pages, current_page)
+            current_page = {}
+            current_h = 0
+        end
+
+        table.insert(current_page, entry)
+        current_h = current_h + slot_h
+    end
+
+    if #current_page > 0 then
+        table.insert(pages, current_page)
+    end
+
+    local total_pages = math.max(1, #pages)
+    local page_num = math.min(math.max(self.browser_state and self.browser_state.page or 1, 1), total_pages)
+    if self.browser_state and self.browser_state.page ~= page_num then
+        self.browser_state.page = page_num
+        self:saveBrowserState()
+    end
+
+    local page_items = pages[page_num] or {}
+    for _, entry in ipairs(page_items) do
+        entry.separator = true
+    end
+
+    return page_items, total_pages
 end
 
 
@@ -8600,7 +8762,7 @@ function Storefront:buildInstalledEntries()
                 table.insert(items, {
                     name = display_name,
                     owner = record and record.owner or "",
-                    stars_fmt = record and record.repo_description and "plugin" or "0",
+                    stars_fmt = (record and record.stars) and tostring(record.stars) or "0",
                     updated = formatTimestamp(plugin.latest_mtime),
                     mtime = plugin.latest_mtime or 0,
                     kind_label = meta_kind,
@@ -8674,7 +8836,7 @@ function Storefront:buildInstalledEntries()
                 table.insert(items, {
                     name = patch.filename,
                     owner = record and record.owner or "",
-                    stars_fmt = "patch",
+                    stars_fmt = (record and record.stars and tonumber(record.stars) and tonumber(record.stars) > 0) and tostring(record.stars) or "0",
                     updated = formatTimestamp(patch.latest_mtime),
                     mtime = patch.latest_mtime or 0,
                     kind_label = _("Patch"),
@@ -8802,20 +8964,8 @@ function Storefront:buildInstalledEntries()
         end
     end)
 
-    local display_total = #items
-    local page_size = self:calculateDynamicPageSize("Installed")
-    local total_pages = math.max(1, math.ceil(display_total / page_size))
-    local page = math.min(math.max(self.browser_state.page or 1, 1), total_pages)
-    if self.browser_state.page ~= page then
-        self.browser_state.page = page
-        self:saveBrowserState()
-    end
-
-    local start_index = (page - 1) * page_size + 1
-    local end_index = math.min(display_total, start_index + page_size - 1)
-
-    local page_items = {}
-    if display_total == 0 then
+    if #items == 0 then
+        local page_items = {}
         table.insert(page_items, {
             text = _("No installed items found."),
             select_enabled = false,
@@ -8827,15 +8977,10 @@ function Storefront:buildInstalledEntries()
                 self:clearSearchAndFilters()
             end,
         })
-    else
-        for i = start_index, end_index do
-            local entry = items[i]
-            entry.separator = true
-            table.insert(page_items, entry)
-        end
+        return page_items, 1
     end
 
-    return page_items, total_pages
+    return self:paginateEntries(items, "Installed")
 end
 
 function Storefront:clearSearchAndFilters()
@@ -8942,19 +9087,6 @@ function Storefront:buildBrowserEntries()
     -- })
     -- items[#items].separator = true
 
-    local page_size = self:calculateDynamicPageSize(tab)
-    local total_pages = math.max(1, math.ceil(display_total / page_size))
-    local page = math.min(math.max(self.browser_state.page or 1, 1), total_pages)
-    if self.browser_state.page ~= page then
-        self.browser_state.page = page
-        self:saveBrowserState()
-    end
-
-    local start_index = (page - 1) * page_size + 1
-    local end_index = math.min(display_total, start_index + page_size - 1)
-
-    -- Set of repos already installed (by full name and repo id), so the
-    -- available list can mark them. Cached across renders; see getInstalledLookup.
     local installed_lookup
     if kind == "plugin" then
         installed_lookup = self:getInstalledLookup()
@@ -8973,23 +9105,27 @@ function Storefront:buildBrowserEntries()
                 self:clearSearchAndFilters()
             end,
         })
+        return items, 1
     else
-        for i = start_index, end_index do
-            if kind == "patch" then
+        if kind == "patch" then
+            for i = 1, display_total do
                 table.insert(items, self:makePatchMenuItem(patch_display_entries[i].repo, patch_display_entries[i].patch))
-            else
+            end
+        else
+            for i = 1, display_total do
                 table.insert(items, self:makeRepoMenuItem(filtered[i], installed_lookup))
             end
-            items[#items].separator = true
         end
     end
+
+    local page_items, total_pages = self:paginateEntries(items, tab)
 
     self._last_total_kind = kind
     self._last_total_pages = total_pages
     if kind == "patch" then
         self._last_patch_display_total = display_total
     end
-    return items, total_pages
+    return page_items, total_pages
 end
 
 function Storefront:showProgressMessage(text, args)
@@ -9226,13 +9362,16 @@ function Storefront:showBrowser(kind)
         self:closeBrowserMenu()
     end
     local current_tab = self.browser_state.tab or "Plugins"
-    self:maybeAutoCheckUpdates()
+    
+    -- Schedule deferred update and catalog background checks AFTER opening UI (zero launch delay)
+    UIManager:nextTick(function()
+        pcall(function() self:maybeAutoCheckUpdates() end)
+    end)
 
-    -- Schedule deferred background catalog check 0.5s AFTER opening UI (zero launch delay)
     local now = os.time()
     if not self._last_catalog_check_time or (now - self._last_catalog_check_time) >= MIN_CATALOG_CHECK_INTERVAL then
         UIManager:scheduleIn(0.5, function()
-            self:maybeCheckCatalogBackground()
+            pcall(function() self:maybeCheckCatalogBackground() end)
         end)
     end
 
@@ -10666,6 +10805,8 @@ function Storefront:handlePostInstall(info, repo)
         local ok_meta, meta = pcall(dofile, meta_path)
         if ok_meta and type(meta) == "table" and meta.version then
             info.plugin_version = meta.version
+        elseif info.plugin_release_tag and info.plugin_release_tag ~= "" then
+            info.plugin_version = info.plugin_release_tag:gsub("^[vV]", "")
         end
     end
 
@@ -10686,7 +10827,9 @@ function Storefront:handlePostInstall(info, repo)
                 self:ensureUpdatesState()
                 local cached = self.updates_state.remote_info[info.plugin_dirname] or {}
                 if info.plugin_version and info.plugin_version ~= "" then
-                    cached.remote_version = info.plugin_version
+                    if not cached.release_tag_name or (info.plugin_release_tag and info.plugin_release_tag == cached.release_tag_name) then
+                        cached.remote_version = info.plugin_version
+                    end
                 end
                 cached.last_checked = os.time()
                 cached.error = nil

@@ -10,9 +10,11 @@ local function check(label, got, expected)
         failures = failures + 1
         print("FAIL", label, "expected=", tostring(expected), "got=", tostring(got))
     end
+    io.stdout:flush()
 end
+_G.check = check
 
--- Create a dummy class that mocks any KOReader widget behaviour
+local _in_schedule = false
 local dummy_widget = {
     extend = function(self, tbl)
         tbl = tbl or {}
@@ -39,6 +41,14 @@ local dummy_widget = {
         for k, v in pairs(self) do c[k] = v end
         return c
     end,
+    scheduleIn = function(self, delay, fn)
+        if type(delay) == "function" then fn = delay end
+        if not fn or _in_schedule then return end
+        _in_schedule = true
+        pcall(fn)
+        _in_schedule = false
+    end,
+    unschedule = function() end,
 }
 
 -- Pre-load dummy mocks for all KOReader UI modules to prevent library load crashes headlessly
@@ -92,14 +102,18 @@ local widgets = {
     "socket",
 }
 
-local _mock_json_db = { plugins = {}, patches = {}, item_options = {} }
+local _mock_json_store = { plugins = {}, patches = {}, item_options = {} }
 package.loaded["json"] = {
     encode = function(val)
-        if type(val) == "table" then _mock_json_db = val end
+        if type(val) == "table" then
+            if val.plugins then _mock_json_store.plugins = val.plugins end
+            if val.patches then _mock_json_store.patches = val.patches end
+            if val.item_options then _mock_json_store.item_options = val.item_options end
+        end
         return "MOCK_JSON"
     end,
     decode = function(str)
-        return _mock_json_db
+        return _mock_json_store
     end,
 }
 
@@ -202,6 +216,8 @@ package.loaded["storefront_cache"] = {
     getLastFetched = function() return 1234567890 end,
     listRepos = function() return {} end,
     isLegacyFormat = function() return false end,
+    getRepo = function() return nil end,
+    getRepoByName = function(owner, name) return nil end,
 }
 
 package.loaded["datastorage"] = {
@@ -269,8 +285,19 @@ package.loaded["ui/uimanager"] = {
     show = function() end,
     close = function() end,
     setDirty = function() end,
-    nextTick = function(self, func) if type(self) == "function" then self() elseif func then func() end end,
-    scheduleIn = function(self, delay, func) if type(self) == "function" then delay() elseif func then func() end end,
+    nextTick = function(self, func)
+        if type(self) == "function" then func = self end
+        if func then pcall(func) end
+    end,
+    scheduleIn = function(self, delay, func)
+        if type(self) == "function" then func = self end
+        if type(delay) == "function" then func = delay end
+        if not func or _in_schedule then return end
+        _in_schedule = true
+        pcall(func)
+        _in_schedule = false
+    end,
+    unschedule = function() end,
 }
 
 -- Setup basic reader settings mock
@@ -478,16 +505,14 @@ if ok_browser then
         }
         local real_installs = require("storefront_installs")
         real_installs.list = function() return dummy_records end
-        package.loaded["storefront_installs"] = real_installs
-        package.loaded["main"] = nil
         local MainStorefront = require("main")
-        if getfenv then getfenv(1).check = check end
+        MainStorefront.getInstallRecordsMap = function() return dummy_records end
         MainStorefront._installed_lookup_cache = nil
         MainStorefront._installed_lookup_gen = nil
+        MainStorefront._auto_matched_gen = nil
         local lookup = MainStorefront:getInstalledLookup()
-        check("Installed lookup matches exact repo full_name", lookup["doctorhetfield-cmd/simpleui.koplugin"] == true, true)
+        check("Installed lookup matches exact repo full_name", lookup and lookup["doctorhetfield-cmd/simpleui.koplugin"] == true, true)
         
-        -- Test that direct match repo shows installed, but sibling repo with same name does not
         local direct_repo_item = MainStorefront:makeRepoMenuItem({ name = "simpleui.koplugin", full_name = "doctorhetfield-cmd/simpleui.koplugin" }, lookup)
         local sibling_repo_item = MainStorefront:makeRepoMenuItem({ name = "simpleui.koplugin", full_name = "yanyan-alien/simpleui.koplugin" }, lookup)
         check("Direct match repo item is marked installed", direct_repo_item.installed, true)
@@ -503,7 +528,6 @@ if ok_browser then
         check("0-star fork is filtered out by default", result, false)
         check("Normal repo passes general filters", MainStorefront:matchesGeneralFilters(test_repo_stars, {}), true)
 
-        -- Test autoMatchInstalled preference (highest stars win, author match wins top priority)
         package.loaded["storefront_plugin_paths"] = {
             getLookupPaths = function() return { "plugins" } end,
             getDefaultPluginsRoot = function() return "plugins" end,
@@ -1042,6 +1066,81 @@ if ok_browser then
         -- Cleanup
         MainStorefront.collectUpdateSummary      = orig_collect_plugin
         MainStorefront.collectPatchUpdateSummary = orig_collect_patch
+
+        -- Test release_override preservation in promptPluginInstallOptions
+        local prompt_selected_release = nil
+        local orig_install_asset = MainStorefront.installPluginFromReleaseAsset
+        MainStorefront.installPluginFromReleaseAsset = function(self_sf, r, rel, asset)
+            prompt_selected_release = rel
+        end
+
+        local dummy_repo = { owner = "testowner", name = "testrepo" }
+        local older_release = { tag_name = "v1.2.0", name = "v1.2.0", assets = { { name = "testrepo.zip", browser_download_url = "http://example.com/1.2.0.zip" } } }
+        MainStorefront:promptPluginInstallOptions(dummy_repo, older_release, true)
+        check("promptPluginInstallOptions uses release_override when provided", prompt_selected_release and prompt_selected_release.tag_name, "v1.2.0")
+        MainStorefront.installPluginFromReleaseAsset = orig_install_asset
+
+        -- Test update detection with date-based versions and missing plugin.version
+        local mock_plugin_no_ver = { dirname = "rakuyomi.koplugin", path = "/dummy/rakuyomi.koplugin", version = nil }
+        local orig_installed = MainStorefront.listInstalledPlugins
+        local orig_ensure_updates = MainStorefront.ensureUpdatesState
+        local InstallStore = require("storefront_installs")
+        local orig_install_list = InstallStore.list
+        MainStorefront.listInstalledPlugins = function() return { mock_plugin_no_ver } end
+        MainStorefront.ensureUpdatesState = function() end
+        InstallStore.list = function()
+            return {
+                ["rakuyomi.koplugin"] = {
+                    owner = "tachibana-shin",
+                    repo = "rakuyomi",
+                    version = "1.39.3",
+                    installed_version = "1.39.3",
+                    tag_name = "v1.39.3"
+                }
+            }
+        end
+
+        MainStorefront.updates_state = { remote_info = { ["rakuyomi.koplugin"] = { release_tag_name = "v1.39.4" } } }
+        MainStorefront._cached_plugin_summary = nil
+        local sum_test = MainStorefront:collectUpdateSummary()
+        check("collectUpdateSummary detects update when plugin.version is missing but record has version", sum_test.updates, 1)
+
+        -- Test date-based release version check
+        MainStorefront.updates_state = { remote_info = { ["rakuyomi.koplugin"] = { release_tag_name = "v2026.07.28" } } }
+        InstallStore.list = function()
+            return {
+                ["rakuyomi.koplugin"] = {
+                    owner = "tachibana-shin",
+                    repo = "rakuyomi",
+                    version = "2026.05.10",
+                    installed_version = "2026.05.10",
+                    tag_name = "v2026.05.10"
+                }
+            }
+        end
+        MainStorefront._cached_plugin_summary = nil
+        local sum_date_test = MainStorefront:collectUpdateSummary()
+        check("collectUpdateSummary detects update for date-based versions", sum_date_test.updates, 1)
+
+        -- Test promptPluginInstallOptions with release_override and multiple assets
+        local test_repo = { name = "multi_asset_plugin", owner = "testowner" }
+        local test_release_override = {
+            tag_name = "v1.0.0-old",
+            assets = {
+                { name = "multi_asset_plugin_v1.0.0-koplugin.zip", browser_download_url = "http://example.com/asset1.zip" },
+                { name = "multi_asset_plugin_v1.0.0-alt-koplugin.zip", browser_download_url = "http://example.com/asset2.zip" },
+            }
+        }
+        local modal_rendered = false
+        local orig_picker = MainStorefront.renderAssetPickerModal
+        MainStorefront.renderAssetPickerModal = function(sf, repo, release, custom_assets, saved_ctx)
+            modal_rendered = true
+            check("renderAssetPickerModal receives release_override", release.tag_name, "v1.0.0-old")
+            check("renderAssetPickerModal receives 2 assets", #custom_assets, 2)
+        end
+        MainStorefront:promptPluginInstallOptions(test_repo, test_release_override, false)
+        check("promptPluginInstallOptions triggers asset picker for release_override with multiple assets", modal_rendered, true)
+        MainStorefront.renderAssetPickerModal = orig_picker
 
     end
 end

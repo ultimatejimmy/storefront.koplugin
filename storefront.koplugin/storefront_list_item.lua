@@ -21,128 +21,6 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local _ = require("gettext")
 
-local _cached_font_faces = {}
-
-local function getCustomFontFace(entry_name, font_family, font_file)
-    if not entry_name or entry_name == "" then return nil end
-    if _cached_font_faces[entry_name] ~= nil then
-        return _cached_font_faces[entry_name] or nil
-    end
-
-    local ffiutil = require("ffi/util")
-    local DataStorage = require("datastorage")
-    local lfs = require("libs/libkoreader-lfs")
-
-    local info = debug.getinfo(1, "S")
-    local script_dir = info and info.source and info.source:match("^@(.*[/\\])") or ""
-    if script_dir:sub(-1) == "/" or script_dir:sub(-1) == "\\" then
-        script_dir = script_dir:sub(1, -2)
-    end
-
-    local candidate_dirs = {}
-    if script_dir ~= "" then
-        table.insert(candidate_dirs, script_dir .. "/assets/fonts/" .. entry_name)
-        table.insert(candidate_dirs, script_dir .. "/../assets/fonts/" .. entry_name)
-    end
-    table.insert(candidate_dirs, DataStorage:getDataDir() .. "/fonts/" .. entry_name)
-    table.insert(candidate_dirs, DataStorage:getDataDir() .. "/plugins/storefront.koplugin/assets/fonts/" .. entry_name)
-    table.insert(candidate_dirs, DataStorage:getDataDir() .. "/plugins/storefront.koplugin/storefront.koplugin/assets/fonts/" .. entry_name)
-    table.insert(candidate_dirs, "assets/fonts/" .. entry_name)
-
-    local found_path = nil
-    for _, dir in ipairs(candidate_dirs) do
-        local rp = (ffiutil and ffiutil.realpath) and ffiutil.realpath(dir) or dir
-        if not rp or rp == "" then rp = dir end
-        if rp and lfs.attributes and lfs.attributes(rp, "mode") == "directory" then
-            if font_file and font_file ~= "" then
-                local exact_p = rp .. "/" .. font_file
-                if lfs.attributes(exact_p, "mode") == "file" then
-                    found_path = exact_p
-                    break
-                end
-            end
-            local fallback_path = nil
-            for file in lfs.dir(rp) do
-                if file ~= "." and file ~= ".." and (file:match("%.ttf$") or file:match("%.otf$")) then
-                    local lfile = file:lower()
-                    if lfile:find("regular") then
-                        found_path = rp .. "/" .. file
-                        break
-                    elseif not lfile:find("italic") and not lfile:find("bold") and not lfile:find("oblique") then
-                        fallback_path = rp .. "/" .. file
-                    elseif not fallback_path then
-                        fallback_path = rp .. "/" .. file
-                    end
-                end
-            end
-            if found_path then break end
-            if fallback_path then
-                found_path = fallback_path
-                break
-            end
-        end
-        if found_path then break end
-    end
-
-    local face = nil
-    if found_path then
-        local ok_ft, Freetype = pcall(require, "ffi/freetype")
-        if ok_ft and Freetype then
-            local scaled_size = Device.screen:scaleBySize(22)
-            local ok, ftsize = pcall(Freetype.newFaceSize, found_path, scaled_size)
-            if ok and ftsize then
-                local basename = found_path:match("([^/\\]+)$") or found_path
-                face = {
-                    orig_font  = basename,
-                    realname   = basename,
-                    size       = scaled_size,
-                    orig_size  = 22,
-                    ftsize     = ftsize,
-                    hash       = found_path .. scaled_size,
-                    is_real_bold = false,
-                    hb_features = { "+kern", "+liga" },
-                }
-                face.getFallbackFont = function(num)
-                    if not num or num == 0 then
-                        if not face.embolden_half_strength then
-                            pcall(function()
-                                face.embolden_half_strength = face.ftsize:getEmboldenHalfStrength(3/8)
-                            end)
-                        end
-                        return face
-                    end
-                    local fb_name = Font.fallbacks and Font.fallbacks[num]
-                    if fb_name then
-                        local ok_fb, fb_face = pcall(Font.getFace, Font, fb_name, 22)
-                        if ok_fb and fb_face then
-                            return fb_face
-                        end
-                    end
-                    return false
-                end
-            end
-        end
-        -- fallback: try Font:getFace with just the basename (works if font is installed)
-        if not face then
-            local basename = found_path:match("([^/\\]+)$")
-            if basename then
-                local ok, res = pcall(Font.getFace, Font, basename, 22)
-                if ok and res then face = res end
-            end
-        end
-    end
-
-    if not face and font_family then
-        local ok, res = pcall(Font.getFace, Font, font_family, 22)
-        if ok and res then
-            face = res
-        end
-    end
-
-    _cached_font_faces[entry_name] = face or false
-    return face or nil
-end
-
 local StorefrontListItem = InputContainer:extend{
     align = "left",
     entry = nil,
@@ -311,22 +189,11 @@ function StorefrontListItem:init()
         local text_w = content_inner - right_reserve
 
         -- Line 1: Name
-        local name_face = nil
-        if entry.kind == "font" or entry.type == "font" or entry.font_family or entry.font_file then
-            local font_file = entry.font_file or entry.font_filename or ""
-            local font_face_name = entry.font_family or entry.font_face or entry.name
-            name_face = getCustomFontFace(entry.name, font_face_name, font_file)
-        end
-
-        local is_custom_font = (name_face ~= nil)
-        if not name_face then
-            name_face = Font:getFace("NotoSerif-Bold.ttf", 22)
-        end
-
+        local name_face = Font:getFace("cfont", 22)
         local name_w = TextWidget:new{
             text = name_text,
             face = name_face,
-            bold = not is_custom_font,
+            bold = true,
             fgcolor = text_color,
             max_width = text_w,
         }
@@ -346,7 +213,7 @@ function StorefrontListItem:init()
             meta_text = table.concat(meta_parts, "  ·  ")
         end
 
-        local meta_face = Font:getFace("NotoSerif-Regular.ttf", 16)
+        local meta_face = Font:getFace("cfont", 16)
         local meta_w = TextWidget:new{
             text = meta_text,
             face = meta_face,
@@ -363,7 +230,7 @@ function StorefrontListItem:init()
                 meta_w,
             }
         else
-            local desc_face = Font:getFace("NotoSerif-Regular.ttf", 14)
+            local desc_face = Font:getFace("cfont", 14)
             local desc_w = TextWidget:new{
                 text = desc_text,
                 face = desc_face,
