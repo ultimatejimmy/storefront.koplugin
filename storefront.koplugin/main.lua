@@ -132,19 +132,109 @@ local function showRestartConfirmation(message)
     if G_storefront_batch_updating then
         return
     end
-    local ConfirmBox = require("ui/widget/confirmbox")
+
+    local storefront_theme = require("storefront_theme")
+    local Device = require("device")
+    local sc = function(val) return (Device and Device.screen and Device.screen.scaleBySize and Device.screen:scaleBySize(val)) or val end
+
+    local sw = Device.screen:getWidth()
+    local sh = Device.screen:getHeight()
+    local dialog_w = math.min(sw - sc(20), sc(380))
+
+    local ui_font_size  = storefront_theme.face_label_size or 18
+    local card_padding  = sc(6)
+    local card_border   = storefront_theme.border_window or sc(2)
+    local inner_w       = dialog_w - (card_padding * 2) - (card_border * 2)
+
     local body_text = string.format("%s\n\n%s", message or "", _("This will take effect on next restart."))
-    UIManager:show(ConfirmBox:new{
+
+    local body_widget = TextBoxWidget:new{
         text = body_text,
-        ok_text = _("Restart now"),
-        cancel_text = _("Restart later"),
-        ok_callback = function()
+        face = Font:getFace("cfont", ui_font_size),
+        fgcolor = Blitbuffer.COLOR_BLACK,
+        width = inner_w - sc(24),
+        alignment = "center",
+    }
+
+    local overlay
+
+    local cancel_btn = Button:new{
+        text = _("Restart later"),
+        bordersize = sc(1),
+        radius = storefront_theme.radius_btn or sc(4),
+        padding = sc(10),
+        width = math.floor((inner_w - sc(12)) / 2),
+        callback = function()
+            if overlay then UIManager:close(overlay, "ui") end
+        end,
+    }
+
+    local ok_btn = Button:new{
+        text = _("Restart now"),
+        text_font_color = Blitbuffer.COLOR_WHITE,
+        background = Blitbuffer.COLOR_BLACK,
+        bordersize = 0,
+        radius = storefront_theme.radius_btn or sc(4),
+        padding = sc(10),
+        width = math.floor((inner_w - sc(12)) / 2),
+        callback = function()
+            if overlay then UIManager:close(overlay, "ui") end
             UIManager:restartKOReader()
         end,
-        key_events = {
-            Close = { { "Back" } }
+    }
+    if ok_btn.label_widget then
+        ok_btn.label_widget.fgcolor = Blitbuffer.COLOR_WHITE
+    end
+
+    local btn_row = HorizontalGroup:new{
+        align = "center",
+        cancel_btn,
+        HorizontalSpan:new{ width = sc(8) },
+        ok_btn,
+    }
+
+    local content_vg = VerticalGroup:new{
+        align = "center",
+        VerticalSpan:new{ width = sc(14) },
+        FrameContainer:new{ padding = sc(4), bordersize = 0, body_widget },
+        VerticalSpan:new{ width = sc(14) },
+        LineWidget:new{
+            dimen = Geom:new{ w = inner_w, h = sc(1) },
+            background = Blitbuffer.COLOR_LIGHT_GRAY,
         },
-    })
+        VerticalSpan:new{ width = sc(10) },
+        FrameContainer:new{ padding = sc(4), bordersize = 0, btn_row },
+        VerticalSpan:new{ width = sc(8) },
+    }
+
+    local card = FrameContainer:new{
+        padding = card_padding,
+        radius = storefront_theme.radius_window or 0,
+        bordersize = card_border,
+        color = Blitbuffer.COLOR_BLACK,
+        background = storefront_theme.color_bg or Blitbuffer.COLOR_WHITE,
+        width = dialog_w,
+        content_vg,
+    }
+
+    overlay = InputContainer:new{
+        dimen = Geom:new{ w = sw, h = sh },
+        key_events = { Close = { { "Back" } } },
+        CenterContainer:new{
+            dimen = Geom:new{ w = sw, h = sh },
+            card,
+        },
+    }
+
+    cancel_btn.show_parent = overlay
+    ok_btn.show_parent     = overlay
+
+    overlay.onClose = function()
+        UIManager:close(overlay, "ui")
+        return true
+    end
+
+    UIManager:show(overlay, "ui")
 end
 
 function Storefront:showConfirmDialog(opts)
@@ -8362,12 +8452,12 @@ function Storefront:calculateDynamicPageSize(tab_name)
         sample_entry = {
             name = "Sample Plugin Name",
             owner = "sample_owner",
-            stars_fmt = "100",
+            stars_fmt = "plugin",
             updated = "2026-07-27",
+            kind_label = "Plugin",
             description = "Sample plugin description text for measuring widget height",
             is_entry = true,
-            badge = "Installed",
-            kind = (tab_name == "Fonts" and "font" or nil),
+            badge_icon = getAssetPath and getAssetPath("check-square.svg") or nil,
         }
     end
 
@@ -8634,7 +8724,62 @@ function Storefront:buildInstalledEntries()
         end
     end
 
-    -- 3. Sort items
+    -- 3. Fonts
+    if filter_type == "all" or filter_type == "font" then
+        local installed_fonts = listInstalledFonts()
+        for _, font_rec in ipairs(installed_fonts) do
+            local font_name = font_rec.font_name or font_rec.repo or ""
+            if font_name == "" then goto continue_font end
+
+            local match_search = true
+            if search_text ~= "" then
+                if not font_name:lower():find(search_text, 1, true) then
+                    match_search = false
+                end
+            end
+
+            if match_search then
+                local catalog_repo = nil
+                local ok_cache, Cache2 = pcall(require, "storefront_cache")
+                if ok_cache and Cache2 then
+                    catalog_repo = Cache2.getRepoByName(font_rec.owner or "", font_name)
+                        or Cache2.getRepoByName("", font_name)
+                end
+
+                table.insert(items, {
+                    name = font_name,
+                    owner = font_rec.owner or "",
+                    stars_fmt = "font",
+                    updated = formatTimestamp(font_rec.installed_at),
+                    mtime = font_rec.installed_at or 0,
+                    kind_label = _("Font"),
+                    description = (catalog_repo and catalog_repo.description) or "",
+                    is_entry = true,
+                    is_installed_item = true,
+                    is_font = true,
+                    font_name = font_name,
+                    callback = function()
+                        local DetailsDialog = require("storefront_details_dialog")
+                        local repo = catalog_repo or {
+                            name = font_name,
+                            owner = font_rec.owner or "",
+                            full_name = font_rec.full_name or font_name,
+                            description = "",
+                            stars = 0,
+                            font_family = font_name,
+                        }
+                        local details_dialog = DetailsDialog:new{
+                            Storefront = self,
+                            repo = repo,
+                            kind = "font",
+                        }
+                        details_dialog:show()
+                    end,
+                })
+            end
+            ::continue_font::
+        end
+    end
     table.sort(items, function(a, b)
         if sort_mode == "name_desc" then
             return (a.name or ""):lower() > (b.name or ""):lower()

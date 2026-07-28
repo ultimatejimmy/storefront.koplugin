@@ -257,7 +257,7 @@ function StorefrontDetailsDialog:init()
             local folder_name = self.update_item.plugin.dirname
             local folder_text = TextWidget:new{
                 text = string.format("folder: %s", folder_name),
-                face = Font:getFace("NotoSerif-Regular.ttf", 14),
+                face = Font:getFace("cfont", 14),
                 bold = true,
                 fgcolor = Blitbuffer.COLOR_WHITE,
             }
@@ -274,18 +274,18 @@ function StorefrontDetailsDialog:init()
 
     local title_label = TextWidget:new{
         text = title_text,
-        face = Font:getFace("NotoSerif-Regular.ttf", 28),
+        face = Font:getFace("cfont", 28),
         bold = true,
         fgcolor = Blitbuffer.COLOR_BLACK,
     }
     local meta_label = TextWidget:new{
         text = meta_text,
-        face = Font:getFace("NotoSerif-Regular.ttf", 16),
+        face = Font:getFace("cfont", 16),
         fgcolor = Blitbuffer.COLOR_BLACK,
     }
     local desc_label = TextBoxWidget:new{
         text = desc_text,
-        face = Font:getFace("NotoSerif-Regular.ttf", 16),
+        face = Font:getFace("cfont", 16),
         fgcolor = Blitbuffer.COLOR_BLACK,
         width = self.screen_w - sc(24),
     }
@@ -664,7 +664,7 @@ function StorefrontDetailsDialog:init()
     local function makeTab(label, is_active, callback_fn)
         local txt_w = TextWidget:new{
             text = label,
-            face = Font:getFace("NotoSerif-Regular.ttf", 18),
+            face = Font:getFace("cfont", 18),
             bold = is_active,
             fgcolor = is_active and Blitbuffer.COLOR_BLACK or Blitbuffer.Color8(120),
         }
@@ -861,7 +861,7 @@ td { vertical-align: top; }
     -- -----------------------------------------------------------------------
     local page_indicator = TextWidget:new{
         text = "1 / 1",
-        face = Font:getFace("NotoSerif-Regular.ttf", 18),
+        face = Font:getFace("cfont", 18),
         fgcolor = Blitbuffer.COLOR_BLACK,
     }
 
@@ -1008,7 +1008,7 @@ td { vertical-align: top; }
         local page_str = string.format("%d / %d", cur, total)
         local page_label = TextWidget:new{
             text = page_str,
-            face = Font:getFace("NotoSerif-Regular.ttf", 18),
+            face = Font:getFace("cfont", 18),
         }
 
         local next_btn = Button:new{
@@ -1132,28 +1132,28 @@ td { vertical-align: top; }
 
             local specimen_html = string.format([[
 <div class="specimen-text">
-  <h2 style="margin-bottom: 4px; font-size: 24px;">%s</h2>
-  <p style="color: #555555; font-size: 14px; margin-top: 0; margin-bottom: 12px;">Category: %s &nbsp;&middot;&nbsp; License: %s &nbsp;&middot;&nbsp; By: %s</p>
+  <h2 style="margin-bottom: 4px; font-size: 2em;">%s</h2>
+  <p style="color: #555555; font-size: 1em; margin-top: 0; margin-bottom: 12px;">Category: %s &nbsp;&middot;&nbsp; License: %s &nbsp;&middot;&nbsp; By: %s</p>
   <hr style="border: 0; border-top: 1px solid #cccccc; margin: 8px 0;" />
   
-  <h3 style="margin-top: 12px; margin-bottom: 6px; font-size: 18px;">Alphabet &amp; Numbers</h3>
-  <p style="font-size: 18px; letter-spacing: 1px; line-height: 1.4; margin-bottom: 12px;">
+  <h3 style="margin-top: 12px; margin-bottom: 6px; font-size: 1.5em;">Alphabet &amp; Numbers</h3>
+  <p style="font-size: 1.2em; letter-spacing: 1px; line-height: 1.4; margin-bottom: 12px;">
     ABCDEFGHIJKLMNOPQRSTUVWXYZ<br/>
     abcdefghijklmnopqrstuvwxyz<br/>
     0123456789 (!@#$%%^&amp;*.,?:;)
   </p>
 
   <hr style="border: 0; border-top: 1px solid #cccccc; margin: 8px 0;" />
-  <h3 style="margin-top: 12px; margin-bottom: 6px; font-size: 18px;">Pangram Preview</h3>
-  <p style="font-size: 22px; line-height: 1.35; margin-bottom: 8px;">The quick brown fox jumps over the lazy dog.</p>
-  <p style="font-size: 16px; line-height: 1.35; margin-bottom: 12px;">Pack my box with five dozen liquor jugs.</p>
+  <h3 style="margin-top: 12px; margin-bottom: 6px; font-size: 1.5em;">Pangram Preview</h3>
+  <p style="font-size: 1.3em; line-height: 1.35; margin-bottom: 8px;">The quick brown fox jumps over the lazy dog.</p>
+  <p style="font-size: 1.1em; line-height: 1.35; margin-bottom: 12px;">Pack my box with five dozen liquor jugs.</p>
 
   <hr style="border: 0; border-top: 1px solid #cccccc; margin: 8px 0;" />
-  <h3 style="margin-top: 12px; margin-bottom: 6px; font-size: 18px;">Reading Passage Specimen</h3>
-  <p style="font-size: 16px; line-height: 1.45; text-align: justify; margin-bottom: 10px;">
+  <h3 style="margin-top: 12px; margin-bottom: 6px; font-size: 1.3em;">Reading Passage Specimen</h3>
+  <p style="font-size: 1.1em; line-height: 1.45; text-align: justify; margin-bottom: 10px;">
     It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters.
   </p>
-  <p style="font-size: 16px; line-height: 1.45; text-align: justify; margin-bottom: 10px;">
+  <p style="font-size: 1.1em; line-height: 1.45; text-align: justify; margin-bottom: 10px;">
     "My dear Mr. Bennet," said his lady to him one day, "have you heard that Netherfield Park is let at last?" Mr. Bennet replied that he had not. "But it is," returned she; "for Mrs. Long has just been here, and she told me all about it." Mr. Bennet made no answer.
   </p>
 </div>
@@ -1279,7 +1279,7 @@ td { vertical-align: top; }
                 local pre_svg_icon = allow_pre and getAssetPath("toggle-right.svg") or getAssetPath("toggle-left.svg")
                 local pre_label_w = TextWidget:new{
                     text = _("Allow pre-release updates"),
-                    face = Font:getFace("NotoSerif-Regular.ttf", 16),
+                    face = Font:getFace("cfont", 16),
                     bold = true,
                     fgcolor = Blitbuffer.COLOR_BLACK,
                 }
@@ -1340,7 +1340,7 @@ td { vertical-align: top; }
                 if not releases or #releases == 0 then
                     table.insert(list_items, TextWidget:new{
                         text = _("No releases found for this repository."),
-                        face = Font:getFace("NotoSerif-Regular.ttf", 14),
+                        face = Font:getFace("cfont", 14),
                         fgcolor = Blitbuffer.COLOR_DARK_GRAY,
                     })
                 else
@@ -1753,7 +1753,7 @@ function StorefrontVersionDetailsDialog:init()
     local repo_title = self.repo and (self.repo.name or self.repo.full_name) or _("Repository")
     local title_label = TextWidget:new{
         text = repo_title,
-        face = Font:getFace("NotoSerif-Regular.ttf", 28),
+        face = Font:getFace("cfont", 28),
         bold = true,
         fgcolor = Blitbuffer.COLOR_BLACK,
     }
@@ -1761,7 +1761,7 @@ function StorefrontVersionDetailsDialog:init()
     local meta_str = string.format("Version: %s%s%s", tag, is_pre and " (PRE-RELEASE)" or "", published ~= "" and ("  ·  Published: " .. published) or "")
     local meta_label = TextWidget:new{
         text = meta_str,
-        face = Font:getFace("NotoSerif-Regular.ttf", 16),
+        face = Font:getFace("cfont", 16),
         fgcolor = Blitbuffer.COLOR_BLACK,
     }
 
@@ -1807,7 +1807,7 @@ function StorefrontVersionDetailsDialog:init()
     }
     local ignore_txt_w = TextWidget:new{
         text = is_ignored and _("Ignored") or _("Ignore"),
-        face = Font:getFace("NotoSerif-Regular.ttf", 16),
+        face = Font:getFace("cfont", 16),
         bold = is_ignored,
         fgcolor = Blitbuffer.COLOR_BLACK,
     }

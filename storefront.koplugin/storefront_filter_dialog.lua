@@ -157,16 +157,17 @@ function StorefrontFilterDialog.showInstalledFilter(arg1, arg2)
 
         table.insert(content_vg, create_section_header(_("Filters")))
 
-        local type_labels = { all = _("All"), plugin = _("Plugins"), patch = _("Patches") }
+        local type_labels = { all = _("All Types"), plugin = _("Plugins"), patch = _("Patches"), font = _("Fonts") }
         local cur_type = state.filter_type or "all"
         local type_widget = TextWidget:new{
             text = type_labels[cur_type] or cur_type,
-            face = Font:getFace("NotoSerif-Regular.ttf", storefront_theme.subtext_font_size or 16),
+            face = Font:getFace("cfont", storefront_theme.subtext_font_size or 16),
             fgcolor = storefront_theme.color_label_dim,
         }
         table.insert(content_vg, create_setting_row(_("Type"), type_widget, function()
             if cur_type == "all" then state.filter_type = "plugin"
             elseif cur_type == "plugin" then state.filter_type = "patch"
+            elseif cur_type == "patch" then state.filter_type = "font"
             else state.filter_type = "all" end
             Storefront.browser_state.page = 1
             Storefront:saveInstalledState()
