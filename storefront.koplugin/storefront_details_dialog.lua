@@ -63,10 +63,30 @@ function StorefrontDetailsDialog:init()
     -- Full-screen dimen
     self.dimen = Geom:new{ x = 0, y = 0, w = self.screen_w, h = self.screen_h }
 
-    -- Hardware back key closes the dialog
+    self.key_events = self.key_events or {}
+    self.key_events.NextPage = {
+        { Input.group.PgFwd },
+        { "Right" },
+        { "PageDown" },
+        { "Down" },
+    }
+    self.key_events.PrevPage = {
+        { Input.group.PgBack },
+        { "Left" },
+        { "PageUp" },
+        { "Up" },
+    }
     if Device:hasKeys() then
         self.key_events.Close = { { Input.group.Back } }
     end
+
+    self.ges_events = self.ges_events or {}
+    self.ges_events.Swipe = {
+        GestureRange:new{
+            ges = "swipe",
+            range = function() return self.dimen end,
+        }
+    }
 
     -- -----------------------------------------------------------------------
     -- 1. Back button (software)
@@ -74,9 +94,8 @@ function StorefrontDetailsDialog:init()
     local back_btn = Button:new{
         text = "< Back",
         text_font_size = 20,
-        bordersize = sc(1),
-        padding = sc(8),
-        background = Blitbuffer.COLOR_WHITE,
+        bordersize = 0,
+        background = nil,
         show_parent = self,
         callback = function()
             self:onClose()
@@ -719,8 +738,8 @@ function StorefrontDetailsDialog:init()
     local tab_bar_h = sc(26)
 
     -- Measure header area heights to compute available content box space
-    local header_h = sc(8) + sc(1)   -- divider line gap
-                   + sc(12)          -- gap above title
+    local header_h = back_btn:getSize().h
+                   + sc(8)
                    + title_label:getSize().h
                    + sc(4)
                    + meta_label:getSize().h
@@ -730,19 +749,18 @@ function StorefrontDetailsDialog:init()
                    + sc(16)
                    + (main_action_btn.getSize and main_action_btn:getSize().h or sc(44))
                    + sc(16)
-                   + sc(1)           -- second divider
+                   + Size.line.thin
+                   + sc(8)
                    + tab_bar_h
+                   + sc(8)
 
-    -- Back-button row height
-    local back_h   = back_btn:getSize().h + sc(8)
-
-    -- Pagination bar height
-    local pager_h  = sc(44) + sc(12)
+    -- Pagination bar height (top gap + bar height + bottom margin gap)
+    local pager_h  = sc(12) + sc(36) + sc(12)
 
     -- FrameContainer padding (top+bottom)
     local frame_padding = sc(12) * 2
 
-    local readme_h = self.screen_h - frame_padding - back_h - header_h - pager_h
+    local readme_h = self.screen_h - frame_padding - header_h - pager_h
     if readme_h < sc(80) then readme_h = sc(80) end
 
     local ffiutil = require("ffi/util")
@@ -844,8 +862,8 @@ td { vertical-align: top; }
         text = "< Prev",
         text_font_size = 16,
         padding = sc(8),
-        bordersize = sc(1),
-        background = Blitbuffer.COLOR_WHITE,
+        bordersize = 0,
+        background = nil,
         show_parent = self,
         callback = function()
             if self.active_tab == "versions" then
@@ -868,14 +886,12 @@ td { vertical-align: top; }
         text = "Next >",
         text_font_size = 16,
         padding = sc(8),
-        bordersize = sc(1),
-        background = Blitbuffer.COLOR_WHITE,
+        bordersize = 0,
+        background = nil,
         show_parent = self,
         callback = function()
             if self.active_tab == "versions" then
-                local total_rels = self.cached_releases and #self.cached_releases or 0
-                local per_page = 4
-                local total_pages = math.max(1, math.ceil(total_rels / per_page))
+                local total_pages = self.versions_total_pages or 1
                 if self.versions_page and self.versions_page < total_pages then
                     self.versions_page = self.versions_page + 1
                     if self.loadContent then self.loadContent("versions") end
@@ -1013,6 +1029,8 @@ td { vertical-align: top; }
     updatePagination = function()
         pagination_box[1] = buildPaginationControls()
     end
+    self._html_box = html_box
+    self._updatePagination = updatePagination
 
     loadContent = function(tab_name)
         self.load_req_id = (self.load_req_id or 0) + 1
@@ -1184,13 +1202,14 @@ td { vertical-align: top; }
                 local StorefrontListItem = require("storefront_list_item")
                 self.versions_page = self.versions_page or 1
 
-                local toggle_h = sc(40)
+                local toggle_h = sc(46)
                 local avail_h = readme_h - toggle_h
-                local row_h = sc(68)
-                local per_page = math.max(2, math.floor(avail_h / row_h))
+                local row_h = sc(72)
+                local per_page = math.max(1, math.floor(avail_h / row_h))
                 local total_rels = #self.cached_releases
                 local total_pages = math.max(1, math.ceil(total_rels / per_page))
                 self.versions_total_pages = total_pages
+                self.versions_per_page = per_page
                 self.versions_page = math.max(1, math.min(self.versions_page, total_pages))
 
                 local list_items = {}
@@ -1471,6 +1490,7 @@ td { vertical-align: top; }
     table.insert(content_group_items, self.content_area_box)
     table.insert(content_group_items, VerticalSpan:new{ width = sc(12) })
     table.insert(content_group_items, self.pagination_bar_container)
+    table.insert(content_group_items, VerticalSpan:new{ width = sc(12) })
 
     local content_group = VerticalGroup:new(content_group_items)
 
@@ -1535,6 +1555,66 @@ function StorefrontDetailsDialog:onLinkTap(href)
     return false
 end
 
+function StorefrontDetailsDialog:onNextPage()
+    if self.active_tab == "versions" then
+        if self.versions_page and self.versions_page < (self.versions_total_pages or 1) then
+            self.versions_page = self.versions_page + 1
+            if self.loadContent then self.loadContent("versions") end
+            return true
+        end
+    else
+        local html_box = self._html_box
+        if html_box then
+            local total = html_box.page_count or 1
+            local cur = html_box.page_number or 1
+            if cur < total then
+                html_box.page_number = cur + 1
+                if rawget(html_box, "_bb") then html_box._bb = nil end
+                if rawget(html_box, "bb") then html_box.bb = nil end
+                if self._updatePagination then self._updatePagination() end
+                UIManager:setDirty(self, "ui")
+                return true
+            end
+        end
+    end
+    return false
+end
+
+function StorefrontDetailsDialog:onPrevPage()
+    if self.active_tab == "versions" then
+        if self.versions_page and self.versions_page > 1 then
+            self.versions_page = self.versions_page - 1
+            if self.loadContent then self.loadContent("versions") end
+            return true
+        end
+    else
+        local html_box = self._html_box
+        if html_box then
+            local cur = html_box.page_number or 1
+            if cur > 1 then
+                html_box.page_number = cur - 1
+                if rawget(html_box, "_bb") then html_box._bb = nil end
+                if rawget(html_box, "bb") then html_box.bb = nil end
+                if self._updatePagination then self._updatePagination() end
+                UIManager:setDirty(self, "ui")
+                return true
+            end
+        end
+    end
+    return false
+end
+
+function StorefrontDetailsDialog:onSwipe(arg, ges_ev)
+    local ev = (type(arg) == "table" and arg) or (type(ges_ev) == "table" and ges_ev)
+    local direction = ev and ev.direction
+    if direction == "left" or direction == "west" then
+        return self:onNextPage()
+    elseif direction == "right" or direction == "east" then
+        return self:onPrevPage()
+    end
+    return false
+end
+
 function StorefrontDetailsDialog:onClose()
     self.is_closed = true
     UIManager:close(self, "ui")
@@ -1566,9 +1646,30 @@ function StorefrontVersionDetailsDialog:init()
 
     self.dimen = Geom:new{ x = 0, y = 0, w = self.screen_w, h = self.screen_h }
 
+    self.key_events = self.key_events or {}
+    self.key_events.NextPage = {
+        { Input.group.PgFwd },
+        { "Right" },
+        { "PageDown" },
+        { "Down" },
+    }
+    self.key_events.PrevPage = {
+        { Input.group.PgBack },
+        { "Left" },
+        { "PageUp" },
+        { "Up" },
+    }
     if Device:hasKeys() then
         self.key_events.Close = { { Input.group.Back } }
     end
+
+    self.ges_events = self.ges_events or {}
+    self.ges_events.Swipe = {
+        GestureRange:new{
+            ges = "swipe",
+            range = function() return self.dimen end,
+        }
+    }
 
     local back_btn = Button:new{
         text = "< Back",
@@ -1795,6 +1896,8 @@ a.plain-link { color: #000000 !important; text-decoration: none !important; }
         if rawget(html_box, "bb") then html_box.bb = nil end
         UIManager:setDirty(self, "ui")
     end
+    self._html_box = html_box
+    self._updatePagination = updatePagination
 
     prev_btn = Button:new{
         text = _("< Prev"),
@@ -1876,6 +1979,50 @@ a.plain-link { color: #000000 !important; text-decoration: none !important; }
         height = self.screen_h,
         content_group,
     }
+end
+
+function StorefrontVersionDetailsDialog:onNextPage()
+    local html_box = self._html_box
+    if html_box then
+        local total = html_box.page_count or 1
+        local cur = html_box.page_number or 1
+        if cur < total then
+            html_box.page_number = cur + 1
+            if rawget(html_box, "_bb") then html_box._bb = nil end
+            if rawget(html_box, "bb") then html_box.bb = nil end
+            if self._updatePagination then self._updatePagination() end
+            UIManager:setDirty(self, "ui")
+            return true
+        end
+    end
+    return false
+end
+
+function StorefrontVersionDetailsDialog:onPrevPage()
+    local html_box = self._html_box
+    if html_box then
+        local cur = html_box.page_number or 1
+        if cur > 1 then
+            html_box.page_number = cur - 1
+            if rawget(html_box, "_bb") then html_box._bb = nil end
+            if rawget(html_box, "bb") then html_box.bb = nil end
+            if self._updatePagination then self._updatePagination() end
+            UIManager:setDirty(self, "ui")
+            return true
+        end
+    end
+    return false
+end
+
+function StorefrontVersionDetailsDialog:onSwipe(arg, ges_ev)
+    local ev = (type(arg) == "table" and arg) or (type(ges_ev) == "table" and ges_ev)
+    local direction = ev and ev.direction
+    if direction == "left" or direction == "west" then
+        return self:onNextPage()
+    elseif direction == "right" or direction == "east" then
+        return self:onPrevPage()
+    end
+    return false
 end
 
 function StorefrontVersionDetailsDialog:onClose()

@@ -44,6 +44,7 @@ Detailed guides available on the wiki:
 * [3. Usage and Capabilities Guide](https://github.com/ultimatejimmy/storefront.koplugin/wiki/3.-Usage)
 * [4. Plugin and Patch Management Guide](https://github.com/ultimatejimmy/storefront.koplugin/wiki/4.-Management)
 * [5. Troubleshooting](https://github.com/ultimatejimmy/storefront.koplugin/wiki/5.-Troubleshooting)
+* [6. Settings Guide](https://github.com/ultimatejimmy/storefront.koplugin/wiki/6.-Settings)
 
 ## Support me
 

@@ -252,13 +252,25 @@ function StorefrontBrowserDialog:init()
     self.height = self.screen_h
     self.dimen = Geom:new{ x = 0, y = 0, w = self.screen_w, h = self.screen_h }
 
+    self.key_events = self.key_events or {}
+    self.key_events.NextPage = {
+        { Input.group.PgFwd },
+        { "Right" },
+        { "PageDown" },
+        { "Down" },
+    }
+    self.key_events.PrevPage = {
+        { Input.group.PgBack },
+        { "Left" },
+        { "PageUp" },
+        { "Up" },
+    }
+    -- Disable FocusManager D-Pad horizontal movement so Left/Right arrow keys trigger PrevPage/NextPage
+    self.key_events.FocusRight = nil
+    self.key_events.FocusLeft = nil
+
     if Device:hasKeys() then
         self.key_events.Close = { { Input.group.Back } }
-        if Device:hasFewKeys() then
-            self.key_events.Close = { { "Left" } }
-        end
-        self.key_events.NextPage = { { Input.group.PgFwd } }
-        self.key_events.PrevPage = { { Input.group.PgBack } }
         self.key_events.ShowMenu = { { "Menu" } }
     end
     if Device:hasKeyboard() then
@@ -267,6 +279,14 @@ function StorefrontBrowserDialog:init()
         self.key_events.HotkeySort = { { "S" } }
         self.key_events.HotkeySwitchTab = { { "T" } }
     end
+
+    self.ges_events = self.ges_events or {}
+    self.ges_events.Swipe = {
+        GestureRange:new{
+            ges = "swipe",
+            range = function() return self.dimen end,
+        }
+    }
 
     local storefront_theme = require("storefront_theme")
     local sc = function(val) return Device.screen:scaleBySize(val) end
@@ -294,9 +314,8 @@ function StorefrontBrowserDialog:init()
         icon = "appbar.search",
         width = btn_w,
         height = btn_h,
-        bordersize = sc(1),
-        radius = storefront_theme.radius_spec_btn,
-        background = Blitbuffer.COLOR_WHITE,
+        bordersize = 0,
+        background = nil,
         callback = function()
             if self.on_filter then self.on_filter() end
         end,
@@ -306,9 +325,8 @@ function StorefrontBrowserDialog:init()
         icon = "appbar.settings",
         width = btn_w,
         height = btn_h,
-        bordersize = sc(1),
-        radius = storefront_theme.radius_spec_btn,
-        background = Blitbuffer.COLOR_WHITE,
+        bordersize = 0,
+        background = nil,
         callback = function()
             if self.on_settings_tap then self.on_settings_tap() end
         end,
@@ -323,6 +341,8 @@ function StorefrontBrowserDialog:init()
         width = sc(24),
         height = sc(24),
         padding = sc(12),
+        bordersize = 0,
+        background = nil,
         allow_flash = false,
         show_parent = self,
         callback = function()
@@ -502,40 +522,92 @@ function StorefrontBrowserDialog:init()
 
     local toolbar_height = 0
     if self.toolbar_buttons and #self.toolbar_buttons > 0 then
-        local tb = HorizontalGroup:new{}
+        -- Split buttons into left and right groups (right_align = true goes to the right side)
+        local left_specs, right_specs = {}, {}
+        for _, spec in ipairs(self.toolbar_buttons) do
+            if spec.right_align then
+                table.insert(right_specs, spec)
+            else
+                table.insert(left_specs, spec)
+            end
+        end
+        local has_split = #left_specs > 0 and #right_specs > 0
+
+        local function buildButtonGroup(specs, force_primary)
+            local grp = HorizontalGroup:new{}
+            local widgets = {}
+            for i, spec in ipairs(specs) do
+                if i > 1 then
+                    table.insert(grp, HorizontalSpan:new{ width = sc(4) })
+                    table.insert(grp, TextWidget:new{
+                        text = "\xC2\xB7",
+                        face = Font:getFace("NotoSerif-Regular.ttf", 14),
+                        fgcolor = Blitbuffer.COLOR_BLACK,
+                    })
+                    table.insert(grp, HorizontalSpan:new{ width = sc(4) })
+                end
+                local use_primary = spec.is_primary or force_primary
+                local btn = Button:new{
+                    text           = spec.text,
+                    text_font_size = 14,
+                    text_font_bold = spec.text_font_bold or use_primary or false,
+                    padding        = sc(8),
+                    radius         = use_primary and sc(10) or sc(16),
+                    bordersize     = use_primary and 0 or sc(1),
+                    background     = use_primary and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_WHITE,
+                    callback       = spec.callback,
+                    show_parent    = self,
+                }
+                if use_primary and btn.label_widget then
+                    btn.label_widget.fgcolor = Blitbuffer.COLOR_WHITE
+                end
+                table.insert(grp, btn)
+                table.insert(widgets, { btn = btn, id = spec.id })
+            end
+            return grp, widgets
+        end
+
         self._toolbar_widgets = {}
         self._toolbar_ids = {}
-        for i, spec in ipairs(self.toolbar_buttons) do
-            if i > 1 then
-                table.insert(tb, HorizontalSpan:new{ width = sc(4) })
-                table.insert(tb, TextWidget:new{
-                    text = "·",
-                    face = Font:getFace("NotoSerif-Regular.ttf", 14),
-                    fgcolor = Blitbuffer.COLOR_BLACK,
-                })
-                table.insert(tb, HorizontalSpan:new{ width = sc(4) })
+
+        local tb
+        if has_split then
+            local left_grp, left_w = buildButtonGroup(left_specs, false)
+            local right_grp, right_w = buildButtonGroup(right_specs, false)
+            for _, w in ipairs(left_w) do
+                self._toolbar_widgets[#self._toolbar_widgets + 1] = w.btn
+                self._toolbar_ids[#self._toolbar_ids + 1] = { id = w.id }
             end
-            local btn = Button:new{
-                text = spec.text,
-                text_font_size = 14,
-                padding = sc(8),
-                radius = sc(16),
-                bordersize = sc(1),
-                background = Blitbuffer.COLOR_WHITE,
-                callback = spec.callback,
-                show_parent = self,
+            for _, w in ipairs(right_w) do
+                self._toolbar_widgets[#self._toolbar_widgets + 1] = w.btn
+                self._toolbar_ids[#self._toolbar_ids + 1] = { id = w.id }
+            end
+            local inner_w = self.width - sc(24)
+            local left_sz = left_grp:getSize().w
+            local right_sz = right_grp:getSize().w
+            local spacer_w = math.max(sc(8), inner_w - left_sz - right_sz)
+            tb = HorizontalGroup:new{
+                left_grp,
+                HorizontalSpan:new{ width = spacer_w },
+                right_grp,
             }
-            table.insert(tb, btn)
-            self._toolbar_widgets[#self._toolbar_widgets + 1] = btn
-            self._toolbar_ids[#self._toolbar_ids + 1] = { id = spec.id }
+        else
+            -- No split: centered layout (original behavior)
+            local all_grp, all_w = buildButtonGroup(self.toolbar_buttons, false)
+            for _, w in ipairs(all_w) do
+                self._toolbar_widgets[#self._toolbar_widgets + 1] = w.btn
+                self._toolbar_ids[#self._toolbar_ids + 1] = { id = w.id }
+            end
+            tb = all_grp
         end
+
         self.toolbar = FrameContainer:new{
-            padding_left = sc(12),
-            padding_right = sc(12),
-            padding_top = sc(4),
+            padding_left   = sc(12),
+            padding_right  = sc(12),
+            padding_top    = sc(4),
             padding_bottom = sc(4),
-            bordersize = 0,
-            CenterContainer:new{
+            bordersize     = 0,
+            has_split and tb or CenterContainer:new{
                 dimen = Geom:new{ w = self.width - sc(24), h = tb:getSize().h },
                 tb,
             },
@@ -563,6 +635,7 @@ function StorefrontBrowserDialog:init()
         bordersize = 0,
         padding = 0,
         scroll_bar_width = 0,
+        ignore_events = { "swipe", "key_pg_back", "key_pg_fwd" },
         self.list_container,
     }
     self.cropping_widget = self.list_scroller
@@ -610,10 +683,7 @@ function StorefrontBrowserDialog:init()
 
     self.layout = {}
     table.insert(self.layout, { filter_btn, settings_btn, close_btn })
-    if self.current_tab == "Updates" then
-        table.insert(self.layout, { self._updates_outdated_btn, self._updates_all_btn, self._updates_check_btn })
-        self._toolbar_row_index = #self.layout
-    elseif self._toolbar_widgets and #self._toolbar_widgets > 0 then
+    if self._toolbar_widgets and #self._toolbar_widgets > 0 then
         table.insert(self.layout, self._toolbar_widgets)
         self._toolbar_row_index = #self.layout
     end
@@ -768,6 +838,17 @@ function StorefrontBrowserDialog:onPrevPage()
         self.on_prev_page()
     end
     return true
+end
+
+function StorefrontBrowserDialog:onSwipe(arg, ges_ev)
+    local ev = (type(arg) == "table" and arg) or (type(ges_ev) == "table" and ges_ev)
+    local direction = ev and ev.direction
+    if direction == "left" or direction == "west" then
+        return self:onNextPage()
+    elseif direction == "right" or direction == "east" then
+        return self:onPrevPage()
+    end
+    return false
 end
 
 function StorefrontBrowserDialog:onShowMenu()

@@ -126,8 +126,42 @@ local function getManagePageSize()
     return DEFAULT_MANAGE_PAGE_SIZE
 end
 
+local G_storefront_batch_updating = false
+
 local function showRestartConfirmation(message)
+<<<<<<< HEAD
     local ConfirmBox = require("ui/widget/confirmbox")
+=======
+    if G_storefront_batch_updating then
+        return
+    end
+    local storefront_theme = require("storefront_theme")
+    local Device = require("device")
+    local sc = function(val) return (Device and Device.screen and Device.screen.scaleBySize and Device.screen:scaleBySize(val)) or val end
+
+    local sw = Device.screen:getWidth()
+    local sh = Device.screen:getHeight()
+    local dialog_w = math.min(sw - sc(20), sc(380))
+
+    local ui_font_size = storefront_theme.face_label_size or 18
+    local title_font_size = storefront_theme.title_font_size or 22
+
+    local overlay
+
+    local title_label = TextWidget:new{
+        text = _("Restart Required"),
+        face = Font:getFace("cfont", title_font_size),
+        bold = true,
+        fgcolor = Blitbuffer.COLOR_BLACK,
+    }
+
+    local title_container = FrameContainer:new{
+        padding = sc(12),
+        bordersize = 0,
+        title_label,
+    }
+
+>>>>>>> main
     local body_text = string.format("%s\n\n%s", message or "", _("This will take effect on next restart."))
     UIManager:show(ConfirmBox:new{
         text = body_text,
@@ -140,6 +174,130 @@ local function showRestartConfirmation(message)
             Close = { { "Back" } }
         },
     })
+end
+
+function Storefront:showConfirmDialog(opts)
+    opts = opts or {}
+    local storefront_theme = require("storefront_theme")
+    local Device = require("device")
+    local sc = function(val) return (Device and Device.screen and Device.screen.scaleBySize and Device.screen:scaleBySize(val)) or val end
+
+    local sw = Device.screen:getWidth()
+    local sh = Device.screen:getHeight()
+    local dialog_w = math.min(sw - sc(20), sc(380))
+
+    local ui_font_size = storefront_theme.face_label_size or 18
+    local title_font_size = storefront_theme.title_font_size or 22
+
+    local overlay
+
+    local title_text = opts.title or _("Confirm Update")
+    local title_label = TextWidget:new{
+        text = title_text,
+        face = Font:getFace("cfont", title_font_size),
+        bold = true,
+        fgcolor = Blitbuffer.COLOR_BLACK,
+    }
+
+    local title_container = FrameContainer:new{
+        padding = sc(12),
+        bordersize = 0,
+        title_label,
+    }
+
+    local body_widget = TextBoxWidget:new{
+        text = opts.text or "",
+        face = Font:getFace("cfont", ui_font_size),
+        fgcolor = Blitbuffer.COLOR_BLACK,
+        width = dialog_w - sc(40),
+        alignment = "center",
+    }
+
+    local body_container = FrameContainer:new{
+        padding = sc(12),
+        bordersize = 0,
+        body_widget,
+    }
+
+    local card_padding = sc(6)
+    local card_border = storefront_theme.border_window or sc(2)
+    local inner_w = dialog_w - (card_padding * 2) - (card_border * 2)
+
+    local cancel_btn = Button:new{
+        text = opts.cancel_text or _("Cancel"),
+        bordersize = sc(1),
+        radius = storefront_theme.radius_btn or sc(18),
+        padding = sc(10),
+        width = math.floor((inner_w - sc(12)) / 2),
+        callback = function()
+            if overlay then UIManager:close(overlay, "ui") end
+            if opts.cancel_callback then opts.cancel_callback() end
+        end,
+    }
+
+    local ok_btn = Button:new{
+        text = opts.ok_text or _("Update All"),
+        bordersize = sc(1),
+        radius = storefront_theme.radius_btn or sc(18),
+        padding = sc(10),
+        width = math.floor((inner_w - sc(12)) / 2),
+        callback = function()
+            if overlay then UIManager:close(overlay, "ui") end
+            if opts.ok_callback then opts.ok_callback() end
+        end,
+    }
+
+    local btn_row = HorizontalGroup:new{
+        align = "center",
+        cancel_btn,
+        HorizontalSpan:new{ width = sc(8) },
+        ok_btn,
+    }
+
+    local content_vg = VerticalGroup:new{
+        align = "center",
+        title_container,
+        LineWidget:new{
+            dimen = Geom:new{ w = inner_w, h = sc(1) },
+            background = Blitbuffer.COLOR_BLACK,
+        },
+        VerticalSpan:new{ width = sc(8) },
+        body_container,
+        VerticalSpan:new{ width = sc(12) },
+        FrameContainer:new{ padding = sc(4), bordersize = 0, btn_row },
+        VerticalSpan:new{ width = sc(6) },
+    }
+
+    local card = FrameContainer:new{
+        padding = card_padding,
+        radius = storefront_theme.radius_window or sc(12),
+        bordersize = card_border,
+        color = Blitbuffer.COLOR_BLACK,
+        background = storefront_theme.color_bg or Blitbuffer.COLOR_WHITE,
+        width = dialog_w,
+        content_vg,
+    }
+
+    overlay = InputContainer:new{
+        dimen = Geom:new{ w = sw, h = sh },
+        key_events = {
+            Close = { { "Back" } }
+        },
+        CenterContainer:new{
+            dimen = Geom:new{ w = sw, h = sh },
+            card,
+        },
+    }
+
+    cancel_btn.show_parent = overlay
+    ok_btn.show_parent = overlay
+
+    overlay.onClose = function()
+        UIManager:close(overlay, "ui")
+        return true
+    end
+
+    UIManager:show(overlay, "ui")
 end
 
 local function showFetchingProgress(message)
@@ -238,11 +396,13 @@ local function showDeleteConfirmationDialog(display_name, is_plugin, plugin_inst
     local title_font_size = storefront_theme.title_font_size or 22
 
     local title_text = string.format(is_plugin and _("Delete plugin '%s'?") or _("Delete patch '%s'?"), display_name)
-    local title_label = TextWidget:new{
+    local title_label = TextBoxWidget:new{
         text = title_text,
         face = Font:getFace("NotoSerif-Regular.ttf", title_font_size),
         bold = true,
         fgcolor = Blitbuffer.COLOR_BLACK,
+        width = dialog_w - sc(32),
+        alignment = "center",
     }
 
     local title_container = FrameContainer:new{
@@ -276,10 +436,12 @@ local function showDeleteConfirmationDialog(display_name, is_plugin, plugin_inst
             return icon .. _("Also delete plugin settings")
         end
 
-        local check_text_widget = TextWidget:new{
+        local check_text_widget = TextBoxWidget:new{
             text = get_check_text(),
             face = Font:getFace("NotoSerif-Regular.ttf", ui_font_size),
             fgcolor = Blitbuffer.COLOR_BLACK,
+            width = dialog_w - sc(40),
+            alignment = "center",
         }
 
         local check_frame = FrameContainer:new{
@@ -611,13 +773,13 @@ function Storefront:refreshPatchUpdates()
 end
 
 function Storefront:_refreshPatchUpdatesInternal(records)
+    if not self.browser_menu then return end
     records = records or {}
     self:ensurePatchUpdatesState()
     local single_context = self.patch_updates_state.single_check_context
         and self.patch_updates_state.single_check_context.filename
     self.patch_updates_state.single_check_context = nil
-    local progress = InfoMessage:new{ text = _("Checking patch updates…"), timeout = 0 }
-    UIManager:show(progress)
+    local progress = self:showProgressMessage(_("Checking patch updates…"))
     UIManager:forceRePaint()
     local remote_info = self.patch_updates_state.remote_info or {}
     local repo_cache = {}
@@ -648,6 +810,7 @@ function Storefront:_refreshPatchUpdatesInternal(records)
     end
 
     for _, record in ipairs(records) do
+        if not self.browser_menu then break end
         local repo = buildPatchRepoDescriptor(record)
         local entry
         local err
@@ -671,7 +834,8 @@ function Storefront:_refreshPatchUpdatesInternal(records)
         }
     end
 
-    UIManager:close(progress)
+    self:dismissProgressMessage(progress)
+    if not self.browser_menu then return end
     self.patch_updates_state.remote_info = remote_info
 
     local summary = self:collectPatchUpdateSummary()
@@ -820,9 +984,11 @@ local CORE_KOREADER_PLUGINS = {
     ["autostandby.koplugin"] = true,
     ["autosuspend.koplugin"] = true,
     ["autoturn.koplugin"] = true,
+    ["autowarmth.koplugin"] = true,
     ["batterystat.koplugin"] = true,
     ["bookshortcuts.koplugin"] = true,
     ["calibre.koplugin"] = true,
+    ["cloudstorage.koplugin"] = true,
     ["coverbrowser.koplugin"] = true,
     ["coverimage.koplugin"] = true,
     ["docsettingtweak.koplugin"] = true,
@@ -1850,6 +2016,22 @@ local function extractAuthorFromPlugin(plugin)
 end
 
 function Storefront:autoMatchInstalled()
+    -- 1. Plugins
+    local records = getInstallRecordsMap()
+
+    -- Scrub any stale auto-matched records for core bundled plugins
+    for plugin_key, _ in pairs(CORE_KOREADER_PLUGINS) do
+        local clean = plugin_key:gsub("%.koplugin$", "")
+        local rec1 = InstallStore.get(plugin_key)
+        if rec1 and rec1.is_auto_matched then
+            InstallStore.remove(plugin_key)
+        end
+        local rec2 = InstallStore.get(clean)
+        if rec2 and rec2.is_auto_matched then
+            InstallStore.remove(clean)
+        end
+    end
+
     local current_gen = InstallStore.getGeneration and InstallStore.getGeneration() or 0
     if self._auto_matched_gen == current_gen then
         return
@@ -1857,9 +2039,9 @@ function Storefront:autoMatchInstalled()
     self._auto_matched_gen = current_gen
     StorefrontLogger.info("AUTO-MATCH starting for installed plugins and patches")
 
-    -- 1. Plugins
-    local records = getInstallRecordsMap()
-    local installed_plugins = listInstalledPlugins()
+    local installed_plugins = self:listInstalledPlugins()
+    records = getInstallRecordsMap()
+
     local unmatched_plugins = {}
     for _, plugin in ipairs(installed_plugins) do
         local record = records[plugin.dirname]
@@ -1901,44 +2083,54 @@ function Storefront:autoMatchInstalled()
         end
 
         for _, plugin in ipairs(unmatched_plugins) do
-            local author = extractAuthorFromPlugin(plugin)
             local clean_dirname = plugin.dirname:gsub("%.koplugin$", ""):lower()
-            local repo
-            if author then
-                local norm_author = author:lower()
-                for _, candidate in ipairs(cached_plugins) do
-                    if candidate.name then
-                        local candidate_clean = candidate.name:gsub("%.koplugin$", ""):lower()
-                        if candidate_clean == clean_dirname or candidate.name:lower() == plugin.dirname:lower() then
-                            local ca_owner = (candidate.owner or (candidate.data and candidate.data.owner and candidate.data.owner.login) or ""):lower()
-                            if ca_owner == norm_author then
-                                repo = candidate
-                                break
+            local koplugin_key = clean_dirname .. ".koplugin"
+
+            -- Skip auto-matching if it's a core KOReader plugin
+            local is_core = CORE_KOREADER_PLUGINS[koplugin_key] or CORE_KOREADER_PLUGINS[clean_dirname]
+            if not is_core and isDefaultPlugin(plugin) then
+                is_core = true
+            end
+
+            if not is_core then
+                local author = extractAuthorFromPlugin(plugin)
+                local repo
+                if author then
+                    local norm_author = author:lower()
+                    for _, candidate in ipairs(cached_plugins) do
+                        if candidate.name then
+                            local candidate_clean = candidate.name:gsub("%.koplugin$", ""):lower()
+                            if candidate_clean == clean_dirname or candidate.name:lower() == plugin.dirname:lower() then
+                                local ca_owner = (candidate.owner or (candidate.data and candidate.data.owner and candidate.data.owner.login) or ""):lower()
+                                if ca_owner == norm_author then
+                                    repo = candidate
+                                    break
+                                end
                             end
                         end
                     end
                 end
-            end
 
-            if not repo then
-                repo = name_map[clean_dirname] or name_map[plugin.dirname:lower()]
-            end
+                if not repo then
+                    repo = name_map[clean_dirname] or name_map[plugin.dirname:lower()]
+                end
 
-            if repo then
-                local existing_rec = records[plugin.dirname]
-                local matched_at = (existing_rec and existing_rec.matched_at) or os.time()
-                local record = {
-                    owner = repo.owner,
-                    repo = repo.name,
-                    repo_full_name = repo.full_name,
-                    repo_description = repo.description,
-                    repo_id = repo.repo_id,
-                    branch = repo.data and repo.data.default_branch or "main",
-                    matched_at = matched_at,
-                    is_auto_matched = true,
-                }
-                InstallStore.upsert(plugin.dirname, record)
-                StorefrontLogger.action(string.format("AUTO-MATCHED plugin %s -> %s", tostring(plugin.dirname), tostring(repo.full_name or repo.name)))
+                if repo then
+                    local existing_rec = records[plugin.dirname]
+                    local matched_at = (existing_rec and existing_rec.matched_at) or os.time()
+                    local record = {
+                        owner = repo.owner,
+                        repo = repo.name,
+                        repo_full_name = repo.full_name,
+                        repo_description = repo.description,
+                        repo_id = repo.repo_id,
+                        branch = repo.data and repo.data.default_branch or "main",
+                        matched_at = matched_at,
+                        is_auto_matched = true,
+                    }
+                    InstallStore.upsert(plugin.dirname, record)
+                    StorefrontLogger.action(string.format("AUTO-MATCHED plugin %s -> %s", tostring(plugin.dirname), tostring(repo.full_name or repo.name)))
+                end
             end
         end
     end
@@ -3142,6 +3334,177 @@ function Storefront:showPatchFilterDialog()
     UIManager:show(self.patch_filter_dialog)
 end
 
+function Storefront:updateAllAvailable()
+    self:ensureUpdatesState()
+    self:ensurePatchUpdatesState()
+
+    local plugin_summary = self:collectUpdateSummary()
+    local patch_summary = self:collectPatchUpdateSummary()
+
+    local pending_queue = {}
+
+    -- Gather outdated plugins
+    for _, item in ipairs(plugin_summary.data or {}) do
+        if item.has_update and item.record then
+            table.insert(pending_queue, {
+                kind = "plugin",
+                name = item.plugin and (item.plugin.name or item.plugin.dirname) or item.record.repo or _("plugin"),
+                record = item.record,
+                plugin = item.plugin,
+                remote = item.remote,
+            })
+        end
+    end
+
+    -- Gather outdated patches
+    for _, item in ipairs(patch_summary.data or {}) do
+        if item.needs_update and item.record then
+            table.insert(pending_queue, {
+                kind = "patch",
+                name = item.patch and (item.patch.filename or item.patch.path) or item.record.filename or _("patch"),
+                record = item.record,
+                patch = item.patch,
+                remote_entry = item.remote_entry,
+            })
+        end
+    end
+
+    if #pending_queue == 0 then
+        UIManager:show(InfoMessage:new{
+            text = _("All items are up to date."),
+            timeout = 4,
+        })
+        return
+    end
+
+    local plugin_count = 0
+    local patch_count = 0
+    for _, item in ipairs(pending_queue) do
+        if item.kind == "plugin" then
+            plugin_count = plugin_count + 1
+        else
+            patch_count = patch_count + 1
+        end
+    end
+
+    local detail_str
+    if plugin_count > 0 and patch_count > 0 then
+        local plugin_str = (plugin_count == 1) and _("1 plugin") or string.format(_("%d plugins"), plugin_count)
+        local patch_str = (patch_count == 1) and _("1 patch") or string.format(_("%d patches"), patch_count)
+        detail_str = string.format(_("%s and %s"), plugin_str, patch_str)
+    elseif plugin_count > 0 then
+        detail_str = (plugin_count == 1) and _("1 plugin") or string.format(_("%d plugins"), plugin_count)
+    else
+        detail_str = (patch_count == 1) and _("1 patch") or string.format(_("%d patches"), patch_count)
+    end
+
+    local confirm_text = string.format(_("Update %s?"), detail_str)
+
+    self:showConfirmDialog{
+        title = _("Confirm Update All"),
+        text = confirm_text,
+        ok_text = _("Update All"),
+        cancel_text = _("Cancel"),
+        ok_callback = function()
+            self:_processBatchUpdateQueue(pending_queue, 1, { success = 0, failed = 0 })
+        end,
+    }
+end
+
+function Storefront:_processBatchUpdateQueue(queue, index, stats)
+    stats = stats or { success = 0, failed = 0 }
+    if index > #queue then
+        G_storefront_batch_updating = false
+        self.pending_install_context = nil
+        self.pending_patch_install = nil
+
+        invalidateInstalledPluginsCache()
+        self._merged_updates_cache = nil
+        self._cached_plugin_summary = nil
+        self._cached_patch_summary = nil
+        self._cached_updates_count = nil
+
+        self:saveUpdatesState()
+        self:savePatchUpdatesState()
+        self:saveInstalledState()
+
+        self:softRefreshCurrentBrowserView()
+
+        local summary_msg
+        if stats.failed == 0 then
+            summary_msg = string.format(_("Successfully updated %d item(s)."), stats.success)
+        else
+            summary_msg = string.format(_("Updated %d of %d item(s) (%d failed)."), stats.success, #queue, stats.failed)
+        end
+
+        showRestartConfirmation(summary_msg)
+        return
+    end
+
+    G_storefront_batch_updating = true
+    local item = queue[index]
+
+    local progress_msg = InfoMessage:new{
+        text = string.format(_("Updating [%d/%d]: %s…"), index, #queue, item.name or ""),
+        timeout = 0,
+    }
+    UIManager:show(progress_msg)
+
+    local next_step = function(success, err)
+        UIManager:close(progress_msg)
+        if success then
+            stats.success = stats.success + 1
+        else
+            stats.failed = stats.failed + 1
+            StorefrontLogger.err(string.format("Batch update failed for item %s: %s", item.name, tostring(err)))
+        end
+        UIManager:nextTick(function()
+            self:_processBatchUpdateQueue(queue, index + 1, stats)
+        end)
+    end
+
+    if item.kind == "plugin" then
+        local record = item.record
+        local plugin = item.plugin or findInstalledPlugin(record.dirname)
+        if not plugin or not record then
+            next_step(false, "Missing local plugin or record")
+            return
+        end
+        self.pending_install_context = {
+            mode = "update",
+            plugin = plugin,
+            batch_callback = next_step,
+        }
+        local descriptor = buildRepoDescriptorFromRecord(record)
+        if not descriptor then
+            next_step(false, "Missing repo descriptor")
+            return
+        end
+        self:promptPluginInstallOptions(descriptor)
+    elseif item.kind == "patch" then
+        local record = item.record
+        local installed_patch = item.patch or findInstalledPatch(record.filename)
+        if not record or not installed_patch then
+            next_step(false, "Missing local patch or record")
+            return
+        end
+        local repo = buildPatchRepoDescriptor(record)
+        local patch_entry = buildPatchEntryFromRecord(record)
+        if not repo or not patch_entry then
+            next_step(false, "Missing patch repo metadata")
+            return
+        end
+        self.pending_patch_install = {
+            mode = "update",
+            patch = installed_patch,
+            batch_callback = next_step,
+        }
+        self:installPatchFromRepo(repo, patch_entry)
+    else
+        next_step(false, "Unknown item kind")
+    end
+end
+
 function Storefront:checkAllUpdates()
     invalidateInstalledPluginsCache()
     local records = getInstallRecordsMap()
@@ -3542,11 +3905,12 @@ function Storefront:_scanUpdatesForDirectApi(tracked)
 end
 
 function Storefront:_checkAllUpdatesInternal(records)
+    if not self.browser_menu then return end
     self:ensureUpdatesState()
-    local progress = InfoMessage:new{ text = _("Checking plugin updates…"), timeout = 0 }
-    UIManager:show(progress)
+    local progress = self:showProgressMessage(_("Checking plugin updates…"))
     local remote_info = self.updates_state.remote_info or {}
     for _, record in ipairs(records) do
+        if not self.browser_menu then break end
         local remote_version, remote_repo_ts, err, release_tag_name = self:fetchRemoteVersionForRecord(record)
         local prev = remote_info[record.dirname] or {}
         remote_info[record.dirname] = {
@@ -3557,15 +3921,21 @@ function Storefront:_checkAllUpdatesInternal(records)
             last_checked = os.time(),
         }
     end
-    UIManager:close(progress)
+    self:dismissProgressMessage(progress)
+    if not self.browser_menu then return end
     self.updates_state.remote_info = remote_info
     self.updates_state.last_checked = os.time()
     invalidateInstalledPluginsCache()
     self._cached_plugin_summary = nil
     self._merged_updates_cache = nil
-    self:updateUpdatesDialog()
+    self:updateUpdatesDialog()        -- refreshes legacy standalone dialog if open
+    self:softRefreshCurrentBrowserView()  -- refreshes browser list view
     self:saveUpdatesState()
     UIManager:setDirty(nil, "full")
+    -- Show completion toast
+    local checked_count = #records
+    local Toast = require("storefront_toast")
+    Toast.show(string.format(_("Checked %d plugin(s) for updates."), checked_count), 3)
 end
 
 local function findLatestRelease(owner, repo, allow_beta)
@@ -5577,13 +5947,21 @@ function Storefront:_installPatchFromRepoInternal(repo, patch)
     end
     local target_path = patches_dir .. "/" .. patch.filename
     local temp_path = target_path .. ".download"
-    local progress = InfoMessage:new{ text = _("Downloading patch…"), timeout = 0 }
+    local progress = InfoMessage:new{
+        text = string.format(_("Downloading patch \"%s\"…"), patch.filename or _("patch")),
+        timeout = 0,
+    }
     UIManager:show(progress)
     local ok, download_err = downloadToFile(url, temp_path)
     UIManager:close(progress)
     if not ok then
         util.removeFile(temp_path)
         UIManager:show(InfoMessage:new{ text = _("Download failed: ") .. tostring(download_err), timeout = 6 })
+        if self.pending_patch_install and self.pending_patch_install.batch_callback then
+            local cb = self.pending_patch_install.batch_callback
+            self.pending_patch_install = nil
+            cb(false, download_err)
+        end
         return
     end
     util.removeFile(target_path)
@@ -5591,6 +5969,11 @@ function Storefront:_installPatchFromRepoInternal(repo, patch)
     if not rename_ok then
         util.removeFile(temp_path)
         UIManager:show(InfoMessage:new{ text = _("Failed to install patch: ") .. tostring(rename_err), timeout = 6 })
+        if self.pending_patch_install and self.pending_patch_install.batch_callback then
+            local cb = self.pending_patch_install.batch_callback
+            self.pending_patch_install = nil
+            cb(false, rename_err)
+        end
         return
     end
     -- Compute the actual SHA of the downloaded file so record.sha always reflects
@@ -5606,13 +5989,20 @@ function Storefront:_installPatchFromRepoInternal(repo, patch)
     if self.pending_patch_install then
         local context = self.pending_patch_install
         self.pending_patch_install = nil
-        if context.mode == "update" and context.patch then
-            showRestartConfirmation(string.format(_("Updated patch %s."), context.patch.filename or _("patch")))
-        else
-            showRestartConfirmation(string.format(_("Installed patch \"%s\"."), patch.filename))
+        if not G_storefront_batch_updating then
+            if context.mode == "update" and context.patch then
+                showRestartConfirmation(string.format(_("Updated patch %s."), context.patch.filename or _("patch")))
+            else
+                showRestartConfirmation(string.format(_("Installed patch \"%s\"."), patch.filename))
+            end
+        end
+        if context.batch_callback then
+            context.batch_callback(true)
         end
     else
-        showRestartConfirmation(string.format(_("Installed patch \"%s\"."), patch.filename))
+        if not G_storefront_batch_updating then
+            showRestartConfirmation(string.format(_("Installed patch \"%s\"."), patch.filename))
+        end
     end
     if stored_record then
         self:updateSinglePatchStatus(patch.filename, stored_record)
@@ -6145,6 +6535,11 @@ function Storefront:renderAssetPickerModal(repo, release, custom_assets, saved_c
         show_parent = overlay,
         callback = function()
             UIManager:close(overlay, "ui")
+            if saved_ctx and saved_ctx.batch_callback then
+                local cb = saved_ctx.batch_callback
+                saved_ctx.batch_callback = nil
+                cb(false, "Cancelled asset selection")
+            end
         end,
     }
 
@@ -6555,14 +6950,33 @@ function Storefront:installPluginFromReleaseAsset(repo, release, asset)
         local safe_name = tostring(asset.name or (repo.name .. "-asset.zip")):gsub("[^%w_%-%.]", "_")
         local zip_path = string.format("%s/%s-%d.zip", downloads_dir, safe_name, os.time())
 
-        local progress = InfoMessage:new{ text = _("Downloading release asset…"), timeout = 0 }
+        local size_str = (asset.size and asset.size > 0)
+            and string.format(" (%d KB)", math.floor(asset.size / 1024))
+            or ""
+        local progress = InfoMessage:new{
+            text = string.format(
+                _("Downloading %s%s…\nThis may take a moment."),
+                tostring(asset.name or _("release asset")),
+                size_str
+            ),
+            timeout = 0,
+        }
         UIManager:show(progress)
+        local function notifyBatchError(err_msg)
+            if self.pending_install_context and self.pending_install_context.batch_callback then
+                local cb = self.pending_install_context.batch_callback
+                self.pending_install_context = nil
+                cb(false, err_msg)
+            end
+        end
+
         local ok, err = downloadToFile(url, zip_path)
         UIManager:close(progress)
         if not ok then
             util.removeFile(zip_path)
             StorefrontLogger.err(string.format("Download failed: %s (url=%s)", tostring(err), url))
             UIManager:show(InfoMessage:new{ text = _("Download failed: ") .. tostring(err), timeout = 6 })
+            notifyBatchError(err)
             return
         end
 
@@ -6571,6 +6985,7 @@ function Storefront:installPluginFromReleaseAsset(repo, release, asset)
             util.removeFile(zip_path)
             StorefrontLogger.err(string.format("Failed to open archive for repo=%s", repo and repo.name or "?"))
             UIManager:show(InfoMessage:new{ text = _("Failed to open downloaded archive."), timeout = 6 })
+            notifyBatchError("Failed to open downloaded archive")
             return
         end
 
@@ -6580,6 +6995,7 @@ function Storefront:installPluginFromReleaseAsset(repo, release, asset)
             util.removeFile(zip_path)
             StorefrontLogger.err(string.format("Plugin detection failed: %s", tostring(detect_err)))
             UIManager:show(InfoMessage:new{ text = detect_err or _("Could not detect plugin inside archive."), timeout = 6 })
+            notifyBatchError(detect_err or "Plugin detection failed")
             return
         end
 
@@ -6598,7 +7014,7 @@ function Storefront:installPluginFromReleaseAsset(repo, release, asset)
         end
 
         local function proceedWithInstall(dest_root)
-            local install_progress = InfoMessage:new{ text = _("Installing plugin…"), timeout = 0 }
+            local install_progress = InfoMessage:new{ text = _("Extracting and installing plugin…\nPlease wait."), timeout = 0 }
             UIManager:show(install_progress)
             local ok_extract, dest_or_err = extractPluginToUserDir(reader, info, dest_root)
             reader:close()
@@ -7787,48 +8203,84 @@ end
 
 function Storefront:calculateDynamicPageSize(tab_name)
     local screen_h = Device.screen:getHeight()
+    local screen_w = Device.screen:getWidth()
     local sc = function(val) return Device.screen:scaleBySize(val) end
     
-    local title_height = sc(64)
-    local tab_bar_height = sc(38)
-    local footer_height = sc(56)
-    
+    local pad = Size.padding.default
+    local thin = Size.line.thin
+    local span = Size.span.vertical_default
+
+    -- Header height: header_group buttons are sc(48) high inside FrameContainer with pad top & bottom
+    local title_height = sc(48) + 2 * pad
+
+    -- Tab bar height: text font 18 (~sc(22)) + VerticalSpan(sc(4)) + underline(sc(3)) + padding_top(sc(12))
+    local tab_font_h = sc(22)
+    local tab_bar_height = sc(12) + tab_font_h + sc(4) + sc(3)
+
+    -- Footer height: CenterContainer h=sc(48) + padding_top(sc(4)) + padding_bottom(sc(4))
+    local footer_height = sc(48) + sc(8)
+
     local has_toolbar = (tab_name == "Installed" and self.browser_state and self.browser_state.show_filter_bar_installed ~= false)
         or (tab_name == "Plugins" and self.browser_state and self.browser_state.show_filter_bar_plugins == true)
         or (tab_name == "Patches" and self.browser_state and self.browser_state.show_filter_bar_patches == true)
+
     local toolbar_height = 0
+    local divider_height = thin + span
     if has_toolbar then
-        toolbar_height = sc(36) + Size.span.vertical_default
-    end
-    
-    -- One divider below the tab bar, plus one more below the toolbar if present
-    local divider_height = Size.line.thin + Size.span.vertical_default
-    if has_toolbar then
-        divider_height = divider_height + Size.line.thin + Size.span.vertical_default
+        local btn_font_h = sc(18)
+        toolbar_height = (btn_font_h + sc(26)) + span
+        divider_height = divider_height + thin + span
     end
 
-    -- list_container has padding = Size.padding.default on all sides,
-    -- consuming vertical space at the top and bottom of the scroll area
-    local list_padding = 2 * Size.padding.default
-    
-    local body_height = screen_h - title_height - tab_bar_height - toolbar_height - divider_height - footer_height - list_padding
+    local body_height = screen_h - title_height - tab_bar_height - footer_height - toolbar_height - divider_height
     if body_height < math.floor(screen_h * 0.5) then
         body_height = math.floor(screen_h * 0.5)
     end
-    
-    local item_height
-    if tab_name == "Plugins" or tab_name == "Patches" or tab_name == "Fonts" or tab_name == "Installed" then
-        item_height = sc(102)
-    else -- Updates
-        item_height = sc(82)
+    -- Measure a sample StorefrontListItem widget dynamically for exact pixel height on current device/scaling
+    local item_w = screen_w - 2 * pad
+    local sample_entry
+    if tab_name == "Updates" then
+        sample_entry = {
+            name = "Sample Plugin Name",
+            kind_label = "Plugin",
+            version_transition = "1.0.0 -> 2.0.0",
+            is_entry = true,
+            is_update_item = true,
+            badge = "Update",
+        }
+    else
+        sample_entry = {
+            name = "Sample Plugin Name",
+            owner = "sample_owner",
+            stars_fmt = "100",
+            updated = "2026-07-27",
+            description = "Sample plugin description text for measuring widget height",
+            is_entry = true,
+            badge = "Installed",
+            kind = (tab_name == "Fonts" and "font" or nil),
+        }
     end
 
-    -- Each item slot includes the item itself plus a separator (thin line between
-    -- items, VerticalSpan after the last). Use VerticalSpan as the conservative value.
-    local slot_height = item_height + Size.span.vertical_default
-    
-    return math.max(1, math.floor(body_height / slot_height))
+    local sample_widget = StorefrontListItem:new{
+        entry = sample_entry,
+        width = item_w,
+    }
+    local item_h = sample_widget:getSize().h
+    if not item_h or item_h <= 0 then
+        item_h = (tab_name == "Updates") and (sc(54) + 2 * pad) or (sc(78) + 2 * pad)
+    end
+
+    -- List container padding inside list_scroller (top & bottom = 2 * pad)
+    local container_padding = 2 * pad
+
+    -- Each item slot includes item frame height and thin separator line between items
+    local slot_total = item_h + thin
+    local avail_height = body_height - container_padding + thin
+
+    return math.max(1, math.floor(avail_height / slot_total))
 end
+
+
 
 function Storefront:ensureInstalledState()
     if not self.installed_state then
@@ -8285,7 +8737,31 @@ function Storefront:buildBrowserEntries()
     return items, total_pages
 end
 
+function Storefront:showProgressMessage(text, args)
+    self:dismissProgressMessage()
+    args = args or {}
+    args.text = text
+    args.timeout = args.timeout or 0
+    local progress = InfoMessage:new(args)
+    self._active_progress_info = progress
+    UIManager:show(progress)
+    UIManager:forceRePaint()  -- ensure overlay renders before blocking calls
+    return progress
+end
+
+function Storefront:dismissProgressMessage(target)
+    if target and target ~= self._active_progress_info then
+        pcall(function() UIManager:close(target) end)
+    end
+    if self._active_progress_info then
+        local p = self._active_progress_info
+        self._active_progress_info = nil
+        pcall(function() UIManager:close(p) end)
+    end
+end
+
 function Storefront:closeBrowserMenu()
+    self:dismissProgressMessage()
     if self.browser_menu then
         UIManager:close(self.browser_menu)
         self.browser_menu = nil
@@ -8550,7 +9026,38 @@ function Storefront:showBrowser(kind)
             callback = function() self:showCatalogFilter() end
         })
     elseif current_tab == "Updates" then
-        toolbar_buttons = nil
+        toolbar_buttons = {}
+        table.insert(toolbar_buttons, {
+            id = "check_updates",
+            text = _("Check Updates"),
+            text_font_bold = true,
+            callback = function()
+                local Toast = require("storefront_toast")
+                Toast.show(_("Checking for updates..."), 2)
+                local installed_plugins = listInstalledPlugins()
+                local records = getInstallRecordsMap()
+                local plugin_repos = {}
+                for _, plugin in ipairs(installed_plugins) do
+                    local record = records[plugin.dirname]
+                    if record and record.owner and record.repo then
+                        record.dirname = plugin.dirname
+                        table.insert(plugin_repos, record)
+                    end
+                end
+                if #plugin_repos > 0 then
+                    self:_checkAllUpdatesInternal(plugin_repos)
+                else
+                    UIManager:show(InfoMessage:new{ text = _("No tracked plugins to check."), timeout = 4 })
+                end
+            end,
+        })
+        table.insert(toolbar_buttons, {
+            id = "update_all",
+            text = _("Update All"),
+            right_align = true,
+            is_primary = true,
+            callback = function() self:updateAllAvailable() end,
+        })
     elseif current_tab == "Installed" then
         self:ensureInstalledState()
         if self.browser_state.show_filter_bar_installed ~= false then
@@ -8744,6 +9251,7 @@ function Storefront:showBrowser(kind)
                 self.browser_state.scroll_offset = normalizeScrollOffset(offset)
             end
             self:saveBrowserState()
+            self:dismissProgressMessage()
             self.browser_menu = nil
         end,
     }
@@ -9792,7 +10300,7 @@ function Storefront:_installPluginFromRepoInternal(repo)
     local zip_path = string.format("%s/%s-%d.zip", downloads_dir, repo.name, os.time())
 
     local progress = InfoMessage:new{
-        text = _("Downloading plugin archive…"),
+        text = _("Downloading plugin source archive…\nThis may take a moment for large repositories."),
         timeout = 0,
     }
     UIManager:show(progress)
@@ -9841,7 +10349,7 @@ function Storefront:_installPluginFromRepoInternal(repo)
 
     local function proceedWithInstall(dest_root)
         local install_progress = InfoMessage:new{
-            text = _("Installing plugin…"),
+            text = _("Extracting and installing plugin…\nPlease wait."),
             timeout = 0,
         }
         UIManager:show(install_progress)
@@ -9931,6 +10439,9 @@ function Storefront:handlePostInstall(info, repo)
                 self:saveUpdatesState()
             end
         end
+    end
+    if context and context.batch_callback then
+        context.batch_callback(true)
     end
 end
 

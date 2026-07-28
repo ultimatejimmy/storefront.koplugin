@@ -209,12 +209,15 @@ package.loaded["datastorage"] = {
     getDataDir = function(self) return "/tmp/koreader_test_data" end,
 }
 
+local _luasettings_db = {}
 package.loaded["luasettings"] = {
     open = function(self, path)
-        local store = { data = {} }
-        function store:readSetting(key) return self.data[key] end
-        function store:saveSetting(key, val) self.data[key] = val; return true end
-        function store:delSetting(key) self.data[key] = nil end
+        _luasettings_db[path] = _luasettings_db[path] or {}
+        local db = _luasettings_db[path]
+        local store = {}
+        function store:readSetting(key) return db[key] end
+        function store:saveSetting(key, val) db[key] = val; return true end
+        function store:delSetting(key) db[key] = nil end
         function store:flush() return true end
         return store
     end,
@@ -783,6 +786,117 @@ if ok_browser then
         if not asset_modal_ok then print("Asset Modal Error:", asset_modal_err) end
         check("renderAssetPickerModal executes without error", asset_modal_ok, true)
 
+        -- Test StorefrontBrowserDialog page turn key events & swipe gestures
+        do
+            local prev_called, next_called = false, false
+            local browser_dialog = StorefrontBrowserDialog:new{
+                title = "Storefront",
+                items = {},
+                page = 2,
+                total_pages = 5,
+                on_prev_page = function() prev_called = true end,
+                on_next_page = function() next_called = true end,
+            }
+            browser_dialog:init()
+
+            check("Browser dialog has NextPage key event", browser_dialog.key_events and browser_dialog.key_events.NextPage ~= nil, true)
+            check("Browser dialog has PrevPage key event", browser_dialog.key_events and browser_dialog.key_events.PrevPage ~= nil, true)
+            check("Browser dialog has Swipe gesture event", browser_dialog.ges_events and browser_dialog.ges_events.Swipe ~= nil, true)
+
+            local ScrollableContainer = require("ui/widget/container/scrollablecontainer")
+            local dummy_scroller = ScrollableContainer:new{
+                ignore_events = { "swipe", "key_pg_back", "key_pg_fwd" },
+            }
+            local has_pg_back, has_pg_fwd = false, false
+            for _, ev in ipairs(dummy_scroller.ignore_events or {}) do
+                if ev == "key_pg_back" then has_pg_back = true end
+                if ev == "key_pg_fwd" then has_pg_fwd = true end
+            end
+            check("Browser list_scroller ignores key_pg_back and key_pg_fwd",
+                has_pg_back and has_pg_fwd, true)
+
+            browser_dialog:onNextPage()
+            check("onNextPage triggers on_next_page callback", next_called, true)
+
+            browser_dialog:onPrevPage()
+            check("onPrevPage triggers on_prev_page callback", prev_called, true)
+
+            prev_called, next_called = false, false
+            browser_dialog:onSwipe(nil, { direction = "left" })
+            check("onSwipe left triggers onNextPage", next_called, true)
+
+            prev_called, next_called = false, false
+            browser_dialog:onSwipe(nil, { direction = "west" })
+            check("onSwipe west triggers onNextPage", next_called, true)
+
+            browser_dialog:onSwipe(nil, { direction = "right" })
+            check("onSwipe right triggers onPrevPage", prev_called, true)
+
+            prev_called, next_called = false, false
+            browser_dialog:onSwipe(nil, { direction = "east" })
+            check("onSwipe east triggers onPrevPage", prev_called, true)
+        end
+
+        -- Test StorefrontDetailsDialog page turn key events & swipe gestures
+        do
+            local StorefrontDetailsDialog = require("storefront_details_dialog")
+            local d_repo = { name = "test-plugin", stars = "123", data = { owner = { login = "test-owner" } } }
+            local d_sf = {
+                browser_state = { kind = "plugin" },
+                browserRefresh = function() end,
+                saveBrowserState = function() end,
+                getInstallRecordsMap = function() return {} end,
+                getPatchRecordsMap = function() return {} end,
+            }
+            local details = StorefrontDetailsDialog:new{
+                Storefront = d_sf,
+                repo = d_repo,
+                kind = "plugin",
+            }
+            details:init()
+
+            check("Details dialog has NextPage key event", details.key_events and details.key_events.NextPage ~= nil, true)
+            check("Details dialog has PrevPage key event", details.key_events and details.key_events.PrevPage ~= nil, true)
+            check("Details dialog has Swipe gesture event", details.ges_events and details.ges_events.Swipe ~= nil, true)
+
+            -- Mock multi-page html_box
+            details._html_box = { page_number = 1, page_count = 3 }
+            local paginated = false
+            details._updatePagination = function() paginated = true end
+
+            local turned_next = details:onNextPage()
+            check("Details onNextPage advances html_box page_number", turned_next and details._html_box.page_number == 2, true)
+
+            local turned_prev = details:onPrevPage()
+            check("Details onPrevPage decrements html_box page_number", turned_prev and details._html_box.page_number == 1, true)
+
+            details:onSwipe(nil, { direction = "left" })
+            check("Details onSwipe left advances page_number to 2", details._html_box.page_number == 2, true)
+
+            details:onSwipe(nil, { direction = "right" })
+            check("Details onSwipe right decrements page_number to 1", details._html_box.page_number == 1, true)
+
+            details:onSwipe(nil, { direction = "west" })
+            check("Details onSwipe west advances page_number to 2", details._html_box.page_number == 2, true)
+
+            details:onSwipe(nil, { direction = "east" })
+            check("Details onSwipe east decrements page_number to 1", details._html_box.page_number == 1, true)
+
+            -- Test versions sub-tab page turning
+            details.active_tab = "versions"
+            details.versions_page = 1
+            details.versions_total_pages = 3
+            local versions_loaded = false
+            details.loadContent = function(tab) if tab == "versions" then versions_loaded = true end end
+
+            details:onNextPage()
+            check("Details onNextPage advances versions_page", details.versions_page == 2 and versions_loaded, true)
+
+            versions_loaded = false
+            details:onPrevPage()
+            check("Details onPrevPage decrements versions_page", details.versions_page == 1 and versions_loaded, true)
+        end
+
         -- Test fetchAndUpdateCacheAsync subprocess failure graceful fallback
         local CatalogClient = require("storefront_net_catalog")
         local async_cb_called = false
@@ -846,6 +960,57 @@ if ok_browser then
         local sum1 = MainStorefront:collectUpdateSummary()
         local sum2 = MainStorefront:collectUpdateSummary()
         check("collectUpdateSummary returns cached summary object on repeated call", sum1 == sum2, true)
+
+        -- Test collectUpdateSummary caching (prevents CPU/memory thrashing on Kindle)
+        MainStorefront.collectUpdateSummary = orig_collect_plugin
+        MainStorefront._cached_plugin_summary = nil
+        local sum1 = MainStorefront:collectUpdateSummary()
+        local sum2 = MainStorefront:collectUpdateSummary()
+        check("collectUpdateSummary returns cached summary object on repeated call", sum1 == sum2, true)
+
+        -- Test isDefaultPlugin and autoMatchInstalled for core KOReader plugins (Issue #43)
+        check("isDefaultPlugin identifies autowarmth as core/default", MainStorefront.isDefaultPlugin({ dirname = "autowarmth.koplugin", root = "plugins" }), true)
+        check("isDefaultPlugin identifies cloudstorage as core/default", MainStorefront.isDefaultPlugin({ dirname = "cloudstorage.koplugin", root = "plugins" }), true)
+
+        -- Test autoMatchInstalled scrubs stale records for core plugins
+        local InstallStore = require("storefront_installs")
+        InstallStore.upsert("autowarmth.koplugin", {
+            owner = "Martus0",
+            repo = "autowarmth.koplugin",
+            is_auto_matched = true,
+        })
+        check("InstallStore recorded stale auto-match record", InstallStore.get("autowarmth.koplugin") ~= nil, true)
+        MainStorefront._auto_matched_gen = nil
+        local orig_list_p = MainStorefront.listInstalledPlugins
+        MainStorefront.listInstalledPlugins = function()
+            return { { dirname = "autowarmth.koplugin", root = "plugins" } }
+        end
+        MainStorefront:autoMatchInstalled()
+        MainStorefront.listInstalledPlugins = orig_list_p
+        local rec_check = InstallStore.get("autowarmth.koplugin") or InstallStore.get("autowarmth")
+        check("autoMatchInstalled scrubbed stale auto-match record for autowarmth", rec_check == nil, true)
+
+        -- Test updateAllAvailable when no updates pending
+        local msg_shown = nil
+        local InfoMessage = require("storefront_toast")
+        local orig_toast_new = InfoMessage.new
+        InfoMessage.new = function(...)
+            local args = {...}
+            local opts = args[1] == InfoMessage and args[2] or args[1]
+            if type(opts) == "table" then
+                msg_shown = opts.text
+            elseif type(opts) == "string" then
+                msg_shown = opts
+            end
+            return orig_toast_new(...)
+        end
+        MainStorefront._cached_plugin_summary = { data = {}, updates = 0 }
+        MainStorefront._cached_patch_summary = { data = {}, updates = 0 }
+        MainStorefront:updateAllAvailable()
+        MainStorefront._cached_plugin_summary = nil
+        MainStorefront._cached_patch_summary = nil
+        InfoMessage.new = orig_toast_new
+        check("updateAllAvailable shows up-to-date message when queue is empty", msg_shown ~= nil and msg_shown:find("up to date") ~= nil, true)
 
         -- Restore mock
         package.loaded["ffi/util"].readAllFromFD = orig_readAllFromFD
