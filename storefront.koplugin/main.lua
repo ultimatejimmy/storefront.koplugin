@@ -3341,7 +3341,8 @@ function Storefront:updateAllAvailable()
     end
 
     if #pending_queue == 0 then
-        UIManager:show(InfoMessage:new{
+        local StorefrontToast = require("storefront_toast")
+        UIManager:show(StorefrontToast:new{
             text = _("All items are up to date."),
             timeout = 4,
         })
