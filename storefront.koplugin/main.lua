@@ -8151,6 +8151,12 @@ function Storefront:makePatchMenuItem(repo, patch)
     }
 end
 
+local function getAssetPath(filename)
+    local info = debug.getinfo(1, "S")
+    local dir = info.source:match("^@(.*[/\\])") or ""
+    return dir .. "assets/" .. filename
+end
+
 function Storefront:calculateDynamicPageSize(tab_name)
     local screen_h = Device.screen:getHeight()
     local screen_w = Device.screen:getWidth()
@@ -8190,14 +8196,17 @@ function Storefront:calculateDynamicPageSize(tab_name)
     -- Measure a sample StorefrontListItem widget dynamically for exact pixel height on current device/scaling
     local item_w = screen_w - 2 * pad
     local sample_entry
-    if tab_name == "Updates" then
+    if tab_name == "Updates" or tab_name == "Installed" then
         sample_entry = {
             name = "Sample Plugin Name",
-            kind_label = "Plugin",
-            version_transition = "1.0.0 -> 2.0.0",
+            updated = "2026-07-27",
+            kind_label = "Plugin · Default",
             is_entry = true,
-            is_update_item = true,
-            badge = "Update",
+            is_installed_item = (tab_name == "Installed"),
+            is_update_item = (tab_name == "Updates"),
+            version_transition = (tab_name == "Updates") and "1.0.0 -> 2.0.0" or nil,
+            badge_icon = (tab_name == "Installed") and getAssetPath("check-square.svg") or nil,
+            badge = (tab_name == "Updates") and _("Update") or nil,
         }
     else
         sample_entry = {
@@ -8216,18 +8225,119 @@ function Storefront:calculateDynamicPageSize(tab_name)
         width = item_w,
     }
     local item_h = sample_widget:getSize().h
-    if not item_h or item_h <= 0 then
-        item_h = (tab_name == "Updates") and (sc(54) + 2 * pad) or (sc(78) + 2 * pad)
-    end
-
-    -- List container padding inside list_scroller (top & bottom = 2 * pad)
     local container_padding = 2 * pad
-
-    -- Each item slot includes item frame height and thin separator line between items
     local slot_total = item_h + thin
     local avail_height = body_height - container_padding + thin
 
     return math.max(1, math.floor(avail_height / slot_total))
+end
+
+function Storefront:calculateAvailableListHeight(tab_name)
+    local screen_h = Device.screen:getHeight()
+    local sc = function(val) return Device.screen:scaleBySize(val) end
+    
+    local pad = Size.padding.default
+    local thin = Size.line.thin
+    local span = Size.span.vertical_default
+
+    -- Header height: header_group buttons are sc(48) high inside FrameContainer with pad top & bottom
+    local title_height = sc(48) + 2 * pad
+
+    -- Tab bar height: text font 18 (~sc(22)) + VerticalSpan(sc(4)) + underline(sc(3)) + padding_top(sc(12))
+    local tab_font_h = sc(22)
+    local tab_bar_height = sc(12) + tab_font_h + sc(4) + sc(3)
+
+    -- Footer height: CenterContainer h=sc(48) + padding_top(sc(4)) + padding_bottom(sc(4))
+    local footer_height = sc(48) + sc(8)
+
+    local has_toolbar = (tab_name == "Installed" and self.browser_state and self.browser_state.show_filter_bar_installed ~= false)
+        or (tab_name == "Plugins" and self.browser_state and self.browser_state.show_filter_bar_plugins == true)
+        or (tab_name == "Patches" and self.browser_state and self.browser_state.show_filter_bar_patches == true)
+
+    local toolbar_height = 0
+    local divider_height = thin + span
+    if has_toolbar then
+        local btn_font_h = sc(18)
+        toolbar_height = (btn_font_h + sc(26)) + span
+        divider_height = divider_height + thin + span
+    end
+
+    local body_height = screen_h - title_height - tab_bar_height - footer_height - toolbar_height - divider_height
+    if body_height < math.floor(screen_h * 0.5) then
+        body_height = math.floor(screen_h * 0.5)
+    end
+
+    local container_padding = 2 * pad
+    return body_height - container_padding + thin
+end
+
+function Storefront:paginateEntries(items, tab_name)
+    if not items or #items == 0 then
+        return {}, 1
+    end
+
+    local avail_height = self:calculateAvailableListHeight(tab_name)
+    local screen_w = Device.screen:getWidth()
+    local pad = Size.padding.default
+    local thin = Size.line.thin
+    local item_w = screen_w - 2 * pad
+
+    local pages = {}
+    local current_page = {}
+    local current_h = 0
+
+    for i, entry in ipairs(items) do
+        local item_h
+        if entry.is_entry then
+            local sample_widget = StorefrontListItem:new{
+                entry = entry,
+                width = item_w,
+            }
+            item_h = sample_widget:getSize().h
+        elseif entry.is_clear_button then
+            item_h = Device.screen:scaleBySize(36)
+        else
+            local face = Font:getFace("smallinfofont")
+            local text_box = TextBoxWidget:new{
+                text = entry.text or "",
+                width = item_w - 2 * pad,
+                face = face,
+                alignment = "left",
+                justified = false,
+                height_adjust = true,
+            }
+            item_h = text_box:getSize().h + 2 * pad
+        end
+
+        local slot_h = (item_h and item_h > 0 and item_h or Device.screen:scaleBySize(60)) + thin
+
+        if #current_page > 0 and (current_h + slot_h > avail_height) then
+            table.insert(pages, current_page)
+            current_page = {}
+            current_h = 0
+        end
+
+        table.insert(current_page, entry)
+        current_h = current_h + slot_h
+    end
+
+    if #current_page > 0 then
+        table.insert(pages, current_page)
+    end
+
+    local total_pages = math.max(1, #pages)
+    local page_num = math.min(math.max(self.browser_state and self.browser_state.page or 1, 1), total_pages)
+    if self.browser_state and self.browser_state.page ~= page_num then
+        self.browser_state.page = page_num
+        self:saveBrowserState()
+    end
+
+    local page_items = pages[page_num] or {}
+    for _, entry in ipairs(page_items) do
+        entry.separator = true
+    end
+
+    return page_items, total_pages
 end
 
 
@@ -8350,7 +8460,7 @@ function Storefront:buildInstalledEntries()
                 table.insert(items, {
                     name = display_name,
                     owner = record and record.owner or "",
-                    stars_fmt = record and record.repo_description and "plugin" or "0",
+                    stars_fmt = (record and record.stars) and tostring(record.stars) or "0",
                     updated = formatTimestamp(plugin.latest_mtime),
                     mtime = plugin.latest_mtime or 0,
                     kind_label = meta_kind,
@@ -8424,7 +8534,7 @@ function Storefront:buildInstalledEntries()
                 table.insert(items, {
                     name = patch.filename,
                     owner = record and record.owner or "",
-                    stars_fmt = "patch",
+                    stars_fmt = (record and record.stars and tonumber(record.stars) and tonumber(record.stars) > 0) and tostring(record.stars) or "0",
                     updated = formatTimestamp(patch.latest_mtime),
                     mtime = patch.latest_mtime or 0,
                     kind_label = _("Patch"),
@@ -8497,20 +8607,8 @@ function Storefront:buildInstalledEntries()
         end
     end)
 
-    local display_total = #items
-    local page_size = self:calculateDynamicPageSize("Installed")
-    local total_pages = math.max(1, math.ceil(display_total / page_size))
-    local page = math.min(math.max(self.browser_state.page or 1, 1), total_pages)
-    if self.browser_state.page ~= page then
-        self.browser_state.page = page
-        self:saveBrowserState()
-    end
-
-    local start_index = (page - 1) * page_size + 1
-    local end_index = math.min(display_total, start_index + page_size - 1)
-
-    local page_items = {}
-    if display_total == 0 then
+    if #items == 0 then
+        local page_items = {}
         table.insert(page_items, {
             text = _("No installed items found."),
             select_enabled = false,
@@ -8522,15 +8620,10 @@ function Storefront:buildInstalledEntries()
                 self:clearSearchAndFilters()
             end,
         })
-    else
-        for i = start_index, end_index do
-            local entry = items[i]
-            entry.separator = true
-            table.insert(page_items, entry)
-        end
+        return page_items, 1
     end
 
-    return page_items, total_pages
+    return self:paginateEntries(items, "Installed")
 end
 
 function Storefront:clearSearchAndFilters()
@@ -8637,19 +8730,6 @@ function Storefront:buildBrowserEntries()
     -- })
     -- items[#items].separator = true
 
-    local page_size = self:calculateDynamicPageSize(tab)
-    local total_pages = math.max(1, math.ceil(display_total / page_size))
-    local page = math.min(math.max(self.browser_state.page or 1, 1), total_pages)
-    if self.browser_state.page ~= page then
-        self.browser_state.page = page
-        self:saveBrowserState()
-    end
-
-    local start_index = (page - 1) * page_size + 1
-    local end_index = math.min(display_total, start_index + page_size - 1)
-
-    -- Set of repos already installed (by full name and repo id), so the
-    -- available list can mark them. Cached across renders; see getInstalledLookup.
     local installed_lookup
     if kind == "plugin" then
         installed_lookup = self:getInstalledLookup()
@@ -8668,23 +8748,27 @@ function Storefront:buildBrowserEntries()
                 self:clearSearchAndFilters()
             end,
         })
+        return items, 1
     else
-        for i = start_index, end_index do
-            if kind == "patch" then
+        if kind == "patch" then
+            for i = 1, display_total do
                 table.insert(items, self:makePatchMenuItem(patch_display_entries[i].repo, patch_display_entries[i].patch))
-            else
+            end
+        else
+            for i = 1, display_total do
                 table.insert(items, self:makeRepoMenuItem(filtered[i], installed_lookup))
             end
-            items[#items].separator = true
         end
     end
+
+    local page_items, total_pages = self:paginateEntries(items, tab)
 
     self._last_total_kind = kind
     self._last_total_pages = total_pages
     if kind == "patch" then
         self._last_patch_display_total = display_total
     end
-    return items, total_pages
+    return page_items, total_pages
 end
 
 function Storefront:showProgressMessage(text, args)
