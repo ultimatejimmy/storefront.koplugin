@@ -968,7 +968,7 @@ function Storefront:_refreshPatchUpdatesInternal(records)
         return nil, err
     end
 
-    for _, record in ipairs(records) do
+    for _idx, record in ipairs(records) do
         if not self.browser_menu then break end
         local repo = buildPatchRepoDescriptor(record)
         local entry
@@ -3228,7 +3228,7 @@ function Storefront:updateAllAvailable()
     local pending_queue = {}
 
     -- Gather outdated plugins
-    for _, item in ipairs(plugin_summary.data or {}) do
+    for _idx, item in ipairs(plugin_summary.data or {}) do
         if item.has_update and item.record then
             table.insert(pending_queue, {
                 kind = "plugin",
@@ -3241,7 +3241,7 @@ function Storefront:updateAllAvailable()
     end
 
     -- Gather outdated patches
-    for _, item in ipairs(patch_summary.data or {}) do
+    for _idx, item in ipairs(patch_summary.data or {}) do
         if item.needs_update and item.record then
             table.insert(pending_queue, {
                 kind = "patch",
@@ -3919,8 +3919,8 @@ local function fetchRemoteVersionCore(record)
         last_err = metadata_err or last_err
     end
 
-    for _, meta_path in ipairs(meta_candidates) do
-        for _, branch in ipairs(branch_candidates) do
+    for _idx, meta_path in ipairs(meta_candidates) do
+        for _bidx, branch in ipairs(branch_candidates) do
             local body, err = fetchGitHubRaw(owner, repo_name, branch, meta_path)
             if body then
                 local version = extractMetaField(body, "version")
@@ -5510,7 +5510,7 @@ function Storefront:showFullChangelog(owner, repo_desc, installed_version, targe
         local collecting = (target_tag == nil)
         local is_downgrade = false
 
-        for _, rel in ipairs(releases) do
+        for _idx, rel in ipairs(releases) do
             local rel_tag = rel.tag_name
 
             -- Downgrade detection: if we hit the installed tag before the

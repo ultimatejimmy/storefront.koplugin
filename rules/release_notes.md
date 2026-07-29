@@ -19,7 +19,9 @@ trigger: always_on
 ```
 ### Install
 
-If you are on an older version that doesn't have built-in updates or you haven't tried it yet, get it here: https://github.com/ultimatejimmy/storefront.koplugin
+Get it here: https://github.com/ultimatejimmy/storefront.koplugin/releases, here are installation instructions: https://github.com/ultimatejimmy/storefront.koplugin/wiki/1.-Installation
+
+If you already have this plugin and are updating, it should appear automatically or you can force check from Settings -> About Storefront -> Check for updates
 
 ### Feedback
 

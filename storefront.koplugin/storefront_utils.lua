@@ -67,6 +67,46 @@ function storefront_utils.firstNonEmpty(...)
     end
 end
 
+local function parseVersionDescriptor(v_str)
+    v_str = tostring(v_str):gsub("^[vV]", "")
+    local main_str, pre_str = v_str:match("^([%d%.]+)%-?(.*)$")
+    if not main_str or main_str == "" then
+        main_str = v_str
+        pre_str = ""
+    end
+
+    local nums = {}
+    for part in main_str:gmatch("%d+") do
+        table.insert(nums, tonumber(part) or 0)
+    end
+
+    local pre_info = nil
+    if pre_str and pre_str ~= "" then
+        local pre_type, pre_num = pre_str:match("^([a-zA-Z]+)(%d*)$")
+        if not pre_type then
+            pre_type = pre_str
+            pre_num = "0"
+        end
+        local ranks = {
+            dev = 1,
+            alpha = 2,
+            beta = 3,
+            preview = 4,
+            rc = 5,
+        }
+        pre_info = {
+            type_rank = ranks[pre_type:lower()] or 0,
+            type_name = pre_type:lower(),
+            num = tonumber(pre_num) or 0,
+        }
+    end
+
+    return {
+        nums = nums,
+        pre = pre_info,
+    }
+end
+
 function storefront_utils.isVersionNewer(v1_str, v2_str)
     if not v1_str or not v2_str then
         return false
@@ -77,25 +117,13 @@ function storefront_utils.isVersionNewer(v1_str, v2_str)
         return false
     end
 
-    local function normalizeVersion(v_str)
-        local parts = {}
-        for part in tostring(v_str):gmatch("([^.-]+)") do
-            local num = tonumber(part)
-            if num then
-                table.insert(parts, num)
-            else
-                table.insert(parts, 0)
-            end
-        end
-        return parts
-    end
+    local d1 = parseVersionDescriptor(v1_str)
+    local d2 = parseVersionDescriptor(v2_str)
 
-    local v1 = normalizeVersion(v1_str)
-    local v2 = normalizeVersion(v2_str)
-    local max_len = math.max(#v1, #v2)
+    local max_len = math.max(#d1.nums, #d2.nums)
     for i = 1, max_len do
-        local a = v1[i] or 0
-        local b = v2[i] or 0
+        local a = d1.nums[i] or 0
+        local b = d2.nums[i] or 0
         if a > b then
             return true
         end
@@ -103,6 +131,26 @@ function storefront_utils.isVersionNewer(v1_str, v2_str)
             return false
         end
     end
+
+    if not d1.pre and d2.pre then
+        return true
+    end
+    if d1.pre and not d2.pre then
+        return false
+    end
+
+    if d1.pre and d2.pre then
+        if d1.pre.type_rank ~= d2.pre.type_rank then
+            return d1.pre.type_rank > d2.pre.type_rank
+        end
+        if d1.pre.type_name ~= d2.pre.type_name then
+            return d1.pre.type_name > d2.pre.type_name
+        end
+        if d1.pre.num ~= d2.pre.num then
+            return d1.pre.num > d2.pre.num
+        end
+    end
+
     return false
 end
 
