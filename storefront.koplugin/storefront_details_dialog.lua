@@ -275,10 +275,16 @@ function StorefrontDetailsDialog:init()
         end
     end
 
-    local is_font = self.kind == "font"
-        or self.kind == "fonts"
-        or (self.repo and (self.repo.kind == "font" or self.repo.is_font or self.repo.font_family ~= nil))
-        or (self.update_item and (self.update_item.kind == "font" or self.update_item.is_font or self.update_item.font ~= nil))
+    local is_font = false
+    if self.kind == "font" or self.kind == "fonts" then
+        is_font = true
+    elseif self.kind ~= "plugin" and self.kind ~= "patch" and not self.patch then
+        if self.repo and (self.repo.kind == "font" or self.repo.is_font) then
+            is_font = true
+        elseif self.update_item and (self.update_item.kind == "font" or self.update_item.is_font) then
+            is_font = true
+        end
+    end
 
     local title_face
     if is_font then

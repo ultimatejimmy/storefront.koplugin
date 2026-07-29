@@ -55,6 +55,19 @@ local R = {
 }
 R.Input = R.Device.input
 
+local StorefrontUtils = require("storefront_utils")
+R.StorefrontUtils = StorefrontUtils
+
+local softWrapLongTokens = StorefrontUtils.softWrapLongTokens
+local normalizeMetaPath = StorefrontUtils.normalizeMetaPath
+local sanitizeMetaPath = StorefrontUtils.sanitizeMetaPath
+local firstNonEmpty = StorefrontUtils.firstNonEmpty
+local isVersionNewer = StorefrontUtils.isVersionNewer
+local normalizeDescription = StorefrontUtils.normalizeDescription
+local parseGitHubTimestamp = StorefrontUtils.parseGitHubTimestamp
+local repoStarsValue = StorefrontUtils.repoStarsValue
+local repoIsFork = StorefrontUtils.repoIsFork
+
 local env = setmetatable({}, { __index = _G })
 for k, v in pairs(R) do
     env[k] = v
@@ -768,7 +781,7 @@ local function isReleaseIgnored(owner, repo_name, version)
 end
 
 
-local extractRepoOwner, ensureCacheDir, ensurePatchesDir, downloadToFile, buildPatchDownloadUrl, derivePluginRepoPath, sanitizeMetaPath, fetchGitHubRaw, formatTimestamp, parseGitHubTimestamp, buildRepoDescriptorFromRecord, buildBranchCandidates, getRepoDefaultBranch, extractMetaField, getInstallRecordsMap, getPatchRecordsMap, extractPluginToUserDir, extractReleaseNameFallback, detectPluginFromArchiveWithFallback, renderReleaseNotesText, softWrapLongTokens, repoIsFork, repoStarsValue
+local extractRepoOwner, ensureCacheDir, ensurePatchesDir, downloadToFile, buildPatchDownloadUrl, derivePluginRepoPath, fetchGitHubRaw, formatTimestamp, buildRepoDescriptorFromRecord, buildBranchCandidates, getRepoDefaultBranch, extractMetaField, getInstallRecordsMap, getPatchRecordsMap, extractPluginToUserDir, extractReleaseNameFallback, detectPluginFromArchiveWithFallback, renderReleaseNotesText
 
 local function buildPatchRepoDescriptor(record)
     if not record or not record.owner or not record.repo then
@@ -789,29 +802,6 @@ local function buildPatchRepoDescriptor(record)
             default_branch = record.branch or "HEAD",
         },
     }
-end
-
-softWrapLongTokens = function(text, max_len)
-    max_len = tonumber(max_len) or 60
-    if not text or text == "" then
-        return ""
-    end
-    text = tostring(text)
-    return text:gsub("(%S+)", function(token)
-        if #token <= max_len then
-            return token
-        end
-        if token:match("[\128-\255]") then
-            return token
-        end
-        local parts = {}
-        local i = 1
-        while i <= #token do
-            parts[#parts + 1] = token:sub(i, i + max_len - 1)
-            i = i + max_len
-        end
-        return table.concat(parts, "\n")
-    end)
 end
 
 local function makeScrollableTextBoxForDialog(dialog, text)
@@ -1546,34 +1536,6 @@ buildBranchCandidates = function(record)
     return candidates
 end
 
-local function normalizeMetaPath(path)
-    if not path or path == "" then
-        return nil
-    end
-    local normalized = path:gsub("^/+", "")
-    if normalized == "_meta.lua" then
-        return normalized
-    end
-    if normalized:match("/_meta%.lua$") then
-        return normalized
-    end
-    if not normalized:match("%.koplugin$") then
-        normalized = normalized .. ".koplugin"
-    end
-    return normalized .. "/_meta.lua"
-end
-
-local function sanitizeMetaPath(path, fallback)
-    if path and path ~= "" then
-        local normalized = normalizeMetaPath(path)
-        if normalized then
-            return normalized
-        end
-    end
-    if fallback and fallback ~= "" then
-        return normalizeMetaPath(fallback)
-    end
-end
 
 local function buildMetaPathCandidates(record)
     if not record then
@@ -1644,20 +1606,6 @@ local function formatRemoteStatus(remote)
     return _("Remote: (not checked)")
 end
 
-local function firstNonEmpty(...)
-    for i = 1, select("#", ...) do
-        local value = select(i, ...)
-        if value ~= nil then
-            if type(value) == "string" then
-                if value ~= "" then
-                    return value
-                end
-            else
-                return value
-            end
-        end
-    end
-end
 
 local function isPreReleaseTag(tag_name)
     if not tag_name then
@@ -1722,58 +1670,6 @@ local function parseVersionFromTag(tag_name)
     return nil
 end
 
-local function isVersionNewer(v1_str, v2_str)
-    if not v1_str or not v2_str then
-        return false
-    end
-    -- Strip a leading "v"/"V" so a _meta.lua version like "v1.4.2" compares
-    -- equal to a release tag parsed to "1.4.2" (parseVersionFromTag already
-    -- strips it on the tag side). Otherwise normalizeVersion turns the "v1"
-    -- segment into 0 and the local version always looks older.
-    v1_str = tostring(v1_str):gsub("^[vV]", "")
-    v2_str = tostring(v2_str):gsub("^[vV]", "")
-    if v1_str == v2_str then
-        return false
-    end
-
-    local function normalizeVersion(v_str)
-        local parts = {}
-        for part in tostring(v_str):gmatch("([^.-]+)") do
-            local num = tonumber(part)
-            if num then
-                table.insert(parts, num)
-            else
-                table.insert(parts, 0)
-            end
-        end
-        return parts
-    end
-
-    local v1 = normalizeVersion(v1_str)
-    local v2 = normalizeVersion(v2_str)
-    local max_len = math.max(#v1, #v2)
-    for i = 1, max_len do
-        local a = v1[i] or 0
-        local b = v2[i] or 0
-        if a > b then
-            return true
-        end
-        if a < b then
-            return false
-        end
-    end
-    return false
-end
-
-local function normalizeDescription(value)
-    if type(value) ~= "string" then
-        return ""
-    end
-    if value:match("^function:%s*0x%x+$") then
-        return ""
-    end
-    return value
-end
 
 local function getRepoOwner(repo)
     if not repo then
@@ -8055,41 +7951,6 @@ function Storefront:repoHasMatchingPatch(repo, search)
     return false
 end
 
-parseGitHubTimestamp = function(value)
-    if type(value) ~= "string" then
-        return 0
-    end
-    local year, month, day, hour, min, sec = value:match("^(%d+)%-(%d+)%-(%d+)T(%d+):(%d+):(%d+)")
-    if not year then
-        return 0
-    end
-    return os.time({
-        year = tonumber(year),
-        month = tonumber(month),
-        day = tonumber(day),
-        hour = tonumber(hour),
-        min = tonumber(min),
-        sec = tonumber(sec),
-    }) or 0
-end
-
-repoStarsValue = function(repo)
-    if type(repo) ~= "table" then return 0 end
-    local s = tonumber(repo.stars)
-    if s and s > 0 then return s end
-    if repo.data then
-        s = tonumber(repo.data.stargazers_count) or tonumber(repo.data.stars)
-        if s and s > 0 then return s end
-    end
-    return s or 0
-end
-
-repoIsFork = function(repo)
-    if type(repo) ~= "table" then return false end
-    if repo.fork ~= nil then return repo.fork == true end
-    if repo.data and repo.data.fork ~= nil then return repo.data.fork == true end
-    return false
-end
 
 local function repoUpdatedValue(repo)
     -- For ordering, only consider pushed_at (last pushed commit).
@@ -10718,11 +10579,12 @@ function Storefront:getRepoDescriptors(kind)
     local descriptors = {}
     for _, repo in ipairs(entries) do
         local owner = repo.owner or (repo.data and repo.data.owner and repo.data.owner.login)
+        local is_font_kind = (kind == "font")
         local descriptor = {
             id = repo.repo_id,
             kind = kind,
             name = repo.name or (repo.data and repo.data.name),
-            font_family = repo.font_family or (repo.data and (repo.data.font_family or repo.data.name)) or repo.name,
+            font_family = repo.font_family or (repo.data and repo.data.font_family) or (is_font_kind and (repo.data and repo.data.name or repo.name) or nil),
             font_file = repo.font_file or (repo.data and repo.data.font_file),
             category = repo.category or (repo.data and repo.data.category),
             license = repo.license or (repo.data and repo.data.license),
@@ -11207,6 +11069,20 @@ function Storefront:promptRepoAction(repo)
         Storefront = self,
         repo = repo,
         kind = current_kind,
+    }
+    details_dialog:show()
+end
+
+function Storefront:promptPatchAction(repo, patch)
+    if not repo or not patch then
+        return
+    end
+    local DetailsDialog = require("storefront_details_dialog")
+    local details_dialog = DetailsDialog:new{
+        Storefront = self,
+        repo = repo,
+        patch = patch,
+        kind = "patch",
     }
     details_dialog:show()
 end
