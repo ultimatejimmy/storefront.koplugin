@@ -568,6 +568,7 @@ local function showDeleteConfirmationDialog(display_name, is_plugin, plugin_inst
         padding = sc(10),
         width = math.floor((inner_w - sc(12)) / 2),
         show_parent = overlay,
+        allow_flash = false,
         callback = function()
             UIManager:close(overlay, "ui")
         end,
@@ -580,9 +581,12 @@ local function showDeleteConfirmationDialog(display_name, is_plugin, plugin_inst
         padding = sc(10),
         width = math.floor((inner_w - sc(12)) / 2),
         show_parent = overlay,
+        allow_flash = false,
         callback = function()
             UIManager:close(overlay, "ui")
-            on_confirm(delete_settings)
+            UIManager:nextTick(function()
+                on_confirm(delete_settings)
+            end)
         end,
     }
 
@@ -5665,46 +5669,51 @@ function Storefront:deleteFont(font_name, record)
     end
     local display_name = font_name
     showDeleteConfirmationDialog(display_name, "font", nil, function()
-        local fonts_root = DataStorage:getDataDir() .. "/fonts"
-        local font_dir = fonts_root .. "/" .. font_name
-        local ffiutil = require("ffi/util")
-        local lfs = require("libs/libkoreader-lfs")
+        local ok, err = pcall(function()
+            local fonts_root = DataStorage:getDataDir() .. "/fonts"
+            local font_dir = fonts_root .. "/" .. font_name
+            local ffiutil = require("ffi/util")
+            local lfs = require("libs/libkoreader-lfs")
 
-        if lfs.attributes(font_dir, "mode") == "directory" then
-            -- Remove any files inside the subfolder, then the subfolder
-            for file in lfs.dir(font_dir) do
-                if file ~= "." and file ~= ".." then
-                    os.remove(font_dir .. "/" .. file)
-                    -- Also remove corresponding flat file in fonts_root
-                    os.remove(fonts_root .. "/" .. file)
+            local function safeRename(path)
+                if lfs.attributes(path, "mode") then
+                    pcall(os.rename, path, path .. ".deleted")
                 end
             end
-            if ffiutil and ffiutil.purgeDir then
-                pcall(ffiutil.purgeDir, font_dir)
+
+            -- Instead of hard deleting, we rename the files to .deleted to avoid 
+            -- Freetype segfaults on active file descriptors (e.g. if the user scrolls).
+            if lfs.attributes(font_dir, "mode") == "directory" then
+                safeRename(font_dir)
             end
-            pcall(lfs.rmdir, font_dir)
-        else
-            os.remove(fonts_root .. "/" .. font_name .. ".ttf")
-            os.remove(fonts_root .. "/" .. font_name .. ".otf")
-        end
 
-        -- Invalidate font cache files on disk
-        os.remove(DataStorage:getDataDir() .. "/cache/fontlist/fontinfo.dat")
-        os.remove(DataStorage:getDataDir() .. "/cache/fontinfo.dat")
+            if record and record.font_file and record.font_file ~= "" then
+                safeRename(fonts_root .. "/" .. record.font_file)
+            end
+            safeRename(fonts_root .. "/" .. font_name .. ".ttf")
+            safeRename(fonts_root .. "/" .. font_name .. ".otf")
+            safeRename(fonts_root .. "/" .. font_name:gsub("%s+", "_") .. ".ttf")
+            safeRename(fonts_root .. "/" .. font_name:gsub("%s+", "_") .. ".otf")
 
-        -- Invalidate in-memory FontList cache
-        local ok_fl, FontList = pcall(require, "fontlist")
-        if ok_fl and FontList then
-            FontList.fontlist = {}
-            FontList.fontinfo = nil
-            FontList.fontnames = {}
-        end
+            -- Invalidate font list cache files on disk so next restart rescans correctly.
+            -- Do NOT call Font.updateFontList() here — it can crash at C level mid-session.
+            pcall(os.remove, DataStorage:getDataDir() .. "/cache/fontlist/fontinfo.dat")
+            pcall(os.remove, DataStorage:getDataDir() .. "/cache/fontinfo.dat")
 
-        InstallStore.removeFont(font_name)
-        self:reopenBrowser(nil, function()
-            local Toast = require("storefront_toast")
-            Toast.show(string.format(_("Removed font %s."), font_name), 4)
+            InstallStore.removeFont(font_name)
         end)
+
+        if not ok then
+            logger.warn("Storefront: error deleting font:", err)
+        end
+
+        showRestartConfirmation(string.format(_("Font '%s' deleted."), display_name))
+        
+        -- Do not call reopenBrowser() here, as it closes the browser which the user does not want.
+        -- If they are in the updates menu, we refresh the updates list in-place.
+        if self.updates_menu then
+            self:updateUpdatesDialog()
+        end
     end)
 end
 
@@ -11682,6 +11691,35 @@ function Storefront:init()
         local ok_attr, attr = pcall(lfs_mod.attributes, legacy_path, "mode")
         if ok_attr and attr == "file" then
             os.remove(legacy_path)
+        end
+    end
+
+    -- Cleanup any files or directories marked for deletion in previous sessions
+    local ok_ds, DataStorage = pcall(require, "datastorage")
+    if ok_ds and DataStorage then
+        local fonts_root = DataStorage:getDataDir() .. "/fonts"
+        if lfs_mod.attributes(fonts_root, "mode") == "directory" then
+            for f in lfs_mod.dir(fonts_root) do
+                if f:match("%.deleted$") then
+                    local full_path = fonts_root .. "/" .. f
+                    local mode = lfs_mod.attributes(full_path, "mode")
+                    if mode == "directory" then
+                        local ok_ffi, ffiutil = pcall(require, "ffi/util")
+                        if ok_ffi and ffiutil and type(ffiutil.purgeDir) == "function" then
+                            pcall(ffiutil.purgeDir, full_path)
+                        else
+                            for inner in lfs_mod.dir(full_path) do
+                                if inner ~= "." and inner ~= ".." then
+                                    pcall(os.remove, full_path .. "/" .. inner)
+                                end
+                            end
+                        end
+                        pcall(lfs_mod.rmdir, full_path)
+                    elseif mode == "file" then
+                        pcall(os.remove, full_path)
+                    end
+                end
+            end
         end
     end
 

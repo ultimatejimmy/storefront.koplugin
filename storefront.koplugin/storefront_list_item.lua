@@ -141,34 +141,37 @@ local function resolveFontItemFace(e, size)
         end
     end
 
-    local face
-    if loaded_font_path and util_mod and util_mod.splitFilePathName then
-        local _, filename = util_mod.splitFilePathName(loaded_font_path)
-        if filename then
-            local ok, f = pcall(Font.getFace, Font, filename, size)
-            if ok and f then face = f end
-        end
-        if not face then
-            local ok, f = pcall(Font.getFace, Font, loaded_font_path, size)
-            if ok and f then face = f end
-        end
+    -- Only load from paths verified to exist on disk; never pass bare family names
+    -- to Font:getFace() as they may resolve through stale FreeType cache entries
+    -- pointing to deleted files, causing unrecoverable C-level crashes.
+    if loaded_font_path and ok_lfs and lfs and lfs.attributes and lfs.attributes(loaded_font_path, "mode") == "file" then
+        local ok, f = pcall(Font.getFace, Font, loaded_font_path, size)
+        if ok and f then face = f end
     end
 
+    -- font_file is a bare filename (e.g. "Merriweather-Regular.ttf"); only try it
+    -- when the actual file can be found on disk to avoid FreeType crashes.
     if not face and font_file ~= "" then
-        local ok, f = pcall(Font.getFace, Font, font_file, size)
-        if ok and f then face = f end
-    end
-
-    if not face and font_family ~= "" then
-        local ok, f = pcall(Font.getFace, Font, font_family, size)
-        if ok and f then face = f end
+        local font_file_path = nil
+        for _, f_name in ipairs(folder_candidates) do
+            local candidate = data_dir .. "/fonts/" .. f_name .. "/" .. font_file
+            if ok_lfs and lfs and lfs.attributes and lfs.attributes(candidate, "mode") == "file" then
+                font_file_path = candidate
+                break
+            end
+        end
+        if font_file_path then
+            local ok, f = pcall(Font.getFace, Font, font_file_path, size)
+            if ok and f then face = f end
+        end
     end
 
     if not face then
-        face = Font:getFace("NotoSerif-Regular.ttf", size)
+        local ok, f = pcall(Font.getFace, Font, "NotoSerif-Regular.ttf", size)
+        if ok and f then face = f end
     end
 
-    return face
+    return face or Font:getFace("cfont", size)
 end
 
 local StorefrontListItem = InputContainer:extend{

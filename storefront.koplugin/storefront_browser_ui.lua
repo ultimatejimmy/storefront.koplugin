@@ -304,7 +304,7 @@ function StorefrontBrowserDialog:init()
 
     local title_label = TextWidget:new{
         text = self.title or _("Storefront"),
-        face = Font:getFace("cfont", 22),
+        face = Font:getFace("NotoSerif-Regular.ttf", 22),
         bold = true,
         fgcolor = Blitbuffer.COLOR_BLACK,
     }
