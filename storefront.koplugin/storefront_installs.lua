@@ -197,8 +197,31 @@ function InstallStore.removeFont(font_name)
     end
     local data = readStore()
     local clean_target = font_name:lower():gsub("[%s%-_]+", "")
+    local alias_map = {
+        ["nvbasker"] = {"librebaskerville", "baskerville", "nvbasker", "basker"},
+        ["librebaskerville"] = {"librebaskerville", "baskerville", "nvbasker", "basker"},
+        ["nvbitter"] = {"bitter", "nvbitter"},
+        ["bitter"] = {"bitter", "nvbitter"},
+        ["nvliterata"] = {"literata", "nvliterata"},
+        ["literata"] = {"literata", "nvliterata"},
+        ["gentiumbookplus"] = {"gentiumplus", "gentiumbookplus", "gentium"},
+        ["gentiumplus"] = {"gentiumplus", "gentiumbookplus", "gentium"},
+        ["opendyslexic"] = {"opendyslexic", "opendyslexic3"},
+        ["readerly"] = {"readerly", "newsreader"},
+        ["sourcerer"] = {"sourcerer", "sourceserif"},
+    }
+    local targets = alias_map[clean_target] or { clean_target }
+
     for k in pairs(data.fonts) do
-        if k:lower():gsub("[%s%-_]+", "") == clean_target then
+        local k_clean = k:lower():gsub("[%s%-_]+", "")
+        local is_match = false
+        for _, t in ipairs(targets) do
+            if k_clean:find(t, 1, true) or t:find(k_clean, 1, true) then
+                is_match = true
+                break
+            end
+        end
+        if is_match then
             data.fonts[k] = nil
         end
     end

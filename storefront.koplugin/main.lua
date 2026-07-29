@@ -5817,27 +5817,25 @@ function Storefront:deleteFont(font_name, record, repo_or_file)
             local lfs = require("libs/libkoreader-lfs")
 
             local function purgePath(target_path)
+                if not target_path or target_path == "" then return end
                 local mode = lfs.attributes(target_path, "mode")
                 if not mode then return end
 
-                local ok_ffi, ffiutil = pcall(require, "ffi/util")
                 if mode == "directory" then
-                    if ok_ffi and ffiutil and type(ffiutil.purgeDir) == "function" then
-                        pcall(ffiutil.purgeDir, target_path)
-                    end
                     for f in lfs.dir(target_path) do
                         if f ~= "." and f ~= ".." then
                             local p = target_path .. "/" .. f
                             local m = lfs.attributes(p, "mode")
                             if m == "directory" then
-                                if ok_ffi and ffiutil and type(ffiutil.purgeDir) == "function" then
-                                    pcall(ffiutil.purgeDir, p)
-                                end
-                                pcall(lfs.rmdir, p)
+                                purgePath(p)
                             elseif m == "file" then
                                 pcall(os.remove, p)
                             end
                         end
+                    end
+                    local ok_ffi, ffiutil = pcall(require, "ffi/util")
+                    if ok_ffi and ffiutil and type(ffiutil.purgeDir) == "function" then
+                        pcall(ffiutil.purgeDir, target_path)
                     end
                     pcall(lfs.rmdir, target_path)
                 elseif mode == "file" then
@@ -6015,11 +6013,10 @@ function Storefront:deleteFont(font_name, record, repo_or_file)
 
         showRestartConfirmation(string.format(_("Font '%s' deleted."), display_name))
         
-        -- Do not call reopenBrowser() here, as it closes the browser which the user does not want.
-        -- If they are in the updates menu, we refresh the updates list in-place.
         if self.updates_menu then
             self:updateUpdatesDialog()
         end
+        self:softRefreshCurrentBrowserView()
     end)
 end
 
