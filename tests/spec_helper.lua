@@ -279,12 +279,17 @@ package.loaded["util"] = {
     end
 }
 local json_lib = nil
-pcall(function() json_lib = require("dkjson") end)
-if not json_lib then
-    json_lib = {
-        encode = function(t) return "{}" end,
-        decode = function(s) return {} end
-    }
+local ok_json, real_json = pcall(require, "json")
+if ok_json and type(real_json) == "table" and type(real_json.decode) == "function" then
+    json_lib = real_json
+else
+    pcall(function() json_lib = require("dkjson") end)
+    if not json_lib then
+        json_lib = {
+            encode = function(t) return "{}" end,
+            decode = function(s) return {} end
+        }
+    end
 end
 package.loaded["json"] = json_lib
 

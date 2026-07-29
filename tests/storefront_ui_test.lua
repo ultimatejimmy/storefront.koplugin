@@ -537,12 +537,17 @@ if ok_browser then
         local dummy_main = { name = "simpleui.koplugin", owner = "doctorhetfield-cmd", full_name = "doctorhetfield-cmd/simpleui.koplugin", fork = false, stars = 15 }
         local dummy_popular_fork = { name = "popularplugin.koplugin", owner = "popfork", full_name = "popfork/popularplugin.koplugin", fork = true, stars = 100 }
         local dummy_low_main = { name = "popularplugin.koplugin", owner = "originaldev", full_name = "originaldev/popularplugin.koplugin", fork = false, stars = 5 }
-        local orig_list = package.loaded["storefront_cache"].listRepos
-        package.loaded["storefront_cache"].listRepos = function()
-            return { dummy_fork, dummy_main, dummy_popular_fork, dummy_low_main }
+        local cache_mod = package.loaded["storefront_cache"] or require("storefront_cache")
+        local orig_list = cache_mod and cache_mod.listRepos
+        if cache_mod then
+            cache_mod.listRepos = function()
+                return { dummy_fork, dummy_main, dummy_popular_fork, dummy_low_main }
+            end
         end
         MainStorefront:autoMatchInstalled()
-        package.loaded["storefront_cache"].listRepos = orig_list
+        if cache_mod then
+            cache_mod.listRepos = orig_list
+        end
         local rec = MainStorefront:getInstalledLookup()
         check("Installed plugin simpleui resolved successfully", rec ~= nil, true)
 

@@ -122,6 +122,9 @@ local Storefront = WidgetContainer:extend{
 require("storefront_updates_ui"):init(Storefront)
 require("storefront_font_mgr"):init(Storefront)
 require("storefront_installer"):init(Storefront)
+local storefront_patch_mgr = require("storefront_patch_mgr")
+storefront_patch_mgr:init(Storefront)
+
 
 -- Filter KOReader's FontList:getFontNames() so preview asset files in
 -- storefront.koplugin/assets/ never bleed into the reader's Book Font Settings Menu.
@@ -795,7 +798,13 @@ local function isReleaseIgnored(owner, repo_name, version)
 end
 
 
-local extractRepoOwner, ensureCacheDir, ensurePatchesDir, downloadToFile, buildPatchDownloadUrl, derivePluginRepoPath, fetchGitHubRaw, formatTimestamp, buildRepoDescriptorFromRecord, buildBranchCandidates, getRepoDefaultBranch, extractMetaField, getInstallRecordsMap, getPatchRecordsMap, extractPluginToUserDir, extractReleaseNameFallback, detectPluginFromArchiveWithFallback, renderReleaseNotesText
+local extractRepoOwner, ensureCacheDir, ensurePatchesDir, downloadToFile, buildPatchDownloadUrl, derivePluginRepoPath, fetchGitHubRaw, formatTimestamp, buildRepoDescriptorFromRecord, buildBranchCandidates, getRepoDefaultBranch, extractMetaField, getInstallRecordsMap, getPatchRecordsMap, listInstalledPatches, buildPatchRecordFields, buildPatchSummary, extractPluginToUserDir, extractReleaseNameFallback, detectPluginFromArchiveWithFallback, renderReleaseNotesText
+
+getPatchRecordsMap = storefront_patch_mgr.getPatchRecordsMap
+listInstalledPatches = storefront_patch_mgr.listInstalledPatches
+buildPatchRecordFields = storefront_patch_mgr.buildPatchRecordFields
+buildPatchSummary = storefront_patch_mgr.buildPatchSummary
+
 
 local function buildPatchRepoDescriptor(record)
     if not record or not record.owner or not record.repo then
@@ -1333,198 +1342,7 @@ local function deleteDirectoryRecursive(path)
     return lfs.rmdir(path)
 end
 
-function listInstalledPatches()
-    local generation = InstallStore.getGeneration and InstallStore.getGeneration() or 0
-    if G_installed_patches_cache and G_installed_patches_cache.generation == generation then
-        return G_installed_patches_cache.patches
-    end
-    local patches = {}
-    if lfs.attributes(PATCHES_ROOT, "mode") ~= "directory" then
-        return patches
-    end
-    for entry in lfs.dir(PATCHES_ROOT) do
-        if entry ~= "." and entry ~= ".." then
-            local is_lua = entry:match("%.lua$")
-            local is_disabled = entry:match("%.lua%.disabled$")
-            if is_lua or is_disabled then
-                local fullpath = PATCHES_ROOT .. "/" .. entry
-                local attr = lfs.attributes(fullpath)
-                if attr and attr.mode == "file" then
-                    table.insert(patches, {
-                        filename = entry,
-                        path = fullpath,
-                        size = attr.size,
-                        latest_mtime = attr.modification,
-                        disabled = is_disabled,
-                    })
-                end
-            end
-        end
-    end
-    table.sort(patches, function(a, b)
-        return (a.filename or "") < (b.filename or "")
-    end)
-    G_installed_patches_cache = {
-        generation = generation,
-        patches = patches,
-    }
-    return patches
-end
 
-getPatchRecordsMap = function()
-    local ok, records = pcall(function()
-        return InstallStore.listPatches()
-    end)
-    if not ok or type(records) ~= "table" then
-        return {}
-    end
-    return records
-end
-
-local function buildPatchRecordFields(filename, repo, patch_info, include_sha)
-    if not filename or filename == "" or not repo then
-        return nil
-    end
-    local owner = extractRepoOwner(repo)
-    local repo_name = repo.name
-    local record = {
-        filename = filename,
-        owner = owner,
-        repo = repo_name,
-        repo_full_name = repo.full_name or (owner and repo_name and (owner .. "/" .. repo_name)) or repo_name,
-        repo_id = repo.repo_id or repo.id,
-        repo_description = repo.description,
-        branch = (patch_info and patch_info.branch) or getRepoDefaultBranch(repo),
-        path = patch_info and patch_info.path,
-        download_url = patch_info and patch_info.download_url,
-        -- Only include SHA when explicitly requested (during install/update).
-        -- During match, leave it nil so fallback mechanism can detect old files.
-        sha = include_sha and (patch_info and patch_info.sha) or nil,
-        matched_at = os.time(),
-    }
-    return record
-end
-
-local function buildPatchSummary(remote_info)
-    local installed = listInstalledPatches()
-    local records = getPatchRecordsMap()
-    local summary = {
-        total = #installed,
-        tracked = 0,
-        unmatched = 0,
-        updates = 0,
-        data = {},
-    }
-    for idx, installed_patch in ipairs(installed) do
-        local record = records[installed_patch.filename]
-        if record and record.owner and record.repo and record.path then
-            summary.tracked = summary.tracked + 1
-        else
-            summary.unmatched = summary.unmatched + 1
-        end
-        local local_sha = computeFileSha1(installed_patch.path)
-        local remote_entry = remote_info and remote_info[installed_patch.filename]
-        if (not remote_entry or remote_entry.error) and record and record.owner and record.repo then
-            local repo, file_map = Cache.findPatchRepoAndFile(installed_patch.filename)
-            if file_map then
-                remote_entry = {
-                    remote_sha = file_map.sha,
-                    download_url = file_map.download_url,
-                    is_cached_fallback = true,
-                }
-            end
-        end
-        local remote_sha = (remote_entry and remote_entry.remote_sha)
-            or (record and record.sha)
-        -- installed_sha: the SHA recorded at install/update time.
-        -- Comparing remote_sha against this (not local_sha) means user edits to
-        -- the local file do NOT trigger a false "update available" — only a real
-        -- server-side change will flip needs_update to true.
-        local installed_sha = record and record.sha
-        local needs_update = false
-        if record and remote_sha then
-            if installed_sha then
-                -- Normal path: server current SHA vs SHA at install time.
-                needs_update = remote_sha ~= installed_sha
-            elseif local_sha then
-                -- Fallback for old records that pre-date SHA storage: compare
-                -- against the local file so we don't silently miss updates.
-                needs_update = remote_sha ~= local_sha
-            else
-                needs_update = true
-            end
-        end
-        if needs_update then
-            summary.updates = summary.updates + 1
-        end
-        summary.data[#summary.data + 1] = {
-            patch = installed_patch,
-            record = record,
-            local_sha = local_sha,
-            remote_sha = remote_sha,
-            remote_entry = remote_entry,
-            needs_update = needs_update,
-        }
-    end
-    return summary
-end
-
-function Storefront:buildPatchUpdateItems(summary)
-    self:ensurePatchUpdatesState()
-    summary = summary or self:collectPatchUpdateSummary()
-    local entries = {}
-    local filter_updates = self.patch_updates_state.filter_only_outdated
-    local filter_linked = self.patch_updates_state.filter_only_linked
-    for idx, patch_item in ipairs(summary.data or {}) do
-        local is_linked = patch_item.record and patch_item.record.owner and patch_item.record.repo
-        if ((not filter_updates) or patch_item.needs_update) and ((not filter_linked) or is_linked) then
-            local patch = patch_item.patch
-            local record = patch_item.record
-            local remote_entry = patch_item.remote_entry
-            local disabled_label = (patch.disabled or isPatchDisabled(patch.filename)) and "[DISABLED] " or ""
-            local lines = {
-                string.format("• %s%s", disabled_label, patch.filename or patch.path or _("patch")),
-            }
-            if record and record.owner and record.repo then
-                table.insert(lines, string.format(_("Repo: %s/%s"), record.owner, record.repo))
-            else
-                table.insert(lines, _("Repo: (not matched)"))
-            end
-            if record and record.path then
-                table.insert(lines, string.format(_("Path: %s"), record.path))
-            end
-            table.insert(lines, formatPatchRemoteStatus(remote_entry))
-            if patch_item.needs_update then
-                table.insert(lines, _("Status: Update available"))
-            elseif record and record.owner and record.repo then
-                table.insert(lines, _("Status: Up to date"))
-            else
-                table.insert(lines, _("Status: Needs matching"))
-            end
-
-            local entry = {
-                text = table.concat(lines, "\n"),
-                dim = not patch_item.needs_update,
-                is_entry = true,
-                keep_menu_open = true,
-            }
-            entry.callback = function()
-                self:promptPatchUpdateAction(patch_item)
-            end
-            entries[#entries + 1] = entry
-        end
-    end
-
-    if #entries == 0 then
-        if self.patch_updates_state.filter_only_outdated then
-            entries[#entries + 1] = { text = _("No patches need updates."), select_enabled = false }
-        else
-            entries[#entries + 1] = { text = _("No patches to display."), select_enabled = false }
-        end
-    end
-
-    return entries
-end
 
 buildBranchCandidates = function(record)
     local seen = {}
@@ -1827,10 +1645,6 @@ end
 
 function Storefront:listInstalledPlugins()
     return listInstalledPlugins()
-end
-
-function Storefront:listInstalledPatches()
-    return listInstalledPatches()
 end
 
 local function listInstalledFonts()
@@ -2197,6 +2011,8 @@ function Storefront:autoMatchInstalled()
     -- 2. Patches
     local patch_records = getPatchRecordsMap()
     local installed_patches = listInstalledPatches()
+
+
     for _, patch in ipairs(installed_patches) do
         local record = patch_records[patch.filename]
         if not (record and record.owner and record.repo and record.path) then
@@ -5085,65 +4901,6 @@ function Storefront:deletePlugin(dirname, record)
     end)
 end
 
-function Storefront:disablePatch(filename)
-    if not filename or filename == "" then
-        return false
-    end
-    if filename:match("%.disabled$") then
-        return true
-    end
-    local old_path = PATCHES_ROOT .. "/" .. filename
-    local new_path = old_path .. ".disabled"
-    local ok, err = os.rename(old_path, new_path)
-    if not ok then
-        logger.warn("Failed to disable patch:", filename, err)
-        return false
-    end
-    return true
-end
-
-function Storefront:enablePatch(filename)
-    if not filename or filename == "" then
-        return false
-    end
-    if not filename:match("%.disabled$") then
-        return true
-    end
-    local old_path = PATCHES_ROOT .. "/" .. filename
-    local new_path = old_path:gsub("%.disabled$", "")
-    local ok, err = os.rename(old_path, new_path)
-    if not ok then
-        logger.warn("Failed to enable patch:", filename, err)
-        return false
-    end
-    return true
-end
-
-function Storefront:deletePatch(filename, record)
-    if not filename or filename == "" then
-        return
-    end
-    local display_name = filename
-
-    showDeleteConfirmationDialog(display_name, false, nil, function()
-        local patch_path = PATCHES_ROOT .. "/" .. filename
-        local ok, err = os.remove(patch_path)
-        if ok then
-            if record then
-                InstallStore.removePatch(filename)
-            end
-            showRestartConfirmation(string.format(_("Patch '%s' deleted."), display_name))
-            if self.patch_updates_menu then
-                self:updatePatchUpdatesDialog()
-            end
-        else
-            UIManager:show(InfoMessage:new{
-                text = string.format(_("Failed to delete patch: %s"), tostring(err)),
-                timeout = 5,
-            })
-        end
-    end)
-end
 
 function Storefront:checkSinglePlugin(record)
     if not record then
@@ -5275,266 +5032,6 @@ function Storefront:updatePluginFromRecord(record)
     self:promptPluginInstallOptions(descriptor)
 end
 
-function Storefront:updatePatchFromRecord(record)
-    if record then
-        StorefrontLogger.action(string.format("UPDATE patch starting: filename=%s (repo=%s/%s)", tostring(record.filename), tostring(record.owner), tostring(record.repo)))
-    end
-    if not record or not record.owner or not record.repo or not record.path then
-        UIManager:show(InfoMessage:new{ text = _("Missing repository info for patch update."), timeout = 4 })
-        return
-    end
-    local repo = buildPatchRepoDescriptor(record)
-    if not repo then
-        UIManager:show(InfoMessage:new{ text = _("Missing repository metadata for patch update."), timeout = 4 })
-        return
-    end
-    local patch_entry = buildPatchEntryFromRecord(record)
-    if not patch_entry then
-        UIManager:show(InfoMessage:new{ text = _("Missing patch file info for update."), timeout = 4 })
-        return
-    end
-    local installed_patch = findInstalledPatch(record.filename)
-    if not installed_patch then
-        UIManager:show(InfoMessage:new{ text = _("Patch file not found locally."), timeout = 4 })
-        return
-    end
-    self.pending_patch_install = {
-        mode = "update",
-        patch = installed_patch,
-    }
-    self:installPatchFromRepo(repo, patch_entry)
-end
-
-function Storefront:cancelMatchContext()
-    self.match_context = nil
-end
-
-function Storefront:startPatchMatchFlow(patch)
-    if type(patch) == "string" then
-        patch = findInstalledPatch(patch)
-    end
-    if not patch then
-        UIManager:show(InfoMessage:new{ text = _("Patch file not found."), timeout = 4 })
-        return
-    end
-    local from_patch_updates = self.patch_updates_menu ~= nil
-    self.match_context = { kind = "patch", patch = patch, from_patch_updates = from_patch_updates }
-    self:ensureBrowserState()
-    self.browser_state.kind = "patch"
-    self.browser_state.page = 1
-    self.browser_state.scroll_offset = nil
-
-    local search_text = patch.filename or patch.path or ""
-    if search_text ~= "" then
-        -- Strip multiple extensions (e.g. ".lua.disabled")
-        while true do
-            local before = search_text
-            search_text = search_text:gsub("%.[^%.]+$", "")
-            if search_text == before then
-                break
-            end
-        end
-        -- Drop numeric prefix like "2-" or "10-"
-        search_text = search_text:gsub("^%d+%-", "")
-        -- Replace dashes/underscores with spaces
-        search_text = search_text:gsub("[-_]+", " ")
-        search_text = util.trim(search_text)
-        self.browser_state.search_text = search_text
-    end
-    self:saveBrowserState()
-    self:closeUpdatesDialog()
-    self:closePatchUpdatesDialog()
-    UIManager:setDirty(nil, "ui")
-    UIManager:show(InfoMessage:new{ text = _("Select a repository patch entry to match with the chosen file."), timeout = 4 })
-    self:showBrowser("patch")
-end
-
-function Storefront:matchPatchWithRepo(patch, repo, patch_entry)
-    if type(patch) == "string" then
-        patch = findInstalledPatch(patch)
-    end
-    if not patch or not repo or not patch_entry then
-        return
-    end
-    StorefrontLogger.action(string.format("MATCH patch: %s matched with repo %s", tostring(patch.filename), tostring(repo.full_name or repo.name)))
-    local from_patch_updates = self.match_context
-        and self.match_context.kind == "patch"
-        and self.match_context.from_patch_updates
-    -- Don't include SHA during match (include_sha=false). If the patch was previously
-    -- installed, the existing SHA will be preserved. If not, it stays nil and the
-    -- fallback mechanism (line 606-609) will compare remote_sha against local_sha,
-    -- correctly detecting updates for manually installed old files.
-    local record = buildPatchRecordFields(patch.filename, repo, patch_entry, false)
-    if not record then
-        UIManager:show(InfoMessage:new{ text = _("Unable to store match for patch."), timeout = 4 })
-        return
-    end
-    InstallStore.upsertPatch(patch.filename, record)
-    -- Keep the in-memory remote_info cache consistent so the patch updates
-    -- dialog reflects the newly matched SHA immediately, without a full refresh.
-    self:updateSinglePatchStatus(patch.filename, record)
-    self.match_context = nil
-    self:closeBrowserMenu()
-    UIManager:setDirty(nil, "ui")
-    UIManager:show(InfoMessage:new{
-        text = string.format(_("Matched %s with %s."), patch.filename, repo.full_name or repo.name or _("repository")),
-        timeout = 5,
-    })
-    if from_patch_updates then
-        self:showPatchUpdatesDialog()
-    end
-end
-
-function Storefront:promptManualMatchForPatch(patch)
-    if type(patch) == "string" then
-        patch = findInstalledPatch(patch)
-    end
-    if not patch then
-        return
-    end
-    local dialog
-    dialog = MultiInputDialog:new{
-        title = _("Match patch with GitHub repository"),
-        fields = {
-            {
-                description = _("Repository owner"),
-                text = "",
-                hint = _("e.g., koreader"),
-            },
-            {
-                description = _("Repository name"),
-                text = "",
-                hint = _("e.g., koreader"),
-            },
-        },
-        buttons = {
-            {
-                {
-                    text = _("Cancel"),
-                    background = Blitbuffer.COLOR_WHITE,
-                    callback = function()
-                        UIManager:close(dialog)
-                    end,
-                },
-                {
-                    text = _("Match"),
-                    background = Blitbuffer.COLOR_WHITE,
-                    is_enter_default = true,
-                    callback = function()
-                        local fields = dialog:getFields()
-                        local owner = util.trim(fields[1] or "")
-                        local repo_name = util.trim(fields[2] or "")
-                        if owner == "" or repo_name == "" then
-                            UIManager:show(InfoMessage:new{
-                                text = _("Both owner and repository name are required."),
-                                timeout = 3,
-                            })
-                            return
-                        end
-                        UIManager:close(dialog)
-                        self:verifyAndMatchPatchWithManualRepo(patch, owner, repo_name)
-                    end,
-                },
-            },
-        },
-    }
-    UIManager:show(dialog)
-end
-
-function Storefront:verifyAndMatchPatchWithManualRepo(patch, owner, repo_name)
-    if type(patch) == "string" then
-        patch = findInstalledPatch(patch)
-    end
-    if not patch or not owner or not repo_name then
-        return
-    end
-    local progress = InfoMessage:new{
-        text = string.format(_("Verifying repository %s/%s..."), owner, repo_name),
-        timeout = 0,
-    }
-    UIManager:show(progress)
-    UIManager:forceRePaint()
-    
-    NetworkMgr:runWhenOnline(function()
-        local full_name = owner .. "/" .. repo_name
-        local repo_data, err = GitHub.fetchRepoMetadata(owner, repo_name)
-        
-        if not repo_data or not repo_data.id then
-            UIManager:close(progress)
-            UIManager:show(InfoMessage:new{
-                text = string.format(_("Repository %s not found on GitHub."), full_name),
-                timeout = 4,
-            })
-            return
-        end
-        
-        local repo = {
-            kind = "patch",
-            name = repo_name,
-            owner = owner,
-            full_name = full_name,
-            id = repo_data.id,
-            repo_id = repo_data.id,
-            description = repo_data.description,
-            data = repo_data,
-        }
-        
-        local entries = self:fetchPatchEntriesFromGitHub(repo)
-        UIManager:close(progress)
-        
-        if not entries or #entries == 0 then
-            UIManager:show(InfoMessage:new{
-                text = string.format(_("No patch files found in repository %s."), full_name),
-                timeout = 4,
-            })
-            return
-        end
-        
-        self.match_context = { kind = "patch", patch = patch, from_patch_updates = self.patch_updates_menu ~= nil }
-        self:showPatchSelectionDialog(patch, repo, entries)
-    end)
-end
-
-function Storefront:showPatchSelectionDialog(patch, repo, entries)
-    if not patch or not repo or not entries or #entries == 0 then
-        return
-    end
-    
-    local dialog
-    local buttons = {}
-    for idx, entry in ipairs(entries) do
-        table.insert(buttons, {
-            {
-                text = entry.path or entry.display_path or _("patch"),
-                background = Blitbuffer.COLOR_WHITE,
-                callback = function()
-                    UIManager:close(dialog)
-                    self:matchPatchWithRepo(patch, repo, entry)
-                end,
-            },
-        })
-    end
-    
-    table.insert(buttons, {
-        {
-            text = _("Cancel"),
-            background = Blitbuffer.COLOR_WHITE,
-            callback = function()
-                UIManager:close(dialog)
-                self.match_context = nil
-            end,
-        },
-    })
-    
-    dialog = ButtonDialog:new{
-        title = string.format(_("Select patch file from %s"), repo.full_name or repo.name),
-        buttons = buttons,
-        tap_close_callback = function()
-            self.match_context = nil
-        end,
-    }
-    UIManager:show(dialog)
-end
 
 local function getRecordedInstall(dirname)
     if not dirname or dirname == "" then
