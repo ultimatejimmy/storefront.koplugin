@@ -153,6 +153,26 @@ local function detectPluginFromArchive(reader, repo)
         prefix = plugin_dirname .. "/"
     end
 
+    if plugin_dirname then
+        if repo and repo.name and repo.name ~= "" then
+            local repo_dirname = repo.name:match("%.koplugin$") and repo.name or (repo.name .. ".koplugin")
+            local clean_repo_base = repo.name:gsub("%.koplugin$", "")
+            if plugin_dirname:find(clean_repo_base, 1, true) then
+                plugin_dirname = repo_dirname
+            end
+        end
+
+        local koplugin_match = plugin_dirname:match("(.*%.koplugin)")
+        if koplugin_match then
+            plugin_dirname = koplugin_match
+        else
+            plugin_dirname = plugin_dirname:gsub("%-[%w_%-]+$", "")
+            if not plugin_dirname:match("%.koplugin$") then
+                plugin_dirname = plugin_dirname .. ".koplugin"
+            end
+        end
+    end
+
     return {
         plugin_dirname = plugin_dirname,
         prefix = prefix,
