@@ -280,7 +280,15 @@ function StorefrontDetailsDialog:init()
         or (self.repo and (self.repo.kind == "font" or self.repo.is_font or self.repo.font_family ~= nil))
         or (self.update_item and (self.update_item.kind == "font" or self.update_item.is_font or self.update_item.font ~= nil))
 
-    local title_face = is_font and Font:getFace("cfont", 28) or Font:getFace("NotoSerif-Regular.ttf", 28)
+    local title_face
+    if is_font then
+        local ok_sli, StorefrontListItem = pcall(require, "storefront_list_item")
+        local font_entry = self.repo or self.update_item or { name = title_text, is_font = true }
+        if ok_sli and type(StorefrontListItem) == "table" and type(StorefrontListItem.resolveFontItemFace) == "function" then
+            title_face = StorefrontListItem.resolveFontItemFace(font_entry, 28)
+        end
+    end
+    title_face = title_face or Font:getFace("NotoSerif-Regular.ttf", 28) or Font:getFace("cfont", 28)
     local title_label = TextWidget:new{
         text = title_text,
         face = title_face,

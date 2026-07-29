@@ -120,28 +120,44 @@ local function resolveFontItemFace(e, size)
         end
     end
 
-    -- Only load from paths verified to exist on disk; never pass bare family names
-    -- to Font:getFace() as they may resolve through stale FreeType cache entries
-    -- pointing to deleted files, causing unrecoverable C-level crashes.
     if loaded_font_path and ok_lfs and lfs and lfs.attributes and lfs.attributes(loaded_font_path, "mode") == "file" then
+        local ok_fl, FontList = pcall(require, "fontlist")
+        if ok_fl and FontList and FontList.getFontList then
+            local fl = FontList:getFontList()
+            if fl then
+                local found = false
+                for _, p in ipairs(fl) do
+                    if p == loaded_font_path then found = true; break end
+                end
+                if not found then
+                    table.insert(fl, loaded_font_path)
+                end
+            end
+        end
         local ok, f = pcall(Font.getFace, Font, loaded_font_path, size)
         if ok and f then face = f end
     end
 
-    -- font_file is a bare filename (e.g. "Merriweather-Regular.ttf"); only try it
-    -- when the actual file can be found on disk to avoid FreeType crashes.
     if not face and font_file ~= "" then
-        local font_file_path = nil
         for _, f_name in ipairs(folder_candidates) do
             local candidate = data_dir .. "/fonts/" .. f_name .. "/" .. font_file
             if ok_lfs and lfs and lfs.attributes and lfs.attributes(candidate, "mode") == "file" then
-                font_file_path = candidate
-                break
+                local ok_fl, FontList = pcall(require, "fontlist")
+                if ok_fl and FontList and FontList.getFontList then
+                    local fl = FontList:getFontList()
+                    if fl then
+                        local found = false
+                        for _, p in ipairs(fl) do
+                            if p == candidate then found = true; break end
+                        end
+                        if not found then
+                            table.insert(fl, candidate)
+                        end
+                    end
+                end
+                local ok, f = pcall(Font.getFace, Font, candidate, size)
+                if ok and f then face = f; break end
             end
-        end
-        if font_file_path then
-            local ok, f = pcall(Font.getFace, Font, font_file_path, size)
-            if ok and f then face = f end
         end
     end
 
@@ -510,5 +526,7 @@ function StorefrontListItem:onHoldSelect()
     end
     return true
 end
+
+StorefrontListItem.resolveFontItemFace = resolveFontItemFace
 
 return StorefrontListItem

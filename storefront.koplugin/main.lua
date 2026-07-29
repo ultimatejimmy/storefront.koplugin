@@ -144,20 +144,16 @@ if ok_fl and FontList and not FontList._storefront_filter_installed then
             if ok_lfs and lfs and lfs.attributes then
                 if self.fontinfo then
                     for path in pairs(self.fontinfo) do
-                        if not path:find("storefront.koplugin", 1, true) then
-                            if lfs.attributes(path, "mode") ~= "file" then
-                                self.fontinfo[path] = nil
-                            end
+                        if path:find("storefront.koplugin", 1, true) or lfs.attributes(path, "mode") ~= "file" then
+                            self.fontinfo[path] = nil
                         end
                     end
                 end
                 if self.fontlist then
                     for i = #self.fontlist, 1, -1 do
                         local path = self.fontlist[i]
-                        if not path:find("storefront.koplugin", 1, true) then
-                            if lfs.attributes(path, "mode") ~= "file" then
-                                table.remove(self.fontlist, i)
-                            end
+                        if path:find("storefront.koplugin", 1, true) or lfs.attributes(path, "mode") ~= "file" then
+                            table.remove(self.fontlist, i)
                         end
                     end
                 end
