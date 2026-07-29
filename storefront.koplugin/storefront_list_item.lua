@@ -23,50 +23,9 @@ local _ = require("gettext")
 
 local G_bundled_fonts_registered = false
 local function ensureBundledFontsRegistered()
-    if G_bundled_fonts_registered then return end
-    G_bundled_fonts_registered = true
-
-    local ok_fl, FontList = pcall(require, "fontlist")
-    if not ok_fl or not FontList then return end
-
-    local fontlist = FontList:getFontList()
-    if not fontlist then return end
-
-    local existing = {}
-    for _, p in ipairs(fontlist) do
-        existing[p] = true
-    end
-
-    local ok_ds, DataStorage = pcall(require, "datastorage")
-    local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
-    if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
-    local ok_ffi, ffiutil = pcall(require, "ffi/util")
-    local util_mod = require("util")
-
-    local data_dir = (ok_ds and DataStorage and DataStorage.getDataDir) and DataStorage:getDataDir() or ""
-
-    local asset_bases = {
-        "assets/fonts",
-        "plugins/storefront.koplugin/assets/fonts",
-    }
-    if data_dir ~= "" then
-        table.insert(asset_bases, data_dir .. "/plugins/storefront.koplugin/assets/fonts")
-        table.insert(asset_bases, data_dir .. "/plugins/storefront.koplugin/storefront.koplugin/assets/fonts")
-    end
-
-    for _, base in ipairs(asset_bases) do
-        local rp = (ffiutil and ffiutil.realpath) and ffiutil.realpath(base) or base
-        if rp and ok_lfs and lfs and lfs.attributes and lfs.attributes(rp, "mode") == "directory" then
-            util_mod.findFiles(rp, function(path, file, attr)
-                if file:sub(1, 1) == "." then return end
-                local ext = file:lower():match(".+%.([^.]+)") or ""
-                if (ext == "ttf" or ext == "otf") and not existing[path] then
-                    existing[path] = true
-                    table.insert(fontlist, path)
-                end
-            end)
-        end
-    end
+    -- Intentionally a no-op so Storefront does not inject bundled fallback fonts
+    -- into KOReader's global FontList, which would cause them to appear in the
+    -- reader's Book Font selection menu even when not installed by the user.
 end
 
 local function resolveFontItemFace(e, size)
@@ -75,8 +34,7 @@ local function resolveFontItemFace(e, size)
         return Font:getFace("NotoSerif-Regular.ttf", size)
     end
 
-    ensureBundledFontsRegistered()
-
+    local face = nil
     local font_folder = e.repo_name or e.font_name or e.name or e.font_family or ""
     local font_family = e.font_family or e.font_name or e.name or ""
     local font_file = e.font_file or ""
@@ -88,6 +46,12 @@ local function resolveFontItemFace(e, size)
     local util_mod = require("util")
     local data_dir = (ok_ds and DataStorage and DataStorage.getDataDir) and DataStorage:getDataDir() or ""
 
+    local info = debug.getinfo(1, "S")
+    local script_dir = info and info.source and info.source:match("^@(.*[/\\])") or ""
+    if script_dir:sub(-1) == "/" or script_dir:sub(-1) == "\\" then
+        script_dir = script_dir:sub(1, -2)
+    end
+
     local folder_candidates = {}
     if font_folder ~= "" then table.insert(folder_candidates, font_folder) end
     if font_family ~= "" and font_family ~= font_folder then table.insert(folder_candidates, font_family) end
@@ -95,12 +59,22 @@ local function resolveFontItemFace(e, size)
 
     local search_dirs = {}
     for _, f_name in ipairs(folder_candidates) do
+        if script_dir ~= "" then
+            table.insert(search_dirs, script_dir .. "/assets/bundled_fonts/" .. f_name)
+            table.insert(search_dirs, script_dir .. "/assets/fonts/" .. f_name)
+            table.insert(search_dirs, script_dir .. "/../assets/bundled_fonts/" .. f_name)
+            table.insert(search_dirs, script_dir .. "/../assets/fonts/" .. f_name)
+        end
+        table.insert(search_dirs, "assets/bundled_fonts/" .. f_name)
         table.insert(search_dirs, "assets/fonts/" .. f_name)
+        table.insert(search_dirs, "plugins/storefront.koplugin/assets/bundled_fonts/" .. f_name)
         table.insert(search_dirs, "plugins/storefront.koplugin/assets/fonts/" .. f_name)
         if data_dir ~= "" then
-            table.insert(search_dirs, data_dir .. "/plugins/storefront.koplugin/assets/fonts/" .. f_name)
-            table.insert(search_dirs, data_dir .. "/plugins/storefront.koplugin/storefront.koplugin/assets/fonts/" .. f_name)
             table.insert(search_dirs, data_dir .. "/fonts/" .. f_name)
+            table.insert(search_dirs, data_dir .. "/plugins/storefront.koplugin/assets/bundled_fonts/" .. f_name)
+            table.insert(search_dirs, data_dir .. "/plugins/storefront.koplugin/assets/fonts/" .. f_name)
+            table.insert(search_dirs, data_dir .. "/plugins/storefront.koplugin/storefront.koplugin/assets/bundled_fonts/" .. f_name)
+            table.insert(search_dirs, data_dir .. "/plugins/storefront.koplugin/storefront.koplugin/assets/fonts/" .. f_name)
         end
     end
 
@@ -115,11 +89,16 @@ local function resolveFontItemFace(e, size)
                     loaded_font_path = exact_p
                     break
                 end
+                local exact_asset = rp .. "/" .. font_file .. ".asset"
+                if lfs.attributes(exact_asset, "mode") == "file" then
+                    loaded_font_path = exact_asset
+                    break
+                end
             end
 
             local fallback_path = nil
             for file in lfs.dir(rp) do
-                if file ~= "." and file ~= ".." and (file:match("%.ttf$") or file:match("%.otf$")) then
+                if file ~= "." and file ~= ".." and (file:match("%.ttf$") or file:match("%.otf$") or file:match("%.ttf%.asset$") or file:match("%.otf%.asset$")) then
                     local lfile = file:lower()
                     local full_file_p = rp .. "/" .. file
                     if lfile:find("regular") then

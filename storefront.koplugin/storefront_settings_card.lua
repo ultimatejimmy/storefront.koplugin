@@ -318,7 +318,21 @@ end
         }
         table.insert(content_vg, create_setting_row("rotate-cw.svg", _("Refresh cache"), meta_widget, function()
             UIManager:close(overlay, "ui")
-            Storefront:browserRefresh()
+            local browser_was_open = Storefront.browser_menu ~= nil
+            local kind = (Storefront.browser_state and Storefront.browser_state.kind) or "plugin"
+            local ok_nm, NetworkMgr2 = pcall(require, "ui/network/manager")
+            local do_refresh = function()
+                Storefront:refreshCache(kind, function(ok)
+                    if browser_was_open then
+                        Storefront:softRefreshCurrentBrowserView()
+                    end
+                end)
+            end
+            if ok_nm and NetworkMgr2 and type(NetworkMgr2.runWhenOnline) == "function" then
+                NetworkMgr2:runWhenOnline(do_refresh)
+            else
+                do_refresh()
+            end
         end))
 
         -- Clear README Cache Row

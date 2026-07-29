@@ -420,9 +420,14 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback)
     os.remove(staging_fonts_file)
 
     if not (ok_ffi and ffiutil and ffiutil.runInSubProcess) then
-        logger.warn("Storefront: ffiutil.runInSubProcess unavailable, skipping background catalog update")
-        if StorefrontLogger then StorefrontLogger.warn("Storefront: ffiutil.runInSubProcess unavailable, skipping background catalog update") end
-        if callback then callback(false, "ffiutil.runInSubProcess unavailable") end
+        logger.warn("Storefront: ffiutil.runInSubProcess unavailable, falling back to sync catalog fetch")
+        local ok_dl, catalog_data = pcall(function() return CatalogClient.fetchCatalog(target_url) end)
+        if ok_dl and catalog_data then
+            local ok_update, err_update = CatalogClient.updateCacheFromCatalog(catalog_data)
+            if callback then callback(ok_update, err_update) end
+        else
+            if callback then callback(false, "Sync catalog fetch failed") end
+        end
         return
     end
 
