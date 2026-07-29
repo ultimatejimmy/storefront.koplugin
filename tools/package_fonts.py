@@ -12,7 +12,7 @@ import sys
 import json
 import zipfile
 
-GITHUB_PAGES_BASE_URL = "https://ultimatejimmy.github.io"
+GITHUB_PAGES_BASE_URL = "https://ultimatejimmy.github.io/storefront.koplugin"
 
 def main():
     print("=== KOReader Storefront Font Packager ===")
