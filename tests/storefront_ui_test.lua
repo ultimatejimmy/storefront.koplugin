@@ -544,12 +544,16 @@ if ok_browser then
                 return { dummy_fork, dummy_main, dummy_popular_fork, dummy_low_main }
             end
         end
+        io.write("DEBUG: pre autoMatch\n"); io.stdout:flush()
         MainStorefront:autoMatchInstalled()
+        io.write("DEBUG: post autoMatch\n"); io.stdout:flush()
         if cache_mod then
             cache_mod.listRepos = orig_list
         end
         local rec = MainStorefront:getInstalledLookup()
+        io.write("DEBUG: post getInstalledLookup\n"); io.stdout:flush()
         check("Installed plugin simpleui resolved successfully", rec ~= nil, true)
+
 
         -- Test StorefrontImageModal loading and onClose execution
         local StorefrontImageModal = require("storefront_image_modal")
@@ -616,7 +620,9 @@ if ok_browser then
         local installed_entries_ok, installed_entries = pcall(function()
             return MainStorefront:buildInstalledEntries()
         end)
+
         check("buildInstalledEntries with full items runs without errors", installed_entries_ok, true)
+
         check("buildInstalledEntries returns list table", type(installed_entries), "table")
         check("buildInstalledEntries populates items", type(installed_entries) == "table" and (#installed_entries > 0), true)
 

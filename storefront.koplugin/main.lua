@@ -122,6 +122,8 @@ local Storefront = WidgetContainer:extend{
 require("storefront_updates_ui"):init(Storefront)
 require("storefront_font_mgr"):init(Storefront)
 require("storefront_installer"):init(Storefront)
+require("storefront_delete_ui"):init(Storefront)
+require("storefront_match"):init(Storefront)
 local storefront_patch_mgr = require("storefront_patch_mgr")
 storefront_patch_mgr:init(Storefront)
 
@@ -536,221 +538,14 @@ local function showFetchingProgress(message)
     }
 end
 
-local function showDeleteConfirmationDialog(display_name, is_plugin, plugin_instance, on_confirm)
-    local storefront_theme = require("storefront_theme")
-    local Device = require("device")
-    local sc = function(val) return (Device and Device.screen and Device.screen.scaleBySize and Device.screen:scaleBySize(val)) or val end
-
-    local sw = Device.screen:getWidth()
-    local sh = Device.screen:getHeight()
-    local dialog_w = math.min(sw - sc(20), sc(380))
-
-    local ui_font_size = storefront_theme.face_label_size or 18
-    local title_font_size = storefront_theme.title_font_size or 22
-
-    local title_text
-    if is_plugin == "font" or is_plugin == "fonts" then
-        title_text = string.format(_("Delete font '%s'?"), display_name)
-    elseif is_plugin == "patch" or is_plugin == "patches" or is_plugin == false then
-        title_text = string.format(_("Delete patch '%s'?"), display_name)
-    else
-        title_text = string.format(_("Delete plugin '%s'?"), display_name)
-    end
-    local title_label = TextBoxWidget:new{
-        text = title_text,
-        face = Font:getFace("NotoSerif-Regular.ttf", title_font_size),
-        bold = true,
-        fgcolor = Blitbuffer.COLOR_BLACK,
-        width = dialog_w - sc(32),
-        alignment = "center",
-    }
-
-    local title_container = FrameContainer:new{
-        padding = sc(12),
-        bordersize = 0,
-        title_label,
-    }
-
-    local body_text = _("This action cannot be undone.\n\nChanges will take effect after restart.")
-    local body_widget = TextBoxWidget:new{
-        text = body_text,
-        face = Font:getFace("NotoSerif-Regular.ttf", ui_font_size),
-        fgcolor = Blitbuffer.COLOR_BLACK,
-        width = dialog_w - sc(40),
-        alignment = "center",
-    }
-
-    local body_container = FrameContainer:new{
-        padding = sc(8),
-        bordersize = 0,
-        body_widget,
-    }
-
-    local delete_settings = false
-    local check_item = nil
-    local overlay
-
-    if is_plugin == true then
-        local function get_check_text()
-            local icon = delete_settings and "☑ " or "☐ "
-            return icon .. _("Also delete plugin settings")
-        end
-
-        local check_text_widget = TextBoxWidget:new{
-            text = get_check_text(),
-            face = Font:getFace("NotoSerif-Regular.ttf", ui_font_size),
-            fgcolor = Blitbuffer.COLOR_BLACK,
-            width = dialog_w - sc(40),
-            alignment = "center",
-        }
-
-        local check_frame = FrameContainer:new{
-            padding = sc(8),
-            bordersize = 0,
-            background = Blitbuffer.COLOR_WHITE,
-            check_text_widget,
-        }
-
-        check_item = InputContainer:new{
-            align = "center",
-            check_frame,
-        }
-
-        check_item.ges_events = {
-            Tap = {
-                GestureRange:new{
-                    ges = "tap",
-                    range = function()
-                        local dim = check_item.dimen
-                        if not dim then return Geom:new{ x = -1, y = -1, w = 1, h = 1 } end
-                        return Geom:new{
-                            x = dim.x or 0,
-                            y = dim.y or 0,
-                            w = check_frame:getSize().w or (dialog_w - sc(40)),
-                            h = check_frame:getSize().h or 0,
-                        }
-                    end
-                }
-            }
-        }
-
-        check_item.onTap = function()
-            delete_settings = not delete_settings
-            check_text_widget:setText(get_check_text())
-            UIManager:setDirty(overlay, "ui")
-            if delete_settings and not plugin_instance then
-                UIManager:show(InfoMessage:new{
-                    text = _("Plugin is not currently loaded, so settings cannot be deleted."),
-                    timeout = 6,
-                })
-            end
-            return true
-        end
-    end
-
-    local card_padding = sc(6)
-    local card_border = storefront_theme.border_window or sc(2)
-    local inner_w = dialog_w - (card_padding * 2) - (card_border * 2)
-
-    local cancel_btn = Button:new{
-        text = _("Cancel"),
-        bordersize = sc(1),
-        radius = storefront_theme.radius_btn or sc(18),
-        padding = sc(10),
-        width = math.floor((inner_w - sc(12)) / 2),
-        show_parent = overlay,
-        allow_flash = false,
-        callback = function()
-            UIManager:close(overlay, "ui")
-        end,
-    }
-
-    local delete_btn = Button:new{
-        text = _("Delete"),
-        bordersize = sc(1),
-        radius = storefront_theme.radius_btn or sc(18),
-        padding = sc(10),
-        width = math.floor((inner_w - sc(12)) / 2),
-        show_parent = overlay,
-        allow_flash = false,
-        callback = function()
-            UIManager:close(overlay, "ui")
-            UIManager:nextTick(function()
-                on_confirm(delete_settings)
-            end)
-        end,
-    }
-
-    local btn_row = HorizontalGroup:new{
-        align = "center",
-        cancel_btn,
-        HorizontalSpan:new{ width = sc(8) },
-        delete_btn,
-    }
-
-    local content_items = {
-        title_container,
-        LineWidget:new{
-            dimen = Geom:new{ w = inner_w, h = sc(1) },
-            background = Blitbuffer.COLOR_BLACK,
-        },
-        VerticalSpan:new{ width = sc(8) },
-        body_container,
-    }
-
-    if check_item then
-        table.insert(content_items, VerticalSpan:new{ width = sc(6) })
-        table.insert(content_items, check_item)
-    end
-
-    table.insert(content_items, VerticalSpan:new{ width = sc(12) })
-    table.insert(content_items, FrameContainer:new{ padding = sc(4), bordersize = 0, btn_row })
-
-    local content_vg = VerticalGroup:new{
-        align = "center",
-        unpack(content_items)
-    }
-
-    local card = FrameContainer:new{
-        padding = sc(6),
-        radius = storefront_theme.radius_window or 0,
-        bordersize = storefront_theme.border_window or sc(2),
-        color = Blitbuffer.COLOR_BLACK,
-        background = storefront_theme.color_bg or Blitbuffer.COLOR_WHITE,
-        width = dialog_w,
-        content_vg,
-    }
-
-    overlay = InputContainer:new{
-        dimen = Geom:new{ w = sw, h = sh },
-        key_events = {
-            Close = { { "Back" } }
-        },
-        CenterContainer:new{
-            dimen = Geom:new{ w = sw, h = sh },
-            card,
-        },
-    }
-
-    overlay.onClose = function()
-        UIManager:close(overlay, "ui")
-        return true
-    end
-
-    UIManager:show(overlay, "ui")
-end
-
 function Storefront:showRestartConfirmation(message)
     return showRestartConfirmation(message)
-end
-
-function Storefront:showDeleteConfirmationDialog(display_name, is_plugin, plugin_instance, on_confirm)
-    return showDeleteConfirmationDialog(display_name, is_plugin, plugin_instance, on_confirm)
 end
 
 function Storefront:showFetchingProgress(message)
     return showFetchingProgress(message)
 end
+
 
 local function getIgnoredReleases()
     return StorefrontSettings:readSetting(IGNORED_RELEASES_KEY) or {}
@@ -1117,133 +912,14 @@ local function isPatchDisabled(filename)
     return filename:match("%.disabled$") ~= nil
 end
 
-local CORE_KOREADER_PLUGINS = {
-    ["archiveviewer.koplugin"] = true,
-    ["autodim.koplugin"] = true,
-    ["autostandby.koplugin"] = true,
-    ["autosuspend.koplugin"] = true,
-    ["autoturn.koplugin"] = true,
-    ["autowarmth.koplugin"] = true,
-    ["batterystat.koplugin"] = true,
-    ["bookshortcuts.koplugin"] = true,
-    ["calibre.koplugin"] = true,
-    ["cloudstorage.koplugin"] = true,
-    ["coverbrowser.koplugin"] = true,
-    ["coverimage.koplugin"] = true,
-    ["docsettingtweak.koplugin"] = true,
-    ["exporter.koplugin"] = true,
-    ["externalkeyboard.koplugin"] = true,
-    ["gestures.koplugin"] = true,
-    ["hello.koplugin"] = true,
-    ["hotkeys.koplugin"] = true,
-    ["httpinspector.koplugin"] = true,
-    ["japanese.koplugin"] = true,
-    ["keepalive.koplugin"] = true,
-    ["kosync.koplugin"] = true,
-    ["movetoarchive.koplugin"] = true,
-    ["newsdownloader.koplugin"] = true,
-    ["opds.koplugin"] = true,
-    ["perceptionexpander.koplugin"] = true,
-    ["profiles.koplugin"] = true,
-    ["qrclipboard.koplugin"] = true,
-    ["readtimer.koplugin"] = true,
-    ["ssh.koplugin"] = true,
-    ["statistics.koplugin"] = true,
-    ["systemstat.koplugin"] = true,
-    ["terminal.koplugin"] = true,
-    ["texteditor.koplugin"] = true,
-    ["timesync.koplugin"] = true,
-    ["vocabbuilder.koplugin"] = true,
-    ["wallabag.koplugin"] = true,
-}
-
 local function isDefaultPlugin(plugin, maybe_plugin)
-    if plugin == Storefront or (type(plugin) == "table" and plugin.name == "storefront") then
-        plugin = maybe_plugin
-    end
-    if not plugin or type(plugin) ~= "table" then return false end
-
-    local candidates = {}
-    if plugin.dirname and plugin.dirname ~= "" then
-        table.insert(candidates, plugin.dirname)
-    end
-    if plugin.shortname and plugin.shortname ~= "" then
-        table.insert(candidates, plugin.shortname)
-    end
-    if plugin.name and plugin.name ~= "" then
-        table.insert(candidates, plugin.name)
-    end
-    if plugin.fullname and plugin.fullname ~= "" then
-        table.insert(candidates, plugin.fullname)
-    end
-    if plugin.meta and type(plugin.meta) == "table" then
-        if plugin.meta.name then table.insert(candidates, plugin.meta.name) end
-        if plugin.meta.fullname then table.insert(candidates, plugin.meta.fullname) end
-    end
-    if #candidates == 0 then return false end
-
-    local records = (getInstallRecordsMap and getInstallRecordsMap()) or {}
-
-    -- 1. Explicit installed_type override check in Storefront records
-    for _, cand in ipairs(candidates) do
-        local clean = cand:gsub("%.koplugin$", ""):lower()
-        local koplugin_key = clean .. ".koplugin"
-        local rec = records[cand] or records[clean] or records[koplugin_key]
-        if rec then
-            if rec.installed_type == "user" then
-                return false
-            end
-            if rec.installed_type == "core" then
-                return true
-            end
-        end
-    end
-
-    -- 2. Check known KOReader core bundled plugins set (takes priority over catalog matches)
-    for _, cand in ipairs(candidates) do
-        local clean = cand:gsub("%.koplugin$", ""):lower()
-        local koplugin_key = clean .. ".koplugin"
-        if CORE_KOREADER_PLUGINS[koplugin_key] or CORE_KOREADER_PLUGINS[clean] then
-            return true
-        end
-    end
-
-    -- 3. Check install records with owner/repo_full_name for user-installed items
-    for _, cand in ipairs(candidates) do
-        local clean = cand:gsub("%.koplugin$", ""):lower()
-        local koplugin_key = clean .. ".koplugin"
-        local rec = records[cand] or records[clean] or records[koplugin_key]
-        if rec and (rec.owner or rec.repo_full_name or rec.repo_id) then
-            return false
-        end
-    end
-
-    -- 4. Check if plugin matches a non-core descriptor in Storefront's catalog
-    if Storefront and type(Storefront.getRepoDescriptors) == "function" then
-        local descriptors = Storefront:getRepoDescriptors("plugin") or {}
-        for _, cand in ipairs(candidates) do
-            local clean = cand:gsub("%.koplugin$", ""):lower()
-            for _, repo in ipairs(descriptors) do
-                local repo_name = (repo.name or ""):gsub("%.koplugin$", ""):lower()
-                if repo_name == clean then
-                    return false
-                end
-            end
-        end
-    end
-
-    -- 5. Check non-standard custom plugin root path
-    local default_root = (PluginPaths.getDefaultPluginsRoot and PluginPaths.getDefaultPluginsRoot()) or "plugins"
-    if plugin.root and plugin.root ~= "plugins" and plugin.root ~= default_root then
-        return false
-    end
-
-    return false
+    return Storefront:isDefaultPlugin(plugin, maybe_plugin)
 end
 
 local function isDefaultPatch(patch)
-    return false
+    return Storefront:isDefaultPatch(patch)
 end
+
 
 function Storefront:togglePluginDisabled(dirname, skip_prompt)
     if not dirname or dirname == "" then return false, "" end
@@ -1884,162 +1560,7 @@ local function extractAuthorFromPlugin(plugin)
     return nil
 end
 
-function Storefront:autoMatchInstalled()
-    -- 1. Plugins
-    local records = getInstallRecordsMap()
 
-    local current_gen = InstallStore.getGeneration and InstallStore.getGeneration() or 0
-    if self._auto_matched_gen == current_gen then
-        return
-    end
-    self._auto_matched_gen = current_gen
-
-    -- Scrub any stale auto-matched records for core bundled plugins
-    for plugin_key, _ in pairs(CORE_KOREADER_PLUGINS) do
-        local clean = plugin_key:gsub("%.koplugin$", "")
-        local rec1 = InstallStore.get(plugin_key)
-        if rec1 and rec1.is_auto_matched then
-            InstallStore.remove(plugin_key)
-        end
-        local rec2 = InstallStore.get(clean)
-        if rec2 and rec2.is_auto_matched then
-            InstallStore.remove(clean)
-        end
-    end
-    StorefrontLogger.info("AUTO-MATCH starting for installed plugins and patches")
-
-    local installed_plugins = self:listInstalledPlugins()
-    local records = getInstallRecordsMap()
-
-    local unmatched_plugins = {}
-    for _, plugin in ipairs(installed_plugins) do
-        local record = records[plugin.dirname]
-        if not (record and record.owner and record.repo) or record.is_auto_matched then
-            table.insert(unmatched_plugins, plugin)
-        end
-    end
-
-    if #unmatched_plugins > 0 then
-        local cached_plugins = Cache.listRepos("plugin")
-        local name_map = {}
-
-        local function isBetterMatch(existing, candidate)
-            if not existing then return true end
-            local ex_stars = repoStarsValue(existing)
-            local ca_stars = repoStarsValue(candidate)
-            if ca_stars ~= ex_stars then
-                return ca_stars > ex_stars -- higher star count always wins
-            end
-            local ex_fork = existing.fork or (existing.data and existing.data.fork) or false
-            local ca_fork = candidate.fork or (candidate.data and candidate.data.fork) or false
-            if ex_fork ~= ca_fork then
-                return not ca_fork -- tiebreaker: prefer non-fork if stars are equal
-            end
-            return false
-        end
-
-        for _, repo in ipairs(cached_plugins) do
-            if repo.name then
-                local low_name = repo.name:lower()
-                if isBetterMatch(name_map[low_name], repo) then
-                    name_map[low_name] = repo
-                end
-                local clean = repo.name:gsub("%.koplugin$", ""):lower()
-                if isBetterMatch(name_map[clean], repo) then
-                    name_map[clean] = repo
-                end
-            end
-        end
-
-        for _, plugin in ipairs(unmatched_plugins) do
-            local clean_dirname = plugin.dirname:gsub("%.koplugin$", ""):lower()
-            local koplugin_key = clean_dirname .. ".koplugin"
-
-            -- Skip auto-matching if it's a core KOReader plugin
-            local is_core = CORE_KOREADER_PLUGINS[koplugin_key] or CORE_KOREADER_PLUGINS[clean_dirname]
-            if not is_core and isDefaultPlugin(plugin) then
-                is_core = true
-            end
-
-            if not is_core then
-                local author = extractAuthorFromPlugin(plugin)
-                local repo
-                if author then
-                    local norm_author = author:lower()
-                    for _, candidate in ipairs(cached_plugins) do
-                        if candidate.name then
-                            local candidate_clean = candidate.name:gsub("%.koplugin$", ""):lower()
-                            if candidate_clean == clean_dirname or candidate.name:lower() == plugin.dirname:lower() then
-                                local ca_owner = (candidate.owner or (candidate.data and candidate.data.owner and candidate.data.owner.login) or ""):lower()
-                                if ca_owner == norm_author then
-                                    repo = candidate
-                                    break
-                                end
-                            end
-                        end
-                    end
-                end
-
-                if not repo then
-                    repo = name_map[clean_dirname] or name_map[plugin.dirname:lower()]
-                end
-
-                if repo then
-                    local existing_rec = records[plugin.dirname]
-                    local matched_at = (existing_rec and existing_rec.matched_at) or os.time()
-                    local record = {
-                        owner = repo.owner,
-                        repo = repo.name,
-                        repo_full_name = repo.full_name,
-                        repo_description = repo.description,
-                        repo_id = repo.repo_id,
-                        branch = repo.data and repo.data.default_branch or "main",
-                        matched_at = matched_at,
-                        is_auto_matched = true,
-                        version = existing_rec and existing_rec.version or nil,
-                        installed_version = existing_rec and existing_rec.installed_version or nil,
-                        installed_tag = existing_rec and existing_rec.installed_tag or nil,
-                        tag_name = existing_rec and existing_rec.tag_name or nil,
-                    }
-                    InstallStore.upsert(plugin.dirname, record)
-                    StorefrontLogger.action(string.format("AUTO-MATCHED plugin %s -> %s", tostring(plugin.dirname), tostring(repo.full_name or repo.name)))
-                end
-            end
-        end
-    end
-
-    -- 2. Patches
-    local patch_records = getPatchRecordsMap()
-    local installed_patches = listInstalledPatches()
-
-
-    for _, patch in ipairs(installed_patches) do
-        local record = patch_records[patch.filename]
-        if not (record and record.owner and record.repo and record.path) then
-            local repo, file_map = Cache.findPatchRepoAndFile(patch.filename)
-            if repo and file_map then
-                local existing_patch_rec = patch_records[patch.filename]
-                local matched_at = (existing_patch_rec and existing_patch_rec.matched_at) or os.time()
-                local record = {
-                    filename = patch.filename,
-                    owner = repo.owner,
-                    repo = repo.name,
-                    repo_full_name = repo.full_name,
-                    repo_id = repo.repo_id,
-                    repo_description = repo.description,
-                    branch = file_map.branch or repo.data and repo.data.default_branch or "HEAD",
-                    path = file_map.path,
-                    download_url = file_map.download_url,
-                    sha = file_map.sha,
-                    matched_at = matched_at,
-                    is_auto_matched = true,
-                }
-                InstallStore.upsertPatch(patch.filename, record)
-                StorefrontLogger.action(string.format("AUTO-MATCHED patch %s -> %s (%s)", tostring(patch.filename), tostring(repo.full_name or repo.name), tostring(file_map.path or "")))
-            end
-        end
-    end
-end
 
 function Storefront:collectPatchUpdateSummary()
     self:ensurePatchUpdatesState()
@@ -4821,85 +4342,7 @@ end
 
 -- ─── End Modify Plugin ────────────────────────────────────────────────────────
 
-function Storefront:disablePlugin(dirname)
-    if not dirname or dirname == "" then
-        return false
-    end
-    local plugins_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
-    local plugin_name = dirname:gsub("%.koplugin$", "")
-    plugins_disabled[plugin_name] = true
-    G_reader_settings:saveSetting("plugins_disabled", plugins_disabled)
-    return true
-end
 
-function Storefront:enablePlugin(dirname)
-    if not dirname or dirname == "" then
-        return false
-    end
-    local plugins_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
-    local plugin_name = dirname:gsub("%.koplugin$", "")
-    plugins_disabled[plugin_name] = nil
-    G_reader_settings:saveSetting("plugins_disabled", plugins_disabled)
-    return true
-end
-
-function Storefront:performPluginDeletion(dirname, record, plugin_instance_for_settings)
-    StorefrontLogger.action(string.format("DELETE starting: plugin %s", tostring(dirname)))
-    local plugin = findInstalledPlugin(dirname)
-    local display_name = plugin and (plugin.name or plugin.dirname) or dirname
-
-    local plugin_path = (plugin and plugin.path) or (PluginPaths.getDefaultPluginsRoot() .. "/" .. dirname)
-    local ok, err = deleteDirectoryRecursive(plugin_path)
-    if ok then
-        if plugin_instance_for_settings then
-            if type(plugin_instance_for_settings.deletePluginSettings) == "function" then
-                pcall(plugin_instance_for_settings.deletePluginSettings, plugin_instance_for_settings)
-            end
-            
-            if plugin_instance_for_settings.settings_file then
-                os.remove(plugin_instance_for_settings.settings_file)
-                os.remove(plugin_instance_for_settings.settings_file .. ".old")
-            end
-            
-            if plugin_instance_for_settings.settings_key then
-                G_reader_settings:delSetting(plugin_instance_for_settings.settings_key)
-            end
-            
-            G_reader_settings:flush()
-        end
-        
-        if record then
-            InstallStore.remove(dirname)
-        end
-        StorefrontLogger.action(string.format("DELETED plugin %s from disk (%s)", tostring(dirname), plugin_path))
-        showRestartConfirmation(string.format(_("Plugin '%s' deleted."), display_name))
-        if self.updates_menu then
-            self:updateUpdatesDialog()
-        end
-    else
-        StorefrontLogger.err(string.format("DELETE failed for plugin %s: %s", tostring(dirname), tostring(err)))
-        UIManager:show(InfoMessage:new{
-            text = string.format(_("Failed to delete plugin: %s"), tostring(err)),
-            timeout = 5,
-        })
-    end
-end
-
-function Storefront:deletePlugin(dirname, record)
-    if not dirname or dirname == "" then
-        return
-    end
-    local plugin = findInstalledPlugin(dirname)
-    local display_name = plugin and (plugin.name or plugin.dirname) or dirname
-
-    local PluginLoader = require("pluginloader")
-    local plugin_name = dirname:gsub("%.koplugin$", "")
-    local plugin_instance = PluginLoader:getPluginInstance(plugin_name)
-
-    showDeleteConfirmationDialog(display_name, true, plugin_instance, function(delete_settings)
-        self:performPluginDeletion(dirname, record, delete_settings and plugin_instance)
-    end)
-end
 
 
 function Storefront:checkSinglePlugin(record)
@@ -7187,6 +6630,9 @@ function Storefront:makeRepoMenuItem(repo, installed_lookup)
     if (repo.kind or (self.browser_state and self.browser_state.kind)) == "font" then
         kind_label = repo.category and repo.category:lower() or _("font")
     end
+
+    local owner = repo.owner or (repo.data and repo.data.owner and (type(repo.data.owner) == "table" and repo.data.owner.login or tostring(repo.data.owner))) or ""
+    local updated = getRepoVersionOrDate(repo, installed_lookup)
 
     return {
         name = repo.name or repo.full_name or _("Repository"),
@@ -10203,10 +9649,10 @@ end
 
 Storefront.listInstalledPlugins = listInstalledPlugins
 Storefront.listInstalledPatches = listInstalledPatches
-Storefront.isDefaultPlugin = isDefaultPlugin
 Storefront.getInstallRecordsMap = getInstallRecordsMap
 Storefront.getPatchRecordsMap = getPatchRecordsMap
 Storefront.getBrowserPageSize = getBrowserPageSize
 
 return Storefront
+
 
