@@ -103,10 +103,16 @@ end
 
 local StorefrontToast = {}
 
-function StorefrontToast.show(text, timeout)
+function StorefrontToast.show(text, timeout, opts)
+    opts = opts or {}
+    local dismissable = true
+    if opts.dismissable == false then
+        dismissable = false
+    end
     local toast = StorefrontToastWidget:new{
         text = text or "",
         timeout = timeout or 3,
+        dismissable = dismissable,
     }
     UIManager:show(toast)
     return toast

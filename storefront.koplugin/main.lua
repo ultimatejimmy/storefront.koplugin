@@ -431,6 +431,11 @@ function Storefront:showConfirmDialog(opts)
 end
 
 local function showFetchingProgress(message)
+    if G_storefront_batch_updating then
+        return {
+            close = function() end
+        }
+    end
     local storefront_theme = require("storefront_theme")
     local Device = require("device")
     local sc = function(val) return (Device and Device.screen and Device.screen.scaleBySize and Device.screen:scaleBySize(val)) or val end
@@ -1042,26 +1047,6 @@ local function formatPatchRemoteStatus(remote_entry)
         return string.format(_("Remote SHA: %s"), short)
     end
     return _("Remote: (not checked)")
-end
-
-local function buildPatchRepoDescriptor(record)
-    if not record or not record.owner or not record.repo then
-        return nil
-    end
-    local owner = record.owner
-    return {
-        kind = "patch",
-        name = record.repo,
-        owner = owner,
-        full_name = record.repo_full_name or string.format("%s/%s", owner, record.repo),
-        id = record.repo_id,
-        repo_id = record.repo_id,
-        description = record.repo_description,
-        data = {
-            owner = { login = owner },
-            default_branch = record.branch or "HEAD",
-        },
-    }
 end
 
 local function buildPatchEntryFromRecord(record)
@@ -3643,7 +3628,9 @@ function Storefront:updateAllAvailable()
         ok_text = _("Update All"),
         cancel_text = _("Cancel"),
         ok_callback = function()
-            self:_processBatchUpdateQueue(pending_queue, 1, { success = 0, failed = 0 })
+            UIManager:nextTick(function()
+                self:_processBatchUpdateQueue(pending_queue, 1, { success = 0, failed = 0 })
+            end)
         end,
     }
 end
@@ -3681,14 +3668,18 @@ function Storefront:_processBatchUpdateQueue(queue, index, stats)
     G_storefront_batch_updating = true
     local item = queue[index]
 
-    local progress_msg = InfoMessage:new{
-        text = string.format(_("Updating [%d/%d]: %s…"), index, #queue, item.name or ""),
-        timeout = 0,
-    }
-    UIManager:show(progress_msg)
+    local StorefrontToast = require("storefront_toast")
+    local progress_msg = StorefrontToast.show(
+        string.format(_("Updating [%d/%d]: %s…"), index, #queue, item.name or ""),
+        0,
+        { dismissable = false }
+    )
+    UIManager:forceRePaint()
 
     local next_step = function(success, err)
-        UIManager:close(progress_msg)
+        if progress_msg and progress_msg.close then
+            progress_msg:close()
+        end
         if success then
             stats.success = stats.success + 1
         else
@@ -6543,32 +6534,6 @@ derivePluginRepoPath = function(plugin_root)
     return plugin_root
 end
 
-local function normalizeMetaPath(path)
-    if not path or path == "" then
-        return nil
-    end
-    local normalized = path:gsub("^/+", "")
-    if normalized:match("/_meta%.lua$") then
-        return normalized
-    end
-    if not normalized:match("%.koplugin$") then
-        normalized = normalized .. ".koplugin"
-    end
-    return normalized .. "/_meta.lua"
-end
-
-local function sanitizeMetaPath(path, fallback)
-    if path and path ~= "" then
-        local normalized = normalizeMetaPath(path)
-        if normalized then
-            return normalized
-        end
-    end
-    if fallback and fallback ~= "" then
-        return normalizeMetaPath(fallback)
-    end
-end
-
 fetchGitHubRaw = function(owner, repo_name, branch, path)
     if not owner or not repo_name or not path or path == "" then
         return nil, _("Missing repository metadata for remote fetch.")
@@ -6619,73 +6584,6 @@ buildRepoDescriptorFromRecord = function(record)
     }
 end
 
-local function firstNonEmpty(...)
-    for i = 1, select("#", ...) do
-        local value = select(i, ...)
-        if value ~= nil then
-            if type(value) == "string" then
-                if value ~= "" then
-                    return value
-                end
-            else
-                return value
-            end
-        end
-    end
-end
-
-local function isVersionNewer(v1_str, v2_str)
-    if not v1_str or not v2_str then
-        return false
-    end
-    -- Strip a leading "v"/"V" so a _meta.lua version like "v1.4.2" compares
-    -- equal to a release tag parsed to "1.4.2" (parseVersionFromTag already
-    -- strips it on the tag side). Otherwise normalizeVersion turns the "v1"
-    -- segment into 0 and the local version always looks older.
-    v1_str = tostring(v1_str):gsub("^[vV]", "")
-    v2_str = tostring(v2_str):gsub("^[vV]", "")
-    if v1_str == v2_str then
-        return false
-    end
-
-    local function normalizeVersion(v_str)
-        local parts = {}
-        for part in tostring(v_str):gmatch("([^.-]+)") do
-            local num = tonumber(part)
-            if num then
-                table.insert(parts, num)
-            else
-                table.insert(parts, 0)
-            end
-        end
-        return parts
-    end
-
-    local v1 = normalizeVersion(v1_str)
-    local v2 = normalizeVersion(v2_str)
-    local max_len = math.max(#v1, #v2)
-    for i = 1, max_len do
-        local a = v1[i] or 0
-        local b = v2[i] or 0
-        if a > b then
-            return true
-        end
-        if a < b then
-            return false
-        end
-    end
-    return false
-end
-
-local function normalizeDescription(value)
-    if type(value) ~= "string" then
-        return ""
-    end
-    if value:match("^function:%s*0x%x+$") then
-        return ""
-    end
-    return value
-end
 
 function Storefront:resetFiltersForRefresh()
     self:ensureBrowserState()
@@ -7802,15 +7700,15 @@ function Storefront:installPluginFromReleaseAsset(repo, release, asset)
         local size_str = (asset.size and asset.size > 0)
             and string.format(" (%d KB)", math.floor(asset.size / 1024))
             or ""
-        local progress = InfoMessage:new{
+        local progress = (not G_storefront_batch_updating) and InfoMessage:new{
             text = string.format(
                 _("Downloading %s%s…\nThis may take a moment."),
                 tostring(asset.name or _("release asset")),
                 size_str
             ),
             timeout = 0,
-        }
-        UIManager:show(progress)
+        } or nil
+        if progress then UIManager:show(progress) end
         local function notifyBatchError(err_msg)
             if self.pending_install_context and self.pending_install_context.batch_callback then
                 local cb = self.pending_install_context.batch_callback
@@ -7820,7 +7718,7 @@ function Storefront:installPluginFromReleaseAsset(repo, release, asset)
         end
 
         local ok, err = downloadToFile(url, zip_path)
-        UIManager:close(progress)
+        if progress then UIManager:close(progress) end
         if not ok then
             util.removeFile(zip_path)
             StorefrontLogger.err(string.format("Download failed: %s (url=%s)", tostring(err), url))
@@ -7866,8 +7764,8 @@ function Storefront:installPluginFromReleaseAsset(repo, release, asset)
         end
 
         local function proceedWithInstall(dest_root)
-            local install_progress = InfoMessage:new{ text = _("Extracting and installing plugin…\nPlease wait."), timeout = 0 }
-            UIManager:show(install_progress)
+            local install_progress = (not G_storefront_batch_updating) and InfoMessage:new{ text = _("Extracting and installing plugin…\nPlease wait."), timeout = 0 } or nil
+            if install_progress then UIManager:show(install_progress) end
             local ok_extract, dest_or_err = extractPluginToUserDir(reader, info, dest_root)
             reader:close()
             util.removeFile(zip_path)
@@ -7888,7 +7786,7 @@ function Storefront:installPluginFromReleaseAsset(repo, release, asset)
                 end
             end
 
-            UIManager:close(install_progress)
+            if install_progress then UIManager:close(install_progress) end
 
             -- Some plugins' _meta.lua only set `fullname` (often wrapped in _()), so
             -- plugin_name parsing can come back nil; fall back to the directory name
