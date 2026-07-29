@@ -86,7 +86,7 @@ function StorefrontFilterDialog.showInstalledFilter(arg1, arg2)
 
             local txt = TextBoxWidget:new{
                 text = left_text,
-                face = Font:getFace("NotoSerif-Regular.ttf", ui_font_size),
+                face = Font:getFace("cfont", ui_font_size),
                 fgcolor = Blitbuffer.COLOR_BLACK,
                 width = max_left_w,
                 alignment = "left",
@@ -141,7 +141,7 @@ function StorefrontFilterDialog.showInstalledFilter(arg1, arg2)
         local function create_section_header(title)
             local label = TextWidget:new{
                 text = title:upper(),
-                face = Font:getFace("NotoSerif-Regular.ttf", storefront_theme.section_header_font_size or 16),
+                face = Font:getFace("cfont", storefront_theme.section_header_font_size or 16),
                 bold = true,
                 fgcolor = Blitbuffer.COLOR_BLACK,
             }
@@ -178,7 +178,7 @@ function StorefrontFilterDialog.showInstalledFilter(arg1, arg2)
         local cur_origin = state.filter_default or "all"
         local origin_widget = TextWidget:new{
             text = origin_labels[cur_origin] or cur_origin,
-            face = Font:getFace("NotoSerif-Regular.ttf", storefront_theme.subtext_font_size or 16),
+            face = Font:getFace("cfont", storefront_theme.subtext_font_size or 16),
             fgcolor = storefront_theme.color_label_dim,
         }
         table.insert(content_vg, create_setting_row(_("Origin"), origin_widget, function()
@@ -194,7 +194,7 @@ function StorefrontFilterDialog.showInstalledFilter(arg1, arg2)
         local cur_status = state.filter_status or "all"
         local status_widget = TextWidget:new{
             text = status_labels[cur_status] or cur_status,
-            face = Font:getFace("NotoSerif-Regular.ttf", storefront_theme.subtext_font_size or 16),
+            face = Font:getFace("cfont", storefront_theme.subtext_font_size or 16),
             fgcolor = storefront_theme.color_label_dim,
         }
         table.insert(content_vg, create_setting_row(_("Status"), status_widget, function()
@@ -219,7 +219,7 @@ function StorefrontFilterDialog.showInstalledFilter(arg1, arg2)
         local cur_sort = state.sort_mode or "name_asc"
         local sort_widget = TextWidget:new{
             text = sort_labels[cur_sort] or cur_sort,
-            face = Font:getFace("NotoSerif-Regular.ttf", storefront_theme.subtext_font_size or 16),
+            face = Font:getFace("cfont", storefront_theme.subtext_font_size or 16),
             fgcolor = storefront_theme.color_label_dim,
         }
         table.insert(content_vg, create_setting_row(_("Sort mode"), sort_widget, function()
@@ -240,7 +240,7 @@ function StorefrontFilterDialog.showInstalledFilter(arg1, arg2)
         })
         local reset_widget = TextWidget:new{
             text = _("Reset to defaults"),
-            face = Font:getFace("NotoSerif-Regular.ttf", ui_font_size),
+            face = Font:getFace("cfont", ui_font_size),
             bold = true,
             fgcolor = Blitbuffer.COLOR_BLACK,
         }
@@ -379,7 +379,7 @@ function StorefrontFilterDialog.showCatalogFilter(arg1, arg2)
 
             local txt = TextBoxWidget:new{
                 text = left_text,
-                face = Font:getFace("NotoSerif-Regular.ttf", ui_font_size),
+                face = Font:getFace("cfont", ui_font_size),
                 fgcolor = Blitbuffer.COLOR_BLACK,
                 width = max_left_w,
                 alignment = "left",
@@ -434,7 +434,7 @@ function StorefrontFilterDialog.showCatalogFilter(arg1, arg2)
         local function create_section_header(title)
             local label = TextWidget:new{
                 text = title:upper(),
-                face = Font:getFace("NotoSerif-Regular.ttf", storefront_theme.section_header_font_size or 16),
+                face = Font:getFace("cfont", storefront_theme.section_header_font_size or 16),
                 bold = true,
                 fgcolor = Blitbuffer.COLOR_BLACK,
             }
@@ -456,7 +456,7 @@ function StorefrontFilterDialog.showCatalogFilter(arg1, arg2)
             local cat_label = (cur_cat == "all") and _("All") or cur_cat:lower()
             local cat_widget = TextWidget:new{
                 text = cat_label,
-                face = Font:getFace("NotoSerif-Regular.ttf", storefront_theme.subtext_font_size or 16),
+                face = Font:getFace("cfont", storefront_theme.subtext_font_size or 16),
                 fgcolor = storefront_theme.color_label_dim,
             }
             table.insert(content_vg, create_setting_row(_("Font style"), cat_widget, function()
@@ -478,7 +478,7 @@ function StorefrontFilterDialog.showCatalogFilter(arg1, arg2)
         local stars_label = (cur_stars > 0) and (tostring(cur_stars) .. "+") or _("Any")
         local stars_widget = TextWidget:new{
             text = stars_label,
-            face = Font:getFace("NotoSerif-Regular.ttf", storefront_theme.subtext_font_size or 16),
+            face = Font:getFace("cfont", storefront_theme.subtext_font_size or 16),
             fgcolor = storefront_theme.color_label_dim,
         }
         table.insert(content_vg, create_setting_row(_("Minimum stars"), stars_widget, function()
@@ -499,7 +499,7 @@ function StorefrontFilterDialog.showCatalogFilter(arg1, arg2)
         local sort_text = sort_opt and sort_opt.summary or _("Sort")
         local sort_widget = TextWidget:new{
             text = sort_text,
-            face = Font:getFace("NotoSerif-Regular.ttf", storefront_theme.subtext_font_size or 16),
+            face = Font:getFace("cfont", storefront_theme.subtext_font_size or 16),
             fgcolor = storefront_theme.color_label_dim,
         }
         table.insert(content_vg, create_setting_row(_("Sort mode"), sort_widget, function()
@@ -515,7 +515,7 @@ function StorefrontFilterDialog.showCatalogFilter(arg1, arg2)
         })
         local reset_widget = TextWidget:new{
             text = _("Reset to defaults"),
-            face = Font:getFace("NotoSerif-Regular.ttf", ui_font_size),
+            face = Font:getFace("cfont", ui_font_size),
             bold = true,
             fgcolor = Blitbuffer.COLOR_BLACK,
         }
@@ -564,7 +564,7 @@ function StorefrontFilterDialog.showCatalogFilter(arg1, arg2)
 
         local card = FrameContainer:new{
             padding = 0,
-            radius = sc(12),
+            radius = storefront_theme.radius_window or 0,
             bordersize = sc(2),
             color = Blitbuffer.COLOR_BLACK,
             background = storefront_theme.color_bg or Blitbuffer.COLOR_WHITE,

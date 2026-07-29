@@ -312,14 +312,18 @@ function StorefrontBrowserDialog:init()
     local btn_w = sc(48)
     local btn_h = sc(48)
 
-    local filter_btn = Button:new{
+    local search_btn = Button:new{
         icon = "appbar.search",
         width = btn_w,
         height = btn_h,
         bordersize = 0,
         background = nil,
         callback = function()
-            if self.on_filter then self.on_filter() end
+            if self.on_search then
+                self.on_search()
+            elseif self.on_filter then
+                self.on_filter()
+            end
         end,
     }
 
@@ -366,7 +370,7 @@ function StorefrontBrowserDialog:init()
         HorizontalSpan:new{ width = logo_gap },
         title_label,
         HorizontalSpan:new{ width = spacer_w },
-        filter_btn,
+        search_btn,
         HorizontalSpan:new{ width = sc(8) },
         settings_btn,
         HorizontalSpan:new{ width = sc(8) },
@@ -379,7 +383,8 @@ function StorefrontBrowserDialog:init()
         header_group,
     }
 
-    self._header_filter_btn = filter_btn
+    self._header_search_btn = search_btn
+    self._header_filter_btn = search_btn
     self._header_settings_btn = settings_btn
     self._close_btn = close_btn
 

@@ -193,6 +193,12 @@ function InstallStore.removeFont(font_name)
         return false
     end
     local data = readStore()
+    local clean_target = font_name:lower():gsub("[%s%-_]+", "")
+    for k in pairs(data.fonts) do
+        if k:lower():gsub("[%s%-_]+", "") == clean_target then
+            data.fonts[k] = nil
+        end
+    end
     data.fonts[font_name:lower()] = nil
     return writeStore(data)
 end

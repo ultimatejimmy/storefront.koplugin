@@ -156,18 +156,18 @@ function StorefrontDetailsDialog:init()
     if not version_str and self.patch then
         version_str = self.patch.sha and ("sha:" .. self.patch.sha:sub(1, 7)) or self.patch.version
     end
-    if not version_str then
+    if not version_str and self.repo then
         version_str = self.repo.latest_version or self.repo.version or self.repo.tag_name or self.repo.release_tag
-    end
-    if not version_str and self.repo.latest_release and type(self.repo.latest_release) == "table" then
-        version_str = self.repo.latest_release.tag_name or self.repo.latest_release.release_tag_name or self.repo.latest_release.name or self.repo.latest_release.version
-    end
-    if not version_str and self.repo.data then
-        if type(self.repo.data.latest_release) == "table" then
-            version_str = self.repo.data.latest_release.tag_name or self.repo.data.latest_release.release_tag_name or self.repo.data.latest_release.name or self.repo.data.latest_release.version
+        if not version_str and self.repo.latest_release and type(self.repo.latest_release) == "table" then
+            version_str = self.repo.latest_release.tag_name or self.repo.latest_release.release_tag_name or self.repo.latest_release.name or self.repo.latest_release.version
         end
-        if not version_str then
-            version_str = self.repo.data.tag_name or self.repo.data.latest_version or self.repo.data.version
+        if not version_str and self.repo.data then
+            if type(self.repo.data.latest_release) == "table" then
+                version_str = self.repo.data.latest_release.tag_name or self.repo.data.latest_release.release_tag_name or self.repo.data.latest_release.name or self.repo.data.latest_release.version
+            end
+            if not version_str then
+                version_str = self.repo.data.tag_name or self.repo.data.latest_version or self.repo.data.version
+            end
         end
     end
 
@@ -179,10 +179,11 @@ function StorefrontDetailsDialog:init()
     if not version_str and self.Storefront then
         if not self.patch and self.Storefront.listInstalledPlugins then
             local installed_plugins = self.Storefront:listInstalledPlugins()
+            local repo_name = self.repo and self.repo.name or ""
             for _, p in ipairs(installed_plugins or {}) do
                 local clean_p = p.dirname:gsub("%.koplugin$", ""):lower()
-                local clean_repo = (self.repo.name or ""):gsub("%.koplugin$", ""):lower()
-                if clean_p == clean_repo or p.dirname:lower() == (self.repo.name or ""):lower() then
+                local clean_repo = repo_name:gsub("%.koplugin$", ""):lower()
+                if (clean_repo ~= "" and clean_p == clean_repo) or (repo_name ~= "" and p.dirname:lower() == repo_name:lower()) then
                     if p.version then
                         version_str = p.version
                         break
@@ -219,7 +220,7 @@ function StorefrontDetailsDialog:init()
 
     if self.patch then
         title_text = self.patch.filename or _("Patch")
-        local repo_name = self.repo.full_name or self.repo.name or ""
+        local repo_name = (self.repo and (self.repo.full_name or self.repo.name)) or ""
         local meta_parts = {}
         if repo_name ~= "" then table.insert(meta_parts, repo_name) end
         if stars > 0 then table.insert(meta_parts, "★ " .. stars_fmt) end
@@ -236,10 +237,12 @@ function StorefrontDetailsDialog:init()
         meta_text = table.concat(meta_parts, "  ·  ")
         desc_text = self.patch.display_path or ""
     else
-        title_text = self.repo.name or self.repo.full_name or _("Repository")
+        title_text = (self.repo and (self.repo.name or self.repo.full_name))
+            or (self.update_item and (self.update_item.name or (self.update_item.plugin and self.update_item.plugin.name)))
+            or _("Repository")
         local meta_parts = {}
-        if owner ~= "" then table.insert(meta_parts, owner) end
-        table.insert(meta_parts, "★ " .. stars_fmt)
+        if owner and owner ~= "" then table.insert(meta_parts, owner) end
+        if stars > 0 then table.insert(meta_parts, "★ " .. stars_fmt) end
         if updated ~= "" and version_str then
             table.insert(meta_parts, string.format("updated %s (%s)", updated, version_str))
         elseif updated ~= "" then
@@ -248,7 +251,7 @@ function StorefrontDetailsDialog:init()
             table.insert(meta_parts, version_str)
         end
         meta_text = table.concat(meta_parts, "  ·  ")
-        desc_text = self.repo.description or ""
+        desc_text = (self.repo and self.repo.description) or (self.update_item and self.update_item.description) or ""
     end
 
     local folder_pill_widget = nil
@@ -272,7 +275,12 @@ function StorefrontDetailsDialog:init()
         end
     end
 
-    local title_face = (self.kind == "font" or self.kind == "fonts") and Font:getFace("cfont", 28) or Font:getFace("NotoSerif-Regular.ttf", 28)
+    local is_font = self.kind == "font"
+        or self.kind == "fonts"
+        or (self.repo and (self.repo.kind == "font" or self.repo.is_font or self.repo.font_family ~= nil))
+        or (self.update_item and (self.update_item.kind == "font" or self.update_item.is_font or self.update_item.font ~= nil))
+
+    local title_face = is_font and Font:getFace("cfont", 28) or Font:getFace("NotoSerif-Regular.ttf", 28)
     local title_label = TextWidget:new{
         text = title_text,
         face = title_face,
@@ -298,17 +306,12 @@ function StorefrontDetailsDialog:init()
     local is_installed = false
     local has_update   = false
 
-    if (self.update_item and (self.update_item.is_installed_item or self.update_item.plugin))
-       or (self.repo and (self.repo.is_installed_item or self.repo.is_installed or self.repo.is_default))
-       or self.kind == "installed" then
-        is_installed = true
-    end
-
-    if self.kind == "font" then
+    if is_font then
+        is_installed = false
         local font_map = InstallStore.listFonts and InstallStore.listFonts() or {}
         local font_name = self.repo and (self.repo.name or self.repo.font_family)
         local font_file = self.repo and self.repo.font_file
-        if font_name and (font_map[font_name] or font_map[font_name:lower()]) then
+        if font_name and (font_map[font_name:lower()] or font_map[font_name]) then
             is_installed = true
         end
         -- Also check filesystem: font may have been manually installed or moved
@@ -319,10 +322,10 @@ function StorefrontDetailsDialog:init()
                 local fonts_root = DataStorage:getDataDir() .. "/fonts"
                 -- Check named subfolder
                 local font_dir = fonts_root .. "/" .. font_name
-                if lfs.attributes(font_dir, "mode") == "directory" then
+                if lfs.attributes(font_dir, "mode") == "directory" and not font_dir:match("%.deleted$") then
                     -- Check if it has at least one font file
                     for f in lfs.dir(font_dir) do
-                        if f:match("%.ttf$") or f:match("%.otf$") then
+                        if (f:match("%.ttf$") or f:match("%.otf$")) and not f:match("%.deleted$") then
                             is_installed = true
                             break
                         end
@@ -331,18 +334,23 @@ function StorefrontDetailsDialog:init()
                 -- Check flat font_file in fonts_root
                 if not is_installed and font_file then
                     local flat_path = fonts_root .. "/" .. font_file
-                    if lfs.attributes(flat_path, "mode") == "file" then
+                    if lfs.attributes(flat_path, "mode") == "file" and not flat_path:match("%.deleted$") then
                         is_installed = true
                     end
                 end
             end
         end
-    elseif self.patch then
+    elseif self.patch or (self.repo and self.repo.kind == "patch") then
         local patch_map = InstallStore.listPatches() or {}
-        if patch_map[self.patch.filename] ~= nil then is_installed = true end
+        if self.patch and patch_map[self.patch.filename] ~= nil then is_installed = true end
     else
+        if (self.update_item and (self.update_item.is_installed_item or self.update_item.plugin))
+           or (self.repo and (self.repo.is_installed_item or self.repo.is_installed or self.repo.is_default))
+           or self.kind == "installed" then
+            is_installed = true
+        end
         local installed_lookup = self.Storefront and self.Storefront.getInstalledLookup and self.Storefront:getInstalledLookup()
-        if installed_lookup then
+        if installed_lookup and self.repo then
             if self.repo.full_name and (installed_lookup[self.repo.full_name] or installed_lookup[self.repo.full_name:lower()]) then
                 is_installed = true
             elseif self.repo.id and installed_lookup["id:" .. tostring(self.repo.id)] then
@@ -355,7 +363,7 @@ function StorefrontDetailsDialog:init()
                 end
             end
         end
-        if not is_installed then
+        if not is_installed and self.repo then
             local install_map = InstallStore.list() or {}
             local repo_name_lower = (self.repo.name or ""):lower()
             local rec = install_map[repo_name_lower] or install_map[self.repo.name]
@@ -392,10 +400,10 @@ function StorefrontDetailsDialog:init()
     local primary_btn_w = action_btn_width - remove_btn_w - sc(12)
 
     local function getInstallRecord()
-        if self.kind == "font" then
+        if is_font then
             local font_map = InstallStore.listFonts and InstallStore.listFonts() or {}
             local font_name = self.repo and (self.repo.name or self.repo.font_family)
-            return font_name and font_map[font_name:lower()]
+            return font_name and (font_map[font_name:lower()] or font_map[font_name])
         elseif self.patch then
             local patch_map = InstallStore.listPatches() or {}
             return patch_map[self.patch.filename]
@@ -420,9 +428,9 @@ function StorefrontDetailsDialog:init()
 
     local function doRemove()
         self:onClose()
-        if self.kind == "font" then
+        if is_font then
             local record = (self.update_item and self.update_item.record) or getInstallRecord()
-            local font_name = self.repo.name or self.repo.font_family
+            local font_name = (self.repo and (self.repo.name or self.repo.font_family)) or (self.update_item and self.update_item.name)
             self.Storefront:deleteFont(font_name, record)
         elseif self.patch then
             local record = (self.update_item and self.update_item.record) or getInstallRecord()
@@ -516,7 +524,7 @@ function StorefrontDetailsDialog:init()
                 toggle_btn.label_widget.fgcolor = Blitbuffer.COLOR_WHITE
             end
             main_action_btn = toggle_btn
-        elseif self.kind == "font" then
+        elseif is_font then
             local remove_btn_w = math.floor(action_btn_width * 0.28)
             local primary_btn_w = action_btn_width - remove_btn_w - sc(12)
 
@@ -624,7 +632,7 @@ function StorefrontDetailsDialog:init()
         end
     else
         main_action_btn = Button:new{
-            text = self.kind == "font" and _("Install Font") or (self.patch and _("Install Patch") or _("Install")),
+            text = is_font and _("Install Font") or (self.patch and _("Install Patch") or _("Install")),
             text_font_size = 18,
             text_font_color = Blitbuffer.COLOR_WHITE,
             background = Blitbuffer.COLOR_BLACK,
@@ -635,7 +643,7 @@ function StorefrontDetailsDialog:init()
             show_parent = self,
             callback = function()
                 self:onClose()
-                if self.kind == "font" then
+                if is_font then
                     self.Storefront:installFontFromRepo(self.repo)
                 elseif self.patch then
                     self.Storefront:installPatchFromRepo(self.repo, self.patch)
@@ -657,7 +665,7 @@ function StorefrontDetailsDialog:init()
     -- -----------------------------------------------------------------------
     -- 4. README / Release Notes Section Tabs & HTML Display
     -- -----------------------------------------------------------------------
-    self.active_tab = self.default_tab or (self.kind == "font" and "sample_text" or (self.kind == "update" and "release_notes" or "readme"))
+    self.active_tab = self.default_tab or (is_font and "sample_text" or (self.kind == "update" and "release_notes" or "readme"))
 
     local readme_w = self.screen_w - sc(24)
 
@@ -700,7 +708,7 @@ function StorefrontDetailsDialog:init()
     end
 
     local function buildTabBar()
-        if self.kind == "font" then
+        if is_font then
             local sample_col = makeTab(_("Sample Text"), true, function() end)
             return HorizontalGroup:new{
                 align = "center",

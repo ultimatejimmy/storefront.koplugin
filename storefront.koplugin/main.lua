@@ -1894,7 +1894,7 @@ local function listInstalledFonts()
         local fonts_root = DataStorage:getDataDir() .. "/fonts"
         if lfs.attributes(fonts_root, "mode") == "directory" then
             for file in lfs.dir(fonts_root) do
-                if file ~= "." and file ~= ".." then
+                if file ~= "." and file ~= ".." and not file:match("%.deleted$") then
                     local p = fonts_root .. "/" .. file
                     local mode = lfs.attributes(p, "mode")
                     if mode == "directory" then
@@ -1904,7 +1904,7 @@ local function listInstalledFonts()
                             -- Ensure folder contains at least one font file
                             local has_font = false
                             for subf in lfs.dir(p) do
-                                if subf:match("%.ttf$") or subf:match("%.otf$") then
+                                if (subf:match("%.ttf$") or subf:match("%.otf$")) and not subf:match("%.deleted$") then
                                     has_font = true
                                     break
                                 end
@@ -5663,7 +5663,7 @@ function Storefront:_installFontFromRepoInternal(repo)
     showRestartConfirmation(msg)
 end
 
-function Storefront:deleteFont(font_name, record)
+function Storefront:deleteFont(font_name, record, repo_or_file)
     if not font_name or font_name == "" then
         return
     end
@@ -5671,8 +5671,6 @@ function Storefront:deleteFont(font_name, record)
     showDeleteConfirmationDialog(display_name, "font", nil, function()
         local ok, err = pcall(function()
             local fonts_root = DataStorage:getDataDir() .. "/fonts"
-            local font_dir = fonts_root .. "/" .. font_name
-            local ffiutil = require("ffi/util")
             local lfs = require("libs/libkoreader-lfs")
 
             local function safeRename(path)
@@ -5681,19 +5679,48 @@ function Storefront:deleteFont(font_name, record)
                 end
             end
 
-            -- Instead of hard deleting, we rename the files to .deleted to avoid 
-            -- Freetype segfaults on active file descriptors (e.g. if the user scrolls).
-            if lfs.attributes(font_dir, "mode") == "directory" then
-                safeRename(font_dir)
+            local stems = {}
+            local function addStem(str)
+                if str and type(str) == "string" and str ~= "" then
+                    local name_only = str:gsub("%.[^%.]+$", "")
+                    local clean = name_only:lower():gsub("[%s%-_]+", "")
+                    if clean ~= "" then
+                        stems[clean] = true
+                    end
+                end
             end
 
-            if record and record.font_file and record.font_file ~= "" then
-                safeRename(fonts_root .. "/" .. record.font_file)
+            addStem(font_name)
+            if record then
+                addStem(record.font_name)
+                addStem(record.repo)
+                addStem(record.font_file)
             end
-            safeRename(fonts_root .. "/" .. font_name .. ".ttf")
-            safeRename(fonts_root .. "/" .. font_name .. ".otf")
-            safeRename(fonts_root .. "/" .. font_name:gsub("%s+", "_") .. ".ttf")
-            safeRename(fonts_root .. "/" .. font_name:gsub("%s+", "_") .. ".otf")
+            if type(repo_or_file) == "table" then
+                addStem(repo_or_file.name)
+                addStem(repo_or_file.font_family)
+                addStem(repo_or_file.font_file)
+            elseif type(repo_or_file) == "string" then
+                addStem(repo_or_file)
+            end
+
+            if lfs.attributes(fonts_root, "mode") == "directory" then
+                for file in lfs.dir(fonts_root) do
+                    if file ~= "." and file ~= ".." and not file:match("%.deleted$") then
+                        local file_clean = file:gsub("%.[^%.]+$", ""):lower():gsub("[%s%-_]+", "")
+                        local is_match = false
+                        for stem in pairs(stems) do
+                            if file_clean:sub(1, #stem) == stem or stem:sub(1, #file_clean) == file_clean then
+                                is_match = true
+                                break
+                            end
+                        end
+                        if is_match then
+                            safeRename(fonts_root .. "/" .. file)
+                        end
+                    end
+                end
+            end
 
             -- Invalidate font list cache files on disk so next restart rescans correctly.
             -- Do NOT call Font.updateFontList() here — it can crash at C level mid-session.
@@ -5701,6 +5728,7 @@ function Storefront:deleteFont(font_name, record)
             pcall(os.remove, DataStorage:getDataDir() .. "/cache/fontinfo.dat")
 
             InstallStore.removeFont(font_name)
+            invalidateInstalledPluginsCache()
         end)
 
         if not ok then
@@ -9929,6 +9957,7 @@ function Storefront:showBrowser(kind)
                 self:browserRefresh()
             end
         end,
+        on_search = function() self:showFilterDialog() end,
         on_filter = function() self:browserOpenFilter() end,
         on_sort = function() self:browserAdvanceSort() end,
         on_switch_tab = function() self:browserSwitchTab() end,
