@@ -136,6 +136,48 @@ if ok_fl and FontList and not FontList._storefront_filter_installed then
             return names
         end
     end
+
+    local orig_saveFontList = FontList.saveFontList
+    if type(orig_saveFontList) == "function" then
+        FontList.saveFontList = function(self, ...)
+            local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
+            if ok_lfs and lfs and lfs.attributes then
+                if self.fontinfo then
+                    for path in pairs(self.fontinfo) do
+                        if not path:find("storefront.koplugin", 1, true) then
+                            if lfs.attributes(path, "mode") ~= "file" then
+                                self.fontinfo[path] = nil
+                            end
+                        end
+                    end
+                end
+                if self.fontlist then
+                    for i = #self.fontlist, 1, -1 do
+                        local path = self.fontlist[i]
+                        if not path:find("storefront.koplugin", 1, true) then
+                            if lfs.attributes(path, "mode") ~= "file" then
+                                table.remove(self.fontlist, i)
+                            end
+                        end
+                    end
+                end
+                if self.fontnames and self.fontinfo then
+                    local valid_families = {}
+                    for path, info in pairs(self.fontinfo) do
+                        if info and info.family then
+                            valid_families[info.family] = true
+                        end
+                    end
+                    for family in pairs(self.fontnames) do
+                        if not valid_families[family] then
+                            self.fontnames[family] = nil
+                        end
+                    end
+                end
+            end
+            return orig_saveFontList(self, ...)
+        end
+    end
 end
 
 local StorefrontListItem = require("storefront_list_item")
@@ -5657,19 +5699,15 @@ function Storefront:_installFontFromRepoInternal(repo)
                                 return a_reg > b_reg
                             end)
 
-                            for _, item in ipairs(entries) do
-                                if font_name:lower():find("opendyslexic") and item.name:lower():find("italic") then
-                                    -- Skip OpenDyslexic italic variants due to upstream OTF macStyle metadata bug
-                                else
-                                    local dst_sub = font_target_dir .. "/" .. item.name
-                                    local parent = dst_sub:match("^(.*)/")
-                                    if parent and parent ~= "" then util.makePath(parent) end
-                                    if reader:extractToPath(item.entry_path, dst_sub) then
-                                        if has_local_fonts then
-                                            copySingleFile(dst_sub, local_font_target_dir .. "/" .. item.name)
-                                        end
-                                        installed_count = installed_count + 1
+                             for _, item in ipairs(entries) do
+                                local dst_sub = font_target_dir .. "/" .. item.name
+                                local parent = dst_sub:match("^(.*)/")
+                                if parent and parent ~= "" then util.makePath(parent) end
+                                if reader:extractToPath(item.entry_path, dst_sub) then
+                                    if has_local_fonts then
+                                        copySingleFile(dst_sub, local_font_target_dir .. "/" .. item.name)
                                     end
+                                    installed_count = installed_count + 1
                                 end
                             end
                             reader:close()
