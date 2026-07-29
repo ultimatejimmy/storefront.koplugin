@@ -26,9 +26,10 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Fetch & Prune Fonts
+      - name: Fetch & Package Fonts
         run: |
           python tools/fetch_new_fonts.py
+          python tools/package_fonts.py
           python tools/prune_plugin_fonts.py
 
       - name: Create Plugin Archive
@@ -41,7 +42,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          files: storefront.koplugin.zip
+          files: |
+            storefront.koplugin.zip
+            fonts/*.zip
           draft: true
           prerelease: ${{ contains(github.ref_name, '-beta') }}
           generate_release_notes: true

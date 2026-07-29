@@ -1,6 +1,9 @@
 name: Build and Deploy Catalog
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch: # Allows manual triggering from Actions tab
 
 permissions:
@@ -24,10 +27,12 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Build Catalog JSON
+      - name: Fetch, Package Fonts & Build Catalog
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          python tools/fetch_new_fonts.py
+          python tools/package_fonts.py
           python tools/build_catalog.py
 
       - name: Setup Pages
