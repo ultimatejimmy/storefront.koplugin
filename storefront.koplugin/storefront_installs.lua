@@ -117,6 +117,9 @@ local function isRecordEqual(a, b)
        and a.pending_download == b.pending_download
        and a.full_installed == b.full_installed
        and a.download_url == b.download_url
+       and a.failed_attempts == b.failed_attempts
+       and a.last_attempt_ts == b.last_attempt_ts
+       and a.download_error == b.download_error
 end
 
 function InstallStore.upsert(plugin_id, record)
