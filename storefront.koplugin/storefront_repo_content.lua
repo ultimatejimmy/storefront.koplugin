@@ -1,7 +1,8 @@
 local DataStorage = require("datastorage")
-local UIManager = require("ui/uimanager")
-local InfoMessage = require("storefront_toast")
-local FileManager = require("apps/filemanager/filemanager")
+local ok_ui, UIManager = pcall(require, "ui/uimanager")
+local ok_toast, InfoMessage = pcall(require, "storefront_toast")
+if not ok_toast then InfoMessage = { show = function() end } end
+local ok_fm, FileManager = pcall(require, "apps/filemanager/filemanager")
 local _ = require("gettext")
 local http = require("socket.http")
 local ltn12 = require("ltn12")

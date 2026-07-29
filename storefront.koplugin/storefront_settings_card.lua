@@ -103,7 +103,7 @@ function StorefrontSettingsCard.show(Storefront)
                 elseif type(icon_arg) == "string" then
                     icon_widget = TextWidget:new{
                         text = icon_arg,
-                        face = Font:getFace("NotoSerif-Regular.ttf", ui_font_size),
+                        face = Font:getFace("cfont", ui_font_size),
                         fgcolor = Blitbuffer.COLOR_BLACK,
                     }
                 end
@@ -131,7 +131,7 @@ function StorefrontSettingsCard.show(Storefront)
             -- Left Text
             local txt = TextBoxWidget:new{
                 text = left_text,
-                face = Font:getFace("NotoSerif-Regular.ttf", ui_font_size),
+                face = Font:getFace("cfont", ui_font_size),
                 fgcolor = Blitbuffer.COLOR_BLACK,
                 width = max_left_w,
                 alignment = "left",
@@ -197,7 +197,7 @@ function StorefrontSettingsCard.show(Storefront)
         local function create_section_header(title)
             local label = TextWidget:new{
                 text = title:upper(),
-                face = Font:getFace("NotoSerif-Regular.ttf", storefront_theme.section_header_font_size or 16),
+                face = Font:getFace("cfont", storefront_theme.section_header_font_size or 16),
                 bold = true,
                 fgcolor = Blitbuffer.COLOR_BLACK,
             }
@@ -219,7 +219,7 @@ function StorefrontSettingsCard.show(Storefront)
         local catalog_mode_label = (catalog_mode == "static") and _("Storefront") or _("Direct GitHub API")
         local catalog_widget = TextWidget:new{
             text = catalog_mode_label,
-            face = Font:getFace("NotoSerif-Regular.ttf", storefront_theme.subtext_font_size or 16),
+            face = Font:getFace("cfont", storefront_theme.subtext_font_size or 16),
             fgcolor = storefront_theme.color_label_dim,
         }
         table.insert(content_vg, create_setting_row(nil, _("Catalog source"), catalog_widget, function()
@@ -313,7 +313,7 @@ end
         local meta_text = ts and ts > 0 and formatDateTime(ts) or _("Never")
         local meta_widget = TextWidget:new{
             text = meta_text,
-            face = Font:getFace("NotoSerif-Regular.ttf", storefront_theme.subtext_font_size or 16),
+            face = Font:getFace("cfont", storefront_theme.subtext_font_size or 16),
             fgcolor = storefront_theme.color_label_dim,
         }
         table.insert(content_vg, create_setting_row("rotate-cw.svg", _("Refresh cache"), meta_widget, function()
@@ -351,7 +351,7 @@ end
         local token_status_text = github_configured and _("Configured ✓") or _("Not set")
         local token_widget = TextWidget:new{
             text = token_status_text,
-            face = Font:getFace("NotoSerif-Regular.ttf", storefront_theme.subtext_font_size or 16),
+            face = Font:getFace("cfont", storefront_theme.subtext_font_size or 16),
             fgcolor = storefront_theme.color_label_dim,
         }
         table.insert(content_vg, create_setting_row(nil, _("GitHub token"), token_widget, function()
@@ -407,7 +407,7 @@ end
         local version_str = StorefrontAboutDialog.getVersion()
         local ver_widget = TextWidget:new{
             text = string.format("v%s", version_str),
-            face = Font:getFace("NotoSerif-Regular.ttf", storefront_theme.subtext_font_size or 16),
+            face = Font:getFace("cfont", storefront_theme.subtext_font_size or 16),
             fgcolor = storefront_theme.color_label_dim,
         }
         table.insert(content_vg, create_setting_row(nil, _("About Storefront"), ver_widget, function()
@@ -421,7 +421,7 @@ end
         local ch_label = (current_ch == "beta") and _("Beta") or _("Stable")
         local ch_widget = TextWidget:new{
             text = ch_label,
-            face = Font:getFace("NotoSerif-Regular.ttf", storefront_theme.subtext_font_size or 16),
+            face = Font:getFace("cfont", storefront_theme.subtext_font_size or 16),
             fgcolor = storefront_theme.color_label_dim,
         }
         table.insert(content_vg, create_setting_row(nil, _("Update channel"), ch_widget, function()
@@ -440,7 +440,7 @@ end
         -- 4. Close Button Row
         local close_text_widget = TextWidget:new{
             text = _("Close"),
-            face = Font:getFace("NotoSerif-Regular.ttf", ui_font_size),
+            face = Font:getFace("cfont", ui_font_size),
             bold = true,
             fgcolor = Blitbuffer.COLOR_BLACK,
         }
@@ -484,7 +484,7 @@ end
         -- Build modal frame
         local card = FrameContainer:new{
             padding = 0,
-            radius = sc(12),
+            radius = storefront_theme.radius_window or 0,
             bordersize = sc(2),
             color = Blitbuffer.COLOR_BLACK,
             background = storefront_theme.color_bg,

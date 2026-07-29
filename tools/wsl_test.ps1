@@ -99,6 +99,13 @@ function Run-Workflow {
         Write-Host "UI Crash Tests FAILED." -ForegroundColor Red
         return $false
     }
+    Write-Host "Running Font System unit tests..."
+    $FontTestCmd = "cd {0}/usr/lib/koreader && env SQUASHFS_ROOT={0} LUA_PATH='{1}/?.lua;./?.lua;./?/init.lua;frontend/?.lua;frontend/?/init.lua;libs/?.lua;common/?.lua;common/?/init.lua;;' ./luajit {1}/tests/storefront_font_test.lua" -f $SquashPath, $WSLDest
+    wsl bash -c `"$FontTestCmd`"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Font System Tests FAILED." -ForegroundColor Red
+        return $false
+    }
     Write-Host "Tests PASSED" -ForegroundColor Green
 
     # 3. Restart KOReader

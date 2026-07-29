@@ -290,7 +290,7 @@ function StorefrontFilterDialog.showInstalledFilter(arg1, arg2)
 
         local card = FrameContainer:new{
             padding = 0,
-            radius = sc(12),
+            radius = storefront_theme.radius_window or 0,
             bordersize = sc(2),
             color = Blitbuffer.COLOR_BLACK,
             background = storefront_theme.color_bg or Blitbuffer.COLOR_WHITE,
@@ -343,7 +343,7 @@ function StorefrontFilterDialog.showCatalogFilter(arg1, arg2)
             UIManager:close(overlay, "ui")
         end
 
-        local title_text = (state.tab == "Patches") and _("Filter & Sort Patches") or _("Filter & Sort Plugins")
+        local title_text = (state.tab == "Patches") and _("Filter & Sort Patches") or ((state.tab == "Fonts") and _("Filter & Sort Fonts") or _("Filter & Sort Plugins"))
         local title_label = TextWidget:new{
             text = title_text,
             face = Font:getFace("NotoSerif-Regular.ttf", title_font_size),
@@ -450,6 +450,28 @@ function StorefrontFilterDialog.showCatalogFilter(arg1, arg2)
 
         table.insert(content_vg, create_section_header(_("Filters")))
 
+        if state.tab == "Fonts" or state.kind == "font" then
+            local cat_presets = { "all", "serif", "sans-serif", "dyslexia", "slab serif" }
+            local cur_cat = state.font_category or "all"
+            local cat_label = (cur_cat == "all") and _("All") or cur_cat:lower()
+            local cat_widget = TextWidget:new{
+                text = cat_label,
+                face = Font:getFace("NotoSerif-Regular.ttf", storefront_theme.subtext_font_size or 16),
+                fgcolor = storefront_theme.color_label_dim,
+            }
+            table.insert(content_vg, create_setting_row(_("Font style"), cat_widget, function()
+                local next_cat = "all"
+                for idx, c in ipairs(cat_presets) do
+                    if cur_cat:lower() == c:lower() then
+                        next_cat = cat_presets[(idx % #cat_presets) + 1]
+                        break
+                    end
+                end
+                state.font_category = next_cat
+                refresh()
+            end))
+        end
+
         -- Min. stars row (presets: 0 -> 10 -> 50 -> 100 -> 500 -> 1000 -> 0)
         local star_presets = { 0, 10, 50, 100, 500, 1000 }
         local cur_stars = tonumber(state.min_stars) or 0
@@ -500,6 +522,7 @@ function StorefrontFilterDialog.showCatalogFilter(arg1, arg2)
         table.insert(content_vg, create_setting_row(_("Reset filters"), reset_widget, function()
             state.search_text = ""
             state.owner = ""
+            state.font_category = "all"
             state.min_stars = 0
             state.sort_mode = "stars_desc"
             state.page = 1

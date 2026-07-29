@@ -21,6 +21,156 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local _ = require("gettext")
 
+local G_bundled_fonts_registered = false
+local function ensureBundledFontsRegistered()
+    if G_bundled_fonts_registered then return end
+    G_bundled_fonts_registered = true
+
+    local ok_fl, FontList = pcall(require, "fontlist")
+    if not ok_fl or not FontList then return end
+
+    local fontlist = FontList:getFontList()
+    if not fontlist then return end
+
+    local existing = {}
+    for _, p in ipairs(fontlist) do
+        existing[p] = true
+    end
+
+    local ok_ds, DataStorage = pcall(require, "datastorage")
+    local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
+    if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
+    local ok_ffi, ffiutil = pcall(require, "ffi/util")
+    local util_mod = require("util")
+
+    local data_dir = (ok_ds and DataStorage and DataStorage.getDataDir) and DataStorage:getDataDir() or ""
+
+    local asset_bases = {
+        "assets/fonts",
+        "plugins/storefront.koplugin/assets/fonts",
+    }
+    if data_dir ~= "" then
+        table.insert(asset_bases, data_dir .. "/plugins/storefront.koplugin/assets/fonts")
+        table.insert(asset_bases, data_dir .. "/plugins/storefront.koplugin/storefront.koplugin/assets/fonts")
+    end
+
+    for _, base in ipairs(asset_bases) do
+        local rp = (ffiutil and ffiutil.realpath) and ffiutil.realpath(base) or base
+        if rp and ok_lfs and lfs and lfs.attributes and lfs.attributes(rp, "mode") == "directory" then
+            util_mod.findFiles(rp, function(path, file, attr)
+                if file:sub(1, 1) == "." then return end
+                local ext = file:lower():match(".+%.([^.]+)") or ""
+                if (ext == "ttf" or ext == "otf") and not existing[path] then
+                    existing[path] = true
+                    table.insert(fontlist, path)
+                end
+            end)
+        end
+    end
+end
+
+local function resolveFontItemFace(e, size)
+    size = size or 22
+    if not (e and (e.kind == "font" or e.is_font)) then
+        return Font:getFace("NotoSerif-Regular.ttf", size)
+    end
+
+    ensureBundledFontsRegistered()
+
+    local font_folder = e.repo_name or e.font_name or e.name or e.font_family or ""
+    local font_family = e.font_family or e.font_name or e.name or ""
+    local font_file = e.font_file or ""
+
+    local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
+    if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
+    local ok_ffi, ffiutil = pcall(require, "ffi/util")
+    local ok_ds, DataStorage = pcall(require, "datastorage")
+    local util_mod = require("util")
+    local data_dir = (ok_ds and DataStorage and DataStorage.getDataDir) and DataStorage:getDataDir() or ""
+
+    local folder_candidates = {}
+    if font_folder ~= "" then table.insert(folder_candidates, font_folder) end
+    if font_family ~= "" and font_family ~= font_folder then table.insert(folder_candidates, font_family) end
+    if e.name and e.name ~= font_folder and e.name ~= font_family then table.insert(folder_candidates, e.name) end
+
+    local search_dirs = {}
+    for _, f_name in ipairs(folder_candidates) do
+        table.insert(search_dirs, "assets/fonts/" .. f_name)
+        table.insert(search_dirs, "plugins/storefront.koplugin/assets/fonts/" .. f_name)
+        if data_dir ~= "" then
+            table.insert(search_dirs, data_dir .. "/plugins/storefront.koplugin/assets/fonts/" .. f_name)
+            table.insert(search_dirs, data_dir .. "/plugins/storefront.koplugin/storefront.koplugin/assets/fonts/" .. f_name)
+            table.insert(search_dirs, data_dir .. "/fonts/" .. f_name)
+        end
+    end
+
+    local loaded_font_path = nil
+
+    for _, dir_path in ipairs(search_dirs) do
+        local rp = (ffiutil and ffiutil.realpath) and ffiutil.realpath(dir_path) or dir_path
+        if rp and ok_lfs and lfs and lfs.attributes and lfs.attributes(rp, "mode") == "directory" then
+            if font_file ~= "" then
+                local exact_p = rp .. "/" .. font_file
+                if lfs.attributes(exact_p, "mode") == "file" then
+                    loaded_font_path = exact_p
+                    break
+                end
+            end
+
+            local fallback_path = nil
+            for file in lfs.dir(rp) do
+                if file ~= "." and file ~= ".." and (file:match("%.ttf$") or file:match("%.otf$")) then
+                    local lfile = file:lower()
+                    local full_file_p = rp .. "/" .. file
+                    if lfile:find("regular") then
+                        loaded_font_path = full_file_p
+                        break
+                    elseif not lfile:find("italic") and not lfile:find("bold") and not lfile:find("oblique") then
+                        fallback_path = full_file_p
+                    elseif not fallback_path then
+                        fallback_path = full_file_p
+                    end
+                end
+            end
+
+            if loaded_font_path then break end
+            if fallback_path then
+                loaded_font_path = fallback_path
+                break
+            end
+        end
+    end
+
+    local face
+    if loaded_font_path and util_mod and util_mod.splitFilePathName then
+        local _, filename = util_mod.splitFilePathName(loaded_font_path)
+        if filename then
+            local ok, f = pcall(Font.getFace, Font, filename, size)
+            if ok and f then face = f end
+        end
+        if not face then
+            local ok, f = pcall(Font.getFace, Font, loaded_font_path, size)
+            if ok and f then face = f end
+        end
+    end
+
+    if not face and font_file ~= "" then
+        local ok, f = pcall(Font.getFace, Font, font_file, size)
+        if ok and f then face = f end
+    end
+
+    if not face and font_family ~= "" then
+        local ok, f = pcall(Font.getFace, Font, font_family, size)
+        if ok and f then face = f end
+    end
+
+    if not face then
+        face = Font:getFace("NotoSerif-Regular.ttf", size)
+    end
+
+    return face
+end
+
 local StorefrontListItem = InputContainer:extend{
     align = "left",
     entry = nil,
@@ -189,7 +339,8 @@ function StorefrontListItem:init()
         local text_w = content_inner - right_reserve
 
         -- Line 1: Name
-        local name_face = Font:getFace("cfont", 22)
+
+        local name_face = (entry.kind == "font" or entry.is_font) and resolveFontItemFace(entry, 22) or Font:getFace("NotoSerif-Regular.ttf", 22)
         local name_w = TextWidget:new{
             text = name_text,
             face = name_face,
@@ -209,7 +360,7 @@ function StorefrontListItem:init()
             if owner_text ~= "" then table.insert(meta_parts, owner_text) end
             if stars_text ~= "" and stars_text ~= "0" then table.insert(meta_parts, "★ " .. stars_text) end
             if updated_text ~= "" then table.insert(meta_parts, updated_text) end
-            if entry.kind_label then table.insert(meta_parts, entry.kind_label) end
+            if entry.kind_label then table.insert(meta_parts, (entry.kind == "font" or entry.is_font) and entry.kind_label:lower() or entry.kind_label) end
             meta_text = table.concat(meta_parts, "  ·  ")
         end
 

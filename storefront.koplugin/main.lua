@@ -50,6 +50,7 @@ local R = {
     lfs = require("libs/libkoreader-lfs"),
     json = require("json"),
     logger = require("logger"),
+    StorefrontListItem = require("storefront_list_item"),
     StorefrontLogger = require("storefront_logger"),
 }
 R.Input = R.Device.input
@@ -331,7 +332,7 @@ function Storefront:showConfirmDialog(opts)
 
     local card = FrameContainer:new{
         padding = card_padding,
-        radius = storefront_theme.radius_window or sc(12),
+        radius = storefront_theme.radius_window or 0,
         bordersize = card_border,
         color = Blitbuffer.COLOR_BLACK,
         background = storefront_theme.color_bg or Blitbuffer.COLOR_WHITE,
@@ -418,7 +419,7 @@ local function showFetchingProgress(message)
 
     local card = FrameContainer:new{
         padding = sc(6),
-        radius = storefront_theme.radius_window or sc(12),
+        radius = storefront_theme.radius_window or 0,
         bordersize = storefront_theme.border_window or sc(2),
         color = Blitbuffer.COLOR_BLACK,
         background = storefront_theme.color_bg or Blitbuffer.COLOR_WHITE,
@@ -617,7 +618,7 @@ local function showDeleteConfirmationDialog(display_name, is_plugin, plugin_inst
 
     local card = FrameContainer:new{
         padding = sc(6),
-        radius = storefront_theme.radius_window or sc(12),
+        radius = storefront_theme.radius_window or 0,
         bordersize = storefront_theme.border_window or sc(2),
         color = Blitbuffer.COLOR_BLACK,
         background = storefront_theme.color_bg or Blitbuffer.COLOR_WHITE,
@@ -1793,10 +1794,12 @@ end
 
 local G_installed_plugins_cache = nil
 local G_installed_patches_cache = nil
+local G_installed_fonts_cache = nil
 
 local function invalidateInstalledPluginsCache()
     G_installed_plugins_cache = nil
     G_installed_patches_cache = nil
+    G_installed_fonts_cache = nil
 end
 
 function Storefront:invalidateInstalledPluginsCache()
@@ -1864,6 +1867,10 @@ function Storefront:listInstalledPatches()
 end
 
 local function listInstalledFonts()
+    local generation = InstallStore.getGeneration and InstallStore.getGeneration() or 0
+    if G_installed_fonts_cache and G_installed_fonts_cache.generation == generation then
+        return G_installed_fonts_cache.fonts
+    end
     local font_map = InstallStore.listFonts and InstallStore.listFonts() or {}
     local result = {}
     local seen = {}
@@ -1915,6 +1922,10 @@ local function listInstalledFonts()
         end
     end
 
+    G_installed_fonts_cache = {
+        generation = generation,
+        fonts = result,
+    }
     return result
 end
 
@@ -5229,11 +5240,271 @@ function Storefront:installFontFromRepo(repo)
     self:_installFontFromRepoInternal(repo)
 end
 
+local function downloadFileToPath(url, target_path)
+    if not url or url == "" then
+        StorefrontLogger.err("downloadFileToPath: empty URL")
+        return false
+    end
+
+    local current_url = url
+    local max_redirects = 5
+    local redirect_count = 0
+
+    local socketutil = require("socketutil")
+    local ltn12 = require("ltn12")
+
+    StorefrontLogger.info(string.format("downloadFileToPath: downloading from %s", url))
+
+    while redirect_count < max_redirects do
+        local response_body = {}
+        local is_https = current_url:match("^https://") ~= nil
+        local http_req
+        if is_https then
+            local ok, https = pcall(require, "ssl.https")
+            if ok and https then http_req = https end
+        end
+        if not http_req then http_req = require("socket.http") end
+
+        socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+
+        local params = {
+            url = current_url,
+            method = "GET",
+            headers = {
+                ["User-Agent"] = "Mozilla/5.0 (compatible; KOReader-Storefront/1.0)",
+            },
+            sink = ltn12.sink.table(response_body),
+        }
+        if not is_https then params.redirect = true end
+
+        local ok_pcall, req_ok, code, headers_res = pcall(http_req.request, params)
+        socketutil:reset_timeout()
+
+        local res_code = tonumber(code) or 0
+        StorefrontLogger.info(string.format("downloadFileToPath: ok=%s, req_ok=%s, code=%d, url=%s", tostring(ok_pcall), tostring(req_ok), res_code, current_url))
+
+        if ok_pcall and req_ok and (res_code == 301 or res_code == 302 or res_code == 303 or res_code == 307 or res_code == 308) then
+            local location = (type(headers_res) == "table") and (headers_res.location or headers_res.Location)
+            StorefrontLogger.info(string.format("downloadFileToPath: redirecting (%d) to %s", res_code, tostring(location)))
+            if location and location ~= "" then
+                current_url = location
+                redirect_count = redirect_count + 1
+            else
+                StorefrontLogger.warn("downloadFileToPath: redirect without location header")
+                break
+            end
+        elseif ok_pcall and req_ok and res_code == 200 then
+            local target = io.open(target_path, "wb")
+            if not target then
+                StorefrontLogger.err("downloadFileToPath: failed to open target file for writing: " .. tostring(target_path))
+                return false
+            end
+            local total_bytes = 0
+            for _, chunk in ipairs(response_body) do
+                target:write(chunk)
+                total_bytes = total_bytes + #chunk
+            end
+            target:close()
+            StorefrontLogger.info(string.format("downloadFileToPath: SUCCESS downloaded %d bytes to %s", total_bytes, target_path))
+            return true
+        else
+            StorefrontLogger.warn(string.format("downloadFileToPath: HTTP request failed, code=%d, err=%s", res_code, tostring(req_ok)))
+            break
+        end
+    end
+
+    return false
+end
+
+local function isNetworkOnline()
+    local ok_nm, NetworkMgr = pcall(require, "ui/network/manager")
+    if ok_nm and NetworkMgr then
+        if type(NetworkMgr.isOnline) == "function" then
+            local online = NetworkMgr:isOnline()
+            if online == true or online == 1 then return true end
+        end
+        if type(NetworkMgr.isWifiOn) == "function" and NetworkMgr:isWifiOn() then return true end
+        if type(NetworkMgr.isConnected) == "function" and NetworkMgr:isConnected() then return true end
+    end
+    -- On desktop emulator / non-Kindle platform, NetworkMgr:isOnline() is false/nil.
+    -- Fallback to true so remote HTTP requests can execute (they will handle failure gracefully).
+    return true
+end
+
+function Storefront:syncPendingFontDownloads()
+    if not isNetworkOnline() then
+        return
+    end
+
+    local now = os.time()
+    local font_map = InstallStore.listFonts() or {}
+    local pending = {}
+    for font_key, rec in pairs(font_map) do
+        if rec and rec.pending_download then
+            local font_name = rec.font_name or rec.repo or font_key
+            local last_attempt = rec.last_attempt_ts or 0
+            local failed_attempts = rec.failed_attempts or 0
+
+            -- If failed 3+ times, stop retrying automatically to avoid hammering the network
+            if failed_attempts >= 3 then
+                rec.pending_download = false
+                rec.download_error = "HTTP download failed after 3 attempts"
+                InstallStore.upsertFont(font_name, rec)
+                goto continue_pending
+            end
+
+            -- Require at least 1 hour (3600s) cooldown between failed retries
+            if last_attempt > 0 and (now - last_attempt) < 3600 then
+                goto continue_pending
+            end
+
+            local download_url = rec.download_url
+            -- Migrate legacy raw GitHub URLs or missing URLs to canonical catalog URL
+            if not download_url or download_url == ""
+               or download_url:find("raw.githubusercontent.com", 1, true)
+               or download_url:find("github.com/google/fonts/raw", 1, true) then
+                local ok_cache, Cache = pcall(require, "storefront_cache")
+                if ok_cache and Cache then
+                    local cat_repo = Cache.getRepoByName(rec.owner or "", font_name) or Cache.getRepoByName("", font_name)
+                    if cat_repo and cat_repo.download_url then
+                        download_url = cat_repo.download_url
+                        rec.download_url = download_url
+                    end
+                end
+            end
+
+            if download_url and download_url ~= "" then
+                table.insert(pending, rec)
+            end
+        end
+        ::continue_pending::
+    end
+
+    if #pending == 0 then
+        return
+    end
+
+    local lfs = require("libs/libkoreader-lfs")
+    local DataStorage = require("datastorage")
+    local fonts_root = DataStorage:getDataDir() .. "/fonts"
+
+    local function copySingleFile(src_file, dst_file)
+        local sf = io.open(src_file, "rb")
+        if sf then
+            local content = sf:read("*all")
+            sf:close()
+            local df = io.open(dst_file, "wb")
+            if df then
+                df:write(content)
+                df:close()
+                return true
+            end
+        end
+        return false
+    end
+
+    local synced_count = 0
+    for _, rec in ipairs(pending) do
+        local font_name = rec.font_name or rec.repo or ""
+        local download_url = rec.download_url
+        if font_name ~= "" and download_url then
+            local font_target_dir = fonts_root .. "/" .. font_name
+            if lfs.attributes(font_target_dir, "mode") ~= "directory" then
+                lfs.mkdir(font_target_dir)
+            end
+
+            local tmp_path = DataStorage:getDataDir() .. "/cache/Storefront/" .. font_name .. "_download.tmp"
+            local util = require("util")
+            util.makePath(DataStorage:getDataDir() .. "/cache/Storefront")
+
+            rec.last_attempt_ts = os.time()
+            if downloadFileToPath(download_url, tmp_path) then
+                local is_zip = download_url:match("%.zip$") or download_url:match("%.zip%?")
+                local extracted_count = 0
+
+                if is_zip then
+                    local ok_arch, Archiver = pcall(require, "ffi/archiver")
+                    if ok_arch and Archiver then
+                        pcall(function()
+                            local arch = Archiver:new{ file = tmp_path }
+                            if arch then arch:unpack(font_target_dir) end
+                        end)
+                        if lfs.attributes(font_target_dir, "mode") == "directory" then
+                            for f in lfs.dir(font_target_dir) do
+                                if f:match("%.ttf$") or f:match("%.otf$") then
+                                    copySingleFile(font_target_dir .. "/" .. f, fonts_root .. "/" .. f)
+                                    extracted_count = extracted_count + 1
+                                end
+                            end
+                        end
+                    end
+                else
+                    local ext = download_url:match("%.([^%.%?]+)$") or "ttf"
+                    local dst_name = font_name:gsub("%s+", "_") .. "-Regular." .. ext
+                    local dst_sub = font_target_dir .. "/" .. dst_name
+                    local dst_flat = fonts_root .. "/" .. dst_name
+                    copySingleFile(tmp_path, dst_sub)
+                    copySingleFile(tmp_path, dst_flat)
+                    extracted_count = 1
+                end
+
+                os.remove(tmp_path)
+
+                if extracted_count > 0 then
+                    rec.pending_download = false
+                    rec.full_installed = true
+                    rec.failed_attempts = 0
+                    rec.download_error = nil
+                    rec.updated_at = os.time()
+                    InstallStore.upsertFont(font_name, rec)
+                    synced_count = synced_count + 1
+                end
+            else
+                rec.failed_attempts = (rec.failed_attempts or 0) + 1
+                if rec.failed_attempts >= 3 then
+                    rec.pending_download = false
+                    rec.download_error = "HTTP download failed after 3 attempts"
+                    StorefrontLogger.warn(string.format("Font download for %s reached 3 failed attempts; disabling retry.", font_name))
+                else
+                    StorefrontLogger.info(string.format("Font download for %s failed (attempt %d/3); will retry in 1 hour.", font_name, rec.failed_attempts))
+                end
+                InstallStore.upsertFont(font_name, rec)
+            end
+        end
+    end
+
+    if synced_count > 0 then
+        os.remove(DataStorage:getDataDir() .. "/cache/fontlist/fontinfo.dat")
+        os.remove(DataStorage:getDataDir() .. "/cache/fontinfo.dat")
+        local ok_fl, FontList = pcall(require, "fontlist")
+        if ok_fl and FontList then
+            FontList.fontlist = {}
+            FontList.fontinfo = nil
+            FontList.fontnames = {}
+        end
+        local ok_font, Font = pcall(require, "ui/font")
+        if ok_font and Font and type(Font.updateFontList) == "function" then
+            pcall(Font.updateFontList, Font)
+        end
+        StorefrontLogger.info(string.format("Synced %d pending font downloads in background", synced_count))
+    end
+end
+
 function Storefront:_installFontFromRepoInternal(repo)
-    -- Use repo.name as the asset folder key (matches catalog.json and assets/fonts/ subdirs)
-    -- repo.font_family is the display name; repo.name is the folder name.
     local asset_folder_name = repo.name or repo.font_family or repo.full_name
     local font_name = repo.font_family or repo.name or repo.full_name
+    local download_url = repo.download_url
+
+    if not download_url or download_url == "" then
+        local ok_cache, Cache = pcall(require, "storefront_cache")
+        if ok_cache and Cache then
+            local cat_repo = Cache.getRepoByName(repo.owner or "", font_name) or Cache.getRepoByName("", font_name)
+            if cat_repo and cat_repo.download_url then
+                download_url = cat_repo.download_url
+            end
+        end
+    end
+
     if not font_name or font_name == "" or not asset_folder_name or asset_folder_name == "" then
         UIManager:show(InfoMessage:new{ text = _("Missing font metadata."), timeout = 4 })
         return
@@ -5253,33 +5524,6 @@ function Storefront:_installFontFromRepoInternal(repo)
         lfs.mkdir(font_target_dir)
     end
 
-    -- Also check base KOReader ./fonts directory if distinct from DataStorage fonts
-    local base_fonts_root = "fonts"
-    local base_fonts_target = nil
-    if lfs.attributes(base_fonts_root, "mode") == "directory" then
-        local real_data_fonts = ffiutil and ffiutil.realpath and ffiutil.realpath(fonts_root) or fonts_root
-        local real_base_fonts = ffiutil and ffiutil.realpath and ffiutil.realpath(base_fonts_root) or base_fonts_root
-        if real_data_fonts ~= real_base_fonts then
-            base_fonts_target = base_fonts_root
-        end
-    end
-
-    -- Find bundled font source directory or files
-    local info = debug.getinfo(1, "S")
-    local script_dir = info and info.source and info.source:match("^@(.*[/\\])") or ""
-    if script_dir:sub(-1) == "/" or script_dir:sub(-1) == "\\" then
-        script_dir = script_dir:sub(1, -2)
-    end
-
-    local candidate_src_dirs = {}
-    if script_dir ~= "" then
-        table.insert(candidate_src_dirs, script_dir .. "/assets/fonts/" .. asset_folder_name)
-        table.insert(candidate_src_dirs, script_dir .. "/../assets/fonts/" .. asset_folder_name)
-    end
-    table.insert(candidate_src_dirs, DataStorage:getDataDir() .. "/plugins/storefront.koplugin/assets/fonts/" .. asset_folder_name)
-    table.insert(candidate_src_dirs, DataStorage:getDataDir() .. "/plugins/storefront.koplugin/storefront.koplugin/assets/fonts/" .. asset_folder_name)
-    table.insert(candidate_src_dirs, "assets/fonts/" .. asset_folder_name)
-
     local function copySingleFile(src_file, dst_file)
         local sf = io.open(src_file, "rb")
         if sf then
@@ -5295,60 +5539,98 @@ function Storefront:_installFontFromRepoInternal(repo)
         return false
     end
 
-    local copied_files = 0
-    for _, src_dir in ipairs(candidate_src_dirs) do
-        local real_src = (ffiutil and ffiutil.realpath) and ffiutil.realpath(src_dir) or src_dir
-        if not real_src or real_src == "" then real_src = src_dir end
-        if real_src and lfs.attributes(real_src, "mode") == "directory" then
-            for file in lfs.dir(real_src) do
-                if file ~= "." and file ~= ".." and (file:match("%.ttf$") or file:match("%.otf$")) then
-                    local src_file = real_src .. "/" .. file
-                    -- 1. Copy into subfolder (e.g., fonts/FontName/Font.ttf)
-                    local dst_subfolder = font_target_dir .. "/" .. file
-                    if copySingleFile(src_file, dst_subfolder) then
-                        copied_files = copied_files + 1
-                    end
-                    -- 2. Copy flat into fonts_root (e.g., fonts/Font.ttf) so KOReader flat scanners find it directly
-                    local dst_flat = fonts_root .. "/" .. file
-                    copySingleFile(src_file, dst_flat)
+    local installed_count = 0
+    local is_full = false
+    local is_pending = false
 
-                    -- 3. Copy into base KOReader ./fonts directory if distinct
-                    if base_fonts_target then
-                        local dst_base_flat = base_fonts_target .. "/" .. file
-                        copySingleFile(src_file, dst_base_flat)
-                        local base_sub = base_fonts_target .. "/" .. font_name
-                        if lfs.attributes(base_sub, "mode") ~= "directory" then
-                            lfs.mkdir(base_sub)
+    -- 1. Try remote full font download if online
+    if isNetworkOnline() and download_url and download_url ~= "" then
+        local tmp_path = DataStorage:getDataDir() .. "/cache/Storefront/" .. font_name .. "_install.tmp"
+        util.makePath(DataStorage:getDataDir() .. "/cache/Storefront")
+
+        if downloadFileToPath(download_url, tmp_path) then
+            local is_zip = download_url:match("%.zip$") or download_url:match("%.zip%?")
+            if is_zip then
+                local ok_arch, Archiver = pcall(require, "ffi/archiver")
+                if ok_arch and Archiver then
+                    pcall(function()
+                        local arch = Archiver:new{ file = tmp_path }
+                        if arch then arch:unpack(font_target_dir) end
+                    end)
+                    if lfs.attributes(font_target_dir, "mode") == "directory" then
+                        for f in lfs.dir(font_target_dir) do
+                            if f:match("%.ttf$") or f:match("%.otf$") then
+                                copySingleFile(font_target_dir .. "/" .. f, fonts_root .. "/" .. f)
+                                installed_count = installed_count + 1
+                            end
                         end
-                        copySingleFile(src_file, base_sub .. "/" .. file)
                     end
                 end
+            else
+                local ext = download_url:match("%.([^%.%?]+)$") or "ttf"
+                local dst_name = font_name:gsub("%s+", "_") .. "-Regular." .. ext
+                copySingleFile(tmp_path, font_target_dir .. "/" .. dst_name)
+                copySingleFile(tmp_path, fonts_root .. "/" .. dst_name)
+                installed_count = 1
             end
-            if copied_files > 0 then
-                break
+            os.remove(tmp_path)
+            if installed_count > 0 then
+                is_full = true
             end
         end
     end
 
-    if copied_files == 0 then
-        UIManager:show(InfoMessage:new{ text = string.format(_("Bundled font files not found for %s."), font_name), timeout = 5 })
+    -- 2. Fall back to local bundled Regular font copy if offline or download failed
+    if installed_count == 0 then
+        local info = debug.getinfo(1, "S")
+        local script_dir = info and info.source and info.source:match("^@(.*[/\\])") or ""
+        if script_dir:sub(-1) == "/" or script_dir:sub(-1) == "\\" then
+            script_dir = script_dir:sub(1, -2)
+        end
+
+        local candidate_src_dirs = {}
+        if script_dir ~= "" then
+            table.insert(candidate_src_dirs, script_dir .. "/assets/fonts/" .. asset_folder_name)
+            table.insert(candidate_src_dirs, script_dir .. "/../assets/fonts/" .. asset_folder_name)
+        end
+        table.insert(candidate_src_dirs, DataStorage:getDataDir() .. "/plugins/storefront.koplugin/assets/fonts/" .. asset_folder_name)
+        table.insert(candidate_src_dirs, DataStorage:getDataDir() .. "/plugins/storefront.koplugin/storefront.koplugin/assets/fonts/" .. asset_folder_name)
+        table.insert(candidate_src_dirs, "assets/fonts/" .. asset_folder_name)
+
+        for _, src_dir in ipairs(candidate_src_dirs) do
+            local real_src = (ffiutil and ffiutil.realpath) and ffiutil.realpath(src_dir) or src_dir
+            if not real_src or real_src == "" then real_src = src_dir end
+            if real_src and lfs.attributes(real_src, "mode") == "directory" then
+                for file in lfs.dir(real_src) do
+                    if file ~= "." and file ~= ".." and (file:match("%.ttf$") or file:match("%.otf$")) then
+                        local src_file = real_src .. "/" .. file
+                        copySingleFile(src_file, font_target_dir .. "/" .. file)
+                        copySingleFile(src_file, fonts_root .. "/" .. file)
+                        installed_count = installed_count + 1
+                    end
+                end
+                if installed_count > 0 then break end
+            end
+        end
+        if installed_count > 0 then
+            is_pending = (download_url ~= nil and download_url ~= "")
+        end
+    end
+
+    if installed_count == 0 then
+        UIManager:show(InfoMessage:new{ text = string.format(_("Font files not found for %s."), font_name), timeout = 5 })
         return
     end
 
-    -- Invalidate KOReader's font cache files on disk so KOReader rescans fonts on boot
-    local fontinfo_cache1 = DataStorage:getDataDir() .. "/cache/fontlist/fontinfo.dat"
-    local fontinfo_cache2 = DataStorage:getDataDir() .. "/cache/fontinfo.dat"
-    os.remove(fontinfo_cache1)
-    os.remove(fontinfo_cache2)
-
-    -- Invalidate in-memory FontList cache
+    -- Invalidate KOReader font caches
+    os.remove(DataStorage:getDataDir() .. "/cache/fontlist/fontinfo.dat")
+    os.remove(DataStorage:getDataDir() .. "/cache/fontinfo.dat")
     local ok_fl, FontList = pcall(require, "fontlist")
     if ok_fl and FontList then
         FontList.fontlist = {}
         FontList.fontinfo = nil
         FontList.fontnames = {}
     end
-
     local ok_font, Font = pcall(require, "ui/font")
     if ok_font and Font and type(Font.updateFontList) == "function" then
         pcall(Font.updateFontList, Font)
@@ -5359,11 +5641,22 @@ function Storefront:_installFontFromRepoInternal(repo)
         owner = repo.owner,
         repo = repo.name,
         full_name = repo.full_name,
+        download_url = download_url,
+        full_installed = is_full,
+        pending_download = is_pending,
         installed_at = os.time(),
         version = repo.version or "1.0",
     })
 
-    showRestartConfirmation(string.format(_("Installed font \"%s\" (%d file(s)) into KOReader fonts directory."), font_name, copied_files))
+    local msg
+    if is_full then
+        msg = string.format(_("Installed full font family \"%s\" (%d file(s))."), font_name, installed_count)
+    elseif is_pending then
+        msg = string.format(_("Installed Regular font style offline for \"%s\". Full font family queued for download when reconnected."), font_name)
+    else
+        msg = string.format(_("Installed font \"%s\" (%d file(s))."), font_name, installed_count)
+    end
+    showRestartConfirmation(msg)
 end
 
 function Storefront:deleteFont(font_name, record)
@@ -5408,11 +5701,10 @@ function Storefront:deleteFont(font_name, record)
         end
 
         InstallStore.removeFont(font_name)
-        UIManager:show(InfoMessage:new{
-            text = string.format(_("Removed font %s."), font_name),
-            timeout = 5,
-        })
-        self:reopenBrowser()
+        self:reopenBrowser(nil, function()
+            local Toast = require("storefront_toast")
+            Toast.show(string.format(_("Removed font %s."), font_name), 4)
+        end)
     end)
 end
 
@@ -7843,10 +8135,11 @@ function Storefront:loadBrowserStateFromSettings()
         return
     end
     self.browser_state = {
-        kind = decoded.kind == "patch" and "patch" or "plugin",
-        tab = decoded.tab or (decoded.kind == "patch" and "Patches" or "Plugins"),
+        kind = (decoded.kind == "patch" and "patch") or (decoded.kind == "font" and "font") or "plugin",
+        tab = decoded.tab or (decoded.kind == "patch" and "Patches" or (decoded.kind == "font" and "Fonts" or "Plugins")),
         search_text = decoded.search_text or "",
         owner = decoded.owner or "",
+        font_category = decoded.font_category or "all",
         min_stars = tonumber(decoded.min_stars) or 0,
         page = math.max(1, tonumber(decoded.page) or 1),
         scroll_offset = normalizeScrollOffset(decoded.scroll_offset),
@@ -7854,6 +8147,7 @@ function Storefront:loadBrowserStateFromSettings()
         search_in_readme = decoded.search_in_readme == true,
         show_filter_bar_plugins = decoded.show_filter_bar_plugins == true,
         show_filter_bar_patches = decoded.show_filter_bar_patches == true,
+        show_filter_bar_fonts = decoded.show_filter_bar_fonts == true,
         show_filter_bar_installed = decoded.show_filter_bar_installed ~= false,
     }
 end
@@ -7867,6 +8161,7 @@ function Storefront:saveBrowserState()
         tab = self.browser_state.tab or (self.browser_state.kind == "patch" and "Patches" or (self.browser_state.kind == "font" and "Fonts" or "Plugins")),
         search_text = self.browser_state.search_text or "",
         owner = self.browser_state.owner or "",
+        font_category = self.browser_state.font_category or "all",
         min_stars = tonumber(self.browser_state.min_stars) or 0,
         page = math.max(1, tonumber(self.browser_state.page) or 1),
         scroll_offset = normalizeScrollOffset(self.browser_state.scroll_offset),
@@ -7874,6 +8169,7 @@ function Storefront:saveBrowserState()
         search_in_readme = self.browser_state.search_in_readme == true,
         show_filter_bar_plugins = self.browser_state.show_filter_bar_plugins == true,
         show_filter_bar_patches = self.browser_state.show_filter_bar_patches == true,
+        show_filter_bar_fonts = self.browser_state.show_filter_bar_fonts == true,
         show_filter_bar_installed = self.browser_state.show_filter_bar_installed ~= false,
     }
     self.browser_state.scroll_offset = state.scroll_offset
@@ -7894,6 +8190,7 @@ function Storefront:ensureBrowserState()
             tab = "Plugins",
             search_text = "",
             owner = "",
+            font_category = "all",
             min_stars = 0,
             page = 1,
             scroll_offset = nil,
@@ -7901,6 +8198,7 @@ function Storefront:ensureBrowserState()
             search_in_readme = false,
             show_filter_bar_plugins = false,
             show_filter_bar_patches = false,
+            show_filter_bar_fonts = false,
             show_filter_bar_installed = true,
         }
         self:saveBrowserState()
@@ -7913,6 +8211,9 @@ function Storefront:ensureBrowserState()
     end
     if type(self.browser_state.owner) ~= "string" then
         self.browser_state.owner = ""
+    end
+    if type(self.browser_state.font_category) ~= "string" then
+        self.browser_state.font_category = "all"
     end
     self.browser_state.min_stars = tonumber(self.browser_state.min_stars) or 0
     self.browser_state.page = math.max(1, tonumber(self.browser_state.page) or 1)
@@ -7928,6 +8229,9 @@ function Storefront:ensureBrowserState()
     end
     if type(self.browser_state.show_filter_bar_patches) ~= "boolean" then
         self.browser_state.show_filter_bar_patches = false
+    end
+    if type(self.browser_state.show_filter_bar_fonts) ~= "boolean" then
+        self.browser_state.show_filter_bar_fonts = false
     end
     if type(self.browser_state.show_filter_bar_installed) ~= "boolean" then
         self.browser_state.show_filter_bar_installed = true
@@ -7979,6 +8283,14 @@ function Storefront:matchesGeneralFilters(repo, filters)
         end
     end
 
+    local font_cat_filter = normalizedLower(filters.font_category or "")
+    if font_cat_filter ~= "" and font_cat_filter ~= "all" then
+        local repo_cat = normalizedLower(repo.category or "")
+        if repo_cat ~= font_cat_filter then
+            return false
+        end
+    end
+
     local min_stars = tonumber(filters.min_stars) or 0
     if min_stars > 0 then
         local stars = repoStarsValue(repo)
@@ -8011,9 +8323,10 @@ function Storefront:getFilteredDescriptors(kind)
     local rf_key = rf and (rf.kind .. "_" .. (rf.matches_count or 0)) or ""
     local fetched = Cache.getLastFetched and Cache.getLastFetched(kind) or 0
     local gen = InstallStore.getGeneration and InstallStore.getGeneration() or 0
-    local cache_key = string.format("%s|%s|%s|%s|%s|%s|%s|%s|%s|%s",
+    local cache_key = string.format("%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s",
         tostring(kind), tostring(search), tostring(self.browser_state.search_in_readme),
         tostring(self.browser_state.min_stars), tostring(self.browser_state.owner),
+        tostring(self.browser_state.font_category),
         tostring(self.browser_state.sort_mode),
         tostring(self.browser_state.include_zero_star_forks), rf_key, tostring(fetched), tostring(gen))
         
@@ -8391,14 +8704,17 @@ function Storefront:makeRepoMenuItem(repo, installed_lookup)
     local stars_fmt = stars >= 1000 and string.format("%.1fk", stars / 1000):gsub("%.0k", "k") or tostring(stars)
     local badge = is_installed and _("Installed") or nil
     local description = normalizeDescription(repo.description)
-    local owner = getRepoOwner(repo) or ""
-    local updated = getRepoVersionOrDate(repo, installed_lookup)
+    local kind_label
+    if (repo.kind or (self.browser_state and self.browser_state.kind)) == "font" then
+        kind_label = repo.category and repo.category:lower() or _("font")
+    end
 
     return {
         name = repo.name or repo.full_name or _("Repository"),
         kind = repo.kind or (self.browser_state and self.browser_state.kind),
         font_family = repo.font_family,
         font_file = repo.font_file,
+        repo_name = repo.name,
         category = repo.category,
         license = repo.license,
         download_url = repo.download_url,
@@ -8406,6 +8722,7 @@ function Storefront:makeRepoMenuItem(repo, installed_lookup)
         stars_fmt = stars_fmt,
         updated = updated,
         description = description,
+        kind_label = kind_label,
         badge = badge,
         text = formatRepoEntry(repo),
         installed = is_installed,
@@ -8591,11 +8908,14 @@ function Storefront:paginateEntries(items, tab_name)
     for i, entry in ipairs(items) do
         local item_h
         if entry.is_entry then
-            local sample_widget = StorefrontListItem:new{
-                entry = entry,
-                width = item_w,
-            }
-            item_h = sample_widget:getSize().h
+            if not entry._measured_h then
+                local sample_widget = StorefrontListItem:new{
+                    entry = entry,
+                    width = item_w,
+                }
+                entry._measured_h = sample_widget:getSize().h
+            end
+            item_h = entry._measured_h
         elseif entry.is_clear_button then
             item_h = Device.screen:scaleBySize(36)
         else
@@ -8889,7 +9209,7 @@ function Storefront:buildInstalledEntries()
     -- 3. Fonts
     if filter_type == "all" or filter_type == "font" then
         local installed_fonts = listInstalledFonts()
-        for _, font_rec in ipairs(installed_fonts) do
+        for i, font_rec in ipairs(installed_fonts) do
             local font_name = font_rec.font_name or font_rec.repo or ""
             if font_name == "" then goto continue_font end
 
@@ -8911,25 +9231,33 @@ function Storefront:buildInstalledEntries()
                 table.insert(items, {
                     name = font_name,
                     owner = font_rec.owner or "",
-                    stars_fmt = "font",
+                    stars_fmt = (catalog_repo and catalog_repo.stars and tonumber(catalog_repo.stars) and tonumber(catalog_repo.stars) > 0) and tostring(catalog_repo.stars) or nil,
                     updated = formatTimestamp(font_rec.installed_at),
                     mtime = font_rec.installed_at or 0,
                     kind_label = _("Font"),
                     description = (catalog_repo and catalog_repo.description) or "",
+                    badge = font_rec.pending_download and _("Offline Regular") or nil,
                     is_entry = true,
                     is_installed_item = true,
                     is_font = true,
+                    kind = "font",
                     font_name = font_name,
+                    font_family = catalog_repo and catalog_repo.font_family or font_name,
+                    font_file = catalog_repo and catalog_repo.font_file or font_rec.font_file,
                     callback = function()
                         local DetailsDialog = require("storefront_details_dialog")
                         local repo = catalog_repo or {
                             name = font_name,
                             owner = font_rec.owner or "",
                             full_name = font_rec.full_name or font_name,
+                            download_url = font_rec.download_url,
                             description = "",
                             stars = 0,
                             font_family = font_name,
                         }
+                        if not repo.download_url and catalog_repo then
+                            repo.download_url = catalog_repo.download_url
+                        end
                         local details_dialog = DetailsDialog:new{
                             Storefront = self,
                             repo = repo,
@@ -9252,7 +9580,13 @@ function Storefront:browserManageInstalled()
 end
 
 function Storefront:browserOpenFilter()
-    self:showFilterDialog()
+    self:ensureBrowserState()
+    local tab = self.browser_state.tab or "Plugins"
+    if tab == "Installed" then
+        self:showInstalledFilter()
+    else
+        self:showCatalogFilter()
+    end
 end
 
 function Storefront:browserAdvanceSort()
@@ -9317,6 +9651,8 @@ function Storefront:maybeCheckCatalogBackground()
         return
     end
 
+    pcall(function() self:syncPendingFontDownloads() end)
+
     self._last_catalog_check_time = now
 
     local Cache = require("storefront_cache")
@@ -9365,6 +9701,7 @@ function Storefront:showBrowser(kind)
     
     -- Schedule deferred update and catalog background checks AFTER opening UI (zero launch delay)
     UIManager:nextTick(function()
+        pcall(function() self:syncPendingFontDownloads() end)
         pcall(function() self:maybeAutoCheckUpdates() end)
     end)
 
@@ -9378,14 +9715,16 @@ function Storefront:showBrowser(kind)
     local title = _("Storefront")
     local Trapper = require("ui/trapper")
     Trapper:wrap(function()
-    local items, total_pages = self:buildBrowserEntries()
-    local initial_focus = self.browser_focus_hint
-    self.browser_focus_hint = nil
+        local ok, err = pcall(function()
+            local items, total_pages = self:buildBrowserEntries()
+            local initial_focus = self.browser_focus_hint
+            self.browser_focus_hint = nil
 
-    local toolbar_buttons
+            local toolbar_buttons
     local show_plugins_bar = (current_tab == "Plugins" and self.browser_state and self.browser_state.show_filter_bar_plugins == true)
     local show_patches_bar = (current_tab == "Patches" and self.browser_state and self.browser_state.show_filter_bar_patches == true)
-    if show_plugins_bar or show_patches_bar then
+    local show_fonts_bar = (current_tab == "Fonts" and self.browser_state and self.browser_state.show_filter_bar_fonts == true)
+    if show_plugins_bar or show_patches_bar or show_fonts_bar then
         toolbar_buttons = {}
         if (self.browser_state.search_text or "") ~= "" then
             table.insert(toolbar_buttons, {
@@ -9394,10 +9733,17 @@ function Storefront:showBrowser(kind)
                 callback = function() self:showCatalogFilter() end
             })
         end
-        if (self.browser_state.owner or "") ~= "" then
+        if (self.browser_state.owner or "") ~= "" and current_tab ~= "Fonts" then
             table.insert(toolbar_buttons, {
                 id = "owner",
                 text = _("Owner: ") .. self.browser_state.owner,
+                callback = function() self:showCatalogFilter() end
+            })
+        end
+        if current_tab == "Fonts" and self.browser_state.font_category and self.browser_state.font_category ~= "all" then
+            table.insert(toolbar_buttons, {
+                id = "font_style",
+                text = _("Style: ") .. self.browser_state.font_category:lower(),
                 callback = function() self:showCatalogFilter() end
             })
         end
@@ -9465,7 +9811,8 @@ function Storefront:showBrowser(kind)
         end
         local type_label = _("All Types")
         if self.installed_state.filter_type == "plugin" then type_label = _("Plugins")
-        elseif self.installed_state.filter_type == "patch" then type_label = _("Patches") end
+        elseif self.installed_state.filter_type == "patch" then type_label = _("Patches")
+        elseif self.installed_state.filter_type == "font" then type_label = _("Fonts") end
         table.insert(toolbar_buttons, {
             id = "type",
             text = type_label,
@@ -9541,6 +9888,7 @@ function Storefront:showBrowser(kind)
         updates_count = updates_count,
         show_filter_bar_plugins = self.browser_state and self.browser_state.show_filter_bar_plugins == true,
         show_filter_bar_patches = self.browser_state and self.browser_state.show_filter_bar_patches == true,
+        show_filter_bar_fonts = self.browser_state and self.browser_state.show_filter_bar_fonts == true,
         show_filter_bar_installed = self.browser_state and self.browser_state.show_filter_bar_installed ~= false,
         on_toggle_filter_bar = function(tab_name)
             self:toggleFilterBar(tab_name)
@@ -9657,6 +10005,13 @@ function Storefront:showBrowser(kind)
     local refresh_mode = self._browser_refresh_mode_hint or "full"
     self._browser_refresh_mode_hint = nil
     UIManager:setDirty(dialog, refresh_mode)
+        end)
+        if not ok then
+            local InfoMessage = require("ui/widget/infomessage")
+            UIManager:show(InfoMessage:new{
+                text = "Storefront Error:\n" .. tostring(err),
+            })
+        end
     end)
 end
 
@@ -9678,6 +10033,8 @@ function Storefront:toggleFilterBar(tab_name)
         self.browser_state.show_filter_bar_plugins = not self.browser_state.show_filter_bar_plugins
     elseif tab_name == "Patches" then
         self.browser_state.show_filter_bar_patches = not self.browser_state.show_filter_bar_patches
+    elseif tab_name == "Fonts" then
+        self.browser_state.show_filter_bar_fonts = not self.browser_state.show_filter_bar_fonts
     elseif tab_name == "Installed" then
         self.browser_state.show_filter_bar_installed = not (self.browser_state.show_filter_bar_installed ~= false)
     end
@@ -11256,7 +11613,8 @@ function Storefront:refreshCache(kind, callback)
             if catalog_ok then
                 local p_count = Cache.countRepos("plugin")
                 local pt_count = Cache.countRepos("patch")
-                local summary = string.format(_("Catalog updated: %d plugins, %d patches."), p_count, pt_count)
+                local f_count = Cache.countRepos("font")
+                local summary = string.format(_("Catalog updated: %d plugins, %d patches, %d fonts."), p_count, pt_count, f_count)
                 StorefrontSettings:saveSetting("status_text", summary)
                 StorefrontSettings:flush()
                 finishRefresh(true, summary, nil)

@@ -5,7 +5,7 @@
   "stats": {
     "total_plugins": 673,
     "total_patches": 0,
-    "total_fonts": 15
+    "total_fonts": 17
   },
   "fonts": [
     {
@@ -21,7 +21,7 @@
       "license": "SIL Open Font License",
       "stars": 420,
       "stargazers_count": 420,
-      "download_url": "https://github.com/nicoverbruggen/ebook-fonts/raw/main/fonts/Libron.zip",
+      "download_url": "https://ultimatejimmy.github.io/fonts/Libron.zip",
       "html_url": "https://github.com/nicoverbruggen/libron"
     },
     {
@@ -37,7 +37,7 @@
       "license": "SIL Open Font License",
       "stars": 380,
       "stargazers_count": 380,
-      "download_url": "https://github.com/nicoverbruggen/ebook-fonts/raw/main/fonts/Sourcerer.zip",
+      "download_url": "https://ultimatejimmy.github.io/fonts/Sourcerer.zip",
       "html_url": "https://github.com/nicoverbruggen/ebook-fonts"
     },
     {
@@ -53,7 +53,7 @@
       "license": "Open License",
       "stars": 310,
       "stargazers_count": 310,
-      "download_url": "https://github.com/nicoverbruggen/ebook-fonts/raw/main/fonts/Cartisse.zip",
+      "download_url": "https://ultimatejimmy.github.io/fonts/Cartisse.zip",
       "html_url": "https://github.com/nicoverbruggen/cartisse"
     },
     {
@@ -69,7 +69,7 @@
       "license": "SIL Open Font License",
       "stars": 290,
       "stargazers_count": 290,
-      "download_url": "https://github.com/nicoverbruggen/ebook-fonts/raw/main/fonts/NV-Charis.zip",
+      "download_url": "https://ultimatejimmy.github.io/fonts/NV-Charis.zip",
       "html_url": "https://github.com/nicoverbruggen/ebook-fonts"
     },
     {
@@ -85,7 +85,7 @@
       "license": "SIL Open Font License",
       "stars": 350,
       "stargazers_count": 350,
-      "download_url": "https://github.com/nicoverbruggen/ebook-fonts/raw/main/fonts/NV-Garamond.zip",
+      "download_url": "https://ultimatejimmy.github.io/fonts/NV-Garamond.zip",
       "html_url": "https://github.com/nicoverbruggen/nv-garamond"
     },
     {
@@ -101,7 +101,7 @@
       "license": "SIL Open Font License",
       "stars": 210,
       "stargazers_count": 210,
-      "download_url": "https://github.com/nicoverbruggen/ebook-fonts/raw/main/fonts/NV-Jost.zip",
+      "download_url": "https://ultimatejimmy.github.io/fonts/NV-Jost.zip",
       "html_url": "https://github.com/nicoverbruggen/ebook-fonts"
     },
     {
@@ -117,7 +117,7 @@
       "license": "SIL Open Font License",
       "stars": 270,
       "stargazers_count": 270,
-      "download_url": "https://github.com/nicoverbruggen/ebook-fonts/raw/main/fonts/Readerly.zip",
+      "download_url": "https://ultimatejimmy.github.io/fonts/Readerly.zip",
       "html_url": "https://github.com/nicoverbruggen/readerly"
     },
     {
@@ -129,11 +129,11 @@
       "owner": "google",
       "full_name": "google/fonts",
       "description": "Created by the Braille Institute to maximize character distinction and legibility for low-vision readers.",
-      "category": "Legibility",
+      "category": "Sans-Serif",
       "license": "SIL Open Font License",
       "stars": 850,
       "stargazers_count": 850,
-      "download_url": "https://github.com/google/fonts/raw/main/ofl/atkinsonhyperlegible/AtkinsonHyperlegible-Regular.ttf",
+      "download_url": "https://ultimatejimmy.github.io/fonts/Atkinson-Hyperlegible.zip",
       "html_url": "https://fonts.google.com/specimen/Atkinson+Hyperlegible"
     },
     {
@@ -149,7 +149,7 @@
       "license": "SIL Open Font License",
       "stars": 920,
       "stargazers_count": 920,
-      "download_url": "https://github.com/google/fonts/raw/main/ofl/literata/Literata-Regular.ttf",
+      "download_url": "https://ultimatejimmy.github.io/fonts/Literata.zip",
       "html_url": "https://fonts.google.com/specimen/Literata"
     },
     {
@@ -165,7 +165,7 @@
       "license": "SIL Open Font License",
       "stars": 1100,
       "stargazers_count": 1100,
-      "download_url": "https://github.com/google/fonts/raw/main/ofl/merriweather/Merriweather-Regular.ttf",
+      "download_url": "https://ultimatejimmy.github.io/fonts/Merriweather.zip",
       "html_url": "https://fonts.google.com/specimen/Merriweather"
     },
     {
@@ -181,7 +181,7 @@
       "license": "SIL Open Font License",
       "stars": 640,
       "stargazers_count": 640,
-      "download_url": "https://github.com/google/fonts/raw/main/ofl/bitter/Bitter-Regular.ttf",
+      "download_url": "https://ultimatejimmy.github.io/fonts/Bitter.zip",
       "html_url": "https://fonts.google.com/specimen/Bitter"
     },
     {
@@ -197,7 +197,7 @@
       "license": "SIL Open Font License",
       "stars": 580,
       "stargazers_count": 580,
-      "download_url": "https://github.com/google/fonts/raw/main/ofl/gentiumbookplus/GentiumBookPlus-Regular.ttf",
+      "download_url": "https://ultimatejimmy.github.io/fonts/Gentium-Plus.zip",
       "html_url": "https://software.sil.org/gentium/"
     },
     {
@@ -213,7 +213,7 @@
       "license": "SIL Open Font License",
       "stars": 730,
       "stargazers_count": 730,
-      "download_url": "https://github.com/google/fonts/raw/main/ofl/lora/Lora-Regular.ttf",
+      "download_url": "https://ultimatejimmy.github.io/fonts/Lora.zip",
       "html_url": "https://fonts.google.com/specimen/Lora"
     },
     {
@@ -229,7 +229,7 @@
       "license": "SIL Open Font License",
       "stars": 3400,
       "stargazers_count": 3400,
-      "download_url": "https://github.com/antijingoist/opendyslexic/raw/master/compiled/OpenDyslexic-Regular.otf",
+      "download_url": "https://ultimatejimmy.github.io/fonts/OpenDyslexic.zip",
       "html_url": "https://opendyslexic.org"
     },
     {
@@ -245,7 +245,7 @@
       "license": "SIL Open Font License",
       "stars": 980,
       "stargazers_count": 980,
-      "download_url": "https://github.com/google/fonts/raw/main/ofl/lexend/Lexend-Regular.ttf",
+      "download_url": "https://ultimatejimmy.github.io/fonts/Lexend.zip",
       "html_url": "https://fonts.google.com/specimen/Lexend"
     },
     {
@@ -261,8 +261,40 @@
       "license": "SIL Open Font License",
       "stars": 410,
       "stargazers_count": 410,
-      "download_url": "https://github.com/nicoverbruggen/ebook-fonts/raw/main/fonts/NV-Newsreader.zip",
+      "download_url": "https://ultimatejimmy.github.io/fonts/NV-Newsreader.zip",
       "html_url": "https://github.com/nicoverbruggen/nv-newsreader"
+    },
+    {
+      "id": 900117,
+      "repo_id": 900117,
+      "name": "Libre Baskerville",
+      "font_family": "Libre Baskerville",
+      "font_file": "LibreBaskerville-Regular.ttf",
+      "owner": "impallari",
+      "full_name": "impallari/Libre-Baskerville",
+      "description": "Web-optimized serif font based on 19th-century Baskerville types, with wide counters and tall x-height for e-ink reading.",
+      "category": "Serif",
+      "license": "SIL Open Font License",
+      "stars": 1400,
+      "stargazers_count": 1400,
+      "download_url": "https://ultimatejimmy.github.io/fonts/Libre-Baskerville.zip",
+      "html_url": "https://fonts.google.com/specimen/Libre+Baskerville"
+    },
+    {
+      "id": 900118,
+      "repo_id": 900118,
+      "name": "Merriweather Sans",
+      "font_family": "Merriweather Sans",
+      "font_file": "MerriweatherSans-Regular.ttf",
+      "owner": "sorkintype",
+      "full_name": "sorkintype/Merriweather-Sans",
+      "description": "Semi-condensed sans-serif designed to complement Merriweather, delivering crisp legibility and high contrast on e-paper screens.",
+      "category": "Sans-Serif",
+      "license": "SIL Open Font License",
+      "stars": 650,
+      "stargazers_count": 650,
+      "download_url": "https://ultimatejimmy.github.io/fonts/Merriweather-Sans.zip",
+      "html_url": "https://fonts.google.com/specimen/Merriweather+Sans"
     }
   ]
 }

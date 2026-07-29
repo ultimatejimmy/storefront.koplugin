@@ -228,6 +228,20 @@ def main():
     patches = process_repos(PATCH_QUERIES, is_patch=True)
     
     now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    script_dir = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() else os.getcwd()
+    output_path = os.path.abspath(os.path.join(script_dir, "..", "catalog.json"))
+    
+    # Preserve fonts array if it exists in the current catalog.json
+    existing_fonts = []
+    if os.path.exists(output_path):
+        try:
+            with open(output_path, "r", encoding="utf-8") as f:
+                old_catalog = json.load(f)
+                if "fonts" in old_catalog:
+                    existing_fonts = old_catalog["fonts"]
+        except Exception as e:
+            print(f"Warning: could not read existing catalog to preserve fonts: {e}")
+            
     catalog = {
         "version": 1,
         "generated_at": now_iso,
@@ -235,17 +249,25 @@ def main():
         "stats": {
             "total_plugins": len(plugins),
             "total_patches": len(patches),
+            "total_fonts": len(existing_fonts),
         },
+        "fonts": existing_fonts,
         "plugins": plugins,
         "patches": patches,
     }
     
-    script_dir = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() else os.getcwd()
-    output_path = os.path.abspath(os.path.join(script_dir, "..", "catalog.json"))
-    
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(catalog, f, indent=2, ensure_ascii=False)
         
+    inner_output_path = os.path.abspath(os.path.join(script_dir, "..", "storefront.koplugin", "catalog.json"))
+    if os.path.exists(os.path.dirname(inner_output_path)):
+        try:
+            with open(inner_output_path, "w", encoding="utf-8") as f:
+                json.dump(catalog, f, indent=2, ensure_ascii=False)
+            print(f"Synced catalog.json to inner plugin folder at {inner_output_path}")
+        except Exception as e:
+            print(f"Warning: could not write inner catalog.json: {e}")
+            
     elapsed = time.time() - start_time
     print(f"Successfully generated catalog.json at {output_path} in {elapsed:.2f}s")
     print(f"Plugins: {len(plugins)}, Patches: {len(patches)}")

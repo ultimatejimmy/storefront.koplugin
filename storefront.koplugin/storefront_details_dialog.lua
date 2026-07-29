@@ -272,9 +272,10 @@ function StorefrontDetailsDialog:init()
         end
     end
 
+    local title_face = (self.kind == "font" or self.kind == "fonts") and Font:getFace("cfont", 28) or Font:getFace("NotoSerif-Regular.ttf", 28)
     local title_label = TextWidget:new{
         text = title_text,
-        face = Font:getFace("cfont", 28),
+        face = title_face,
         bold = true,
         fgcolor = Blitbuffer.COLOR_BLACK,
     }

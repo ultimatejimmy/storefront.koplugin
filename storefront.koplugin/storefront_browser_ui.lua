@@ -78,11 +78,12 @@ function StorefrontBrowserDialog:buildTabBar()
         end
 
         local is_active = (self.current_tab == tab_name)
-        local font_face = is_active and Font:getFace("smallinfofontbold", 18) or Font:getFace("smallinfofont", 17)
+        local font_face = Font:getFace("smallinfofont", 18)
         
         local label = TextWidget:new{
             text = tab_name,
             face = font_face,
+            bold = is_active,
             fgcolor = is_active and Blitbuffer.COLOR_BLACK or Blitbuffer.Color8(80),
         }
 
@@ -91,7 +92,8 @@ function StorefrontBrowserDialog:buildTabBar()
         if tab_name == "Updates" and self.updates_count > 0 then
             local badge_inner = TextWidget:new{
                 text = tostring(self.updates_count),
-                face = Font:getFace("smallinfofontbold", 12),
+                face = Font:getFace("smallinfofont", 12),
+                bold = true,
                 fgcolor = Blitbuffer.COLOR_WHITE,
             }
             local badge = FrameContainer:new{
@@ -302,7 +304,7 @@ function StorefrontBrowserDialog:init()
 
     local title_label = TextWidget:new{
         text = self.title or _("Storefront"),
-        face = Font:getFace("NotoSerif-Bold.ttf", 22),
+        face = Font:getFace("cfont", 22),
         bold = true,
         fgcolor = Blitbuffer.COLOR_BLACK,
     }
@@ -445,7 +447,7 @@ function StorefrontBrowserDialog:init()
 
     local page_label = TextWidget:new{
         text = string.format(_("Page %d of %d"), self.page, math.max(1, self.total_pages)),
-        face = Font:getFace("NotoSerif-Regular.ttf", 18),
+        face = Font:getFace("cfont", 18),
         fgcolor = Blitbuffer.COLOR_BLACK,
     }
     

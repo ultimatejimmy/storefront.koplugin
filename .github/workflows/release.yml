@@ -21,6 +21,16 @@ jobs:
         with:
           fetch-depth: 0 # Fetch all history for all tags and branches
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Fetch & Prune Fonts
+        run: |
+          python tools/fetch_new_fonts.py
+          python tools/prune_plugin_fonts.py
+
       - name: Create Plugin Archive
         run: |
           # Package the plugin directory into a zip file
