@@ -108,6 +108,36 @@ local Storefront = WidgetContainer:extend{
 
 require("storefront_updates_ui"):init(Storefront)
 
+-- Filter KOReader's FontList:getFontNames() so preview asset files in
+-- storefront.koplugin/assets/ never bleed into the reader's Book Font Settings Menu.
+local ok_fl, FontList = pcall(require, "fontlist")
+if ok_fl and FontList and not FontList._storefront_filter_installed then
+    FontList._storefront_filter_installed = true
+    local orig_getFontNames = FontList.getFontNames
+    if type(orig_getFontNames) == "function" then
+        FontList.getFontNames = function(self, ...)
+            local names = orig_getFontNames(self, ...)
+            if type(names) == "table" and self.fontinfo then
+                for family in pairs(names) do
+                    local is_only_asset = true
+                    for path, info in pairs(self.fontinfo) do
+                        if info and info.family == family then
+                            if not path:find("storefront.koplugin", 1, true) then
+                                is_only_asset = false
+                                break
+                            end
+                        end
+                    end
+                    if is_only_asset then
+                        names[family] = nil
+                    end
+                end
+            end
+            return names
+        end
+    end
+end
+
 local StorefrontListItem = require("storefront_list_item")
 local StorefrontBrowserDialog = require("storefront_browser_ui")
 
@@ -5341,19 +5371,11 @@ local function purgeFontCacheFiles()
     local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
     local data_dir = DataStorage:getDataDir()
 
-    -- Step 1: Clear FontList from memory first, and neuter its save method
-    -- so KOReader cannot write a stale cache back to disk on shutdown.
+    -- Step 1: Invalidate memory font list state so KOReader rescans fonts
     local ok_fl, FontList = pcall(require, "fontlist")
     if ok_fl and FontList then
-        FontList.fontlist = {}
-        FontList.fontinfo = nil
-        FontList.fontnames = {}
-        -- Prevent KOReader from saving the cleared (or stale) list back on exit
-        if type(FontList.saveFontList) == "function" then
-            FontList.saveFontList = function() end
-        end
-        if type(FontList.updateFontList) == "function" then
-            FontList.updateFontList = function() end
+        if type(FontList.clearCache) == "function" then
+            pcall(FontList.clearCache, FontList)
         end
     end
 
@@ -5504,7 +5526,6 @@ function Storefront:syncPendingFontDownloads()
                         if extracted_count == 0 and lfs.attributes(font_target_dir, "mode") == "directory" then
                             for f in lfs.dir(font_target_dir) do
                                 if f:match("%.ttf$") or f:match("%.otf$") then
-                                    copySingleFile(font_target_dir .. "/" .. f, fonts_root .. "/" .. f)
                                     extracted_count = extracted_count + 1
                                 end
                             end
@@ -5514,9 +5535,7 @@ function Storefront:syncPendingFontDownloads()
                     local ext = download_url:match("%.([^%.%?]+)$") or "ttf"
                     local dst_name = font_name:gsub("%s+", "_") .. "-Regular." .. ext
                     local dst_sub = font_target_dir .. "/" .. dst_name
-                    local dst_flat = fonts_root .. "/" .. dst_name
                     copySingleFile(tmp_path, dst_sub)
-                    copySingleFile(tmp_path, dst_flat)
                     extracted_count = 1
                 end
 
@@ -5621,20 +5640,35 @@ function Storefront:_installFontFromRepoInternal(repo)
                     pcall(function()
                         local reader = Archiver.Reader:new()
                         if reader and reader:open(tmp_path) then
+                            local entries = {}
                             for entry in reader:iterate() do
                                 if entry.mode == "file" then
                                     local f_name = entry.path:match("([^/]+)$") or entry.path
                                     if f_name:match("%.ttf$") or f_name:match("%.otf$") then
-                                        local dst_sub = font_target_dir .. "/" .. f_name
-                                        local dst_flat = fonts_root .. "/" .. f_name
-                                        local parent = dst_sub:match("^(.*)/")
-                                        if parent and parent ~= "" then util.makePath(parent) end
-                                        if reader:extractToPath(entry.path, dst_sub) then
-                                            if has_local_fonts then
-                                                copySingleFile(dst_sub, local_font_target_dir .. "/" .. f_name)
-                                            end
-                                            installed_count = installed_count + 1
+                                        table.insert(entries, { entry_path = entry.path, name = f_name })
+                                    end
+                                end
+                            end
+
+                            -- Prioritize Regular fonts first so KOReader's scanner registers Regular as primary face
+                            table.sort(entries, function(a, b)
+                                local a_reg = a.name:lower():find("regular") and 1 or 0
+                                local b_reg = b.name:lower():find("regular") and 1 or 0
+                                return a_reg > b_reg
+                            end)
+
+                            for _, item in ipairs(entries) do
+                                if font_name:lower():find("opendyslexic") and item.name:lower():find("italic") then
+                                    -- Skip OpenDyslexic italic variants due to upstream OTF macStyle metadata bug
+                                else
+                                    local dst_sub = font_target_dir .. "/" .. item.name
+                                    local parent = dst_sub:match("^(.*)/")
+                                    if parent and parent ~= "" then util.makePath(parent) end
+                                    if reader:extractToPath(item.entry_path, dst_sub) then
+                                        if has_local_fonts then
+                                            copySingleFile(dst_sub, local_font_target_dir .. "/" .. item.name)
                                         end
+                                        installed_count = installed_count + 1
                                     end
                                 end
                             end
@@ -5780,6 +5814,11 @@ function Storefront:deleteFont(font_name, record, repo_or_file)
                     local clean = name_only:lower():gsub("[%s%-_]+", "")
                     if clean ~= "" then
                         stems[clean] = true
+                        for word in name_only:lower():gmatch("[%a%d]+") do
+                            if #word >= 4 and word ~= "font" and word ~= "regular" and word ~= "bold" and word ~= "italic" then
+                                stems[word] = true
+                            end
+                        end
                     end
                 end
             end
@@ -5798,28 +5837,74 @@ function Storefront:deleteFont(font_name, record, repo_or_file)
                 addStem(repo_or_file)
             end
 
-            local root_dirs = { fonts_root }
-            if lfs.attributes("fonts", "mode") == "directory" then
-                table.insert(root_dirs, "fonts")
+            -- Known font family alias map to handle internal FreeType name mismatches
+            local font_family_aliases = {
+                ["bitter"] = { "nv bitter", "bitter", "nv_bitter" },
+                ["nv bitter"] = { "nv bitter", "bitter", "nv_bitter" },
+                ["literata"] = { "nv literata", "literata", "nv_literata" },
+                ["nv literata"] = { "nv literata", "literata", "nv_literata" },
+                ["libre baskerville"] = { "nv basker", "libre baskerville", "librebaskerville", "baskerville", "basker" },
+                ["nv basker"] = { "nv basker", "libre baskerville", "librebaskerville", "baskerville", "basker" },
+                ["gentium plus"] = { "gentium book plus", "gentium plus", "gentiumbookplus", "gentium" },
+                ["gentium book plus"] = { "gentium book plus", "gentium plus", "gentiumbookplus", "gentium" },
+                ["readerly"] = { "readerly", "newsreader" },
+                ["sourcerer"] = { "sourcerer", "source serif" },
+            }
+
+            local low_name = font_name:lower()
+            if font_family_aliases[low_name] then
+                for _, alias in ipairs(font_family_aliases[low_name]) do
+                    addStem(alias)
+                end
             end
-            -- Also check the plugin's bundled assets/fonts/ directory — KOReader scans
-            -- the entire plugins folder recursively for fonts, so bundled copies there
-            -- will appear in the font picker even after the user deletes the font.
-            local plugin_path = self and self.path or ""
-            if plugin_path ~= "" then
-                table.insert(root_dirs, plugin_path .. "/assets/bundled_fonts")
+
+            -- Build list of all absolute font root dirs where this font may have been installed.
+            -- On WSL/desktop, KOReader can scan both DataStorage fonts AND ./fonts in its CWD.
+            -- Resolve all candidate roots to absolute paths to ensure reliable deletion.
+            local root_dirs_seen = {}
+            local root_dirs = {}
+            local function addRootDir(d)
+                if not d or d == "" then return end
+                local abs_d = d
+                local ok_fu, fu = pcall(require, "ffi/util")
+                if ok_fu and fu and fu.realpath then
+                    local rp = fu.realpath(d)
+                    if rp and rp ~= "" then abs_d = rp end
+                end
+                if not root_dirs_seen[abs_d] then
+                    root_dirs_seen[abs_d] = true
+                    table.insert(root_dirs, abs_d)
+                end
             end
-            -- Also clean stale tmp install files from the Storefront cache
+            addRootDir(fonts_root)
+            -- Also check KOReader's working-directory ./fonts
+            local ok_fu2, fu2 = pcall(require, "ffi/util")
+            if ok_fu2 and fu2 and fu2.realpath then
+                local cwd_fonts = fu2.realpath("fonts")
+                addRootDir(cwd_fonts)
+            end
+            addRootDir("fonts")
+            -- Also check classic KOReader home dirs
+            addRootDir("/home/" .. (os.getenv("USER") or os.getenv("LOGNAME") or "") .. "/.config/koreader/fonts")
+            addRootDir(DataStorage:getDataDir() .. "/../fonts")
+
+            -- Clean stale tmp install files from the Storefront cache
             local storefront_cache_dir = DataStorage:getDataDir() .. "/cache/Storefront"
             if lfs.attributes(storefront_cache_dir, "mode") == "directory" then
-                for stem in pairs(stems) do
-                    local tmp = storefront_cache_dir .. "/" .. font_name .. "_install.tmp"
-                    pcall(os.remove, tmp)
-                end
+                local tmp = storefront_cache_dir .. "/" .. font_name .. "_install.tmp"
+                pcall(os.remove, tmp)
             end
 
             for _, root in ipairs(root_dirs) do
                 if lfs.attributes(root, "mode") == "directory" then
+                    -- First try direct target folder
+                    purgePath(root .. "/" .. font_name)
+                    if record and record.font_file and record.font_file ~= "" then
+                        purgePath(root .. "/" .. record.font_file)
+                    end
+                    if type(repo_or_file) == "table" and repo_or_file.font_file and repo_or_file.font_file ~= "" then
+                        purgePath(root .. "/" .. repo_or_file.font_file)
+                    end
                     for file in lfs.dir(root) do
                         if file ~= "." and file ~= ".." then
                             if file:match("%.deleted$") then
@@ -5828,7 +5913,7 @@ function Storefront:deleteFont(font_name, record, repo_or_file)
                                 local file_clean = file:gsub("%.[^%.]+$", ""):lower():gsub("[%s%-_]+", "")
                                 local is_match = false
                                 for stem in pairs(stems) do
-                                    if file_clean:sub(1, #stem) == stem or stem:sub(1, #file_clean) == file_clean then
+                                    if file_clean:sub(1, #stem) == stem or stem:sub(1, #file_clean) == file_clean or file_clean:find(stem, 1, true) or stem:find(file_clean, 1, true) then
                                         is_match = true
                                         break
                                     end
@@ -5842,10 +5927,47 @@ function Storefront:deleteFont(font_name, record, repo_or_file)
                 end
             end
 
+            -- Remove deleted font file paths and names from KOReader's in-memory FontList
+            local ok_fl, FontList = pcall(require, "fontlist")
+            if ok_fl and FontList then
+                if FontList.fontlist then
+                    for stem in pairs(stems) do
+                        for i = #FontList.fontlist, 1, -1 do
+                            local p = FontList.fontlist[i]
+                            local p_clean = p:lower():gsub("[%s%-_]+", "")
+                            if p_clean:find(stem, 1, true) then
+                                table.remove(FontList.fontlist, i)
+                            end
+                        end
+                    end
+                end
+                if FontList.fontinfo then
+                    for stem in pairs(stems) do
+                        for k in pairs(FontList.fontinfo) do
+                            local k_clean = k:lower():gsub("[%s%-_]+", "")
+                            if k_clean:find(stem, 1, true) or stem:find(k_clean, 1, true) then
+                                FontList.fontinfo[k] = nil
+                            end
+                        end
+                    end
+                end
+                if FontList.fontnames then
+                    for stem in pairs(stems) do
+                        for k in pairs(FontList.fontnames) do
+                            local k_clean = k:lower():gsub("[%s%-_]+", "")
+                            if k_clean:find(stem, 1, true) or stem:find(k_clean, 1, true) then
+                                FontList.fontnames[k] = nil
+                            end
+                        end
+                    end
+                end
+            end
+
             -- Invalidate font list cache files on disk so next restart rescans correctly.
             purgeFontCacheFiles()
 
             InstallStore.removeFont(font_name)
+            self._repo_descriptors_cache = nil
             invalidateInstalledPluginsCache()
         end)
 
@@ -8842,7 +8964,28 @@ end
 
 function Storefront:makeRepoMenuItem(repo, installed_lookup)
     local is_installed = false
-    if installed_lookup then
+    local kind = repo.kind or (self.browser_state and self.browser_state.kind)
+    if kind == "font" then
+        local font_name = repo.name or repo.font_family or repo.full_name or ""
+        local clean_name = font_name:lower():gsub("[%s%-_]+", "")
+        local installed_fonts = InstallStore.listFonts() or {}
+        for k, v in pairs(installed_fonts) do
+            if k:lower():gsub("[%s%-_]+", "") == clean_name then
+                is_installed = true
+                break
+            end
+        end
+        if not is_installed and font_name ~= "" then
+            local ok_ds, DataStorage = pcall(require, "datastorage")
+            local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
+            if ok_ds and DataStorage and ok_lfs and lfs and lfs.attributes then
+                local fonts_dir = DataStorage:getDataDir() .. "/fonts/" .. font_name
+                if lfs.attributes(fonts_dir, "mode") == "directory" then
+                    is_installed = true
+                end
+            end
+        end
+    elseif installed_lookup then
         if repo.full_name and (installed_lookup[repo.full_name] or installed_lookup[repo.full_name:lower()]) then
             is_installed = true
         elseif repo.id and installed_lookup["id:" .. tostring(repo.id)] then
@@ -11841,13 +11984,12 @@ function Storefront:init()
         end
     end
 
-    -- Rename any raw .ttf/.otf files inside plugin assets to .asset so KOReader's
-    -- core font scanner ignores them and does not register them into the Book Font menu.
+    -- Ensure any .asset files in plugin assets are restored to standard .ttf/.otf extension
     local asset_dir_candidates = {
-        plugin_dir .. "/assets/bundled_fonts",
         plugin_dir .. "/assets/fonts",
-        plugin_dir .. "/storefront.koplugin/assets/bundled_fonts",
+        plugin_dir .. "/assets/bundled_fonts",
         plugin_dir .. "/storefront.koplugin/assets/fonts",
+        plugin_dir .. "/storefront.koplugin/assets/bundled_fonts",
     }
     for _, a_dir in ipairs(asset_dir_candidates) do
         if lfs_mod.attributes(a_dir, "mode") == "directory" then
@@ -11856,8 +11998,9 @@ function Storefront:init()
                     local f_path = a_dir .. "/" .. font_folder
                     if lfs_mod.attributes(f_path, "mode") == "directory" then
                         for item in lfs_mod.dir(f_path) do
-                            if item:match("%.ttf$") or item:match("%.otf$") then
-                                pcall(os.rename, f_path .. "/" .. item, f_path .. "/" .. item .. ".asset")
+                            if item:match("%.asset$") then
+                                local restored_name = item:gsub("%.asset$", "")
+                                pcall(os.rename, f_path .. "/" .. item, f_path .. "/" .. restored_name)
                             end
                         end
                     end

@@ -139,8 +139,8 @@
     {
       "id": 900109,
       "repo_id": 900109,
-      "name": "Literata",
-      "font_family": "Literata",
+      "name": "NV Literata",
+      "font_family": "NV Literata",
       "font_file": "NV_Literata-Regular.ttf",
       "owner": "google",
       "full_name": "google/fonts",
@@ -171,8 +171,8 @@
     {
       "id": 900111,
       "repo_id": 900111,
-      "name": "Bitter",
-      "font_family": "Bitter",
+      "name": "NV Bitter",
+      "font_family": "NV Bitter",
       "font_file": "NV_Bitter-Regular.ttf",
       "owner": "solmatas",
       "full_name": "solmatas/Bitter",
@@ -267,8 +267,8 @@
     {
       "id": 900117,
       "repo_id": 900117,
-      "name": "Libre Baskerville",
-      "font_family": "Libre Baskerville",
+      "name": "NV Basker",
+      "font_family": "NV Basker",
       "font_file": "LibreBaskerville-Regular.ttf",
       "owner": "impallari",
       "full_name": "impallari/Libre-Baskerville",

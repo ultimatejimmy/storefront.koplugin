@@ -124,6 +124,19 @@ local function resolveFontItemFace(e, size)
     -- to Font:getFace() as they may resolve through stale FreeType cache entries
     -- pointing to deleted files, causing unrecoverable C-level crashes.
     if loaded_font_path and ok_lfs and lfs and lfs.attributes and lfs.attributes(loaded_font_path, "mode") == "file" then
+        local ok_fl, FontList = pcall(require, "fontlist")
+        if ok_fl and FontList and FontList.getFontList then
+            local fl = FontList:getFontList()
+            if fl then
+                local found = false
+                for _, p in ipairs(fl) do
+                    if p == loaded_font_path then found = true; break end
+                end
+                if not found then
+                    table.insert(fl, loaded_font_path)
+                end
+            end
+        end
         local ok, f = pcall(Font.getFace, Font, loaded_font_path, size)
         if ok and f then face = f end
     end
@@ -321,12 +334,12 @@ function StorefrontListItem:init()
         local text_w = content_inner - right_reserve
 
         -- Line 1: Name
-
-        local name_face = (entry.kind == "font" or entry.is_font) and resolveFontItemFace(entry, 22) or Font:getFace("NotoSerif-Regular.ttf", 22)
+        local is_font_item = (entry.kind == "font" or entry.is_font)
+        local name_face = is_font_item and resolveFontItemFace(entry, 22) or Font:getFace("NotoSerif-Regular.ttf", 22)
         local name_w = TextWidget:new{
             text = name_text,
             face = name_face,
-            bold = true,
+            bold = not is_font_item,
             fgcolor = text_color,
             max_width = text_w,
         }
