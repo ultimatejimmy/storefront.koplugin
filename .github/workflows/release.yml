@@ -44,7 +44,6 @@ jobs:
           tag_name: ${{ github.ref_name }}
           files: |
             storefront.koplugin.zip
-            fonts/*.zip
           draft: true
           prerelease: ${{ contains(github.ref_name, '-beta') }}
           generate_release_notes: true
