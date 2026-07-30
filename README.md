@@ -4,7 +4,7 @@
 ![Status](https://img.shields.io/badge/status-active-brightgreen.svg)
 [![Liberapay](https://img.shields.io/liberapay/receives/ultimatejimmy.svg?logo=liberapay)](https://liberapay.com/ultimatejimmy)
 
-Discover, install, and update community-created KOReader plugins and user patches without leaving your device. 
+Discover, install, and update community-created KOReader plugins, user patches, and fonts without leaving your device. 
 
 Storefront surfaces a curated list of plugins and patches from GitHub with filtering, sorting, and install flows designed to feel native on e-ink hardware.
 
@@ -12,12 +12,13 @@ Storefront surfaces a curated list of plugins and patches from GitHub with filte
 
 ## Key Capabilities
 
-- **Unified browser** for both plugins and user patches with persistent filters and paging.
+- **Unified browser** for plugins, patches, and fonts with persistent filters and paging.
 - **Offline-friendly cache** stored under `data/cache/Storefront` so existing results remain accessible when you lose connectivity.
 - **Per-entry README viewer** that fetches `README.md` directly from GitHub and displays it in the plugin.
-- **Install/update pipeline** that handles `.koplugin` archives, verifies metadata, and copies files to `data/plugins` or `data/patches` accordingly.
+- **Install/update pipeline** that handles `.koplugin` archives, verifies metadata, and copies files to the correct locations.
 - **Update tracking** for installed plugins and numbered patch files, complete with SHA comparisons and refreshable summaries.
-- **Versions tab** showing all published releases for any plugin or patch, with per-version install, ignore, and pre-release filtering.
+- **Versions tab** showing all published releases for any plugin or patch, with per-version installation, ignoring, and pre-release filtering.
+- **Multilingual**: Available in English, German, French, Spanish, Brazilian Portuguese, Russian, Ukrainian, Turkish, Simplified Chinese, Dutch, Hungarian, Polish, Indonesian, Arabic, Italian, Serbian, and Japanese.
 - **Optional authentication** through a GitHub Personal Access Token (PAT) to increase API rate limits.
 
 ## Screenshots
