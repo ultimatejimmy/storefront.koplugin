@@ -5,6 +5,8 @@ if not ok_toast then InfoMessage = { show = function() end } end
 local ok_fm, FileManager = pcall(require, "apps/filemanager/filemanager")
 local _ = require("gettext")
 local http = require("socket.http")
+local ok_https, https = pcall(require, "ssl.https")
+if not ok_https then https = http end
 local ltn12 = require("ltn12")
 local util = require("util")
 local logger = require("logger")
@@ -69,70 +71,141 @@ local CONTENT_TYPE_EXT = {
 -- turn out to be SVG (MuPDF's HTML box can't render them, whatever the
 -- extension) are rejected -- this is the only reliable way to catch SVGs
 -- served through camo, whose proxy URLs never contain ".svg".
+local USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+
 local function downloadImage(url, dest, max_redirects)
     max_redirects = max_redirects or 5
     if max_redirects <= 0 then return false end
-    local f, err = io.open(dest, "wb")
-    if not f then return false end
-    local _, code, headers = http.request{
-        url = url,
-        sink = ltn12.sink.file(f),
-        headers = {
-            ["User-Agent"] = "KOReader-Storefront",
-        },
-        redirect = false,
-    }
-    code = tonumber(code)
-    if code == 200 then
-        local content_type = (headers and (headers["content-type"] or headers["Content-Type"]) or ""):lower()
-        if content_type:find("svg", 1, true) then
-            os.remove(dest)
-            return false
-        end
-        local mapped_ext = CONTENT_TYPE_EXT[content_type:match("^[^;%s]+") or ""]
-        if mapped_ext then
-            local current_ext = dest:match("%.([%w]+)$")
-            if current_ext and current_ext:lower() ~= mapped_ext then
-                local new_dest = dest:gsub("%.[%w]+$", "." .. mapped_ext)
-                os.remove(new_dest)
-                if os.rename(dest, new_dest) then
-                    return true, new_dest
-                end
-            end
-        end
-        return true, dest
-    elseif (code == 301 or code == 302 or code == 303 or code == 307 or code == 308) and headers and headers.location then
-        os.remove(dest)
-        local new_url = headers.location
-        if not new_url:match("^https?://") then
-            local host = url:match("^(https?://[^/]+)")
-            if host then
-                if new_url:sub(1,1) == "/" then
-                    new_url = host .. new_url
-                else
-                    new_url = host .. "/" .. new_url
-                end
-            end
-        end
-        return downloadImage(new_url, dest, max_redirects - 1)
-    else
-        os.remove(dest)
+    dest = dest:gsub("\\", "/")
+
+    -- Clean HTML tags from URL if any got through
+    url = url:gsub("<[^>]+>", "")
+
+    -- Do not attempt to download directory paths like .../wiki/img or .../img
+    local clean_check = url:lower():gsub("%?.*$", "")
+    if clean_check:match("/img$") or clean_check:match("/images$") or clean_check:match("/wiki$") then
         return false
     end
+
+    local urls_to_try = { url }
+    local w_owner, w_repo, w_path = url:match("^https?://raw%.githubusercontent%.com/wiki/([^/]+)/([^/]+)/(.+)$")
+    if not w_owner then w_owner, w_repo, w_path = url:match("^https?://github%.com/([^/]+)/([^/]+)/wiki/(.+)$") end
+
+    if w_owner and w_repo and w_path then
+        table.insert(urls_to_try, string.format("https://raw.githubusercontent.com/wiki/%s/%s/%s", w_owner, w_repo, w_path))
+        table.insert(urls_to_try, string.format("https://github.com/%s/%s/wiki/%s", w_owner, w_repo, w_path))
+        table.insert(urls_to_try, string.format("https://raw.githubusercontent.com/%s/%s/main/%s", w_owner, w_repo, w_path))
+        table.insert(urls_to_try, string.format("https://raw.githubusercontent.com/%s/%s/master/%s", w_owner, w_repo, w_path))
+        table.insert(urls_to_try, string.format("https://github.com/%s/%s/raw/main/%s", w_owner, w_repo, w_path))
+        table.insert(urls_to_try, string.format("https://github.com/%s/%s/raw/master/%s", w_owner, w_repo, w_path))
+    else
+        local r_owner, r_repo, r_branch, r_path = url:match("^https?://raw%.githubusercontent%.com/([^/]+)/([^/]+)/([^/]+)/(.+)$")
+        if not r_owner then r_owner, r_repo, r_branch, r_path = url:match("^https?://github%.com/([^/]+)/([^/]+)/raw/([^/]+)/(.+)$") end
+        if not r_owner then r_owner, r_repo, r_branch, r_path = url:match("^https?://github%.com/([^/]+)/([^/]+)/blob/([^/]+)/(.+)$") end
+
+        if r_owner and r_repo and r_branch and r_path then
+            table.insert(urls_to_try, string.format("https://raw.githubusercontent.com/wiki/%s/%s/%s", r_owner, r_repo, r_path))
+            table.insert(urls_to_try, string.format("https://github.com/%s/%s/wiki/%s", r_owner, r_repo, r_path))
+            table.insert(urls_to_try, string.format("https://raw.githubusercontent.com/%s/%s/main/%s", r_owner, r_repo, r_path))
+            table.insert(urls_to_try, string.format("https://raw.githubusercontent.com/%s/%s/master/%s", r_owner, r_repo, r_path))
+        end
+    end
+
+    for _, current_url in ipairs(urls_to_try) do
+        local f, err = io.open(dest, "wb")
+        if f then
+            local file_sink = ltn12.sink.file(f)
+            local res, code, headers = http.request{
+                url = current_url,
+                sink = file_sink,
+                headers = {
+                    ["User-Agent"] = USER_AGENT,
+                    ["Accept"] = "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+                },
+                redirect = false,
+            }
+            pcall(function() file_sink(nil) end)
+            pcall(function() f:close() end)
+
+            code = tonumber(code)
+            logger.info("Storefront image download:", current_url, "code=", code)
+
+            if code == 200 then
+                local content_type = (headers and (headers["content-type"] or headers["Content-Type"]) or ""):lower()
+                if content_type:find("svg", 1, true) then
+                    os.remove(dest)
+                    return false
+                end
+                local mapped_ext = CONTENT_TYPE_EXT[content_type:match("^[^;%s]+") or ""]
+                if mapped_ext then
+                    local current_ext = dest:match("%.([%w]+)$")
+                    if current_ext and current_ext:lower() ~= mapped_ext then
+                        local new_dest = dest:gsub("%.[%w]+$", "." .. mapped_ext)
+                        os.remove(new_dest)
+                        if os.rename(dest, new_dest) then
+                            return true, new_dest:gsub("\\", "/")
+                        end
+                    end
+                end
+                return true, dest:gsub("\\", "/")
+            else
+                local location = headers and (headers["location"] or headers["Location"])
+                os.remove(dest)
+                if (code == 301 or code == 302 or code == 303 or code == 307 or code == 308) and location and location ~= "" then
+                    local new_url = location
+                    if not new_url:match("^https?://") then
+                        local host = current_url:match("^(https?://[^/]+)")
+                        if host then
+                            new_url = (new_url:sub(1,1) == "/") and (host .. new_url) or (host .. "/" .. new_url)
+                        end
+                    end
+                    return downloadImage(new_url, dest, max_redirects - 1)
+                end
+            end
+        end
+    end
+    return false
 end
 
 -- Resolves a possibly-relative image src against the repo's default branch
--- on raw.githubusercontent.com. GitHub's rendered README HTML leaves
--- relative paths (e.g. "./data/screenshots/x.png") exactly as authored --
--- it does not rewrite them to absolute URLs the way the github.com web UI
--- does -- so left alone they'd resolve against our local cache directory
--- instead of the repo, and MuPDF would find nothing there.
-local function resolveImageUrl(raw_url, owner, repo)
+-- on raw.githubusercontent.com.
+local function resolveImageUrl(raw_url, owner, repo, is_wiki)
+    if not raw_url or raw_url == "" then return "" end
+
+    if raw_url:find("raw%.githubusercontent%.com") and raw_url:find("/HEAD/") then
+        raw_url = raw_url:gsub("/HEAD/", "/main/")
+    end
+
+    local b_owner, b_repo, b_branch, b_path = raw_url:match("^https?://github%.com/([^/]+)/([^/]+)/blob/([^/]+)/(.+)$")
+    if b_owner and b_repo and b_branch and b_path then
+        if b_branch == "HEAD" then b_branch = "main" end
+        return string.format("https://raw.githubusercontent.com/%s/%s/%s/%s", b_owner, b_repo, b_branch, b_path)
+    end
+
+    local r_owner, r_repo, r_branch, r_path = raw_url:match("^https?://github%.com/([^/]+)/([^/]+)/raw/([^/]+)/(.+)$")
+    if r_owner and r_repo and r_branch and r_path then
+        if r_branch == "HEAD" then r_branch = "main" end
+        return string.format("https://raw.githubusercontent.com/%s/%s/%s/%s", r_owner, r_repo, r_branch, r_path)
+    end
+
+    local w_owner, w_repo, w_path = raw_url:match("^https?://github%.com/([^/]+)/([^/]+)/wiki/(.+)$")
+    if w_owner and w_repo and w_path then
+        return string.format("https://raw.githubusercontent.com/wiki/%s/%s/%s", w_owner, w_repo, w_path)
+    end
+
     if raw_url:match("^https?://") or raw_url:match("^//") or raw_url:match("^data:") then
+        if raw_url:sub(1, 2) == "//" then
+            return "https:" .. raw_url
+        end
         return raw_url
     end
+
     local rel = raw_url:gsub("^%./", ""):gsub("^/+", "")
-    return string.format("https://raw.githubusercontent.com/%s/%s/HEAD/%s", owner, repo, rel)
+    if is_wiki then
+        return string.format("https://raw.githubusercontent.com/wiki/%s/%s/%s", owner, repo, rel)
+    else
+        return string.format("https://raw.githubusercontent.com/%s/%s/main/%s", owner, repo, rel)
+    end
 end
 
 function RepoContent.stripMarkdown(text)
@@ -194,7 +267,7 @@ function RepoContent.fetchReadme(owner, repo)
     return true, path
 end
 
-function RepoContent.fetchReadmeHtml(owner, repo)
+function RepoContent.fetchReadmeHtml(owner, repo, force_refresh)
     if not owner or not repo then
         return false, "missing owner/repo"
     end
@@ -203,8 +276,10 @@ function RepoContent.fetchReadmeHtml(owner, repo)
     local safe_repo = repo:gsub("[^%w_-]", "_")
     local path = string.format("%s/%s_%s_README.html", dir, safe_owner, safe_repo)
 
-    -- 1. Check disk cache first for instant opening
-    if lfs.attributes(path, "mode") == "file" then
+    -- 1. Check disk cache first for instant opening (if not forced and < 7 days old)
+    local attrs = lfs.attributes(path)
+    local is_fresh = attrs and attrs.mode == "file" and (not force_refresh) and ((os.time() - (attrs.modification or 0)) < 604800)
+    if is_fresh or (attrs and attrs.mode == "file" and force_refresh == nil and false) then
         local cached_content = util.readFromFile(path)
         if cached_content and cached_content ~= "" then
             if cached_content:find("<img") then
@@ -262,12 +337,13 @@ function RepoContent.fetchReadmeHtml(owner, repo)
 
         local ok_img, final_path = downloadImage(url, img_dest)
         if ok_img and final_path then
-            local final_filename = final_path:match("[^/]+$") or img_filename
+            local clean_path = final_path:gsub("\\", "/")
+            local final_filename = clean_path:match("[^/]+$") or img_filename
             local img_html = prefix .. final_filename .. suffix
-            return string.format('<a href="storefront-img:%s">%s</a>', final_path, img_html)
+            return string.format('<a href="storefront-img:%s">%s</a>', clean_path, img_html)
         end
 
-        return ""
+        return prefix .. url .. suffix
     end)
 
     -- Clean up double-nested <a> tags so storefront-img links take precedence
@@ -420,6 +496,314 @@ function RepoContent.fetchReleaseNotesHtml(owner, repo, release_override)
         return false, write_err or "write error"
     end
     return true, path
+end
+
+local function getWikiCacheDir(owner, repo)
+    local dir = DataStorage:getDataDir() .. "/cache/Storefront/wiki"
+    local safe_owner = owner:gsub("[^%w_-]", "_")
+    local safe_repo = repo:gsub("[^%w_-]", "_")
+    local repo_dir = string.format("%s/%s_%s", dir, safe_owner, safe_repo)
+    local ok, err = util.makePath(repo_dir)
+    if not ok then
+        logger.warn("Storefront Wiki cache dir failure", err)
+    end
+    return repo_dir
+end
+
+RepoContent.getWikiCacheDir = getWikiCacheDir
+
+local wiki_status_cache = {}
+
+function RepoContent.checkWikiExists(owner, repo)
+    if not owner or not repo or owner == "" or repo == "" then
+        return false
+    end
+    local key = (owner .. "/" .. repo):lower()
+    if wiki_status_cache[key] ~= nil then
+        return wiki_status_cache[key]
+    end
+
+    local dir = getWikiCacheDir(owner, repo)
+    local home_path = string.format("%s/Home.html", dir)
+    if lfs.attributes(home_path, "mode") == "file" then
+        wiki_status_cache[key] = true
+        return true
+    end
+
+    local raw_home, err = GitHubClient.fetchWikiPageRaw(owner, repo, "Home")
+    if raw_home and raw_home ~= "" then
+        wiki_status_cache[key] = true
+        return true
+    end
+
+    wiki_status_cache[key] = false
+    return false
+end
+
+function RepoContent.fetchWikiSidebar(owner, repo, force_refresh)
+    if not owner or not repo then
+        return {}
+    end
+    local raw_sidebar = GitHubClient.fetchWikiPageRaw(owner, repo, "_Sidebar")
+    local items = {}
+    local seen = {}
+
+    local function isImageTarget(str)
+        if not str or type(str) ~= "string" then return false end
+        local clean = str:gsub("^%s+", ""):gsub("%s+$", ""):lower()
+        local ext = clean:match("%.([%w]+)$") or clean:match("%.([%w]+)%?")
+        if ext then
+            if ext == "png" or ext == "jpg" or ext == "jpeg" or ext == "gif" or ext == "webp" or ext == "svg" or ext == "bmp" then
+                return true
+            end
+        end
+        if clean:find("^image:") or clean:find("^file:") or clean:find("^media:") or clean:find("^img/") or clean:find("^images/") or clean:find("/img/") then
+            return true
+        end
+        return false
+    end
+
+    local function addPageItem(title, target)
+        if not target or target == "" then return end
+        local clean_target = target:gsub("^%s+", ""):gsub("%s+$", ""):gsub("^/+", "")
+        clean_target = clean_target:gsub("^https?://github%.com/[^/]+/[^/]+/wiki/", "")
+        if isImageTarget(clean_target) or isImageTarget(target) then
+            return
+        end
+        local key = clean_target:lower()
+        if not seen[key] then
+            seen[key] = true
+            table.insert(items, {
+                title = (title and title ~= "") and title or clean_target,
+                page = clean_target,
+            })
+        end
+    end
+
+    if raw_sidebar and raw_sidebar ~= "" then
+        for line in (raw_sidebar .. "\n"):gmatch("(.-)\r?\n") do
+            if not line:match("^%s*!%[") then
+                local title, target = line:match("%[%[([^%]|]+)|([^%]]+)%]")
+                if not title then
+                    target = line:match("%[%[([^%]]+)%]")
+                    title = target
+                end
+                if not target then
+                    title, target = line:match("([^!]%[[^%]]+%]%(([^%)]+)%)")
+                    if not target then
+                        title, target = line:match("^%[([^%]]+)%]%(([^%)]+)%)")
+                    end
+                end
+                if target then
+                    addPageItem(title, target)
+                end
+            end
+        end
+    else
+        addPageItem("Home", "Home")
+        local raw_home = GitHubClient.fetchWikiPageRaw(owner, repo, "Home")
+        if raw_home and raw_home ~= "" then
+            local text_no_imgs = raw_home:gsub("!%[[^%]]*%]%([^%)]*%)", "")
+            for title, target in text_no_imgs:gmatch("%[%[([^%]|]+)|([^%]]+)%]") do
+                addPageItem(title, target)
+            end
+            for target in text_no_imgs:gmatch("%[%[([^%]]+)%]") do
+                addPageItem(target, target)
+            end
+            for title, target in text_no_imgs:gmatch("%[([^%]]+)%]%(([^%)]+)%)") do
+                if not target:find("^https?://") and not target:find("^#") and not target:find("^data:") then
+                    addPageItem(title, target)
+                end
+            end
+        end
+    end
+
+    return items
+end
+
+function RepoContent.fetchWikiPageHtml(owner, repo, page_name, force_refresh)
+    if not owner or not repo then
+        return false, "missing owner/repo"
+    end
+    pcall(RepoContent.autoCleanCache)
+    page_name = (page_name and page_name ~= "") and page_name or "Home"
+    local safe_page = page_name:gsub("[^%w_-]", "_")
+    local dir = getWikiCacheDir(owner, repo)
+    local path = string.format("%s/%s.html", dir, safe_page)
+
+    local ext = page_name:lower():match("%.([%w]+)$")
+    if ext and (ext == "png" or ext == "jpg" or ext == "jpeg" or ext == "gif" or ext == "webp" or ext == "svg" or ext == "bmp") then
+        local img_url = resolveImageUrl(page_name, owner, repo, true)
+        local safe_owner = owner:gsub("[^%w_-]", "_")
+        local safe_repo = repo:gsub("[^%w_-]", "_")
+        local clean_url = img_url:gsub("[^%w]", "_")
+        if #clean_url > 40 then clean_url = clean_url:sub(-40) end
+        local img_filename = string.format("%s_%s_wiki_img_%s.%s", safe_owner, safe_repo, clean_url, ext)
+        local img_dest = dir .. "/" .. img_filename
+        local ok_img, final_path = downloadImage(img_url, img_dest)
+        local final_filename = (final_path and final_path:match("[^/]+$")) or img_filename
+        local html = string.format('<div class="markdown-body"><p><b>%s</b></p><hr/><img src="%s"/></div>', page_name, final_filename)
+        util.writeToFile(html, path)
+        return true, path
+    end
+
+    local attrs = lfs.attributes(path)
+    local is_fresh = attrs and attrs.mode == "file" and (not force_refresh) and ((os.time() - (attrs.modification or 0)) < 604800)
+    if is_fresh then
+        local cached_content = util.readFromFile(path)
+        if cached_content and cached_content ~= "" then
+            if cached_content:find("/HEAD/") then
+                cached_content = cached_content:gsub("/HEAD/", "/main/")
+            end
+            if cached_content:find("<img") then
+                cached_content = cached_content:gsub("(<img[^>]+style=[\"'][^\"']*[%s\"';])width:%s*[^;\"]+;?", "%1")
+                if not cached_content:find("storefront%-img:") then
+                    cached_content = cached_content:gsub('(<img[^>]+src=["\'])([^"\']+)(["\'][^>]*>)', function(prefix, filename, suffix)
+                        local full_img_path = dir .. "/" .. filename
+                        if lfs.attributes(full_img_path, "mode") == "file" then
+                            return string.format('<a href="storefront-img:%s">%s%s%s</a>', full_img_path, prefix, filename, suffix)
+                        end
+                        return prefix .. filename .. suffix
+                    end)
+                end
+                cached_content = cached_content:gsub('<a[^>]+href=["\'][^"\']+["\'][^>]*>%s*(<a%s+href=["\']storefront%-img:[^"\']+["\'][^>]*>.-</a>)%s*</a>', "%1")
+                util.writeToFile(cached_content, path)
+            end
+            return true, path
+        end
+    end
+
+    local raw_md, err = GitHubClient.fetchWikiPageRaw(owner, repo, page_name)
+    if not raw_md or raw_md == "" then
+        return false, err or "wiki page not found"
+    end
+
+    local body = GitHubClient.markdownToHtml(raw_md, owner, repo, true)
+
+    -- Strip explicit width and height attributes so images expand to full width
+    body = body:gsub("(<img[^>]+)%s+width=[\"'][^\"']*[\"']", "%1")
+    body = body:gsub("(<img[^>]+)%s+height=[\"'][^\"']*[\"']", "%1")
+    body = body:gsub("(<img[^>]+style=[\"'][^\"']*[%s\"';])width:%s*[^;\"]+;?", "%1")
+
+    -- Download inline images locally if needed
+    body = body:gsub('(<img[^>]+src=["\'])([^"\']+)(["\'][^>]*>)', function(prefix, raw_url, suffix)
+        local url = raw_url:gsub("&amp;", "&")
+        if url:lower():match("%.svg") ~= nil then return "" end
+        url = resolveImageUrl(url, owner, repo, true)
+
+        local clean_url = url:gsub("[^%w]", "_")
+        if #clean_url > 40 then clean_url = clean_url:sub(-40) end
+        local ext = url:match("%.([%w]+)$") or "png"
+        ext = ext:lower()
+        if ext == "svg" then return "" end
+
+        local safe_owner = owner:gsub("[^%w_-]", "_")
+        local safe_repo = repo:gsub("[^%w_-]", "_")
+        local img_filename = string.format("%s_%s_wiki_img_%s.%s", safe_owner, safe_repo, clean_url, ext)
+        local img_dest = dir .. "/" .. img_filename
+
+        if lfs.attributes(img_dest, "mode") == "file" then
+            local img_html = prefix .. img_filename .. suffix
+            return string.format('<a href="storefront-img:%s">%s</a>', img_dest, img_html)
+        end
+
+        local ok_img, final_path = downloadImage(url, img_dest)
+        if ok_img and final_path then
+            local clean_path = final_path:gsub("\\", "/")
+            local final_filename = clean_path:match("[^/]+$") or img_filename
+            local img_html = prefix .. final_filename .. suffix
+            return string.format('<a href="storefront-img:%s">%s</a>', clean_path, img_html)
+        end
+        return prefix .. url .. suffix
+    end)
+
+    body = body:gsub('<a[^>]+href=["\'][^"\']+["\'][^>]*>%s*(<a%s+href=["\']storefront%-img:[^"\']+["\'][^>]*>.-</a>)%s*</a>', "%1")
+
+    local ok, write_err = util.writeToFile(body, path)
+    if not ok then
+        return false, write_err or "write error"
+    end
+    return true, path
+end
+
+function RepoContent.autoCleanCache(max_size_mb, max_age_days)
+    max_size_mb = max_size_mb or 50
+    max_age_days = max_age_days or 30
+    local max_bytes = max_size_mb * 1024 * 1024
+    local max_age_secs = max_age_days * 86400
+
+    local cache_dirs = {
+        DataStorage:getDataDir() .. "/cache/Storefront/readme",
+        DataStorage:getDataDir() .. "/cache/Storefront/wiki",
+    }
+
+    local files = {}
+    local total_size = 0
+    local now = os.time()
+
+    for _, base_dir in ipairs(cache_dirs) do
+        if lfs.attributes(base_dir, "mode") == "directory" then
+            local function scanDir(d)
+                for entry in lfs.dir(d) do
+                    if entry ~= "." and entry ~= ".." then
+                        local full = d .. "/" .. entry
+                        local attr = lfs.attributes(full)
+                        if attr then
+                            if attr.mode == "file" then
+                                local age = now - (attr.modification or 0)
+                                if age > max_age_secs then
+                                    os.remove(full)
+                                else
+                                    total_size = total_size + (attr.size or 0)
+                                    table.insert(files, { path = full, mtime = attr.modification or 0, size = attr.size or 0 })
+                                end
+                            elseif attr.mode == "directory" then
+                                scanDir(full)
+                            end
+                        end
+                    end
+                end
+            end
+            scanDir(base_dir)
+        end
+    end
+
+    if total_size > max_bytes then
+        table.sort(files, function(a, b) return a.mtime < b.mtime end)
+        for _, file in ipairs(files) do
+            if total_size <= max_bytes then break end
+            if os.remove(file.path) then
+                total_size = total_size - file.size
+            end
+        end
+    end
+end
+
+function RepoContent.clearWikiCache()
+    local dir = DataStorage:getDataDir() .. "/cache/Storefront/wiki"
+    local removed = 0
+    local errors = {}
+    if lfs.attributes(dir, "mode") ~= "directory" then
+        return { removed = 0, errors = errors }
+    end
+    for entry in lfs.dir(dir) do
+        if entry ~= "." and entry ~= ".." then
+            local full_path = dir .. "/" .. entry
+            local mode = lfs.attributes(full_path, "mode")
+            if mode == "file" then
+                if os.remove(full_path) then removed = removed + 1 else table.insert(errors, full_path) end
+            elseif mode == "directory" then
+                for sub in lfs.dir(full_path) do
+                    if sub ~= "." and sub ~= ".." then
+                        local sub_p = full_path .. "/" .. sub
+                        if os.remove(sub_p) then removed = removed + 1 else table.insert(errors, sub_p) end
+                    end
+                end
+                lfs.rmdir(full_path)
+            end
+        end
+    end
+    return { removed = removed, errors = errors }
 end
 
 return RepoContent

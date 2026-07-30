@@ -57,7 +57,7 @@ check("Code block content preserved", html_code:find("local x = 1") ~= nil)
 
 -- Test 8: Images conversion & relative URL resolution
 local html_img = GitHubClient.markdownToHtml("![Screenshot](docs/screen.png)", "koreader", "coverbrowser")
-check("Markdown image converted to <img src=...>", html_img:find('<img src="https://raw.githubusercontent.com/koreader/coverbrowser/HEAD/docs/screen.png" alt="Screenshot"/>') ~= nil)
+check("Markdown image converted to <img src=...>", html_img:find('<img src="https://raw.githubusercontent.com/koreader/coverbrowser/main/docs/screen.png" alt="Screenshot"/>') ~= nil)
 
 -- Test 9: Ensure links do not break image syntax
 local html_img_and_link = GitHubClient.markdownToHtml("![Pic](https://example.com/pic.png) [Link](https://example.com)")

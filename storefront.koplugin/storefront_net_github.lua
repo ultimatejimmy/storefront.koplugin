@@ -405,7 +405,11 @@ local function markdownToHtml(md, owner, repo)
             processed = processed:gsub("!%[([^%]]*)%]%(([^%)]+)%)", function(alt, src)
                 if owner and repo and type(owner) == "string" and type(repo) == "string" and not src:find("^https?://") and not src:find("^data:") then
                     local clean_src = src:gsub("^%./", "")
-                    src = string.format("https://raw.githubusercontent.com/%s/%s/HEAD/%s", owner, repo, clean_src)
+                    if is_wiki then
+                        src = string.format("https://raw.githubusercontent.com/wiki/%s/%s/%s", owner, repo, clean_src)
+                    else
+                        src = string.format("https://raw.githubusercontent.com/%s/%s/main/%s", owner, repo, clean_src)
+                    end
                 end
                 return string.format('<img src="%s" alt="%s"/>', src, alt)
             end)
@@ -417,7 +421,11 @@ local function markdownToHtml(md, owner, repo)
                     unescaped_attrs = unescaped_attrs:gsub('src=["\']([^"\']+)["\']', function(src)
                         if not src:find("^https?://") and not src:find("^data:") then
                             local clean_src = src:gsub("^%./", "")
-                            src = string.format("https://raw.githubusercontent.com/%s/%s/HEAD/%s", owner, repo, clean_src)
+                            if is_wiki then
+                                src = string.format("https://raw.githubusercontent.com/wiki/%s/%s/%s", owner, repo, clean_src)
+                            else
+                                src = string.format("https://raw.githubusercontent.com/%s/%s/main/%s", owner, repo, clean_src)
+                            end
                         end
                         return string.format('src="%s"', src)
                     end)
@@ -432,15 +440,82 @@ local function markdownToHtml(md, owner, repo)
             processed = processed:gsub("&lt;/summary&gt;", "</b></p>")
             processed = processed:gsub("&lt;br%s*/?&gt;", "<br/>")
 
-            -- Inline formatting (using replacement functions to avoid Lua gsub '%' capture expansion crashes)
-            processed = processed:gsub("%[([^%]]+)%]%(([^%)]+)%)", function(label, url)
-                return string.format('<a href="%s">%s</a>', url, label)
+            local function isImageFile(str)
+                if not str or type(str) ~= "string" then return false end
+                local clean = str:gsub("^%s+", ""):gsub("%s+$", ""):lower()
+                local ext = clean:match("%.([%w]+)$") or clean:match("%.([%w]+)%?")
+                if ext then
+                    if ext == "png" or ext == "jpg" or ext == "jpeg" or ext == "gif" or ext == "webp" or ext == "svg" or ext == "bmp" then
+                        return true
+                    end
+                end
+                if clean:find("^image:") or clean:find("^file:") or clean:find("^media:") then
+                    return true
+                end
+                return false
+            end
+
+            -- Convert Gollum Wiki links: [[Title|Page-Name]] or [[Page-Name]] or [[image.png]]
+            processed = processed:gsub("%[%[([^%]|]+)|([^%]]+)%]%]", function(arg1, arg2)
+                local clean1 = arg1:gsub("^%s+", ""):gsub("%s+$", "")
+                local clean2 = arg2:gsub("^%s+", ""):gsub("%s+$", "")
+                if isImageFile(clean2) then
+                    local src = clean2:gsub("^[Ii]mage:", ""):gsub("^[Ff]ile:", "")
+                    if is_wiki and owner and repo and not src:find("^https?://") and not src:find("^data:") then
+                        src = string.format("https://raw.githubusercontent.com/wiki/%s/%s/%s", owner, repo, src:gsub("^%./", ""))
+                    end
+                    return string.format('<img src="%s" alt="%s"/>', src, clean1)
+                elseif isImageFile(clean1) then
+                    local src = clean1:gsub("^[Ii]mage:", ""):gsub("^[Ff]ile:", "")
+                    if is_wiki and owner and repo and not src:find("^https?://") and not src:find("^data:") then
+                        src = string.format("https://raw.githubusercontent.com/wiki/%s/%s/%s", owner, repo, src:gsub("^%./", ""))
+                    end
+                    return string.format('<img src="%s" alt="%s"/>', src, clean2)
+                else
+                    local clean_target = clean2:gsub("%s+", "-")
+                    return string.format('<a href="storefront-wiki:%s">%s</a>', clean_target, clean1)
+                end
             end)
+
+            processed = processed:gsub("%[%[([^%]]+)%]%]", function(target)
+                local clean_target = target:gsub("^%s+", ""):gsub("%s+$", "")
+                if isImageFile(clean_target) then
+                    local src = clean_target:gsub("^[Ii]mage:", ""):gsub("^[Ff]ile:", "")
+                    if is_wiki and owner and repo and not src:find("^https?://") and not src:find("^data:") then
+                        src = string.format("https://raw.githubusercontent.com/wiki/%s/%s/%s", owner, repo, src:gsub("^%./", ""))
+                    end
+                    return string.format('<img src="%s" alt="%s"/>', src, clean_target)
+                else
+                    local clean_link = clean_target:gsub("%s+", "-")
+                    return string.format('<a href="storefront-wiki:%s">%s</a>', clean_link, clean_target)
+                end
+            end)
+
+            -- Convert Markdown links: [label](url)
+            processed = processed:gsub("%[([^%]]+)%]%(([^%)]+)%)", function(label, url_str)
+                local wiki_page = url_str:match("^https?://github%.com/[^/]+/[^/]+/wiki/(.+)$")
+                    or url_str:match("^/[^/]+/[^/]+/wiki/(.+)$")
+                if wiki_page then
+                    local clean_w = wiki_page:gsub("#.*$", "")
+                    return string.format('<a href="storefront-wiki:%s">%s</a>', clean_w, label)
+                end
+                return string.format('<a href="%s">%s</a>', url_str, label)
+            end)
+            local saved_tags = {}
+            processed = processed:gsub("<[^>]+>", function(tag)
+                table.insert(saved_tags, tag)
+                return "\0TAG" .. #saved_tags .. "\0"
+            end)
+
             processed = processed:gsub("%*%*([^*]+)%*%*", function(b) return string.format("<b>%s</b>", b) end)
             processed = processed:gsub("__([^_]+)__", function(b) return string.format("<b>%s</b>", b) end)
             processed = processed:gsub("%*([^*]+)%*", function(i) return string.format("<i>%s</i>", i) end)
             processed = processed:gsub("_([^_]+)_", function(i) return string.format("<i>%s</i>", i) end)
             processed = processed:gsub("`([^`]+)`", function(c) return string.format("<code>%s</code>", c) end)
+
+            processed = processed:gsub("%zTAG(%d+)%z", function(idx)
+                return saved_tags[tonumber(idx)]
+            end)
 
             -- Headings
             local h6 = processed:match("^######%s+(.+)")
@@ -552,9 +627,48 @@ function GitHubClient.fetchReadmeHtml(owner, repo)
         },
         sink = newTableSink(raw_response),
     }
-    local raw_body = table.concat(raw_response)
-    if tonumber(raw_code) == 200 and raw_body ~= "" then
-        return markdownToHtml(raw_body, owner, repo), nil
+    return nil, string.format("HTTP %s", tostring(code))
+end
+
+GitHubClient.markdownToHtml = markdownToHtml
+
+function GitHubClient.fetchWikiPageRaw(owner, repo, page_name)
+    if not owner or not repo then
+        return nil, "missing owner/repo"
+    end
+    page_name = (page_name and page_name ~= "") and page_name or "Home"
+    local clean_page = page_name:gsub("%.md$", "")
+    local wiki_url = string.format("https://raw.githubusercontent.com/wiki/%s/%s/%s.md", owner, repo, clean_page)
+    local response_body = {}
+    local _, code = http.request{
+        url = wiki_url,
+        headers = {
+            ["Accept"] = "text/plain",
+            ["User-Agent"] = USER_AGENT,
+        },
+        sink = newTableSink(response_body),
+    }
+    code = tonumber(code)
+    local body = table.concat(response_body)
+    if code == 200 and body and body ~= "" then
+        return body, nil
+    end
+
+    -- Fallback without .md extension
+    local wiki_url_noext = string.format("https://raw.githubusercontent.com/wiki/%s/%s/%s", owner, repo, clean_page)
+    response_body = {}
+    local _, code_noext = http.request{
+        url = wiki_url_noext,
+        headers = {
+            ["Accept"] = "text/plain",
+            ["User-Agent"] = USER_AGENT,
+        },
+        sink = newTableSink(response_body),
+    }
+    code_noext = tonumber(code_noext)
+    body = table.concat(response_body)
+    if code_noext == 200 and body and body ~= "" then
+        return body, nil
     end
 
     return nil, string.format("HTTP %s", tostring(code))

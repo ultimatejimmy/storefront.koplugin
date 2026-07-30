@@ -65,6 +65,14 @@ function StorefrontDetailsDialog:init()
     -- Full-screen dimen
     self.dimen = Geom:new{ x = 0, y = 0, w = self.screen_w, h = self.screen_h }
 
+    if self.repo then
+        if self.repo.has_wiki ~= nil then
+            self.has_wiki = self.repo.has_wiki
+        elseif self.repo.data and type(self.repo.data) == "table" and self.repo.data.has_wiki ~= nil then
+            self.has_wiki = self.repo.data.has_wiki
+        end
+    end
+
     self.key_events = self.key_events or {}
     self.key_events.NextPage = {
         { Input.group.PgFwd },
@@ -131,6 +139,15 @@ function StorefrontDetailsDialog:init()
         or (type(self.repo.full_name) == "string" and self.repo.full_name:match("^[^/]+/(.+)$"))
         or (self.update_item and self.update_item.record and self.update_item.record.repo)
         or ""
+
+    if self.has_wiki == nil and owner ~= "" and repo_name ~= "" then
+        if RepoContent and type(RepoContent.checkWikiExists) == "function" then
+            local ok_check, has_w = pcall(RepoContent.checkWikiExists, owner, repo_name)
+            if ok_check then
+                self.has_wiki = (has_w == true)
+            end
+        end
+    end
     local stars = tonumber(self.repo.stars) or (self.repo.data and tonumber(self.repo.data.stargazers_count)) or 0
     local stars_fmt = stars >= 1000 and string.format("%.1fk", stars / 1000):gsub("%.0k", "k") or tostring(stars)
 
@@ -734,6 +751,7 @@ function StorefrontDetailsDialog:init()
         local is_readme = (self.active_tab == "readme")
         local is_rel    = (self.active_tab == "release_notes")
         local is_ver    = (self.active_tab == "versions")
+        local is_wiki   = (self.active_tab == "wiki")
 
         local readme_col = makeTab(_("README"), is_readme, function()
             if self.active_tab ~= "readme" then
@@ -768,14 +786,31 @@ function StorefrontDetailsDialog:init()
             end
         end)
 
-        return HorizontalGroup:new{
-            align = "center",
+        local wiki_col = makeTab(_("Wiki"), is_wiki, function()
+            if self.active_tab ~= "wiki" then
+                self.active_tab = "wiki"
+                if self.tab_bar_box then
+                    self.tab_bar_box[1] = self:buildTabBar()
+                end
+                UIManager:setDirty(self, "ui")
+                loadContent("wiki")
+            end
+        end)
+
+        local tab_group_items = {
             readme_col,
-            HorizontalSpan:new{ width = sc(16) },
+            HorizontalSpan:new{ width = sc(12) },
             rel_col,
-            HorizontalSpan:new{ width = sc(16) },
+            HorizontalSpan:new{ width = sc(12) },
             ver_col,
         }
+
+        if self.has_wiki ~= false then
+            table.insert(tab_group_items, HorizontalSpan:new{ width = sc(12) })
+            table.insert(tab_group_items, wiki_col)
+        end
+
+        return HorizontalGroup:new(tab_group_items)
     end
 
     self.buildTabBar = buildTabBar
@@ -1077,14 +1112,12 @@ td { vertical-align: top; }
         buildPaginationControls(),
     }
     local pagination_bar = pagination_box
-
     updatePagination = function()
         pagination_box[1] = buildPaginationControls()
     end
     self._html_box = html_box
     self._updatePagination = updatePagination
-
-    loadContent = function(tab_name)
+    loadContent = function(tab_name, force_refresh)
         self.load_req_id = (self.load_req_id or 0) + 1
         local current_req_id = self.load_req_id
 
@@ -1212,13 +1245,15 @@ td { vertical-align: top; }
             html_box:setContent("<p style='text-align:center;color:gray;'>" .. _("Loading Release Notes...") .. "</p>", readme_css, sc(18))
         elseif tab_name == "versions" then
             html_box:setContent("<p style='text-align:center;color:gray;'>" .. _("Loading Versions...") .. "</p>", readme_css, sc(18))
+        elseif tab_name == "wiki" then
+            html_box:setContent("<p style='text-align:center;color:gray;'>" .. _("Loading Wiki...") .. "</p>", readme_css, sc(18))
         else
             html_box:setContent("<p style='text-align:center;color:gray;'>" .. _("Loading README...") .. "</p>", readme_css, sc(18))
         end
         UIManager:setDirty(self, "ui")
 
         if (not owner or owner == "" or not repo_name or repo_name == "") and tab_name ~= "versions" then
-            local msg = (tab_name == "release_notes") and _("No Release Notes available.") or _("No README available.")
+            local msg = (tab_name == "release_notes") and _("No Release Notes available.") or (tab_name == "wiki" and _("No Wiki available.") or _("No README available."))
             html_box:setContent("<p style='text-align:center;color:gray;'>" .. msg .. "</p>", readme_css, sc(18))
             updatePagination()
             return
@@ -1260,41 +1295,34 @@ td { vertical-align: top; }
 
             if tab_name == "versions" then
                 local item_key = self.patch and self.patch.filename or (self.repo and (self.repo.name or self.repo.full_name or repo_name))
-                local allow_pre = InstallStore.isPreReleaseAllowed(item_key)
+                local allow_pre = item_key and InstallStore.isPreReleaseAllowed(item_key) or false
 
-                local releases = self.raw_releases_cache
-                if not releases and owner ~= "" and repo_name ~= "" then
-                    local ok_gh, GitHubClient = pcall(require, "storefront_net_github")
-                    if ok_gh and GitHubClient and type(GitHubClient.fetchReleases) == "function" then
-                        local live_rels = GitHubClient.fetchReleases(owner, repo_name, { per_page = 30, max_pages = 2 })
-                        if live_rels and #live_rels > 0 then
-                            releases = live_rels
+                if not self.cached_releases or force_refresh then
+                    local cached = getReleasesFromCache(self.repo)
+                    if cached and #cached > 1 then
+                        self.cached_releases = cached
+                    else
+                        local fetched, err = GitHubClient.fetchReleases(owner, repo_name)
+                        if fetched and #fetched > 0 then
+                            self.cached_releases = fetched
+                        else
+                            self.cached_releases = cached
                         end
                     end
                 end
 
-                if not releases or #releases == 0 then
-                    releases = getReleasesFromCache(self.repo)
-                end
-                self.raw_releases_cache = releases
-
-                -- Filter out pre-releases if allow_pre is false
-                local raw_list = releases or {}
-                if #raw_list > 0 then
-                    local filtered = {}
-                    for _, rel in ipairs(raw_list) do
-                        local tag = rel.tag_name or rel.name or ""
-                        local is_pre = (rel.prerelease == true) or (tag:lower():find("beta") or tag:lower():find("alpha") or tag:lower():find("rc"))
-                        if allow_pre or not is_pre then
-                            table.insert(filtered, rel)
-                        end
+                local raw_releases = self.cached_releases or {}
+                local releases = {}
+                for _, rel in ipairs(raw_releases) do
+                    local tag = rel.tag_name or rel.name or ""
+                    local is_pre = (rel.prerelease == true) or (tag:lower():find("beta") or tag:lower():find("alpha") or tag:lower():find("rc"))
+                    if allow_pre or not is_pre then
+                        table.insert(releases, rel)
                     end
-                    releases = filtered
                 end
 
                 if self.is_closed or self.load_req_id ~= current_req_id or self.active_tab ~= tab_name then return end
 
-                self.cached_releases = releases or {}
                 local StorefrontListItem = require("storefront_list_item")
                 self.versions_page = self.versions_page or 1
 
@@ -1302,7 +1330,7 @@ td { vertical-align: top; }
                 local avail_h = readme_h - toggle_h
                 local row_h = sc(72)
                 local per_page = math.max(1, math.floor(avail_h / row_h))
-                local total_rels = #self.cached_releases
+                local total_rels = #releases
                 local total_pages = math.max(1, math.ceil(total_rels / per_page))
                 self.versions_total_pages = total_pages
                 self.versions_per_page = per_page
@@ -1372,7 +1400,7 @@ td { vertical-align: top; }
                 table.insert(list_items, toggle_btn)
                 table.insert(list_items, VerticalSpan:new{ width = sc(6) })
 
-                if not releases or #releases == 0 then
+                if #releases == 0 then
                     table.insert(list_items, TextWidget:new{
                         text = _("No releases found for this repository."),
                         face = Font:getFace("cfont", 14),
@@ -1451,8 +1479,103 @@ td { vertical-align: top; }
                 return
             end
 
+            local function buildViewerHeader()
+                if tab_name ~= "wiki" then
+                    html_box.dimen = Geom:new{ w = readme_w, h = readme_h }
+                    return html_box
+                end
+
+                local bar_h = sc(28)
+                local hr_h = Size.line.thin
+                local header_h_offset = bar_h + sc(4) + hr_h + sc(4)
+                html_box.dimen = Geom:new{ w = readme_w, h = readme_h - header_h_offset }
+
+                local page_title = self.active_wiki_page or "Home"
+                local selector_btn = Button:new{
+                    text = page_title .. "  ▾",
+                    text_font_size = 15,
+                    text_font_bold = true,
+                    padding = sc(4),
+                    padding_h = sc(10),
+                    bordersize = sc(1),
+                    radius = 0,
+                    background = Blitbuffer.COLOR_WHITE,
+                    show_parent = self,
+                    callback = function()
+                        local Menu = require("ui/widget/menu")
+                        local pages_menu
+                        local menu_items = {}
+                        local items = self.wiki_sidebar_items or {}
+                        if #items == 0 then
+                            items = { { title = "Home", page = "Home" } }
+                        end
+                        for _, item in ipairs(items) do
+                            table.insert(menu_items, {
+                                text = item.title or item.page,
+                                callback = function()
+                                    if pages_menu then
+                                        UIManager:close(pages_menu)
+                                    end
+                                    self.active_wiki_page = item.page
+                                    if self.loadContent then self.loadContent("wiki") end
+                                end,
+                            })
+                        end
+                        local menu_w = math.min(self.screen_w - sc(32), sc(500))
+                        pages_menu = Menu:new{
+                            title = _("Wiki Pages"),
+                            item_table = menu_items,
+                            width = menu_w,
+                            radius = 0,
+                            bordersize = sc(2),
+                        }
+                        if pages_menu.radius then pages_menu.radius = 0 end
+                        UIManager:show(pages_menu)
+                    end,
+                }
+
+                local refresh_btn = Button:new{
+                    text = "↻",
+                    text_font_size = 16,
+                    text_font_bold = true,
+                    bordersize = sc(1),
+                    radius = 0,
+                    background = Blitbuffer.COLOR_WHITE,
+                    padding = sc(4),
+                    padding_h = sc(8),
+                    show_parent = self,
+                    callback = function()
+                        if self.loadContent then self.loadContent("wiki", true) end
+                    end,
+                }
+
+                local header_bar = OverlapGroup:new{
+                    dimen = Geom:new{ w = readme_w, h = bar_h },
+                    LeftContainer:new{
+                        dimen = Geom:new{ w = readme_w, h = bar_h },
+                        selector_btn,
+                    },
+                    RightContainer:new{
+                        dimen = Geom:new{ w = readme_w, h = bar_h },
+                        refresh_btn,
+                    },
+                }
+
+                return VerticalGroup:new{
+                    align = "left",
+                    header_bar,
+                    VerticalSpan:new{ width = sc(4) },
+                    LineWidget:new{
+                        background = Blitbuffer.COLOR_DARK_GRAY,
+                        dimen = Geom:new{ w = readme_w, h = hr_h },
+                    },
+                    VerticalSpan:new{ width = sc(4) },
+                    html_box,
+                }
+            end
+
             if self.content_area_box then
-                self.content_area_box[1] = html_box
+                self.content_area_box[1] = buildViewerHeader()
             end
             if self.pagination_bar_container then
                 self.pagination_bar_container[1] = pagination_bar
@@ -1462,7 +1585,7 @@ td { vertical-align: top; }
             if tab_name == "release_notes" then
                 local rel_data = (self.update_item and (self.update_item.remote or self.update_item.remote_entry)) or self.repo.latest_release
                 if RepoContent and type(RepoContent.fetchReleaseNotesHtml) == "function" then
-                    local ok_pcall, res_ok, res_path = pcall(RepoContent.fetchReleaseNotesHtml, owner, repo_name, rel_data)
+                    local ok_pcall, res_ok, res_path = pcall(RepoContent.fetchReleaseNotesHtml, owner, repo_name, rel_data, force_refresh)
                     if ok_pcall then
                         ok, path = res_ok, res_path
                     else
@@ -1470,9 +1593,25 @@ td { vertical-align: top; }
                         ok, path = false, nil
                     end
                 end
+            elseif tab_name == "wiki" then
+                self.active_wiki_page = self.active_wiki_page or "Home"
+                if RepoContent and type(RepoContent.fetchWikiSidebar) == "function" then
+                    pcall(function()
+                        self.wiki_sidebar_items = RepoContent.fetchWikiSidebar(owner, repo_name, force_refresh)
+                    end)
+                end
+                if RepoContent and type(RepoContent.fetchWikiPageHtml) == "function" then
+                    local ok_pcall, res_ok, res_path = pcall(RepoContent.fetchWikiPageHtml, owner, repo_name, self.active_wiki_page, force_refresh)
+                    if ok_pcall then
+                        ok, path = res_ok, res_path
+                    else
+                        logger.warn("Storefront: error fetching wiki page", res_ok)
+                        ok, path = false, nil
+                    end
+                end
             else
                 if RepoContent and type(RepoContent.fetchReadmeHtml) == "function" then
-                    local ok_pcall, res_ok, res_path = pcall(RepoContent.fetchReadmeHtml, owner, repo_name)
+                    local ok_pcall, res_ok, res_path = pcall(RepoContent.fetchReadmeHtml, owner, repo_name, force_refresh)
                     if ok_pcall then
                         ok, path = res_ok, res_path
                     else
@@ -1482,14 +1621,21 @@ td { vertical-align: top; }
                 end
             end
 
-            if self.is_closed or self.load_req_id ~= current_req_id or self.active_tab ~= tab_name then
-                return
-            end
-
             if ok and path then
                 local html_content = util.readFromFile(path)
                 if html_content and html_content ~= "" then
-                    local cache_dir = require("datastorage"):getDataDir() .. (tab_name == "release_notes" and "/cache/Storefront/release_notes" or "/cache/Storefront/readme")
+                    local cache_dir
+                    if tab_name == "release_notes" then
+                        cache_dir = require("datastorage"):getDataDir() .. "/cache/Storefront/release_notes"
+                    elseif tab_name == "wiki" then
+                        if RepoContent and type(RepoContent.getWikiCacheDir) == "function" then
+                            cache_dir = RepoContent.getWikiCacheDir(owner, repo_name)
+                        else
+                            cache_dir = require("datastorage"):getDataDir() .. "/cache/Storefront/wiki"
+                        end
+                    else
+                        cache_dir = require("datastorage"):getDataDir() .. "/cache/Storefront/readme"
+                    end
                     html_box.page_number = 1
                     local set_ok, set_err = pcall(function()
                         html_box:setContent(html_content, readme_css, sc(18), false, false, cache_dir)
@@ -1507,20 +1653,40 @@ td { vertical-align: top; }
                     if rawget(html_box, "bb") then html_box.bb = nil end
                     updatePagination()
                 else
-                    local msg = (tab_name == "release_notes") and _("Unable to read Release Notes.") or _("Unable to read README.")
+                    if tab_name == "wiki" then
+                        self.has_wiki = false
+                        self.active_tab = "readme"
+                        if self.tab_bar_box then
+                            self.tab_bar_box[1] = self:buildTabBar()
+                        end
+                        loadContent("readme")
+                        return
+                    else
+                        local msg = (tab_name == "release_notes") and _("Unable to read Release Notes.") or _("Unable to read README.")
+                        html_box.page_number = 1
+                        pcall(function()
+                            html_box:setContent("<p style='text-align:center;color:red;'>" .. msg .. "</p>", readme_css, sc(18))
+                        end)
+                        updatePagination()
+                    end
+                end
+            else
+                if tab_name == "wiki" then
+                    self.has_wiki = false
+                    self.active_tab = "readme"
+                    if self.tab_bar_box then
+                        self.tab_bar_box[1] = self:buildTabBar()
+                    end
+                    loadContent("readme")
+                    return
+                else
+                    local msg = (tab_name == "release_notes") and _("No Release Notes available.") or _("No README available.")
                     html_box.page_number = 1
                     pcall(function()
-                        html_box:setContent("<p style='text-align:center;color:red;'>" .. msg .. "</p>", readme_css, sc(18))
+                        html_box:setContent("<p style='text-align:center;color:gray;'>" .. msg .. "</p>", readme_css, sc(18))
                     end)
                     updatePagination()
                 end
-            else
-                local msg = (tab_name == "release_notes") and _("No Release Notes available.") or _("No README available.")
-                html_box.page_number = 1
-                pcall(function()
-                    html_box:setContent("<p style='text-align:center;color:gray;'>" .. msg .. "</p>", readme_css, sc(18))
-                end)
-                updatePagination()
             end
             UIManager:setDirty(self, "ui")
         end
@@ -1646,6 +1812,32 @@ function StorefrontDetailsDialog:onLinkTap(href)
                 ver_dialog:show()
             end
             return true
+        elseif href:find("^storefront%-wiki:") or (self.active_tab == "wiki" and href and type(href) == "string") then
+            local clean_page = href:gsub("^storefront%-wiki:", "")
+            clean_page = clean_page:gsub("^https?://github%.com/[^/]+/[^/]+/wiki/", "")
+            clean_page = clean_page:gsub("^/[^/]+/[^/]+/wiki/", "")
+            clean_page = clean_page:gsub("^%./", ""):gsub("^/+", "")
+            clean_page = clean_page:gsub("#.*$", "")
+            clean_page = clean_page:gsub("%%20", " ")
+            clean_page = clean_page:gsub("^%s+", ""):gsub("%s+$", "")
+
+            local is_external = (href:find("^https?://") or href:find("^http://") or href:find("^mailto:")) and not href:find("github%.com/[^/]+/[^/]+/wiki/")
+
+            if not is_external and clean_page and clean_page ~= "" then
+                self.wiki_history = self.wiki_history or {}
+                if self.active_wiki_page then
+                    table.insert(self.wiki_history, self.active_wiki_page)
+                end
+                self.active_wiki_page = clean_page
+                self.active_tab = "wiki"
+                if self.tab_bar_box then
+                    self.tab_bar_box[1] = self:buildTabBar()
+                end
+                if self.loadContent then
+                    self.loadContent("wiki")
+                end
+                return true
+            end
         end
     end
     return false
