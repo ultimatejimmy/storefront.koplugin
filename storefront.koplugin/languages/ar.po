@@ -217,3 +217,24 @@ msgstr "التصحيحات"
 msgid "tab_plugins"
 msgstr "الإضافات"
 
+msgid "Downloading %s…"
+msgstr "جاري تحميل %s…"
+
+msgid "Installing %s…"
+msgstr "جاري تثبيت %s…"
+
+msgid "Refreshing catalog…"
+msgstr "جاري تحديث الفهرس…"
+
+msgid "Refreshing catalog via Direct GitHub API…"
+msgstr "تحديث الفهرس عبر Direct GitHub API…"
+
+msgid "Fetching plugins via Direct GitHub API…"
+msgstr "جلب الإضافات عبر Direct GitHub API…"
+
+msgid "Fetching patches via Direct GitHub API…"
+msgstr "جلب التصحيحات عبر Direct GitHub API…"
+
+msgid "Fetching patch file listings…"
+msgstr "جلب قائمة ملفات التصحيح…"
+

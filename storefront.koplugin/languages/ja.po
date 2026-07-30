@@ -217,3 +217,24 @@ msgstr "パッチ"
 msgid "tab_plugins"
 msgstr "プラグイン"
 
+msgid "Downloading %s…"
+msgstr "%s をダウンロード中…"
+
+msgid "Installing %s…"
+msgstr "%s をインストール中…"
+
+msgid "Refreshing catalog…"
+msgstr "カタログを更新中…"
+
+msgid "Refreshing catalog via Direct GitHub API…"
+msgstr "Direct GitHub API 経由でカタログを更新中…"
+
+msgid "Fetching plugins via Direct GitHub API…"
+msgstr "Direct GitHub API 経由でプラグインを取得中…"
+
+msgid "Fetching patches via Direct GitHub API…"
+msgstr "Direct GitHub API 経由でパッチを取得中…"
+
+msgid "Fetching patch file listings…"
+msgstr "パッチファイル一覧を取得中…"
+

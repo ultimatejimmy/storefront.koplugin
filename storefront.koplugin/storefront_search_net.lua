@@ -262,7 +262,11 @@ function SearchNet:init(Storefront)
         StorefrontLogger.info(string.format("CACHE REFRESH starting (kind=%s)", tostring(kind)))
 
         local Toast = require("storefront_toast")
-        local progress_toast = Toast.show(_("Refreshing catalog..."), 1.5)
+        local UIManager = require("ui/uimanager")
+        local is_direct = GitHub.isDirectApiEnabled()
+        local initial_msg = is_direct and _("Refreshing catalog via Direct GitHub API…") or _("Refreshing catalog…")
+        local progress_toast = Toast.show(initial_msg, 0, { dismissable = false })
+        if UIManager.forceRePaint then UIManager:forceRePaint() end
 
         local finishRefresh = function(ok, summary_msg, err_msg)
             sf.is_refreshing = false
@@ -281,7 +285,7 @@ function SearchNet:init(Storefront)
         end
 
         local CatalogClient = require("storefront_net_catalog")
-        if not GitHub.isDirectApiEnabled() then
+        if not is_direct then
             logger.info("Storefront: refreshing via static catalog feed (async)")
             CatalogClient.fetchAndUpdateCacheAsync(nil, function(catalog_ok, catalog_err)
                 if catalog_ok then
@@ -300,33 +304,47 @@ function SearchNet:init(Storefront)
             return
         end
 
-        local ok, err = pcall(function()
-            local refresh_plugins = (kind == "plugin") or (kind == "all")
-            local refresh_patches = (kind == "patch") or (kind == "all")
-            local summary_parts = {}
-            if refresh_plugins then
-                local plugin_total = sf:fetchAndStore("plugin", PLUGIN_TOPICS, "Plugin", PLUGIN_NAME_QUERIES)
-                table.insert(summary_parts, string.format(_("Cached %s plugins."), tostring(plugin_total)))
-            end
-            if refresh_patches then
-                local patch_total = sf:fetchAndStore("patch", PATCH_TOPICS, "Patch", PATCH_NAME_QUERIES)
-                if sf.refreshPatchFileListings then
-                    sf:refreshPatchFileListings()
+        UIManager:scheduleIn(0.05, function()
+            local ok, err = pcall(function()
+                local refresh_plugins = (kind == "plugin") or (kind == "all")
+                local refresh_patches = (kind == "patch") or (kind == "all")
+                local summary_parts = {}
+                if refresh_plugins then
+                    if progress_toast and progress_toast.setText then
+                        progress_toast:setText(_("Fetching plugins via Direct GitHub API…"))
+                        if UIManager.forceRePaint then UIManager:forceRePaint() end
+                    end
+                    local plugin_total = sf:fetchAndStore("plugin", PLUGIN_TOPICS, "Plugin", PLUGIN_NAME_QUERIES)
+                    table.insert(summary_parts, string.format(_("Cached %s plugins."), tostring(plugin_total)))
                 end
-                table.insert(summary_parts, string.format(_("Cached %s patch repositories."), tostring(patch_total)))
-            end
-            local summary = table.concat(summary_parts, " ")
-            if summary == "" then
-                summary = _("Storefront cache refreshed.")
-            end
-            StorefrontSettings:saveSetting("status_text", summary)
-            StorefrontSettings:flush()
-            finishRefresh(true, summary, nil)
-        end)
+                if refresh_patches then
+                    if progress_toast and progress_toast.setText then
+                        progress_toast:setText(_("Fetching patches via Direct GitHub API…"))
+                        if UIManager.forceRePaint then UIManager:forceRePaint() end
+                    end
+                    local patch_total = sf:fetchAndStore("patch", PATCH_TOPICS, "Patch", PATCH_NAME_QUERIES)
+                    if sf.refreshPatchFileListings then
+                        if progress_toast and progress_toast.setText then
+                            progress_toast:setText(_("Fetching patch file listings…"))
+                            if UIManager.forceRePaint then UIManager:forceRePaint() end
+                        end
+                        sf:refreshPatchFileListings()
+                    end
+                    table.insert(summary_parts, string.format(_("Cached %s patch repositories."), tostring(patch_total)))
+                end
+                local summary = table.concat(summary_parts, " ")
+                if summary == "" then
+                    summary = _("Storefront cache refreshed.")
+                end
+                StorefrontSettings:saveSetting("status_text", summary)
+                StorefrontSettings:flush()
+                finishRefresh(true, summary, nil)
+            end)
 
-        if not ok then
-            finishRefresh(false, nil, err)
-        end
+            if not ok then
+                finishRefresh(false, nil, err)
+            end
+        end)
     end
 end
 

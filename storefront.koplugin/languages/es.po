@@ -482,6 +482,27 @@ msgstr "Orden: Estado"
 msgid "Sort"
 msgstr "Orden"
 
+msgid "Downloading %s…"
+msgstr "Descargando %s…"
+
+msgid "Installing %s…"
+msgstr "Instalando %s…"
+
+msgid "Refreshing catalog…"
+msgstr "Actualizando catálogo…"
+
+msgid "Refreshing catalog via Direct GitHub API…"
+msgstr "Actualizando catálogo mediante la API directa de GitHub…"
+
+msgid "Fetching plugins via Direct GitHub API…"
+msgstr "Obteniendo plugins mediante la API directa de GitHub…"
+
+msgid "Fetching patches via Direct GitHub API…"
+msgstr "Obteniendo parches mediante la API directa de GitHub…"
+
+msgid "Fetching patch file listings…"
+msgstr "Obteniendo listas de archivos de parches…"
+
 
 
 

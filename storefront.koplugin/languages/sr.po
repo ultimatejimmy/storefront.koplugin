@@ -217,3 +217,24 @@ msgstr "Закрпе"
 msgid "tab_plugins"
 msgstr "Прикључци"
 
+msgid "Downloading %s…"
+msgstr "Preuzimanje %s…"
+
+msgid "Installing %s…"
+msgstr "Instaliranje %s…"
+
+msgid "Refreshing catalog…"
+msgstr "Osvežavanje kataloga…"
+
+msgid "Refreshing catalog via Direct GitHub API…"
+msgstr "Osvežavanje kataloga putem Direct GitHub API…"
+
+msgid "Fetching plugins via Direct GitHub API…"
+msgstr "Preuzimanje priključaka putem Direct GitHub API…"
+
+msgid "Fetching patches via Direct GitHub API…"
+msgstr "Preuzimanje zakrpa putem Direct GitHub API…"
+
+msgid "Fetching patch file listings…"
+msgstr "Preuzimanje liste fajlova zakrpa…"
+

@@ -678,13 +678,12 @@ function M:init(Storefront)
         end
         local zip_path = string.format("%s/%s-%d.zip", downloads_dir, repo.name, os.time())
 
-        local progress = InfoMessage:new{
-            text = _("Downloading plugin source archive…\nThis may take a moment for large repositories."),
-            timeout = 0,
-        }
-        UIManager:show(progress)
+        local Toast = require("storefront_toast")
+        local plugin_display_name = repo and (repo.name or repo.full_name) or "plugin"
+        local progress = Toast.show(string.format(_("Downloading %s…"), plugin_display_name), 0)
+        if UIManager.forceRePaint then UIManager:forceRePaint() end
         local ok, err = downloadToFile(url, zip_path)
-        UIManager:close(progress)
+        if progress and progress.close then progress:close() end
 
         if not ok then
             util.removeFile(zip_path)
@@ -724,14 +723,15 @@ function M:init(Storefront)
         end
 
         local function proceedWithInstall(dest_root)
-            local install_progress = InfoMessage:new{
-                text = _("Extracting and installing plugin…\nPlease wait."),
-                timeout = 0,
-            }
-            UIManager:show(install_progress)
+            local install_display_name = info and info.plugin_name or (repo and repo.name) or "plugin"
+            local install_progress = Toast.show(string.format(_("Installing %s…"), install_display_name), 0)
+            if UIManager.forceRePaint then UIManager:forceRePaint() end
+
             local ok_extract, dest_or_err = extractPluginToUserDir(reader, info, dest_root)
             reader:close()
             util.removeFile(zip_path)
+
+            if install_progress and install_progress.close then install_progress:close() end
 
             if not ok_extract then
                 UIManager:show(InfoMessage:new{
@@ -757,7 +757,6 @@ function M:init(Storefront)
                 end
             end
 
-            UIManager:close(install_progress)
             StorefrontLogger.action(msg)
             self:showRestartConfirmation(msg)
 
@@ -794,17 +793,16 @@ function M:init(Storefront)
         end
         local zip_path = string.format("%s/%s-%d.zip", downloads_dir, repo.name or "plugin", os.time())
 
+        local Toast = require("storefront_toast")
         local progress
         if not is_batch then
-            progress = InfoMessage:new{
-                text = string.format(_("Downloading release asset %s…"), asset_name),
-                timeout = 0,
-            }
-            UIManager:show(progress)
+            local display_name = repo and (repo.name or repo.full_name) or asset_name
+            progress = Toast.show(string.format(_("Downloading %s…"), display_name), 0)
+            if UIManager.forceRePaint then UIManager:forceRePaint() end
         end
 
         local ok, err = downloadToFile(asset.browser_download_url, zip_path)
-        if progress then UIManager:close(progress) end
+        if progress and progress.close then progress:close() end
 
         if not ok then
             util.removeFile(zip_path)
@@ -870,18 +868,16 @@ function M:init(Storefront)
         local function proceedWithInstall(dest_root)
             local install_progress
             if not is_batch then
-                install_progress = InfoMessage:new{
-                    text = _("Extracting and installing plugin…\nPlease wait."),
-                    timeout = 0,
-                }
-                UIManager:show(install_progress)
+                local display_name = info and info.plugin_name or (repo and repo.name) or "plugin"
+                install_progress = Toast.show(string.format(_("Installing %s…"), display_name), 0)
+                if UIManager.forceRePaint then UIManager:forceRePaint() end
             end
 
             local ok_extract, dest_or_err = extractPluginToUserDir(reader, info, dest_root)
             reader:close()
             util.removeFile(zip_path)
 
-            if install_progress then UIManager:close(install_progress) end
+            if install_progress and install_progress.close then install_progress:close() end
 
             if not ok_extract then
                 if not is_batch then

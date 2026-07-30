@@ -217,3 +217,24 @@ msgstr "补丁"
 msgid "tab_plugins"
 msgstr "插件"
 
+msgid "Downloading %s…"
+msgstr "正在下载 %s…"
+
+msgid "Installing %s…"
+msgstr "正在安装 %s…"
+
+msgid "Refreshing catalog…"
+msgstr "正在刷新目录…"
+
+msgid "Refreshing catalog via Direct GitHub API…"
+msgstr "正在通过 Direct GitHub API 刷新目录…"
+
+msgid "Fetching plugins via Direct GitHub API…"
+msgstr "正在通过 Direct GitHub API 获取插件…"
+
+msgid "Fetching patches via Direct GitHub API…"
+msgstr "正在通过 Direct GitHub API 获取补丁…"
+
+msgid "Fetching patch file listings…"
+msgstr "正在获取补丁文件列表…"
+

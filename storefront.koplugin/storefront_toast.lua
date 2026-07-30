@@ -50,6 +50,7 @@ function StorefrontToastWidget:init()
         width = max_toast_w - sc(70),
         alignment = "center",
     }
+    self.label_widget = label
 
     local row = HorizontalGroup:new{
         align = "center",
@@ -99,6 +100,14 @@ function StorefrontToastWidget:close()
         self._timer = nil
     end
     UIManager:close(self)
+end
+
+function StorefrontToastWidget:setText(text)
+    self.text = text or ""
+    if self.label_widget then
+        self.label_widget:setText(self.text)
+        UIManager:setDirty(self, "ui")
+    end
 end
 
 local StorefrontToast = {}

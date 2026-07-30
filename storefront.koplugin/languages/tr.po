@@ -217,3 +217,24 @@ msgstr "Yamalar"
 msgid "tab_plugins"
 msgstr "Eklentiler"
 
+msgid "Downloading %s…"
+msgstr "%s indiriliyor…"
+
+msgid "Installing %s…"
+msgstr "%s kuruluyor…"
+
+msgid "Refreshing catalog…"
+msgstr "Katalog yenileniyor…"
+
+msgid "Refreshing catalog via Direct GitHub API…"
+msgstr "Katalog Direct GitHub API ile yenileniyor…"
+
+msgid "Fetching plugins via Direct GitHub API…"
+msgstr "Eklentiler Direct GitHub API ile alınıyor…"
+
+msgid "Fetching patches via Direct GitHub API…"
+msgstr "Yamalar Direct GitHub API ile alınıyor…"
+
+msgid "Fetching patch file listings…"
+msgstr "Yama dosyası listeleri alınıyor…"
+

@@ -217,3 +217,24 @@ msgstr "Javítások"
 msgid "tab_plugins"
 msgstr "Bővítmények"
 
+msgid "Downloading %s…"
+msgstr "%s letöltése…"
+
+msgid "Installing %s…"
+msgstr "%s telepítése…"
+
+msgid "Refreshing catalog…"
+msgstr "Katalógus frissítése…"
+
+msgid "Refreshing catalog via Direct GitHub API…"
+msgstr "Katalógus frissítése Direct GitHub API használatával…"
+
+msgid "Fetching plugins via Direct GitHub API…"
+msgstr "Bővítmények lekérése Direct GitHub API használatával…"
+
+msgid "Fetching patches via Direct GitHub API…"
+msgstr "Javítások lekérése Direct GitHub API használatával…"
+
+msgid "Fetching patch file listings…"
+msgstr "Javításfájlok listájának lekérése…"
+

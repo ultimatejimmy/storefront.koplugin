@@ -456,3 +456,24 @@ msgstr "Czcionka"
 
 msgid "Default"
 msgstr "Wbudowana"
+
+msgid "Downloading %s…"
+msgstr "Pobieranie %s…"
+
+msgid "Installing %s…"
+msgstr "Instalowanie %s…"
+
+msgid "Refreshing catalog…"
+msgstr "Odświeżanie katalogu…"
+
+msgid "Refreshing catalog via Direct GitHub API…"
+msgstr "Odświeżanie katalogu przez Direct GitHub API…"
+
+msgid "Fetching plugins via Direct GitHub API…"
+msgstr "Pobieranie wtyczek przez Direct GitHub API…"
+
+msgid "Fetching patches via Direct GitHub API…"
+msgstr "Pobieranie łatek przez Direct GitHub API…"
+
+msgid "Fetching patch file listings…"
+msgstr "Pobieranie listy plików łatek…"

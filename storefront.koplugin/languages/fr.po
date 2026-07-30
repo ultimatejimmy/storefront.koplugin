@@ -478,5 +478,26 @@ msgstr "Tri : Statut"
 msgid "Sort"
 msgstr "Tri"
 
+msgid "Downloading %s…"
+msgstr "Téléchargement de %s…"
+
+msgid "Installing %s…"
+msgstr "Installation de %s…"
+
+msgid "Refreshing catalog…"
+msgstr "Actualisation du catalogue…"
+
+msgid "Refreshing catalog via Direct GitHub API…"
+msgstr "Actualisation du catalogue via l'API GitHub Directe…"
+
+msgid "Fetching plugins via Direct GitHub API…"
+msgstr "Récupération des plugins via l'API GitHub Directe…"
+
+msgid "Fetching patches via Direct GitHub API…"
+msgstr "Récupération des patchs via l'API GitHub Directe…"
+
+msgid "Fetching patch file listings…"
+msgstr "Récupération de la liste des fichiers de patch…"
+
 
 

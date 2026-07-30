@@ -393,6 +393,27 @@ msgstr "Sort: Status"
 msgid "Sort"
 msgstr "Sort"
 
+msgid "Downloading %s…"
+msgstr "Downloading %s…"
+
+msgid "Installing %s…"
+msgstr "Installing %s…"
+
+msgid "Refreshing catalog…"
+msgstr "Refreshing catalog…"
+
+msgid "Refreshing catalog via Direct GitHub API…"
+msgstr "Refreshing catalog via Direct GitHub API…"
+
+msgid "Fetching plugins via Direct GitHub API…"
+msgstr "Fetching plugins via Direct GitHub API…"
+
+msgid "Fetching patches via Direct GitHub API…"
+msgstr "Fetching patches via Direct GitHub API…"
+
+msgid "Fetching patch file listings…"
+msgstr "Fetching patch file listings…"
+
 
 
 

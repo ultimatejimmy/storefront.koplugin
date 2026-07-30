@@ -217,3 +217,24 @@ msgstr "Tambalan"
 msgid "tab_plugins"
 msgstr "Plugin"
 
+msgid "Downloading %s…"
+msgstr "Mengunduh %s…"
+
+msgid "Installing %s…"
+msgstr "Memasang %s…"
+
+msgid "Refreshing catalog…"
+msgstr "Memperbarui katalog…"
+
+msgid "Refreshing catalog via Direct GitHub API…"
+msgstr "Memperbarui katalog via Direct GitHub API…"
+
+msgid "Fetching plugins via Direct GitHub API…"
+msgstr "Mengambil plugin via Direct GitHub API…"
+
+msgid "Fetching patches via Direct GitHub API…"
+msgstr "Mengambil tambalan via Direct GitHub API…"
+
+msgid "Fetching patch file listings…"
+msgstr "Mengambil daftar berkas tambalan…"
+

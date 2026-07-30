@@ -313,6 +313,12 @@ local FALLBACKS = {
     status_downloading = "Downloading...",
     status_installing = "Installing...",
     status_uninstalling = "Uninstalling...",
+    ["Downloading %s…"] = "Downloading %s…",
+    ["Installing %s…"] = "Installing %s…",
+    ["Refreshing catalog via Direct GitHub API…"] = "Refreshing catalog via Direct GitHub API…",
+    ["Fetching plugins via Direct GitHub API…"] = "Fetching plugins via Direct GitHub API…",
+    ["Fetching patches via Direct GitHub API…"] = "Fetching patches via Direct GitHub API…",
+    ["Fetching patch file listings…"] = "Fetching patch file listings…",
     
     -- Dialog Titles & Labels
     label_author = "Author",

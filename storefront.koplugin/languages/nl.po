@@ -217,3 +217,24 @@ msgstr "Patches"
 msgid "tab_plugins"
 msgstr "Plugins"
 
+msgid "Downloading %s…"
+msgstr "%s downloaden…"
+
+msgid "Installing %s…"
+msgstr "%s installeren…"
+
+msgid "Refreshing catalog…"
+msgstr "Catalogus vernieuwen…"
+
+msgid "Refreshing catalog via Direct GitHub API…"
+msgstr "Catalogus vernieuwen via Direct GitHub API…"
+
+msgid "Fetching plugins via Direct GitHub API…"
+msgstr "Plugins ophalen via Direct GitHub API…"
+
+msgid "Fetching patches via Direct GitHub API…"
+msgstr "Patches ophalen via Direct GitHub API…"
+
+msgid "Fetching patch file listings…"
+msgstr "Lijst met patchbestanden ophalen…"
+
