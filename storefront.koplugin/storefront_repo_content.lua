@@ -567,14 +567,41 @@ function RepoContent.fetchWikiSidebar(owner, repo, force_refresh)
         if not target or target == "" then return end
         local clean_target = target:gsub("^%s+", ""):gsub("%s+$", ""):gsub("^/+", "")
         clean_target = clean_target:gsub("^https?://github%.com/[^/]+/[^/]+/wiki/", "")
-        if isImageTarget(clean_target) or isImageTarget(target) then
+
+        if clean_target:find("|") then
+            local p1, p2 = clean_target:match("^(.-)|(.-)$")
+            if p1 and p2 then
+                clean_target = p1:gsub("^%s+", ""):gsub("%s+$", "")
+                if not title or title == target then
+                    title = p2:gsub("^%s+", ""):gsub("%s+$", "")
+                end
+            end
+        end
+
+        local clean_title = (title and type(title) == "string") and title:gsub("^%s+", ""):gsub("%s+$", "") or ""
+        if clean_title:find("|") then
+            local p1, p2 = clean_title:match("^(.-)|(.-)$")
+            if p1 and p2 then
+                clean_title = p1:gsub("^%s+", ""):gsub("%s+$", "")
+            end
+        end
+
+        if isImageTarget(clean_target) or isImageTarget(clean_title) then
             return
         end
-        local key = clean_target:lower()
+
+        local key = clean_target:lower():gsub("[^%w]", "")
+        if key == "" then key = clean_target:lower() end
+
         if not seen[key] then
             seen[key] = true
+            local display_title = (clean_title ~= "" and clean_title ~= clean_target) and clean_title or clean_target
+            if display_title == clean_target then
+                display_title = display_title:gsub("^(%d+)%.-", "%1. "):gsub("-", " ")
+            end
+
             table.insert(items, {
-                title = (title and title ~= "") and title or clean_target,
+                title = display_title,
                 page = clean_target,
             })
         end
@@ -675,6 +702,9 @@ function RepoContent.fetchWikiPageHtml(owner, repo, page_name, force_refresh)
 
     local raw_md, err = GitHubClient.fetchWikiPageRaw(owner, repo, page_name)
     if not raw_md or raw_md == "" then
+        if attrs and attrs.mode == "file" then
+            return true, path
+        end
         return false, err or "wiki page not found"
     end
 

@@ -28,6 +28,7 @@ local RightContainer = require("ui/widget/container/rightcontainer")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local StorefrontImageModal = require("storefront_image_modal")
 local InstallStore = require("storefront_installs")
+local InfoMessage = require("ui/widget/infomessage")
 local logger = require("logger")
 local GestureRange = require("ui/gesturerange")
 local util = require("util")
@@ -902,8 +903,10 @@ a { color: #000000 !important; text-decoration: underline; }
 a.plain-link { color: #000000 !important; text-decoration: none !important; }
 a.btn-primary { display: block !important; width: 100%% !important; background-color: #000000 !important; color: #ffffff !important; padding: 14px 0 !important; text-decoration: none !important; font-weight: bold !important; border-radius: 8px !important; text-align: center !important; font-size: 18px !important; box-sizing: border-box !important; }
 img { max-width: 100%%; height: auto; margin-left: auto; margin-right: auto; }
-table { width: 100%% !important; min-width: 100%% !important; table-layout: fixed !important; border-collapse: collapse !important; margin: 0 !important; padding: 0 !important; }
-td { vertical-align: top; }
+table { width: 100%% !important; min-width: 100%% !important; border-collapse: collapse !important; margin: 0.6em 0 !important; border: 1px solid #666666 !important; }
+th { background-color: #e0e0e0 !important; font-weight: bold !important; border: 1px solid #888888 !important; padding: 5px 8px !important; text-align: left !important; }
+td { vertical-align: top !important; border: 1px solid #cccccc !important; padding: 5px 8px !important; }
+tr:nth-child(even) td { background-color: #f5f5f5 !important; }
 ]=], font_declarations, sans_family, sans_family, serif_family)
 
     local html_box = HtmlBoxWidget:new{
@@ -1490,6 +1493,7 @@ td { vertical-align: top; }
                 local header_h_offset = bar_h + sc(4) + hr_h + sc(4)
                 html_box.dimen = Geom:new{ w = readme_w, h = readme_h - header_h_offset }
 
+                local dialog_self = self
                 local page_title = self.active_wiki_page or "Home"
                 local selector_btn = Button:new{
                     text = page_title .. "  ▾",
@@ -1516,8 +1520,14 @@ td { vertical-align: top; }
                                     if pages_menu then
                                         UIManager:close(pages_menu)
                                     end
-                                    self.active_wiki_page = item.page
-                                    if self.loadContent then self.loadContent("wiki") end
+                                    if item.page ~= self.active_wiki_page then
+                                        self.wiki_history = self.wiki_history or {}
+                                        if self.active_wiki_page then
+                                            table.insert(self.wiki_history, self.active_wiki_page)
+                                        end
+                                        self.active_wiki_page = item.page
+                                        if self.loadContent then self.loadContent("wiki") end
+                                    end
                                 end,
                             })
                         end
@@ -1527,26 +1537,110 @@ td { vertical-align: top; }
                             item_table = menu_items,
                             width = menu_w,
                             radius = 0,
+                            rect_radius = 0,
                             bordersize = sc(2),
                         }
-                        if pages_menu.radius then pages_menu.radius = 0 end
+                        local function zeroRadius(w, depth)
+                            if not w or type(w) ~= "table" or (depth and depth > 4) then return end
+                            if rawget(w, "radius") then w.radius = 0 end
+                            if rawget(w, "rect_radius") then w.rect_radius = 0 end
+                            for k, v in pairs(w) do
+                                if type(v) == "table" and k ~= "parent" and k ~= "show_parent" and k ~= "dialog" and k ~= "_parent" and k ~= "ui" then
+                                    if type(k) == "number" or k == "frame" or k == "cover_frame" or k == "container" or k == "title_bar" or k == "title_frame" or k == "movable_container" then
+                                        zeroRadius(v, (depth or 0) + 1)
+                                    end
+                                end
+                            end
+                        end
+                        zeroRadius(pages_menu)
                         UIManager:show(pages_menu)
                     end,
                 }
 
-                local refresh_btn = Button:new{
-                    text = "↻",
-                    text_font_size = 16,
-                    text_font_bold = true,
+                local refresh_icon = ImageWidget:new{
+                    file = getAssetPath("rotate-cw.svg"),
+                    width = sc(18),
+                    height = sc(18),
+                    scale_factor = 0,
+                    is_icon = true,
+                    alpha = true,
+                }
+
+                local refresh_frame = FrameContainer:new{
+                    background = Blitbuffer.COLOR_WHITE,
                     bordersize = sc(1),
                     radius = 0,
+                    padding = sc(3),
+                    padding_h = sc(6),
+                    refresh_icon,
+                }
+
+                local refresh_btn = InputContainer:new{
+                    refresh_frame,
+                }
+                refresh_btn.ges_events = {
+                    TapRefreshWiki = {
+                        GestureRange:new{
+                            ges = "tap",
+                            range = function()
+                                local d = refresh_btn.dimen or refresh_frame:getSize()
+                                return Geom:new{ x = d.x or 0, y = d.y or 0, w = d.w or 0, h = d.h or 0 }
+                            end,
+                        },
+                    },
+                }
+                function refresh_btn:onTapRefreshWiki()
+                    if dialog_self.loadContent then dialog_self.loadContent("wiki", true) end
+                    return true
+                end
+
+                local back_arrow_icon = ImageWidget:new{
+                    file = getAssetPath("arrow-left.svg"),
+                    width = sc(18),
+                    height = sc(18),
+                    scale_factor = 0,
+                    is_icon = true,
+                    alpha = true,
+                }
+
+                local back_wiki_frame = FrameContainer:new{
                     background = Blitbuffer.COLOR_WHITE,
-                    padding = sc(4),
-                    padding_h = sc(8),
-                    show_parent = self,
-                    callback = function()
-                        if self.loadContent then self.loadContent("wiki", true) end
-                    end,
+                    bordersize = sc(1),
+                    radius = 0,
+                    padding = sc(3),
+                    padding_h = sc(6),
+                    back_arrow_icon,
+                }
+
+                local back_wiki_btn = InputContainer:new{
+                    back_wiki_frame,
+                }
+                back_wiki_btn.ges_events = {
+                    TapBackWiki = {
+                        GestureRange:new{
+                            ges = "tap",
+                            range = function()
+                                local d = back_wiki_btn.dimen or back_wiki_frame:getSize()
+                                return Geom:new{ x = d.x or 0, y = d.y or 0, w = d.w or 0, h = d.h or 0 }
+                            end,
+                        },
+                    },
+                }
+                function back_wiki_btn:onTapBackWiki()
+                    if dialog_self.wiki_history and #dialog_self.wiki_history > 0 then
+                        local prev_page = table.remove(dialog_self.wiki_history)
+                        dialog_self.active_wiki_page = prev_page
+                        if dialog_self.loadContent then dialog_self.loadContent("wiki") end
+                    else
+                        pcall(function() InfoMessage:show(_("No previous page in history")) end)
+                    end
+                    return true
+                end
+
+                local right_btn_group = HorizontalGroup:new{
+                    back_wiki_btn,
+                    HorizontalSpan:new{ width = sc(6) },
+                    refresh_btn,
                 }
 
                 local header_bar = OverlapGroup:new{
@@ -1557,7 +1651,7 @@ td { vertical-align: top; }
                     },
                     RightContainer:new{
                         dimen = Geom:new{ w = readme_w, h = bar_h },
-                        refresh_btn,
+                        right_btn_group,
                     },
                 }
 
@@ -1654,13 +1748,21 @@ td { vertical-align: top; }
                     updatePagination()
                 else
                     if tab_name == "wiki" then
-                        self.has_wiki = false
-                        self.active_tab = "readme"
-                        if self.tab_bar_box then
-                            self.tab_bar_box[1] = self:buildTabBar()
+                        if self.has_wiki == true or (self.active_wiki_page and self.active_wiki_page ~= "Home") then
+                            html_box.page_number = 1
+                            pcall(function()
+                                html_box:setContent("<p style='text-align:center;color:red;'>" .. _("Unable to load wiki page. Tap refresh to retry.") .. "</p>", readme_css, sc(18))
+                            end)
+                            updatePagination()
+                        else
+                            self.has_wiki = false
+                            self.active_tab = "readme"
+                            if self.tab_bar_box then
+                                self.tab_bar_box[1] = self:buildTabBar()
+                            end
+                            loadContent("readme")
+                            return
                         end
-                        loadContent("readme")
-                        return
                     else
                         local msg = (tab_name == "release_notes") and _("Unable to read Release Notes.") or _("Unable to read README.")
                         html_box.page_number = 1
@@ -1672,13 +1774,21 @@ td { vertical-align: top; }
                 end
             else
                 if tab_name == "wiki" then
-                    self.has_wiki = false
-                    self.active_tab = "readme"
-                    if self.tab_bar_box then
-                        self.tab_bar_box[1] = self:buildTabBar()
+                    if self.has_wiki == true or (self.active_wiki_page and self.active_wiki_page ~= "Home") then
+                        html_box.page_number = 1
+                        pcall(function()
+                            html_box:setContent("<p style='text-align:center;color:gray;'>" .. _("No Wiki page content available.") .. "</p>", readme_css, sc(18))
+                        end)
+                        updatePagination()
+                    else
+                        self.has_wiki = false
+                        self.active_tab = "readme"
+                        if self.tab_bar_box then
+                            self.tab_bar_box[1] = self:buildTabBar()
+                        end
+                        loadContent("readme")
+                        return
                     end
-                    loadContent("readme")
-                    return
                 else
                     local msg = (tab_name == "release_notes") and _("No Release Notes available.") or _("No README available.")
                     html_box.page_number = 1

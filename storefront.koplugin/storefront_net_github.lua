@@ -381,6 +381,77 @@ local function markdownToHtml(md, owner, repo)
         md = md:gsub(entity, repl)
     end
 
+    -- Pre-convert Markdown Tables into HTML table blocks
+    local function convertMarkdownTables(text)
+        local raw_lines = {}
+        for l in (text .. "\n"):gmatch("(.-)\r?\n") do
+            table.insert(raw_lines, l)
+        end
+
+        local out_lines = {}
+        local idx = 1
+        while idx <= #raw_lines do
+            local l1 = raw_lines[idx]
+            local l2 = raw_lines[idx + 1]
+
+            local is_l1_pipe = l1 and l1:find("|") ~= nil
+            local is_l2_sep = l2 and l2:find("|") and (l2:gsub("^%s*|", ""):gsub("|%s*$", ""):match("^%s*[%-%s:|]+%s*$") and l2:find("%-"))
+
+            if is_l1_pipe and is_l2_sep then
+                local tbl_parts = {}
+                table.insert(tbl_parts, "<table>")
+                table.insert(tbl_parts, "<thead><tr>")
+
+                local function splitCells(row_str)
+                    local s = row_str:gsub("^%s*|", ""):gsub("|%s*$", "")
+                    local cells = {}
+                    local pos = 1
+                    while true do
+                        local p = s:find("|", pos, true)
+                        if not p then
+                            local c = (s:sub(pos):gsub("^%s+", ""):gsub("%s+$", ""))
+                            table.insert(cells, c)
+                            break
+                        else
+                            local c = (s:sub(pos, p - 1):gsub("^%s+", ""):gsub("%s+$", ""))
+                            table.insert(cells, c)
+                            pos = p + 1
+                        end
+                    end
+                    return cells
+                end
+
+                for _, h in ipairs(splitCells(l1)) do
+                    table.insert(tbl_parts, string.format("<th>%s</th>", h))
+                end
+                table.insert(tbl_parts, "</tr></thead><tbody>")
+
+                idx = idx + 2
+
+                while idx <= #raw_lines do
+                    local row = raw_lines[idx]
+                    if not row or not row:find("|") or row:match("^%s*$") then
+                        break
+                    end
+                    table.insert(tbl_parts, "<tr>")
+                    for _, c in ipairs(splitCells(row)) do
+                        table.insert(tbl_parts, string.format("<td>%s</td>", c))
+                    end
+                    table.insert(tbl_parts, "</tr>")
+                    idx = idx + 1
+                end
+                table.insert(tbl_parts, "</tbody></table>")
+                table.insert(out_lines, table.concat(tbl_parts))
+            else
+                table.insert(out_lines, l1)
+                idx = idx + 1
+            end
+        end
+        return table.concat(out_lines, "\n")
+    end
+
+    md = convertMarkdownTables(md)
+
     local lines = {}
     local in_code_block = false
     local in_list = false
@@ -400,6 +471,20 @@ local function markdownToHtml(md, owner, repo)
             table.insert(lines, escaped)
         else
             local processed = line:gsub("&", "&amp;"):gsub("<", "&lt;"):gsub(">", "&gt;")
+
+            -- Restore table HTML tags if present from pre-conversion
+            processed = processed:gsub("&lt;table&gt;", "<table>")
+            processed = processed:gsub("&lt;/table&gt;", "</table>")
+            processed = processed:gsub("&lt;thead&gt;", "<thead>")
+            processed = processed:gsub("&lt;/thead&gt;", "</thead>")
+            processed = processed:gsub("&lt;tbody&gt;", "<tbody>")
+            processed = processed:gsub("&lt;/tbody&gt;", "</tbody>")
+            processed = processed:gsub("&lt;tr&gt;", "<tr>")
+            processed = processed:gsub("&lt;/tr&gt;", "</tr>")
+            processed = processed:gsub("&lt;th&gt;", "<th>")
+            processed = processed:gsub("&lt;/th&gt;", "</th>")
+            processed = processed:gsub("&lt;td&gt;", "<td>")
+            processed = processed:gsub("&lt;/td&gt;", "</td>")
 
             -- Convert Markdown Images: ![alt](url) -> <img src="url" alt="alt"/>
             processed = processed:gsub("!%[([^%]]*)%]%(([^%)]+)%)", function(alt, src)
@@ -517,49 +602,62 @@ local function markdownToHtml(md, owner, repo)
                 return saved_tags[tonumber(idx)]
             end)
 
-            -- Headings
-            local h6 = processed:match("^######%s+(.+)")
-            local h5 = processed:match("^#####%s+(.+)")
-            local h4 = processed:match("^####%s+(.+)")
-            local h3 = processed:match("^###%s+(.+)")
-            local h2 = processed:match("^##%s+(.+)")
-            local h1 = processed:match("^#%s+(.+)")
+            -- Check for HTML table block tags so we don't wrap them in <p>
+            local is_tbl_tag = processed:find("<table") or processed:find("</table>")
+                or processed:find("<tr") or processed:find("</tr>")
+                or processed:find("<th") or processed:find("</th>")
+                or processed:find("<td") or processed:find("</td>")
+                or processed:find("<thead") or processed:find("</thead>")
+                or processed:find("<tbody") or processed:find("</tbody>")
 
-            if h1 then
+            if is_tbl_tag then
                 if in_list then table.insert(lines, "</ul>"); in_list = false end
-                table.insert(lines, "<h1>" .. h1 .. "</h1>")
-            elseif h2 then
-                if in_list then table.insert(lines, "</ul>"); in_list = false end
-                table.insert(lines, "<h2>" .. h2 .. "</h2>")
-            elseif h3 then
-                if in_list then table.insert(lines, "</ul>"); in_list = false end
-                table.insert(lines, "<h3>" .. h3 .. "</h3>")
-            elseif h4 then
-                if in_list then table.insert(lines, "</ul>"); in_list = false end
-                table.insert(lines, "<h4>" .. h4 .. "</h4>")
-            elseif h5 then
-                if in_list then table.insert(lines, "</ul>"); in_list = false end
-                table.insert(lines, "<h5>" .. h5 .. "</h5>")
-            elseif h6 then
-                if in_list then table.insert(lines, "</ul>"); in_list = false end
-                table.insert(lines, "<h6>" .. h6 .. "</h6>")
+                table.insert(lines, processed)
             else
-                local item = processed:match("^%s*[%-%*]%s+(.+)")
-                if item then
-                    if not in_list then
-                        table.insert(lines, "<ul>")
-                        in_list = true
-                    end
-                    table.insert(lines, "<li>" .. item .. "</li>")
+                -- Headings
+                local h6 = processed:match("^######%s+(.+)")
+                local h5 = processed:match("^#####%s+(.+)")
+                local h4 = processed:match("^####%s+(.+)")
+                local h3 = processed:match("^###%s+(.+)")
+                local h2 = processed:match("^##%s+(.+)")
+                local h1 = processed:match("^#%s+(.+)")
+
+                if h1 then
+                    if in_list then table.insert(lines, "</ul>"); in_list = false end
+                    table.insert(lines, "<h1>" .. h1 .. "</h1>")
+                elseif h2 then
+                    if in_list then table.insert(lines, "</ul>"); in_list = false end
+                    table.insert(lines, "<h2>" .. h2 .. "</h2>")
+                elseif h3 then
+                    if in_list then table.insert(lines, "</ul>"); in_list = false end
+                    table.insert(lines, "<h3>" .. h3 .. "</h3>")
+                elseif h4 then
+                    if in_list then table.insert(lines, "</ul>"); in_list = false end
+                    table.insert(lines, "<h4>" .. h4 .. "</h4>")
+                elseif h5 then
+                    if in_list then table.insert(lines, "</ul>"); in_list = false end
+                    table.insert(lines, "<h5>" .. h5 .. "</h5>")
+                elseif h6 then
+                    if in_list then table.insert(lines, "</ul>"); in_list = false end
+                    table.insert(lines, "<h6>" .. h6 .. "</h6>")
                 else
-                    if in_list then
-                        table.insert(lines, "</ul>")
-                        in_list = false
-                    end
-                    if processed:match("^%s*$") then
-                        table.insert(lines, "<br/>")
+                    local item = processed:match("^%s*[%-%*]%s+(.+)")
+                    if item then
+                        if not in_list then
+                            table.insert(lines, "<ul>")
+                            in_list = true
+                        end
+                        table.insert(lines, "<li>" .. item .. "</li>")
                     else
-                        table.insert(lines, "<p>" .. processed .. "</p>")
+                        if in_list then
+                            table.insert(lines, "</ul>")
+                            in_list = false
+                        end
+                        if processed:match("^%s*$") then
+                            table.insert(lines, "<br/>")
+                        else
+                            table.insert(lines, "<p>" .. processed .. "</p>")
+                        end
                     end
                 end
             end
@@ -638,40 +736,46 @@ function GitHubClient.fetchWikiPageRaw(owner, repo, page_name)
     end
     page_name = (page_name and page_name ~= "") and page_name or "Home"
     local clean_page = page_name:gsub("%.md$", "")
-    local wiki_url = string.format("https://raw.githubusercontent.com/wiki/%s/%s/%s.md", owner, repo, clean_page)
-    local response_body = {}
-    local _, code = http.request{
-        url = wiki_url,
-        headers = {
-            ["Accept"] = "text/plain",
-            ["User-Agent"] = USER_AGENT,
-        },
-        sink = newTableSink(response_body),
+
+    local candidate_pages = {
+        clean_page,
+        clean_page:gsub("%s+", "-"),
+        clean_page:gsub("%s+", "%%20"),
+        clean_page:gsub("^(%d+)%s*%.%s*", "%1.-"),
+        clean_page:gsub("^(%d+)%s*%.%s*", "%1-"),
+        clean_page:gsub("[^%w_%-.]", "-"),
     }
-    code = tonumber(code)
-    local body = table.concat(response_body)
-    if code == 200 and body and body ~= "" then
-        return body, nil
+
+    local seen_pages = {}
+    for _, name in ipairs(candidate_pages) do
+        if not seen_pages[name] then
+            seen_pages[name] = true
+
+            local urls_to_try = {
+                string.format("https://raw.githubusercontent.com/wiki/%s/%s/%s.md", owner, repo, name),
+                string.format("https://raw.githubusercontent.com/wiki/%s/%s/%s", owner, repo, name),
+            }
+
+            for _, wiki_url in ipairs(urls_to_try) do
+                local response_body = {}
+                local res, code = http.request{
+                    url = wiki_url,
+                    headers = {
+                        ["Accept"] = "text/plain",
+                        ["User-Agent"] = USER_AGENT,
+                    },
+                    sink = newTableSink(response_body),
+                }
+                code = tonumber(code)
+                local body = table.concat(response_body)
+                if code == 200 and body and body ~= "" then
+                    return body, nil
+                end
+            end
+        end
     end
 
-    -- Fallback without .md extension
-    local wiki_url_noext = string.format("https://raw.githubusercontent.com/wiki/%s/%s/%s", owner, repo, clean_page)
-    response_body = {}
-    local _, code_noext = http.request{
-        url = wiki_url_noext,
-        headers = {
-            ["Accept"] = "text/plain",
-            ["User-Agent"] = USER_AGENT,
-        },
-        sink = newTableSink(response_body),
-    }
-    code_noext = tonumber(code_noext)
-    body = table.concat(response_body)
-    if code_noext == 200 and body and body ~= "" then
-        return body, nil
-    end
-
-    return nil, string.format("HTTP %s", tostring(code))
+    return nil, "HTTP 404: wiki page not found"
 end
 
 return GitHubClient
