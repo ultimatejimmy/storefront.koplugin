@@ -6507,6 +6507,7 @@ function Storefront:calculateDynamicPageSize(tab_name)
     local has_toolbar = (tab_name == "Installed" and self.browser_state and self.browser_state.show_filter_bar_installed ~= false)
         or (tab_name == "Plugins" and self.browser_state and self.browser_state.show_filter_bar_plugins == true)
         or (tab_name == "Patches" and self.browser_state and self.browser_state.show_filter_bar_patches == true)
+        or (tab_name == "Fonts" and self.browser_state and self.browser_state.show_filter_bar_fonts == true)
 
     local toolbar_height = 0
     local divider_height = thin + span
@@ -6555,7 +6556,7 @@ function Storefront:calculateDynamicPageSize(tab_name)
     local item_h = sample_widget:getSize().h
     local container_padding = 2 * pad
     local slot_total = item_h + thin
-    local avail_height = body_height - container_padding + thin
+    local avail_height = body_height - container_padding
 
     return math.max(1, math.floor(avail_height / slot_total))
 end
@@ -6581,6 +6582,7 @@ function Storefront:calculateAvailableListHeight(tab_name)
     local has_toolbar = (tab_name == "Installed" and self.browser_state and self.browser_state.show_filter_bar_installed ~= false)
         or (tab_name == "Plugins" and self.browser_state and self.browser_state.show_filter_bar_plugins == true)
         or (tab_name == "Patches" and self.browser_state and self.browser_state.show_filter_bar_patches == true)
+        or (tab_name == "Fonts" and self.browser_state and self.browser_state.show_filter_bar_fonts == true)
 
     local toolbar_height = 0
     local divider_height = thin + span
@@ -6596,7 +6598,7 @@ function Storefront:calculateAvailableListHeight(tab_name)
     end
 
     local container_padding = 2 * pad
-    return body_height - container_padding + thin
+    return body_height - container_padding
 end
 
 function Storefront:paginateEntries(items, tab_name)
@@ -6640,16 +6642,18 @@ function Storefront:paginateEntries(items, tab_name)
             item_h = text_box:getSize().h + 2 * pad
         end
 
-        local slot_h = (item_h and item_h > 0 and item_h or Device.screen:scaleBySize(60)) + thin
+        local item_needed_h = (item_h and item_h > 0 and item_h or Device.screen:scaleBySize(60))
+        local slot_h = (#current_page == 0) and item_needed_h or (item_needed_h + thin)
 
         if #current_page > 0 and (current_h + slot_h > avail_height) then
             table.insert(pages, current_page)
             current_page = {}
-            current_h = 0
+            current_h = item_needed_h
+        else
+            current_h = current_h + slot_h
         end
 
         table.insert(current_page, entry)
-        current_h = current_h + slot_h
     end
 
     if #current_page > 0 then

@@ -425,13 +425,15 @@ function StorefrontBrowserDialog:init()
                     self._focus_target_index = fidx
                 end
             end
-            if entry.separator and idx < #self.items then
-                list_group[#list_group + 1] = LineWidget:new{
-                    background = Blitbuffer.COLOR_DARK_GRAY,
-                    dimen = Geom:new{ w = entry_width, h = Size.line.thin },
-                }
-            else
-                list_group[#list_group + 1] = VerticalSpan:new{ width = Size.span.vertical_default }
+            if idx < #self.items then
+                if entry.separator then
+                    list_group[#list_group + 1] = LineWidget:new{
+                        background = Blitbuffer.COLOR_DARK_GRAY,
+                        dimen = Geom:new{ w = entry_width, h = Size.line.thin },
+                    }
+                else
+                    list_group[#list_group + 1] = VerticalSpan:new{ width = Size.span.vertical_default }
+                end
             end
         end
     end
