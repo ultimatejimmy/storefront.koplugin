@@ -1,0 +1,489 @@
+msgid ""
+msgstr ""
+"Language-Team: Spanish\n"
+"Language: es\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+# en-hash: 775f0a631bf3455122e2f6932ec06f7b
+msgid "about_text"
+msgstr "Storefront es un gestor de paquetes integrado en KOReader para complementos, parches y fuentes."
+
+# en-hash: d941e779a1f26a117075fb1935c15664
+msgid "btn_apply"
+msgstr "Aplicar"
+
+# en-hash: 0557fa923dcee4d0f86b1409f5c2167f
+msgid "btn_back"
+msgstr "< Volver"
+
+msgid "< Back"
+msgstr "< Volver"
+
+msgid "updated %s (%s)"
+msgstr "actualizado %s (%s)"
+
+msgid "updated %s"
+msgstr "actualizado %s"
+
+
+# en-hash: ea4788705e6873b424c65e91c2846b19
+msgid "btn_cancel"
+msgstr "Cancelar"
+
+# en-hash: d3d2e617335f08df83599665eef8a418
+msgid "btn_close"
+msgstr "Cerrar"
+
+# en-hash: 7b546d0a793a61f3640243be12674e30
+msgid "btn_install"
+msgstr "Instalar"
+
+# en-hash: e0aa021e21dddbd6d8cecec71e9cf564
+msgid "btn_ok"
+msgstr "OK"
+
+# en-hash: 3b878279a04dc47d60932bf294d9e3d2
+msgid "btn_preview"
+msgstr "Vista previa"
+
+# en-hash: 63a6a0e6981e295d47d41541f014b2d4
+msgid "btn_refresh"
+msgstr "Actualizar"
+
+# en-hash: 1fef1bb7ae7fe2fa13e0cbca9c5ecdf4
+msgid "btn_release_notes"
+msgstr "Notas de la versión"
+
+# en-hash: bc3b80b0bb11634aebe3a7b6cfbcac7e
+msgid "btn_restart"
+msgstr "Reiniciar KOReader"
+
+# en-hash: 47a0be8d1015d54fbcf101bf890ab8d8
+msgid "btn_retry"
+msgstr "Reintentar"
+
+# en-hash: 13348442cc6a27032d2b4aa28b75a5d3
+msgid "btn_search"
+msgstr "Buscar"
+
+# en-hash: ee4943261623910c0ee47a060dff55c1
+msgid "btn_uninstall"
+msgstr "Desinstalar"
+
+# en-hash: 06933067a9d3be2c4318853b0b7da18a
+msgid "btn_update"
+msgstr "Actualizar"
+
+# en-hash: 46c59b20e0fcaedbf19e59546d1bf035
+msgid "btn_view_details"
+msgstr "Ver detalles"
+
+# en-hash: c0ae6f112c3f87f272a71bf6fb190333
+msgid "confirm_install"
+msgstr "¿Instalar '%s'?"
+
+# en-hash: dbe637db6ff8ddbc1ce24cf9659bca40
+msgid "confirm_uninstall"
+msgstr "¿Desinstalar '%s'? Esta acción no se puede deshacer."
+
+# en-hash: e99ee5fb3426746cf595700889ecae69
+msgid "confirm_update"
+msgstr "¿Actualizar '%s' de v%s a v%s?"
+
+# en-hash: 0fa6e12e2c5e52a9a7a97ea94cbf0338
+msgid "err_install_failed"
+msgstr "Error al instalar '%s'."
+
+# en-hash: 5eeaa935ae4cfcefb1c06ca7f35b29fa
+msgid "err_network_failed"
+msgstr "Error de red: No se pudo descargar el catálogo."
+
+# en-hash: 8b3a7dc9bf55be1b8166b177893ea30b
+msgid "err_uninstall_failed"
+msgstr "Error al desinstalar '%s'."
+
+# en-hash: 8c3bece5fb7eebdfec6cae8d0e7e408d
+msgid "filter_all"
+msgstr "Todas las categorías"
+
+# en-hash: 4041b65e90f2302e26d9c614b0b14c33
+msgid "filter_installed"
+msgstr "Instalado"
+
+# en-hash: 58628efef0b8dbd0c9ff7ea64cf46cf7
+msgid "filter_updates"
+msgstr "Updates"
+
+# en-hash: 9559c5d13028c2e6f4777598177579f1
+msgid "label_author"
+msgstr "Autor"
+
+# en-hash: b5a7adde1af5c87d7594c1f332d961cf
+msgid "label_description"
+msgstr "Descripción"
+
+# en-hash: d9426f866418873491edb6156e9c4021
+msgid "label_downloads"
+msgstr "Descargas"
+
+# en-hash: 0a7f14b6fc709f6e6ec3505c2a13a968
+msgid "label_license"
+msgstr "Licencia"
+
+# en-hash: b4c51e04ae9ff246e7f1df6aa5d8e763
+msgid "label_repository"
+msgstr "Repositorio"
+
+# en-hash: 6f6cb72d544962fa333e2e34ce64f719
+msgid "label_size"
+msgstr "Tamaño"
+
+# en-hash: a1fa27779242b4902f7ae3fad5c6d4e5
+msgid "label_type"
+msgstr "Tipo"
+
+# en-hash: 02b1f86825c040d2b704c703b41d0637
+msgid "label_version"
+msgstr "Versión"
+
+# en-hash: 48b111166683f25c83bc05e2ed36bd32
+msgid "menu_about"
+msgstr "Acerca de Storefront"
+
+# en-hash: 6007ec1bf3a5f973cdb6279f643ee16a
+msgid "menu_settings"
+msgstr "Configuración de Storefront"
+
+# en-hash: 8491c7a683ec0bf7fb8aaed4990263f3
+msgid "menu_storefront"
+msgstr "Storefront"
+
+# en-hash: 65bc2337d11fbf81a385f0ef352d192f
+msgid "menu_storefront_desc"
+msgstr "Explorar, instalar y actualizar complementos, parches y fuentes."
+
+# en-hash: 82e3f890e0c52bb3522f7b88df1789c6
+msgid "msg_catalog_updated"
+msgstr "Catálogo actualizado correctamente."
+
+# en-hash: f84dfadcd34fbc8c1aaecf1c7d81a8b9
+msgid "msg_no_results"
+msgstr "No se encontraron elementos coincidentes."
+
+# en-hash: ce9d2aa7e2264ef550f28fbff80eefb1
+msgid "prompt_restart_needed"
+msgstr "Instalación completada. ¿Reiniciar KOReader ahora para activar '%s'?"
+
+# en-hash: 67fce54fd98bd50280eb6d8a3ed3bbcb
+msgid "search_hint"
+msgstr "Buscar en storefront..."
+
+# en-hash: beaa7406a6b8ef36329bf6d911b3337a
+msgid "status_builtin"
+msgstr "Integrado"
+
+# en-hash: e3579b1897d264fcf237a3465dd89eb2
+msgid "status_downloading"
+msgstr "Descargando..."
+
+# en-hash: 4041b65e90f2302e26d9c614b0b14c33
+msgid "status_installed"
+msgstr "Instalado"
+
+# en-hash: ce5f053531b790dcfc43555ae9314eb3
+msgid "status_installing"
+msgstr "Instalando..."
+
+# en-hash: 0570b201f805a8f4c40b8a24855ad482
+msgid "status_not_installed"
+msgstr "No instalado"
+
+# en-hash: b5b7b9f365bc9a0efba16d9a103c8065
+msgid "status_uninstalling"
+msgstr "Desinstalando..."
+
+# en-hash: 58628efef0b8dbd0c9ff7ea64cf46cf7
+msgid "status_update_available"
+msgstr "Actualización disponible"
+
+# en-hash: 8491c7a683ec0bf7fb8aaed4990263f3
+msgid "storefront_title"
+msgstr "Storefront"
+
+# en-hash: b1c94ca2fbc3e78fc30069c8d0f01680
+msgid "tab_all"
+msgstr "Todo"
+
+# en-hash: 827fc29315d0339d67ec1be6f178f566
+msgid "tab_fonts"
+msgstr "Fuentes"
+
+# en-hash: 3ca92a6df790eb9bcac440c955745100
+msgid "tab_patches"
+msgstr "Parches"
+
+# en-hash: 2755e10e408ec20ee56d0263e804f5e7
+msgid "tab_plugins"
+msgstr "Plugins"
+
+msgid "Settings"
+msgstr "Ajustes"
+
+msgid "Catalog & Cache"
+msgstr "Catálogo y caché"
+
+msgid "Catalog source"
+msgstr "Fuente del catálogo"
+
+msgid "Direct GitHub API"
+msgstr "API directa de GitHub"
+
+msgid "Refresh cache"
+msgstr "Actualizar caché"
+
+msgid "Clear README cache"
+msgstr "Borrar caché del LÉAME"
+
+msgid "Search & API"
+msgstr "Búsqueda y API"
+
+msgid "Include 0-star forks"
+msgstr "Incluir bifurcaciones sin estrellas"
+
+msgid "GitHub token"
+msgstr "Token de GitHub"
+
+msgid "Not set"
+msgstr "No configurado"
+
+msgid "Configured ✓"
+msgstr "Configurado ✓"
+
+msgid "About Storefront"
+msgstr "Acerca de Storefront"
+
+msgid "Update channel"
+msgstr "Canal de actualización"
+
+msgid "Beta"
+msgstr "Beta"
+
+msgid "Stable"
+msgstr "Estable"
+
+msgid "Never"
+msgstr "Nunca"
+
+msgid "Close"
+msgstr "Cerrar"
+
+msgid "About"
+msgstr "Acerca de"
+
+msgid "Updates"
+msgstr "Actualizaciones"
+
+msgid "Version"
+msgstr "Versión"
+
+msgid "Author"
+msgstr "Autor"
+
+msgid "Check for updates"
+msgstr "Buscar actualizaciones"
+
+msgid "Filter & Sort Installed"
+msgstr "Filtrar y ordenar instalados"
+
+msgid "Filters"
+msgstr "Filtros"
+
+msgid "Sorting"
+msgstr "Ordenación"
+
+msgid "Type"
+msgstr "Tipo"
+
+msgid "Origin"
+msgstr "Origen"
+
+msgid "Status"
+msgstr "Estado"
+
+msgid "Sort mode"
+msgstr "Modo de orden"
+
+msgid "Reset filters"
+msgstr "Filtros"
+
+msgid "Reset to defaults"
+msgstr "Restablecer"
+
+msgid "Apply"
+msgstr "Aplicar"
+
+msgid "All Types"
+msgstr "Todos"
+
+msgid "User Installed"
+msgstr "Usuario"
+
+msgid "Default only"
+msgstr "Predeterminados"
+
+msgid "Enabled"
+msgstr "Activado"
+
+msgid "Disabled"
+msgstr "Desactivado"
+
+msgid "Last Updated (Newest)"
+msgstr "Más recientes"
+
+msgid "Last Updated (Oldest)"
+msgstr "Más antiguos"
+
+msgid "Name (A-Z)"
+msgstr "Nombre (A-Z)"
+
+msgid "Name (Z-A)"
+msgstr "Nombre (Z-A)"
+
+msgid "Check Updates"
+msgstr "Buscar actualizaciones"
+
+msgid "Update All"
+msgstr "Actualizar todo"
+
+msgid "Reinstall"
+msgstr "Reinstalar"
+
+msgid "Remove"
+msgstr "Quitar"
+
+msgid "Enable"
+msgstr "Activar"
+
+msgid "Disable"
+msgstr "Desactivar"
+
+msgid "Sample Text"
+msgstr "Texto de muestra"
+
+msgid "Alphabet & Numbers"
+msgstr "Alfabeto y números"
+
+msgid "Pangram Preview"
+msgstr "Vista previa de pangrama"
+
+msgid "Reading Passage Specimen"
+msgstr "Muestra de texto de lectura"
+
+msgid "Category: %s"
+msgstr "Categoría: %s"
+
+msgid "License: %s"
+msgstr "Licencia: %s"
+
+msgid "By: %s"
+msgstr "Por: %s"
+
+msgid "< Prev"
+msgstr "< Ant"
+
+msgid "Next >"
+msgstr "Sig >"
+
+msgid "< Back"
+msgstr "< Volver"
+
+msgid "updated %s"
+msgstr "actualizado el %s"
+
+msgid "updated %s (%s)"
+msgstr "actualizado el %s (%s)"
+
+msgid "header_updates"
+msgstr "Actualizaciones"
+
+msgid "header_about"
+msgstr "Acerca de"
+
+msgid "README"
+msgstr "LÉAME"
+
+msgid "Release Notes"
+msgstr "Notas de la versión"
+
+msgid "Versions"
+msgstr "Versiones"
+
+msgid "Install Font"
+msgstr "Instalar fuente"
+
+msgid "Install Patch"
+msgstr "Instalar parche"
+
+msgid "The quick brown fox jumps over the lazy dog."
+msgstr "El veloz murciélago hindú comía feliz cardo y kiwi. La cigüeña tocaba el saxofón detrás del palpal de paja."
+
+msgid "Pack my box with five dozen liquor jugs."
+msgstr "El pingüino Wenceslao hizo kilómetros de equitación para festejar el aniversario."
+
+msgid "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters."
+msgstr "Es una verdad universalmente reconocida que todo hombre soltero, poseedor de una gran fortuna, necesita una esposa. Y muy poco valen las opiniones o sentimientos que semejante hombre pueda tener al llegar a un nuevo vecindario: esta verdad está tan arraigada en las familias de la vecindad que lo consideran propiedad legítima de alguna de sus hijas."
+
+msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
+msgstr "—Mi querido señor Bennet —le dijo un día su esposa—, ¿ha oído usted que por fin se ha alquilado Netherfield Park? El señor Bennet contestó que no. —Pues así es —insistió ella—; la señora Long ha estado aquí hace un momento y me lo ha contado todo. El señor Bennet no hizo ningún comentario."
+
+msgid "All"
+msgstr "Todos"
+
+msgid "Sort: Updated"
+msgstr "Orden: Fecha"
+
+msgid "Sort: Name"
+msgstr "Orden: Nombre"
+
+msgid "Sort: Stars"
+msgstr "Orden: Estrellas"
+
+msgid "Filter..."
+msgstr "Filtrar..."
+
+msgid "Sort: Stars (high → low)"
+msgstr "Orden: Estrellas"
+
+msgid "Sort: Recently updated"
+msgstr "Orden: Fecha"
+
+msgid "Sort: Name (A → Z)"
+msgstr "Orden: Nombre (A-Z)"
+
+msgid "Sort: Name (Z → A)"
+msgstr "Orden: Nombre (Z-A)"
+
+msgid "Sort: A-Z"
+msgstr "Orden: A-Z"
+
+msgid "Sort: Z-A"
+msgstr "Orden: Z-A"
+
+msgid "Sort: Oldest"
+msgstr "Orden: Antiguos"
+
+msgid "Sort: Type"
+msgstr "Orden: Tipo"
+
+msgid "Sort: Status"
+msgstr "Orden: Estado"
+
+msgid "Sort"
+msgstr "Orden"
+
+
+
+
+
+

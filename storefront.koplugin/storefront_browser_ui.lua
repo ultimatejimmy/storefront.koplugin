@@ -25,7 +25,8 @@ local TitleBar = require("ui/widget/titlebar")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
-local _ = require("gettext")
+local Localization = require("localization_storefront")
+local _ = function(key, ...) return Localization:t(key, ...) end
 
 local Input = Device.input
 local StorefrontListItem = require("storefront_list_item")
@@ -72,16 +73,24 @@ function StorefrontBrowserDialog:buildTabBar()
 
     local sc = function(val) return Device.screen:scaleBySize(val) end
 
+    local tab_label_map = {
+        Plugins = _("Plugins"),
+        Patches = _("Patches"),
+        Fonts = _("Fonts"),
+        Installed = _("Installed"),
+        Updates = _("Updates"),
+    }
+
     for i, tab_name in ipairs(tabs) do
         if i > 1 then
-            table.insert(tab_widgets, HorizontalSpan:new{ width = sc(12) })
+            table.insert(tab_widgets, HorizontalSpan:new{ width = sc(8) })
         end
 
         local is_active = (self.current_tab == tab_name)
         local font_face = Font:getFace("smallinfofont", 18)
         
         local label = TextWidget:new{
-            text = tab_name,
+            text = tab_label_map[tab_name] or tab_name,
             face = font_face,
             bold = is_active,
             fgcolor = is_active and Blitbuffer.COLOR_BLACK or Blitbuffer.Color8(80),

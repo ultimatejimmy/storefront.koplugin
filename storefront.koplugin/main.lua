@@ -34,7 +34,8 @@ local R = {
     CenterContainer = require("ui/widget/container/centercontainer"),
     RightContainer = require("ui/widget/container/rightcontainer"),
     OverlapGroup = require("ui/widget/overlapgroup"),
-    _ = require("gettext"),
+    Localization = require("localization_storefront"),
+    _ = function(key, ...) return require("localization_storefront"):t(key, ...) end,
     Cache = require("storefront_cache"),
     GitHub = require("storefront_net_github"),
     RepoContent = require("storefront_repo_content"),
@@ -8833,6 +8834,7 @@ end
 
 
 function Storefront:init()
+    Localization:init(self.path)
     StorefrontLogger.reset()
     local mode_str = GitHub.isDirectApiEnabled() and "Direct API" or "Storefront Catalog"
     local plugin_count = Cache.countRepos and Cache.countRepos("plugin") or #Cache.listRepos("plugin")

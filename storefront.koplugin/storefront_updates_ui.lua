@@ -3,7 +3,8 @@ local InfoMessage = require("storefront_toast")
 local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
 local Cache = require("storefront_cache")
-local _ = require("gettext")
+local Localization = require("localization_storefront")
+local _ = function(key, ...) return Localization:t(key, ...) end
 
 local StorefrontUpdatesUi = {}
 

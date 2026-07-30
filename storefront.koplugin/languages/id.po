@@ -1,0 +1,219 @@
+msgid ""
+msgstr ""
+"Language-Team: Indonesian\n"
+"Language: id\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+# en-hash: 775f0a631bf3455122e2f6932ec06f7b
+msgid "about_text"
+msgstr "Storefront adalah manajer paket bawaan aplikasi di KOReader untuk plugin, tambalan, dan font."
+
+# en-hash: d941e779a1f26a117075fb1935c15664
+msgid "btn_apply"
+msgstr "Terapkan"
+
+# en-hash: 0557fa923dcee4d0f86b1409f5c2167f
+msgid "btn_back"
+msgstr "Kembali"
+
+# en-hash: ea4788705e6873b424c65e91c2846b19
+msgid "btn_cancel"
+msgstr "Batal"
+
+# en-hash: d3d2e617335f08df83599665eef8a418
+msgid "btn_close"
+msgstr "Tutup"
+
+# en-hash: 7b546d0a793a61f3640243be12674e30
+msgid "btn_install"
+msgstr "Pasang"
+
+# en-hash: e0aa021e21dddbd6d8cecec71e9cf564
+msgid "btn_ok"
+msgstr "OK"
+
+# en-hash: 3b878279a04dc47d60932bf294d9e3d2
+msgid "btn_preview"
+msgstr "Pratinjau"
+
+# en-hash: 63a6a0e6981e295d47d41541f014b2d4
+msgid "btn_refresh"
+msgstr "Segarkan"
+
+# en-hash: 1fef1bb7ae7fe2fa13e0cbca9c5ecdf4
+msgid "btn_release_notes"
+msgstr "Catatan Rilis"
+
+# en-hash: bc3b80b0bb11634aebe3a7b6cfbcac7e
+msgid "btn_restart"
+msgstr "Mulai Ulang KOReader"
+
+# en-hash: 47a0be8d1015d54fbcf101bf890ab8d8
+msgid "btn_retry"
+msgstr "Coba Lagi"
+
+# en-hash: 13348442cc6a27032d2b4aa28b75a5d3
+msgid "btn_search"
+msgstr "Cari"
+
+# en-hash: ee4943261623910c0ee47a060dff55c1
+msgid "btn_uninstall"
+msgstr "Copot"
+
+# en-hash: 06933067a9d3be2c4318853b0b7da18a
+msgid "btn_update"
+msgstr "Perbarui"
+
+# en-hash: 46c59b20e0fcaedbf19e59546d1bf035
+msgid "btn_view_details"
+msgstr "Lihat Detail"
+
+# en-hash: c0ae6f112c3f87f272a71bf6fb190333
+msgid "confirm_install"
+msgstr "Pasang '%s'?"
+
+# en-hash: dbe637db6ff8ddbc1ce24cf9659bca40
+msgid "confirm_uninstall"
+msgstr "Copot '%s'? Tindakan ini tidak dapat dibatalkan."
+
+# en-hash: e99ee5fb3426746cf595700889ecae69
+msgid "confirm_update"
+msgstr "Perbarui '%s' dari v%s ke v%s?"
+
+# en-hash: 0fa6e12e2c5e52a9a7a97ea94cbf0338
+msgid "err_install_failed"
+msgstr "Pemasangan gagal untuk '%s'."
+
+# en-hash: 5eeaa935ae4cfcefb1c06ca7f35b29fa
+msgid "err_network_failed"
+msgstr "Kesalahan jaringan: Gagal mengunduh katalog."
+
+# en-hash: 8b3a7dc9bf55be1b8166b177893ea30b
+msgid "err_uninstall_failed"
+msgstr "Pencopotan gagal untuk '%s'."
+
+# en-hash: 8c3bece5fb7eebdfec6cae8d0e7e408d
+msgid "filter_all"
+msgstr "Semua Kategori"
+
+# en-hash: 4041b65e90f2302e26d9c614b0b14c33
+msgid "filter_installed"
+msgstr "Terpasang"
+
+# en-hash: 58628efef0b8dbd0c9ff7ea64cf46cf7
+msgid "filter_updates"
+msgstr "Pembaruan Tersedia"
+
+# en-hash: 9559c5d13028c2e6f4777598177579f1
+msgid "label_author"
+msgstr "Penulis"
+
+# en-hash: b5a7adde1af5c87d7594c1f332d961cf
+msgid "label_description"
+msgstr "Deskripsi"
+
+# en-hash: d9426f866418873491edb6156e9c4021
+msgid "label_downloads"
+msgstr "Unduhan"
+
+# en-hash: 0a7f14b6fc709f6e6ec3505c2a13a968
+msgid "label_license"
+msgstr "Lisensi"
+
+# en-hash: b4c51e04ae9ff246e7f1df6aa5d8e763
+msgid "label_repository"
+msgstr "Repositori"
+
+# en-hash: 6f6cb72d544962fa333e2e34ce64f719
+msgid "label_size"
+msgstr "Ukuran"
+
+# en-hash: a1fa27779242b4902f7ae3fad5c6d4e5
+msgid "label_type"
+msgstr "Tipe"
+
+# en-hash: 02b1f86825c040d2b704c703b41d0637
+msgid "label_version"
+msgstr "Versi"
+
+# en-hash: 48b111166683f25c83bc05e2ed36bd32
+msgid "menu_about"
+msgstr "Tentang Storefront"
+
+# en-hash: 6007ec1bf3a5f973cdb6279f643ee16a
+msgid "menu_settings"
+msgstr "Pengaturan Storefront"
+
+# en-hash: 8491c7a683ec0bf7fb8aaed4990263f3
+msgid "menu_storefront"
+msgstr "Storefront"
+
+# en-hash: 65bc2337d11fbf81a385f0ef352d192f
+msgid "menu_storefront_desc"
+msgstr "Jelajahi, pasang, dan perbarui plugin, tambalan, serta font."
+
+# en-hash: 82e3f890e0c52bb3522f7b88df1789c6
+msgid "msg_catalog_updated"
+msgstr "Katalog berhasil diperbarui."
+
+# en-hash: f84dfadcd34fbc8c1aaecf1c7d81a8b9
+msgid "msg_no_results"
+msgstr "Tidak ada item yang cocok."
+
+# en-hash: ce9d2aa7e2264ef550f28fbff80eefb1
+msgid "prompt_restart_needed"
+msgstr "Pemasangan selesai. Mulai ulang KOReader sekarang untuk mengaktifkan '%s'?"
+
+# en-hash: 67fce54fd98bd50280eb6d8a3ed3bbcb
+msgid "search_hint"
+msgstr "Cari di storefront..."
+
+# en-hash: beaa7406a6b8ef36329bf6d911b3337a
+msgid "status_builtin"
+msgstr "Bawaan"
+
+# en-hash: e3579b1897d264fcf237a3465dd89eb2
+msgid "status_downloading"
+msgstr "Mengunduh..."
+
+# en-hash: 4041b65e90f2302e26d9c614b0b14c33
+msgid "status_installed"
+msgstr "Terpasang"
+
+# en-hash: ce5f053531b790dcfc43555ae9314eb3
+msgid "status_installing"
+msgstr "Memasang..."
+
+# en-hash: 0570b201f805a8f4c40b8a24855ad482
+msgid "status_not_installed"
+msgstr "Belum Terpasang"
+
+# en-hash: b5b7b9f365bc9a0efba16d9a103c8065
+msgid "status_uninstalling"
+msgstr "Mencopot..."
+
+# en-hash: 58628efef0b8dbd0c9ff7ea64cf46cf7
+msgid "status_update_available"
+msgstr "Pembaruan Tersedia"
+
+# en-hash: 8491c7a683ec0bf7fb8aaed4990263f3
+msgid "storefront_title"
+msgstr "Storefront"
+
+# en-hash: b1c94ca2fbc3e78fc30069c8d0f01680
+msgid "tab_all"
+msgstr "Semua"
+
+# en-hash: 827fc29315d0339d67ec1be6f178f566
+msgid "tab_fonts"
+msgstr "Font"
+
+# en-hash: 3ca92a6df790eb9bcac440c955745100
+msgid "tab_patches"
+msgstr "Tambalan"
+
+# en-hash: 2755e10e408ec20ee56d0263e804f5e7
+msgid "tab_plugins"
+msgstr "Plugin"
+

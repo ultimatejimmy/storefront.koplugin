@@ -17,7 +17,9 @@ local GestureRange = require("ui/gesturerange")
 local UIManager = require("ui/uimanager")
 local DataStorage = require("datastorage")
 local LuaSettings = require("luasettings")
-local _ = require("gettext")
+local Localization = require("localization_storefront")
+local _ = function(key, ...) return Localization:t(key, ...) end
+
 local lfs = require("libs/libkoreader-lfs")
 
 local PluginPaths = require("storefront_plugin_paths")

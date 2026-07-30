@@ -15,7 +15,8 @@ local HorizontalSpan = require("ui/widget/horizontalspan")
 local LineWidget = require("ui/widget/linewidget")
 local LuaSettings = require("luasettings")
 local DataStorage = require("datastorage")
-local _ = require("gettext")
+local Localization = require("localization_storefront")
+local _ = function(key, ...) return Localization:t(key, ...) end
 local storefront_theme = require("storefront_theme")
 
 local StorefrontAboutDialog = {}

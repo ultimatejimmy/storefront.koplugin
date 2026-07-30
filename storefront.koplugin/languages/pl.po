@@ -1,0 +1,439 @@
+msgid ""
+msgstr ""
+"Language-Team: Polish\n"
+"Language: pl\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "about_text"
+msgstr "Storefront to menedżer pakietów dla wtyczek, poprawek i czcionek KOReader."
+
+msgid "btn_apply"
+msgstr "Zastosuj"
+
+msgid "btn_back"
+msgstr "< Wstecz"
+
+msgid "< Back"
+msgstr "< Wstecz"
+
+msgid "updated %s (%s)"
+msgstr "zaktualizowano %s (%s)"
+
+msgid "updated %s"
+msgstr "zaktualizowano %s"
+
+msgid "btn_cancel"
+msgstr "Anuluj"
+
+msgid "btn_close"
+msgstr "Zamknij"
+
+msgid "btn_install"
+msgstr "Zainstaluj"
+
+msgid "btn_ok"
+msgstr "OK"
+
+msgid "btn_preview"
+msgstr "Podgląd"
+
+msgid "btn_refresh"
+msgstr "Odśwież"
+
+msgid "btn_release_notes"
+msgstr "Wydania"
+
+msgid "btn_restart"
+msgstr "Uruchom ponownie"
+
+msgid "btn_retry"
+msgstr "Ponów"
+
+msgid "btn_search"
+msgstr "Szukaj"
+
+msgid "btn_uninstall"
+msgstr "Odinstaluj"
+
+msgid "btn_update"
+msgstr "Aktualizuj"
+
+msgid "btn_view_details"
+msgstr "Szczegóły"
+
+msgid "confirm_install"
+msgstr "Zainstalować '%s'?"
+
+msgid "confirm_uninstall"
+msgstr "Odinstalować '%s'? Tej operacji nie można cofnąć."
+
+msgid "confirm_update"
+msgstr "Zaktualizować '%s' z v%s do v%s?"
+
+msgid "err_install_failed"
+msgstr "Instalacja '%s' nie powiodła się."
+
+msgid "err_network_failed"
+msgstr "Błąd sieci: nie można pobrać katalogu."
+
+msgid "err_uninstall_failed"
+msgstr "Odinstalowanie '%s' nie powiodło się."
+
+msgid "filter_all"
+msgstr "Wszystkie kateg."
+
+msgid "filter_installed"
+msgstr "Zainstal."
+
+msgid "filter_updates"
+msgstr "Aktualizacje"
+
+msgid "label_author"
+msgstr "Autor"
+
+msgid "label_description"
+msgstr "Opis"
+
+msgid "label_downloads"
+msgstr "Pobrania"
+
+msgid "label_license"
+msgstr "Licencja"
+
+msgid "label_repository"
+msgstr "Repozytorium"
+
+msgid "label_size"
+msgstr "Rozmiar"
+
+msgid "label_status"
+msgstr "Status"
+
+msgid "label_version"
+msgstr "Wersja"
+
+msgid "menu_storefront"
+msgstr "Storefront"
+
+msgid "menu_storefront_desc"
+msgstr "Przeglądaj wtyczki, poprawki i czcionki."
+
+msgid "msg_catalog_updated"
+msgstr "Katalog zaktualizowany."
+
+msgid "msg_no_results"
+msgstr "Brak wyników wyszukiwania."
+
+msgid "msg_restart_required"
+msgstr "Wymagany restart KOReadera."
+
+msgid "search_hint"
+msgstr "Szukaj w Storefront..."
+
+msgid "status_builtin"
+msgstr "Wbudowane"
+
+msgid "status_disabled"
+msgstr "Wyłączone"
+
+msgid "status_enabled"
+msgstr "Włączone"
+
+msgid "status_installed"
+msgstr "Zainstalowane"
+
+msgid "status_update_available"
+msgstr "Dostępna aktualizacja"
+
+msgid "storefront_title"
+msgstr "Storefront"
+
+msgid "tab_fonts"
+msgstr "Czcionki"
+
+msgid "tab_patches"
+msgstr "Poprawki"
+
+msgid "tab_plugins"
+msgstr "Wtyczki"
+
+msgid "header_updates"
+msgstr "Aktualizacje"
+
+msgid "Check Updates"
+msgstr "Sprawdź aktualizacje"
+
+msgid "Update All"
+msgstr "Aktualizuj wszystko"
+
+msgid "Checking for updates..."
+msgstr "Sprawdzanie aktualizacji..."
+
+msgid "No tracked plugins to check."
+msgstr "Brak śledzonych wtyczek do sprawdzenia."
+
+msgid "header_about"
+msgstr "O programie"
+
+
+msgid "tab_readme"
+msgstr "README"
+
+msgid "tab_versions"
+msgstr "Wersje"
+
+msgid "tab_sample_text"
+msgstr "Próbka tekstu"
+
+msgid "Sample Text"
+msgstr "Próbka tekstu"
+
+msgid "Reinstall"
+msgstr "Zainstaluj ponownie"
+
+msgid "Remove"
+msgstr "Usuń"
+
+msgid "Enable"
+msgstr "Włącz"
+
+msgid "Disable"
+msgstr "Wyłącz"
+
+msgid "Install Font"
+msgstr "Zainstaluj czcionkę"
+
+msgid "Install Patch"
+msgstr "Zainstaluj poprawkę"
+
+msgid "Install"
+msgstr "Zainstaluj"
+
+msgid "Category: %s"
+msgstr "Kategoria: %s"
+
+msgid "License: %s"
+msgstr "Licencja: %s"
+
+msgid "By: %s"
+msgstr "Autor: %s"
+
+msgid "Alphabet & Numbers"
+msgstr "Alfabet i cyfry"
+
+msgid "Pangram Preview"
+msgstr "Podgląd pangramu"
+
+msgid "Reading Passage Specimen"
+msgstr "Próbka czytania"
+
+msgid "< Prev"
+msgstr "< Poprzednia"
+
+msgid "Next >"
+msgstr "Następna >"
+
+msgid "Allow pre-release updates"
+msgstr "Zezwól na wersje beta"
+
+msgid "Restart now"
+msgstr "Uruchom teraz"
+
+msgid "Restart later"
+msgstr "Uruchom później"
+
+msgid "This will take effect on next restart."
+msgstr "Zmiany wejdą w życie po ponownym uruchomieniu."
+
+msgid "Font '%s' deleted."
+msgstr "Czcionka '%s' została usunięta."
+
+msgid "Plugin '%s' deleted."
+msgstr "Wtyczka '%s' została usunięta."
+
+msgid "Patch '%s' deleted."
+msgstr "Poprawka '%s' została usunięta."
+
+msgid "Delete font '%s'?"
+msgstr "Usunąć czcionkę '%s'?"
+
+msgid "Delete patch '%s'?"
+msgstr "Usunąć poprawkę '%s'?"
+
+msgid "Delete plugin '%s'?"
+msgstr "Usunąć wtyczkę '%s'?"
+
+msgid "This action cannot be undone."
+msgstr "Tej operacji nie można cofnąć."
+
+msgid "Changes will take effect after restart."
+msgstr "Zmiany wejdą w życie po restarcie."
+
+msgid "Also delete plugin settings"
+msgstr "Usuń także ustawienia wtyczki"
+
+msgid "Delete"
+msgstr "Usuń"
+
+msgid "Sort: Stars (high → low)"
+msgstr "Sortuj: Gwiazdki"
+
+msgid "Sort: Recently updated"
+msgstr "Sortuj: Data"
+
+msgid "Sort: Name (A → Z)"
+msgstr "Sortuj: Nazwa (A-Z)"
+
+msgid "Sort: Name (Z → A)"
+msgstr "Sortuj: Nazwa (Z-A)"
+
+msgid "Sort: A-Z"
+msgstr "Sortuj: A-Z"
+
+msgid "Sort: Z-A"
+msgstr "Sortuj: Z-A"
+
+msgid "Sort: Oldest"
+msgstr "Sortuj: Najstarsze"
+
+msgid "Sort: Type"
+msgstr "Sortuj: Typ"
+
+msgid "Sort: Status"
+msgstr "Sortuj: Status"
+
+msgid "Sort"
+msgstr "Sortuj"
+
+msgid "The quick brown fox jumps over the lazy dog."
+msgstr "Pchnąć w tę łódź jeża lub ośm skrzyń fig."
+
+msgid "Pack my box with five dozen liquor jugs."
+msgstr "Mężny bądź, chroń pułk twój i sześć flag."
+
+msgid "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters."
+msgstr "Jest prawdą powszechnie znaną, że samotnemu mężczyźnie posiadającemu pokaźny majątek potrzeba do szczęścia tylko żony. Jakkolwiek mało znane byłyby uczucia czy poglądy takiego człowieka, kiedy zjawia się po raz pierwszy w nowej okolicy, prawda ta jest tak głęboko zakorzeniona w umysłach okolicznych rodzin, że uważa się go za prawną własność tej czy innej z ich córek."
+
+msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
+msgstr "— Mój drogi panie Bennet — rzekła doń pewnego dnia jego małżonka — czy słyszałeś, że Netherfield Park został wreszcie wydzierżawiony? Pan Bennet odparł, że nie słyszał. — A jednak tak jest — powtórzyła pani Bennet. — Pani Long dopiero co tu była i wszystko mi opowiedziała."
+
+msgid "Page %d of %d"
+msgstr "Strona %d z %d"
+
+msgid "All Types"
+msgstr "Wszystkie kateg."
+
+msgid "User Installed"
+msgstr "Użytkownika"
+
+msgid "Default only"
+msgstr "Tylko wbudowane"
+
+msgid "Filter & Sort Installed"
+msgstr "Filtrowanie i sortowanie"
+
+msgid "Filters"
+msgstr "Filtry"
+
+msgid "Type"
+msgstr "Typ"
+
+msgid "Origin"
+msgstr "Pochodzenie"
+
+msgid "Status"
+msgstr "Status"
+
+msgid "Sorting"
+msgstr "Sortowanie"
+
+msgid "Sort mode"
+msgstr "Tryb sortowania"
+
+msgid "Reset filters"
+msgstr "Resetuj filtry"
+
+msgid "Reset to defaults"
+msgstr "Przywróć domyślne"
+
+msgid "All"
+msgstr "Wszystkie"
+
+msgid "Enabled"
+msgstr "Włączone"
+
+msgid "Disabled"
+msgstr "Wyłączone"
+
+msgid "Name (A-Z)"
+msgstr "Nazwa (A-Z)"
+
+msgid "Name (Z-A)"
+msgstr "Nazwa (Z-A)"
+
+msgid "Last Updated (Newest)"
+msgstr "Najnowsze"
+
+msgid "Last Updated (Oldest)"
+msgstr "Najstarsze"
+
+msgid "Settings"
+msgstr "Ustawienia"
+
+msgid "Catalog & Cache"
+msgstr "Katalog i pamięć podręczna"
+
+msgid "Catalog source"
+msgstr "Źródło katalogu"
+
+msgid "Storefront"
+msgstr "Storefront"
+
+msgid "Direct GitHub API"
+msgstr "Bezpośrednie API GitHub"
+
+msgid "Refresh cache"
+msgstr "Odśwież pamięć podręczną"
+
+msgid "Clear README cache"
+msgstr "Wyczyść pamięć README"
+
+msgid "Search & API"
+msgstr "Wyszukiwanie i API"
+
+msgid "Include 0-star forks"
+msgstr "Uwzględnij forki bez gwiazdek"
+
+msgid "GitHub token"
+msgstr "Token GitHub"
+
+msgid "Not set"
+msgstr "Nie ustawiono"
+
+msgid "Configured ✓"
+msgstr "Skonfigurowano ✓"
+
+msgid "About Storefront"
+msgstr "O Storefront"
+
+msgid "Update channel"
+msgstr "Kanał aktualizacji"
+
+msgid "Beta"
+msgstr "Beta"
+
+msgid "Stable"
+msgstr "Stabilny"
+
+msgid "Plugin"
+msgstr "Wtyczka"
+
+msgid "Patch"
+msgstr "Poprawka"
+
+msgid "Font"
+msgstr "Czcionka"
+
+msgid "Default"
+msgstr "Wbudowana"

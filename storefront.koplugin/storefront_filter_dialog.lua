@@ -19,7 +19,8 @@ local CheckButton = require("ui/widget/checkbutton")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local InputDialog = require("ui/widget/inputdialog")
 local util = require("util")
-local _ = require("gettext")
+local Localization = require("localization_storefront")
+local _ = function(key, ...) return Localization:t(key, ...) end
 local storefront_theme = require("storefront_theme")
 
 local StorefrontFilterDialog = {}

@@ -7,7 +7,9 @@ local InfoMessage = require("ui/widget/infomessage")
 local InstallStore = require("storefront_installs")
 local StorefrontLogger = require("storefront_logger")
 local UIManager = require("ui/uimanager")
-local _ = require("gettext")
+local Localization = require("localization_storefront")
+local _ = function(key, ...) return Localization:t(key, ...) end
+
 local ffiutil = require("ffi/util")
 local logger = require("logger")
 local lfs = require("libs/libkoreader-lfs")

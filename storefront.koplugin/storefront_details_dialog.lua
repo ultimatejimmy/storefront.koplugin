@@ -15,7 +15,8 @@ local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
-local _ = require("gettext")
+local Localization = require("localization_storefront")
+local _ = function(key, ...) return Localization:t(key, ...) end
 local NetworkMgr = require("ui/network/manager")
 local RepoContent = require("storefront_repo_content")
 local TextViewer = require("ui/widget/textviewer")
@@ -93,7 +94,7 @@ function StorefrontDetailsDialog:init()
     -- 1. Back button (software)
     -- -----------------------------------------------------------------------
     local back_btn = Button:new{
-        text = "< Back",
+        text = _("< Back"),
         text_font_size = 20,
         bordersize = 0,
         background = nil,
@@ -225,9 +226,9 @@ function StorefrontDetailsDialog:init()
         if repo_name ~= "" then table.insert(meta_parts, repo_name) end
         if stars > 0 then table.insert(meta_parts, "★ " .. stars_fmt) end
         if updated ~= "" and version_str then
-            table.insert(meta_parts, string.format("updated %s (%s)", updated, version_str))
+            table.insert(meta_parts, string.format(_("updated %s (%s)"), updated, version_str))
         elseif updated ~= "" then
-            table.insert(meta_parts, "updated " .. updated)
+            table.insert(meta_parts, string.format(_("updated %s"), updated))
         elseif version_str then
             table.insert(meta_parts, version_str)
         end
@@ -244,9 +245,9 @@ function StorefrontDetailsDialog:init()
         if owner and owner ~= "" then table.insert(meta_parts, owner) end
         if stars > 0 then table.insert(meta_parts, "★ " .. stars_fmt) end
         if updated ~= "" and version_str then
-            table.insert(meta_parts, string.format("updated %s (%s)", updated, version_str))
+            table.insert(meta_parts, string.format(_("updated %s (%s)"), updated, version_str))
         elseif updated ~= "" then
-            table.insert(meta_parts, "updated " .. updated)
+            table.insert(meta_parts, string.format(_("updated %s"), updated))
         elseif version_str then
             table.insert(meta_parts, version_str)
         end
@@ -1156,10 +1157,10 @@ td { vertical-align: top; }
             local specimen_html = string.format([[
 <div class="specimen-text">
   <h2 style="margin-bottom: 4px; font-size: 2em;">%s</h2>
-  <p style="color: #555555; font-size: 1em; margin-top: 0; margin-bottom: 12px;">Category: %s &nbsp;&middot;&nbsp; License: %s &nbsp;&middot;&nbsp; By: %s</p>
+  <p style="color: #555555; font-size: 1em; margin-top: 0; margin-bottom: 12px;">%s &nbsp;&middot;&nbsp; %s &nbsp;&middot;&nbsp; %s</p>
   <hr style="border: 0; border-top: 1px solid #cccccc; margin: 8px 0;" />
   
-  <h3 style="margin-top: 12px; margin-bottom: 6px; font-size: 1.5em;">Alphabet &amp; Numbers</h3>
+  <h3 style="margin-top: 12px; margin-bottom: 6px; font-size: 1.5em;">%s</h3>
   <p style="font-size: 1.2em; letter-spacing: 1px; line-height: 1.4; margin-bottom: 12px;">
     ABCDEFGHIJKLMNOPQRSTUVWXYZ<br/>
     abcdefghijklmnopqrstuvwxyz<br/>
@@ -1167,20 +1168,31 @@ td { vertical-align: top; }
   </p>
 
   <hr style="border: 0; border-top: 1px solid #cccccc; margin: 8px 0;" />
-  <h3 style="margin-top: 12px; margin-bottom: 6px; font-size: 1.5em;">Pangram Preview</h3>
-  <p style="font-size: 1.3em; line-height: 1.35; margin-bottom: 8px;">The quick brown fox jumps over the lazy dog.</p>
-  <p style="font-size: 1.1em; line-height: 1.35; margin-bottom: 12px;">Pack my box with five dozen liquor jugs.</p>
+  <h3 style="margin-top: 12px; margin-bottom: 6px; font-size: 1.5em;">%s</h3>
+  <p style="font-size: 1.3em; line-height: 1.35; margin-bottom: 8px;">%s</p>
+  <p style="font-size: 1.1em; line-height: 1.35; margin-bottom: 12px;">%s</p>
 
   <hr style="border: 0; border-top: 1px solid #cccccc; margin: 8px 0;" />
-  <h3 style="margin-top: 12px; margin-bottom: 6px; font-size: 1.3em;">Reading Passage Specimen</h3>
+  <h3 style="margin-top: 12px; margin-bottom: 6px; font-size: 1.3em;">%s</h3>
   <p style="font-size: 1.1em; line-height: 1.45; text-align: justify; margin-bottom: 10px;">
-    It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters.
+    %s
   </p>
   <p style="font-size: 1.1em; line-height: 1.45; text-align: justify; margin-bottom: 10px;">
-    "My dear Mr. Bennet," said his lady to him one day, "have you heard that Netherfield Park is let at last?" Mr. Bennet replied that he had not. "But it is," returned she; "for Mrs. Long has just been here, and she told me all about it." Mr. Bennet made no answer.
+    %s
   </p>
 </div>
-]], font_family, font_cat, font_lic, font_author)
+]], font_family,
+    string.format(_("Category: %s"), font_cat),
+    string.format(_("License: %s"), font_lic),
+    string.format(_("By: %s"), font_author),
+    _("Alphabet & Numbers"),
+    _("Pangram Preview"),
+    _("The quick brown fox jumps over the lazy dog."),
+    _("Pack my box with five dozen liquor jugs."),
+    _("Reading Passage Specimen"),
+    _("It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters."),
+    _("\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer.")
+)
 
             local ok_set, set_err = pcall(function()
                 html_box:setContent(specimen_html, specimen_css, sc(16))

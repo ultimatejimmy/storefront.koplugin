@@ -29,7 +29,7 @@ After approval, write high-level, tested code.
 5. **Write the code:** Use human-readable comments where appropriate (don't over-comment) and write concise functional code.
 6. **Verification Workflow:** After any modification, or whenever the user says "run the tests", you MUST run the full verification and synchronization script: `powershell -ExecutionPolicy Bypass -File tools/wsl_test.ps1`. This ensures syntax is valid, all unit tests pass, and changes are synced to the test environment.
 7. **Test-Driven Development:** For every new feature or logic modification, you MUST add corresponding unit tests in the `tests/` directory. Coverage should include edge cases, error handling, and expected success paths. Use `busted` and existing mocks in `tests/spec_helper.lua`.
-8. **Language translations:** `en.po` is the primary language master. Whenever you add or modify translation keys in the code (e.g., `loc:t("key")`), you MUST run `python tools/sync_translations.py` to propagate changes across all `.po` files.
+8. **Language translations:** `en.po` is the primary language master. Whenever you add or modify translation keys in the code (e.g., `_("key")`), follow `rules/translations.md`. Keep all 17 target `.po` files synchronized using `python tools/sync_translations.py`, ensure 100% key parity using `python tools/audit_translation_keys.py`, and verify character lengths match English using `python tools/audit_translation_lengths.py`.
 9. **Automated Restart:** The verification workflow attempts to restart KOReader automatically. A default restart command is provided in `wsl_test.ps1`. To override it, set the `$env:KOREADER_START_CMD` environment variable in PowerShell.
 
 ## End User testing

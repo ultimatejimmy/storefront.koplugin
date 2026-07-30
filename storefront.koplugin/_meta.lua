@@ -1,10 +1,18 @@
-local _ = require("gettext")
+local ok_loc, Localization = pcall(require, "localization_storefront")
+if ok_loc and Localization then
+    Localization:init()
+end
+local _ = function(key, ...)
+    if ok_loc and Localization then
+        return Localization:t(key, ...)
+    end
+    return key
+end
 
 return {
     name = "storefront",
-    fullname = _("Storefront"),
-    description = _([[Discover and manage community plugins and patches from GitHub topics.]]),
+    fullname = _("menu_storefront"),
+    description = _("menu_storefront_desc"),
     version = "26.7.30-beta",
     author = "ultimatejimmy",
 }
-

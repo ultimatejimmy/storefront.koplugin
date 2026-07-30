@@ -125,6 +125,13 @@ local function runTests()
     assertTest(font_aliases["literata"] ~= nil, "Alias Exists: Literata")
     assertTest(font_aliases["gentium plus"] ~= nil, "Alias Exists: Gentium Plus")
 
+    -- ----------------------------------------------------
+    -- TEST 4: Localization Suite Run
+    -- ----------------------------------------------------
+    print("\n--- TEST 4: Localization Suite ---")
+    local ok_loc_suite = pcall(dofile, script_dir .. "storefront_localization_test.lua")
+    assertTest(ok_loc_suite, "Localization Test Suite Execution")
+
     print("\n==================================================")
     print(string.format("  SUMMARY: %d Passed, %d Failed", passed, failed))
     print("==================================================")
