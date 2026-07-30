@@ -262,9 +262,13 @@ local function showRestartConfirmation(message)
         end,
     }
 
+    local is_dark = (Device and Device.isDark and Device:isDark())
+        or (Device and Device.screen and Device.screen.isDark and Device.screen:isDark())
+        or (UIManager and UIManager.isNightMode and UIManager:isNightMode())
+
     local ok_btn = Button:new{
         text = _("Restart now"),
-        text_font_color = Blitbuffer.COLOR_WHITE,
+        text_font_color = is_dark and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_WHITE,
         background = Blitbuffer.COLOR_BLACK,
         bordersize = 0,
         radius = storefront_theme.radius_btn or sc(4),
@@ -276,7 +280,7 @@ local function showRestartConfirmation(message)
         end,
     }
     if ok_btn.label_widget then
-        ok_btn.label_widget.fgcolor = Blitbuffer.COLOR_WHITE
+        ok_btn.label_widget.fgcolor = is_dark and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_WHITE
     end
 
     local btn_row = HorizontalGroup:new{
