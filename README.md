@@ -2,7 +2,7 @@
 ![Platform](https://img.shields.io/badge/platform-KOReader-green.svg)
 ![License](https://img.shields.io/badge/license-MIT-yellow.svg)
 ![Status](https://img.shields.io/badge/status-active-brightgreen.svg)
-![liberapay](https://img.shields.io/liberapay/patrons/ultimatejimmy.svg?logo=liberapay) 
+[![Liberapay](https://img.shields.io/liberapay/receives/ultimatejimmy.svg?logo=liberapay)](https://liberapay.com/ultimatejimmy)
 
 Discover, install, and update community-created KOReader plugins and user patches without leaving your device. 
 
@@ -45,6 +45,8 @@ Detailed guides available on the wiki:
 * [4. Plugin and Patch Management Guide](https://github.com/ultimatejimmy/storefront.koplugin/wiki/4.-Management)
 * [5. Troubleshooting](https://github.com/ultimatejimmy/storefront.koplugin/wiki/5.-Troubleshooting)
 * [6. Settings Guide](https://github.com/ultimatejimmy/storefront.koplugin/wiki/6.-Settings)
+* [7. Language Support](https://github.com/ultimatejimmy/storefront.koplugin/wiki/7.-Language-Support)
+
 
 ## Support me
 

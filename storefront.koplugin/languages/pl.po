@@ -131,6 +131,25 @@ msgstr "Wymagany restart KOReadera."
 msgid "search_hint"
 msgstr "Szukaj w Storefront..."
 
+msgid "Search text"
+msgstr "Tekst wyszukiwania"
+
+msgid "Name, description, topic"
+msgstr "Nazwa, opis, temat"
+
+msgid "Owner"
+msgstr "Właściciel"
+
+msgid "anyone"
+msgstr "dowolny"
+
+msgid "Minimum stars"
+msgstr "Minimalna liczba gwiazdek"
+
+msgid "Clear"
+msgstr "Wyczyść"
+
+
 msgid "status_builtin"
 msgstr "Wbudowane"
 
