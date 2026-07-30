@@ -2,7 +2,7 @@
 ![Platform](https://img.shields.io/badge/platform-KOReader-green.svg)
 ![License](https://img.shields.io/badge/license-MIT-yellow.svg)
 ![Status](https://img.shields.io/badge/status-active-brightgreen.svg)
-[![Liberapay](https://img.shields.io/liberapay/receives/ultimatejimmy.svg?logo=liberapay)](https://liberapay.com/ultimatejimmy)
+![liberapay](https://img.shields.io/liberapay/patrons/ultimatejimmy.svg?logo=liberapay) 
 
 Discover, install, and update community-created KOReader plugins, user patches, and fonts without leaving your device. 
 
