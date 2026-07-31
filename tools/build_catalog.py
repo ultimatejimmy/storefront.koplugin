@@ -142,6 +142,27 @@ def fetch_raw_readme(owner, repo, default_branch="main"):
         pass
     return None
 
+def check_wiki_content(owner, repo):
+    """
+    Checks if the wiki actually has a Home page, filtering out repos 
+    that just have the wiki feature enabled but no content.
+    """
+    urls_to_try = [
+        f"https://raw.githubusercontent.com/wiki/{owner}/{repo}/Home.md",
+        f"https://raw.githubusercontent.com/wiki/{owner}/{repo}/Home"
+    ]
+    for url in urls_to_try:
+        try:
+            # Use HEAD request to save bandwidth and time
+            req = urllib.request.Request(url, method="HEAD")
+            req.add_header("User-Agent", USER_AGENT)
+            with urllib.request.urlopen(req, timeout=3) as resp:
+                if resp.status == 200:
+                    return True
+        except Exception:
+            continue
+    return False
+
 def process_single_repo(repo_item, is_patch):
     owner = repo_item.get("owner", {}).get("login", "")
     repo_name = repo_item.get("name", "")
@@ -151,6 +172,12 @@ def process_single_repo(repo_item, is_patch):
     is_fork = repo_item.get("fork", False)
     repo_id = repo_item.get("id", 0)
     
+    # Check if the feature is on, and if so, verify it actually has content
+    has_wiki_feature = repo_item.get("has_wiki", False)
+    actual_wiki_exists = False
+    if has_wiki_feature:
+        actual_wiki_exists = check_wiki_content(owner, repo_name)
+
     # Prepare normalized record
     record = {
         "id": repo_id,
@@ -165,7 +192,7 @@ def process_single_repo(repo_item, is_patch):
         "language": repo_item.get("language") or "",
         "homepage": repo_item.get("homepage") or "",
         "default_branch": default_branch,
-        "has_wiki": repo_item.get("has_wiki", False),
+        "has_wiki": actual_wiki_exists,
         "readme": fetch_raw_readme(owner, repo_name, default_branch),
         "pushed_at": repo_item.get("pushed_at") or "",
         "updated_at": repo_item.get("updated_at") or "",

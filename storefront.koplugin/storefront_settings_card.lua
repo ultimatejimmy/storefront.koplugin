@@ -310,14 +310,21 @@ local function formatDateTime(ts)
 end
 
         -- Refresh Cache Row
+        local is_currently_refreshing = Storefront.isRefreshing and Storefront:isRefreshing()
         local ts = Cache.getLastFetched(current_kind)
-        local meta_text = ts and ts > 0 and formatDateTime(ts) or _("Never")
+        local meta_text = is_currently_refreshing
+            and _("Refreshing…")
+            or (ts and ts > 0 and formatDateTime(ts) or _("Never"))
         local meta_widget = TextWidget:new{
             text = meta_text,
             face = Font:getFace("cfont", storefront_theme.subtext_font_size or 16),
             fgcolor = storefront_theme.color_label_dim,
         }
         table.insert(content_vg, create_setting_row("rotate-cw.svg", _("Refresh cache"), meta_widget, function()
+            if Storefront.isRefreshing and Storefront:isRefreshing() then
+                InfoMessage:new{ text = _("Catalog refresh is already in progress in the background."), timeout = 3 }:show()
+                return
+            end
             UIManager:close(overlay, "ui")
             local browser_was_open = Storefront.browser_menu ~= nil
             local kind = (Storefront.browser_state and Storefront.browser_state.kind) or "plugin"

@@ -285,14 +285,29 @@ function InstallStore.setItemOptions(item_key, opts)
 end
 
 function InstallStore.isPreReleaseAllowed(item_key)
+    if not item_key or item_key == "" then return false end
     local opts = InstallStore.getItemOptions(item_key)
-    return opts.allow_prerelease == true
+    if opts.allow_prerelease == true then return true end
+    local clean_key = item_key:gsub("%.koplugin$", "")
+    if clean_key ~= item_key then
+        opts = InstallStore.getItemOptions(clean_key)
+        if opts.allow_prerelease == true then return true end
+    end
+    return false
 end
 
 function InstallStore.setPreReleaseAllowed(item_key, allowed)
+    if not item_key or item_key == "" then return false end
     local opts = InstallStore.getItemOptions(item_key)
     opts.allow_prerelease = (allowed == true)
-    return InstallStore.setItemOptions(item_key, opts)
+    InstallStore.setItemOptions(item_key, opts)
+    local clean_key = item_key:gsub("%.koplugin$", "")
+    if clean_key ~= item_key then
+        local clean_opts = InstallStore.getItemOptions(clean_key)
+        clean_opts.allow_prerelease = (allowed == true)
+        InstallStore.setItemOptions(clean_key, clean_opts)
+    end
+    return true
 end
 
 function InstallStore.isReleaseIgnored(item_key, tag_name)

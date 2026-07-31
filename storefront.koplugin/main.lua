@@ -2915,20 +2915,39 @@ function Storefront:_scanUpdatesForDirectApi(tracked)
                 if not owner or not repo_name then
                     last_err = "Missing repository info."
                 else
-                    -- Check live GitHub release first
-                    local latest_release, release_err = GitHub.fetchLatestRelease(owner, repo_name)
-                    if latest_release and latest_release.tag_name then
-                        if not latest_release.prerelease and not latest_release.draft then
-                            local tag_lower = latest_release.tag_name:lower()
-                            local is_prerelease_tag = tag_lower:find("alpha", 1, true) or 
-                                                      tag_lower:find("beta", 1, true) or 
-                                                      tag_lower:find("rc", 1, true) or 
-                                                      tag_lower:find("dev", 1, true) or 
-                                                      tag_lower:find("preview", 1, true) or 
-                                                      tag_lower:find("test", 1, true)
-                            if not is_prerelease_tag then
-                                release_tag_name = latest_release.tag_name
-                                release_published_at = parseGitHubTimestampWorker(latest_release.published_at)
+                    local allow_prerelease = isPreReleaseAllowedForPlugin(nil, record, dirname)
+                    if allow_prerelease then
+                        local releases, fetch_err = GitHub.fetchReleases(owner, repo_name, {
+                            per_page = 10,
+                            max_pages = 1,
+                        })
+                        if releases and #releases > 0 then
+                            for _, release in ipairs(releases) do
+                                if not release.draft then
+                                    release_tag_name = release.tag_name
+                                    release_published_at = parseGitHubTimestampWorker(release.published_at)
+                                    break
+                                end
+                            end
+                        end
+                    end
+
+                    -- Check live GitHub release if not found via prerelease check
+                    if not release_tag_name then
+                        local latest_release, release_err = GitHub.fetchLatestRelease(owner, repo_name)
+                        if latest_release and latest_release.tag_name then
+                            if not latest_release.prerelease and not latest_release.draft then
+                                local tag_lower = latest_release.tag_name:lower()
+                                local is_prerelease_tag = tag_lower:find("alpha", 1, true) or 
+                                                          tag_lower:find("beta", 1, true) or 
+                                                          tag_lower:find("rc", 1, true) or 
+                                                          tag_lower:find("dev", 1, true) or 
+                                                          tag_lower:find("preview", 1, true) or 
+                                                          tag_lower:find("test", 1, true)
+                                if not is_prerelease_tag then
+                                    release_tag_name = latest_release.tag_name
+                                    release_published_at = parseGitHubTimestampWorker(latest_release.published_at)
+                                end
                             end
                         end
                     end
@@ -3134,10 +3153,34 @@ function Storefront:_checkAllUpdatesInternal(records)
     Toast.show(string.format(_("Checked %d plugin(s) for updates."), checked_count), 3)
 end
 
-local function findLatestRelease(owner, repo, allow_beta)
+local function isPreReleaseAllowedForPlugin(repo, record, dirname)
+    local keys = {}
+    if repo then
+        if repo.name then table.insert(keys, repo.name) end
+        if repo.full_name then table.insert(keys, repo.full_name) end
+    end
+    if record then
+        if record.repo then table.insert(keys, record.repo) end
+        if record.repo_full_name then table.insert(keys, record.repo_full_name) end
+        if record.dirname then table.insert(keys, record.dirname) end
+    end
+    if dirname then table.insert(keys, dirname) end
+    for _, key in ipairs(keys) do
+        if InstallStore.isPreReleaseAllowed(key) then
+            return true
+        end
+    end
+    return false
+end
+
+function Storefront:isPreReleaseAllowedForPlugin(repo, record, dirname)
+    return isPreReleaseAllowedForPlugin(repo, record, dirname)
+end
+
+local function findLatestRelease(owner, repo, allow_prerelease)
     local GitHub = require("storefront_net_github")
 
-    if allow_beta then
+    if allow_prerelease then
         local releases, fetch_err = GitHub.fetchReleases(owner, repo, {
             per_page = 10,
             max_pages = 1,
@@ -3200,8 +3243,9 @@ local function fetchRemoteVersionCore(record)
     local is_storefront = record.dirname == "storefront.koplugin"
         or (record.repo and record.repo:lower():match("storefront%.koplugin"))
     local allow_beta = is_storefront and (require("storefront_about_dialog").getChannel() == "beta")
+    local allow_prerelease = allow_beta or isPreReleaseAllowedForPlugin(nil, record, record and record.dirname)
 
-    local latest_release = findLatestRelease(owner, repo_name, allow_beta)
+    local latest_release = findLatestRelease(owner, repo_name, allow_prerelease)
 
     if latest_release and latest_release.tag_name then
         local release_version = parseVersionFromTag(latest_release.tag_name)
@@ -7267,6 +7311,11 @@ end
 
 function Storefront:browserRefresh()
     self:ensureBrowserState()
+    if self.isRefreshing and self:isRefreshing() then
+        local Toast = require("storefront_toast")
+        Toast.show(_("Catalog refresh is already in progress in the background."), 3)
+        return
+    end
     local kind = self.browser_state.kind or "plugin"
     self:resetBrowserScrollState()
     self:resetFiltersForRefresh()

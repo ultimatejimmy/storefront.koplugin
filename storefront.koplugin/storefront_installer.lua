@@ -502,19 +502,23 @@ function M:init(Storefront)
             local release, release_err
             if release_override and type(release_override) == "table" then
                 release = release_override
-                if (not release.assets or #release.assets == 0) and release.tag_name then
-                    local full_release = GitHub.fetchReleaseByTag and GitHub.fetchReleaseByTag(owner, repo.name, release.tag_name)
+                local override_tag = release.tag_name or release.release_tag_name
+                if (not release.assets or #release.assets == 0) and override_tag then
+                    local full_release = GitHub.fetchReleaseByTag and GitHub.fetchReleaseByTag(owner, repo.name, override_tag)
                     if full_release and type(full_release) == "table" and full_release.assets and #full_release.assets > 0 then
                         release = full_release
                     end
                 end
             else
+                local ctx_record = saved_ctx and saved_ctx.plugin and InstallStore.get(saved_ctx.plugin.dirname)
+                local allow_prerelease = self.isPreReleaseAllowedForPlugin and self:isPreReleaseAllowedForPlugin(repo, ctx_record, saved_ctx and saved_ctx.plugin and saved_ctx.plugin.dirname)
+
                 local catalog_mode = GitHub.getCatalogMode and GitHub.getCatalogMode() or "static"
                 local catalog_repo = Cache.getRepo and (
                     Cache.getRepo("plugin", repo.full_name or repo.name)
                     or (repo.owner and repo.name and Cache.getRepo("plugin", repo.owner .. "/" .. repo.name))
                 )
-                local catalog_release = (catalog_mode == "static") and (
+                local catalog_release = (catalog_mode == "static" and not allow_prerelease) and (
                     (repo and repo.latest_release)
                     or (repo and repo.data and repo.data.latest_release)
                     or (catalog_repo and catalog_repo.latest_release)
@@ -528,7 +532,26 @@ function M:init(Storefront)
                     release = catalog_release
                 else
                     local progress = self:showFetchingProgress(_("Fetching release info…"))
-                    release, release_err = GitHub.fetchLatestRelease(owner, repo.name)
+                    if allow_prerelease then
+                        local rels, err = GitHub.fetchReleases(owner, repo.name, { per_page = 10, max_pages = 1 })
+                        if rels and #rels > 0 then
+                            for _, rel in ipairs(rels) do
+                                if not rel.draft then
+                                    release = rel
+                                    break
+                                end
+                            end
+                        end
+                        if release and (not release.assets or #release.assets == 0) and release.tag_name then
+                            local full_rel = GitHub.fetchReleaseByTag and GitHub.fetchReleaseByTag(owner, repo.name, release.tag_name)
+                            if full_rel and type(full_rel) == "table" and full_rel.assets and #full_rel.assets > 0 then
+                                release = full_rel
+                            end
+                        end
+                    end
+                    if not release then
+                        release, release_err = GitHub.fetchLatestRelease(owner, repo.name)
+                    end
                     if progress and progress.close then
                         progress.close()
                     end

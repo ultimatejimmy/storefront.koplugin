@@ -248,8 +248,21 @@ function SearchNet:init(Storefront)
         return #collected
     end
 
+    Storefront.isRefreshing = function(sf)
+        if sf and sf.is_refreshing then
+            return true
+        end
+        local ok_cat, CatalogClient = pcall(require, "storefront_net_catalog")
+        if ok_cat and CatalogClient and CatalogClient.isRefreshing and CatalogClient.isRefreshing() then
+            return true
+        end
+        return false
+    end
+
     Storefront.refreshCache = function(sf, kind, callback)
-        if sf.is_refreshing then
+        local Toast = require("storefront_toast")
+        if sf:isRefreshing() then
+            Toast.show(_("Catalog refresh is already in progress in the background."), 3)
             if callback then callback(false, "Already refreshing") end
             return
         end

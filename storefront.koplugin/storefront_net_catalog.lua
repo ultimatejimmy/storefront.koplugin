@@ -235,6 +235,13 @@ function CatalogClient.cancelAsyncFetch()
     end
 end
 
+function CatalogClient.isRefreshing()
+    if CatalogClient._async_pid then
+        return true
+    end
+    return false
+end
+
 function CatalogClient.processCatalogDataToStaging(catalog_data, staging_plugins_file, staging_patches_file, staging_fonts_file)
     if not catalog_data or type(catalog_data) ~= "table" then
         return false, "invalid catalog format"
@@ -493,8 +500,14 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback)
             CatalogClient._async_pid = nil
 
             local read_func = ffiutil.readAllFromFD or ffiutil.readFromFD
-            local raw_msg = (read_func and parent_read_fd) and read_func(parent_read_fd) or (read_func and read_func(pid))
-            local child_msg = (type(raw_msg) == "string" and raw_msg ~= "") and raw_msg or "SUBPROCESS_NO_MSG"
+            local ok_read, raw_msg = pcall(function()
+                if read_func and parent_read_fd then
+                    return read_func(parent_read_fd)
+                elseif read_func then
+                    return read_func(pid)
+                end
+            end)
+            local child_msg = (ok_read and type(raw_msg) == "string" and raw_msg ~= "") and raw_msg or "SUBPROCESS_NO_MSG"
             logger.info("Storefront: catalog subprocess finished with msg:", tostring(child_msg))
             if StorefrontLogger then StorefrontLogger.info("Storefront: catalog subprocess finished with msg: " .. tostring(child_msg)) end
 

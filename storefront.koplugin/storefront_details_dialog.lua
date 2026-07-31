@@ -1412,7 +1412,11 @@ tr:nth-child(even) td { background-color: #f5f5f5 !important; }
                 function toggle_btn:onStorefrontVersionToggleTap()
                     if item_key then
                         local current = InstallStore.isPreReleaseAllowed(item_key)
-                        InstallStore.setPreReleaseAllowed(item_key, not current)
+                        local next_val = not current
+                        InstallStore.setPreReleaseAllowed(item_key, next_val)
+                        if dialog_self.repo and dialog_self.repo.name then InstallStore.setPreReleaseAllowed(dialog_self.repo.name, next_val) end
+                        if dialog_self.repo and dialog_self.repo.full_name then InstallStore.setPreReleaseAllowed(dialog_self.repo.full_name, next_val) end
+                        if dialog_self.update_item and dialog_self.update_item.plugin and dialog_self.update_item.plugin.dirname then InstallStore.setPreReleaseAllowed(dialog_self.update_item.plugin.dirname, next_val) end
                         if dialog_self.loadContent then dialog_self.loadContent("versions") end
                     end
                     return true
@@ -1913,7 +1917,11 @@ function StorefrontDetailsDialog:onLinkTap(href)
             local item_key = self.patch and self.patch.filename or (self.repo and (self.repo.name or self.repo.full_name))
             if item_key then
                 local current = InstallStore.isPreReleaseAllowed(item_key)
-                InstallStore.setPreReleaseAllowed(item_key, not current)
+                local next_val = not current
+                InstallStore.setPreReleaseAllowed(item_key, next_val)
+                if self.repo and self.repo.name then InstallStore.setPreReleaseAllowed(self.repo.name, next_val) end
+                if self.repo and self.repo.full_name then InstallStore.setPreReleaseAllowed(self.repo.full_name, next_val) end
+                if self.update_item and self.update_item.plugin and self.update_item.plugin.dirname then InstallStore.setPreReleaseAllowed(self.update_item.plugin.dirname, next_val) end
                 if self.loadContent then self.loadContent("versions") end
             end
             return true
