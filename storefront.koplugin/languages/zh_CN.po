@@ -5,215 +5,209 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-# en-hash: 775f0a631bf3455122e2f6932ec06f7b
+msgid "Any"
+msgstr "不限"
+
+msgid "Check for updates"
+msgstr "检查更新"
+
+msgid "Checked %d plugin updates"
+msgstr "已检查 %d 个插件更新"
+
+msgid "Checking for Storefront updates..."
+msgstr "正在检查 Storefront 更新..."
+
+msgid "Checking for Storefront updates…"
+msgstr "正在检查 Storefront 更新…"
+
+msgid "Checking plugin updates"
+msgstr "正在检查插件更新"
+
+msgid "Filter..."
+msgstr "筛选..."
+
+msgid "Filter & Sort Fonts"
+msgstr "筛选与排序字体"
+
+msgid "Filter & Sort Installed"
+msgstr "筛选与排序已安装项"
+
+msgid "Filter & Sort Patches"
+msgstr "筛选与排序补丁"
+
+msgid "Filter & Sort Plugins"
+msgstr "筛选与排序插件"
+
+msgid "Installed plugin Storefront version %s"
+msgstr "已安装 Storefront 插件版本 %s"
+
+msgid "Successfully updated %d item(s)."
+msgstr "成功更新了 %d 个项目。"
+
+msgid "Successfully updated %d items."
+msgstr "成功更新了 %d 个项目。"
+
+msgid "Update %d outdated item(s)?"
+msgstr "更新 %d 个过期的项目？"
+
+msgid "Update all outdated items?"
+msgstr "更新所有过期的项目？"
+
 msgid "about_text"
 msgstr "Storefront 是一个用于 KOReader 的应用内包管理器，支持插件、补丁和字体。"
 
-# en-hash: d941e779a1f26a117075fb1935c15664
 msgid "btn_apply"
 msgstr "应用"
 
-# en-hash: 0557fa923dcee4d0f86b1409f5c2167f
 msgid "btn_back"
 msgstr "返回"
 
-# en-hash: ea4788705e6873b424c65e91c2846b19
 msgid "btn_cancel"
 msgstr "取消"
 
-# en-hash: d3d2e617335f08df83599665eef8a418
 msgid "btn_close"
 msgstr "关闭"
 
-# en-hash: 7b546d0a793a61f3640243be12674e30
 msgid "btn_install"
 msgstr "安装"
 
-# en-hash: e0aa021e21dddbd6d8cecec71e9cf564
 msgid "btn_ok"
 msgstr "确定"
 
-# en-hash: 3b878279a04dc47d60932bf294d9e3d2
 msgid "btn_preview"
 msgstr "预览"
 
-# en-hash: 63a6a0e6981e295d47d41541f014b2d4
 msgid "btn_refresh"
 msgstr "刷新"
 
-# en-hash: 1fef1bb7ae7fe2fa13e0cbca9c5ecdf4
 msgid "btn_release_notes"
 msgstr "更新说明"
 
-# en-hash: bc3b80b0bb11634aebe3a7b6cfbcac7e
 msgid "btn_restart"
 msgstr "重启 KOReader"
 
-# en-hash: 47a0be8d1015d54fbcf101bf890ab8d8
 msgid "btn_retry"
 msgstr "重试"
 
-# en-hash: 13348442cc6a27032d2b4aa28b75a5d3
 msgid "btn_search"
 msgstr "搜索"
 
-# en-hash: ee4943261623910c0ee47a060dff55c1
 msgid "btn_uninstall"
 msgstr "卸载"
 
-# en-hash: 06933067a9d3be2c4318853b0b7da18a
 msgid "btn_update"
 msgstr "更新"
 
-# en-hash: 46c59b20e0fcaedbf19e59546d1bf035
 msgid "btn_view_details"
 msgstr "查看详情"
 
-# en-hash: c0ae6f112c3f87f272a71bf6fb190333
 msgid "confirm_install"
 msgstr "是否安装“%s”？"
 
-# en-hash: dbe637db6ff8ddbc1ce24cf9659bca40
 msgid "confirm_uninstall"
 msgstr "是否卸载“%s”？此操作无法撤销。"
 
-# en-hash: e99ee5fb3426746cf595700889ecae69
 msgid "confirm_update"
 msgstr "是否将“%s”从 v%s 更新至 v%s？"
 
-# en-hash: 0fa6e12e2c5e52a9a7a97ea94cbf0338
 msgid "err_install_failed"
 msgstr "“%s”安装失败。"
 
-# en-hash: 5eeaa935ae4cfcefb1c06ca7f35b29fa
 msgid "err_network_failed"
 msgstr "网络错误：无法下载目录。"
 
-# en-hash: 8b3a7dc9bf55be1b8166b177893ea30b
 msgid "err_uninstall_failed"
 msgstr "“%s”卸载失败。"
 
-# en-hash: 8c3bece5fb7eebdfec6cae8d0e7e408d
 msgid "filter_all"
 msgstr "所有分类"
 
-# en-hash: 4041b65e90f2302e26d9c614b0b14c33
 msgid "filter_installed"
 msgstr "已安装"
 
-# en-hash: 58628efef0b8dbd0c9ff7ea64cf46cf7
 msgid "filter_updates"
 msgstr "有可用更新"
 
-# en-hash: 9559c5d13028c2e6f4777598177579f1
 msgid "label_author"
 msgstr "作者"
 
-# en-hash: b5a7adde1af5c87d7594c1f332d961cf
 msgid "label_description"
 msgstr "描述"
 
-# en-hash: d9426f866418873491edb6156e9c4021
 msgid "label_downloads"
 msgstr "下载量"
 
-# en-hash: 0a7f14b6fc709f6e6ec3505c2a13a968
 msgid "label_license"
 msgstr "许可证"
 
-# en-hash: b4c51e04ae9ff246e7f1df6aa5d8e763
 msgid "label_repository"
 msgstr "代码库"
 
-# en-hash: 6f6cb72d544962fa333e2e34ce64f719
 msgid "label_size"
 msgstr "大小"
 
-# en-hash: a1fa27779242b4902f7ae3fad5c6d4e5
 msgid "label_type"
 msgstr "类型"
 
-# en-hash: 02b1f86825c040d2b704c703b41d0637
 msgid "label_version"
 msgstr "版本"
 
-# en-hash: 48b111166683f25c83bc05e2ed36bd32
 msgid "menu_about"
 msgstr "关于 Storefront"
 
-# en-hash: 6007ec1bf3a5f973cdb6279f643ee16a
 msgid "menu_settings"
 msgstr "Storefront 设置"
 
-# en-hash: 8491c7a683ec0bf7fb8aaed4990263f3
 msgid "menu_storefront"
 msgstr "Storefront 商店"
 
-# en-hash: 65bc2337d11fbf81a385f0ef352d192f
 msgid "menu_storefront_desc"
 msgstr "浏览、安装与更新插件、补丁和字体。"
 
-# en-hash: 82e3f890e0c52bb3522f7b88df1789c6
 msgid "msg_catalog_updated"
 msgstr "目录已成功更新。"
 
-# en-hash: f84dfadcd34fbc8c1aaecf1c7d81a8b9
 msgid "msg_no_results"
 msgstr "未找到符合搜索条件的项目。"
 
-# en-hash: ce9d2aa7e2264ef550f28fbff80eefb1
 msgid "prompt_restart_needed"
 msgstr "安装完成。是否立即重启 KOReader 以启用“%s”？"
 
-# en-hash: 67fce54fd98bd50280eb6d8a3ed3bbcb
 msgid "search_hint"
 msgstr "搜索 Storefront..."
 
-# en-hash: beaa7406a6b8ef36329bf6d911b3337a
 msgid "status_builtin"
 msgstr "内置"
 
-# en-hash: e3579b1897d264fcf237a3465dd89eb2
 msgid "status_downloading"
 msgstr "正在下载..."
 
-# en-hash: 4041b65e90f2302e26d9c614b0b14c33
 msgid "status_installed"
 msgstr "已安装"
 
-# en-hash: ce5f053531b790dcfc43555ae9314eb3
 msgid "status_installing"
 msgstr "正在安装..."
 
-# en-hash: 0570b201f805a8f4c40b8a24855ad482
 msgid "status_not_installed"
 msgstr "未安装"
 
-# en-hash: b5b7b9f365bc9a0efba16d9a103c8065
 msgid "status_uninstalling"
 msgstr "正在卸载..."
 
-# en-hash: 58628efef0b8dbd0c9ff7ea64cf46cf7
 msgid "status_update_available"
 msgstr "有可用更新"
 
-# en-hash: 8491c7a683ec0bf7fb8aaed4990263f3
 msgid "storefront_title"
 msgstr "Storefront"
 
-# en-hash: b1c94ca2fbc3e78fc30069c8d0f01680
 msgid "tab_all"
 msgstr "全部"
 
-# en-hash: 827fc29315d0339d67ec1be6f178f566
 msgid "tab_fonts"
 msgstr "字体"
 
-# en-hash: 3ca92a6df790eb9bcac440c955745100
 msgid "tab_patches"
 msgstr "补丁"
 
-# en-hash: 2755e10e408ec20ee56d0263e804f5e7
 msgid "tab_plugins"
 msgstr "插件"
-

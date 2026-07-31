@@ -5,6 +5,264 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
+msgid "< Back"
+msgstr "< Back"
+
+msgid "< Prev"
+msgstr "< Prev"
+
+msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
+msgstr "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
+
+msgid "About"
+msgstr "About"
+
+msgid "About Storefront"
+msgstr "About Storefront"
+
+msgid "All"
+msgstr "All"
+
+msgid "All Types"
+msgstr "All Types"
+
+msgid "Alphabet & Numbers"
+msgstr "Alphabet & Numbers"
+
+msgid "Any"
+msgstr "Any"
+
+msgid "Apply"
+msgstr "Apply"
+
+msgid "Author"
+msgstr "Author"
+
+msgid "Beta"
+msgstr "Beta"
+
+msgid "By: %s"
+msgstr "By: %s"
+
+msgid "Catalog & Cache"
+msgstr "Catalog & Cache"
+
+msgid "Catalog source"
+msgstr "Catalog source"
+
+msgid "Category: %s"
+msgstr "Category: %s"
+
+msgid "Check Updates"
+msgstr "Check Updates"
+
+msgid "Check for updates"
+msgstr "Check for updates"
+
+msgid "Checked %d plugin updates"
+msgstr "Checked %d plugin updates"
+
+msgid "Checking for Storefront updates..."
+msgstr "Checking for Storefront updates..."
+
+msgid "Checking for Storefront updates…"
+msgstr "Checking for Storefront updates…"
+
+msgid "Checking plugin updates"
+msgstr "Checking plugin updates"
+
+msgid "Clear README cache"
+msgstr "Clear README cache"
+
+msgid "Close"
+msgstr "Close"
+
+msgid "Configured ✓"
+msgstr "Configured ✓"
+
+msgid "Default only"
+msgstr "Default only"
+
+msgid "Direct GitHub API"
+msgstr "Direct GitHub API"
+
+msgid "Disable"
+msgstr "Disable"
+
+msgid "Disabled"
+msgstr "Disabled"
+
+msgid "Enable"
+msgstr "Enable"
+
+msgid "Enabled"
+msgstr "Enabled"
+
+msgid "Filter..."
+msgstr "Filter..."
+
+msgid "Filter & Sort Fonts"
+msgstr "Filter & Sort Fonts"
+
+msgid "Filter & Sort Installed"
+msgstr "Filter & Sort Installed"
+
+msgid "Filter & Sort Patches"
+msgstr "Filter & Sort Patches"
+
+msgid "Filter & Sort Plugins"
+msgstr "Filter & Sort Plugins"
+
+msgid "Filters"
+msgstr "Filters"
+
+msgid "GitHub token"
+msgstr "GitHub token"
+
+msgid "Include 0-star forks"
+msgstr "Include 0-star forks"
+
+msgid "Install Font"
+msgstr "Install Font"
+
+msgid "Install Patch"
+msgstr "Install Patch"
+
+msgid "Installed plugin Storefront version %s"
+msgstr "Installed plugin Storefront version %s"
+
+msgid "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters."
+msgstr "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters."
+
+msgid "Last Updated (Newest)"
+msgstr "Last Updated (Newest)"
+
+msgid "Last Updated (Oldest)"
+msgstr "Last Updated (Oldest)"
+
+msgid "License: %s"
+msgstr "License: %s"
+
+msgid "Name (A-Z)"
+msgstr "Name (A-Z)"
+
+msgid "Name (Z-A)"
+msgstr "Name (Z-A)"
+
+msgid "Never"
+msgstr "Never"
+
+msgid "Next >"
+msgstr "Next >"
+
+msgid "Not set"
+msgstr "Not set"
+
+msgid "Origin"
+msgstr "Origin"
+
+msgid "Pack my box with five dozen liquor jugs."
+msgstr "Pack my box with five dozen liquor jugs."
+
+msgid "Pangram Preview"
+msgstr "Pangram Preview"
+
+msgid "Reading Passage Specimen"
+msgstr "Reading Passage Specimen"
+
+msgid "Refresh cache"
+msgstr "Refresh cache"
+
+msgid "Reinstall"
+msgstr "Reinstall"
+
+msgid "Remove"
+msgstr "Remove"
+
+msgid "Reset filters"
+msgstr "Reset filters"
+
+msgid "Reset to defaults"
+msgstr "Reset to defaults"
+
+msgid "Sample Text"
+msgstr "Sample Text"
+
+msgid "Search & API"
+msgstr "Search & API"
+
+msgid "Settings"
+msgstr "Settings"
+
+msgid "Sort"
+msgstr "Sort"
+
+msgid "Sort mode"
+msgstr "Sort mode"
+
+msgid "Sort: A-Z"
+msgstr "Sort: A-Z"
+
+msgid "Sort: Name (A → Z)"
+msgstr "Sort: Name (A → Z)"
+
+msgid "Sort: Name (Z → A)"
+msgstr "Sort: Name (Z → A)"
+
+msgid "Sort: Oldest"
+msgstr "Sort: Oldest"
+
+msgid "Sort: Recently updated"
+msgstr "Sort: Recently updated"
+
+msgid "Sort: Stars (high → low)"
+msgstr "Sort: Stars (high → low)"
+
+msgid "Sort: Status"
+msgstr "Sort: Status"
+
+msgid "Sort: Type"
+msgstr "Sort: Type"
+
+msgid "Sorting"
+msgstr "Sorting"
+
+msgid "Stable"
+msgstr "Stable"
+
+msgid "Status"
+msgstr "Status"
+
+msgid "Successfully updated %d item(s)."
+msgstr "Successfully updated %d item(s)."
+
+msgid "Successfully updated %d items."
+msgstr "Successfully updated %d items."
+
+msgid "The quick brown fox jumps over the lazy dog."
+msgstr "The quick brown fox jumps over the lazy dog."
+
+msgid "Type"
+msgstr "Type"
+
+msgid "Update %d outdated item(s)?"
+msgstr "Update %d outdated item(s)?"
+
+msgid "Update All"
+msgstr "Update All"
+
+msgid "Update all outdated items?"
+msgstr "Update all outdated items?"
+
+msgid "Update channel"
+msgstr "Update channel"
+
+msgid "Updates"
+msgstr "Updates"
+
+msgid "User Installed"
+msgstr "User Installed"
+
 msgid "about_text"
 msgstr "Storefront is an in-app package manager for KOReader plugins, patches, and fonts."
 
@@ -13,10 +271,6 @@ msgstr "Apply"
 
 msgid "btn_back"
 msgstr "< Back"
-
-msgid "< Back"
-msgstr "< Back"
-
 
 msgid "btn_cancel"
 msgstr "Cancel"
@@ -168,231 +422,8 @@ msgstr "Patches"
 msgid "tab_plugins"
 msgstr "Plugins"
 
-msgid "Settings"
-msgstr "Settings"
-
-msgid "Catalog & Cache"
-msgstr "Catalog & Cache"
-
-msgid "Catalog source"
-msgstr "Catalog source"
-
-msgid "Direct GitHub API"
-msgstr "Direct GitHub API"
-
-msgid "Refresh cache"
-msgstr "Refresh cache"
-
-msgid "Clear README cache"
-msgstr "Clear README cache"
-
-msgid "Search & API"
-msgstr "Search & API"
-
-msgid "Include 0-star forks"
-msgstr "Include 0-star forks"
-
-msgid "GitHub token"
-msgstr "GitHub token"
-
-msgid "Not set"
-msgstr "Not set"
-
-msgid "Configured ✓"
-msgstr "Configured ✓"
-
-msgid "About Storefront"
-msgstr "About Storefront"
-
-msgid "Update channel"
-msgstr "Update channel"
-
-msgid "Beta"
-msgstr "Beta"
-
-msgid "Stable"
-msgstr "Stable"
-
-msgid "Never"
-msgstr "Never"
-
-msgid "Close"
-msgstr "Close"
-
-msgid "About"
-msgstr "About"
-
-msgid "Updates"
-msgstr "Updates"
-
-msgid "Version"
-msgstr "Version"
-
-msgid "Author"
-msgstr "Author"
-
-msgid "Check for updates"
-msgstr "Check for updates"
-
-msgid "Filter & Sort Installed"
-msgstr "Filter & Sort Installed"
-
-msgid "Filters"
-msgstr "Filters"
-
-msgid "Sorting"
-msgstr "Sorting"
-
-msgid "Type"
-msgstr "Type"
-
-msgid "Origin"
-msgstr "Origin"
-
-msgid "Status"
-msgstr "Status"
-
-msgid "Sort mode"
-msgstr "Sort mode"
-
-msgid "Reset filters"
-msgstr "Reset filters"
-
-msgid "Reset to defaults"
-msgstr "Reset to defaults"
-
-msgid "Apply"
-msgstr "Apply"
-
-msgid "All Types"
-msgstr "All Types"
-
-msgid "User Installed"
-msgstr "User Installed"
-
-msgid "Default only"
-msgstr "Default only"
-
-msgid "Enabled"
-msgstr "Enabled"
-
-msgid "Disabled"
-msgstr "Disabled"
-
-msgid "Last Updated (Newest)"
-msgstr "Last Updated (Newest)"
-
-msgid "Last Updated (Oldest)"
-msgstr "Last Updated (Oldest)"
-
-msgid "Name (A-Z)"
-msgstr "Name (A-Z)"
-
-msgid "Name (Z-A)"
-msgstr "Name (Z-A)"
-
-msgid "Check Updates"
-msgstr "Check Updates"
-
-msgid "Update All"
-msgstr "Update All"
-
-msgid "Reinstall"
-msgstr "Reinstall"
-
-msgid "Remove"
-msgstr "Remove"
-
-msgid "Enable"
-msgstr "Enable"
-
-msgid "Disable"
-msgstr "Disable"
-
-msgid "Sample Text"
-msgstr "Sample Text"
-
-msgid "Alphabet & Numbers"
-msgstr "Alphabet & Numbers"
-
-msgid "Pangram Preview"
-msgstr "Pangram Preview"
-
-msgid "Reading Passage Specimen"
-msgstr "Reading Passage Specimen"
-
-msgid "Category: %s"
-msgstr "Category: %s"
-
-msgid "License: %s"
-msgstr "License: %s"
-
-msgid "By: %s"
-msgstr "By: %s"
-
-msgid "< Prev"
-msgstr "< Prev"
-
-msgid "Next >"
-msgstr "Next >"
-
-msgid "< Back"
-msgstr "< Back"
-
 msgid "updated %s"
 msgstr "updated %s"
 
 msgid "updated %s (%s)"
 msgstr "updated %s (%s)"
-
-msgid "Install Font"
-msgstr "Install Font"
-
-msgid "Install Patch"
-msgstr "Install Patch"
-
-msgid "The quick brown fox jumps over the lazy dog."
-msgstr "The quick brown fox jumps over the lazy dog."
-
-msgid "Pack my box with five dozen liquor jugs."
-msgstr "Pack my box with five dozen liquor jugs."
-
-msgid "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters."
-msgstr "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters."
-
-msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
-msgstr "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
-
-msgid "Sort: Stars (high → low)"
-msgstr "Sort: Stars (high → low)"
-
-msgid "Sort: Recently updated"
-msgstr "Sort: Recently updated"
-
-msgid "Sort: Name (A → Z)"
-msgstr "Sort: Name (A → Z)"
-
-msgid "Sort: Name (Z → A)"
-msgstr "Sort: Name (Z → A)"
-
-msgid "Sort: A-Z"
-msgstr "Sort: A-Z"
-
-msgid "Sort: Z-A"
-msgstr "Sort: Z-A"
-
-msgid "Sort: Oldest"
-msgstr "Sort: Oldest"
-
-msgid "Sort: Type"
-msgstr "Sort: Type"
-
-msgid "Sort: Status"
-msgstr "Sort: Status"
-
-msgid "Sort"
-msgstr "Sort"
-
-
-
-
