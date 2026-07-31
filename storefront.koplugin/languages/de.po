@@ -5,226 +5,44 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-# en-hash: 775f0a631bf3455122e2f6932ec06f7b
-msgid "about_text"
-msgstr "Storefront ist ein Paket-Manager in KOReader für Plugins, Patches und Schriftarten."
+msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
+msgstr "»Mein lieber Mr. Bennet«, sagte seine Dame eines Tages zu ihm, »haben Sie gehört, dass Netherfield Park endlich vermietet ist?« Mr. Bennet antwortete, er habe es nicht gehört. »Aber es ist so«, erwiderte sie; »denn Mrs. Long war gerade hier und hat mir alles erzählt.«"
 
-# en-hash: d941e779a1f26a117075fb1935c15664
-msgid "btn_apply"
-msgstr "Anwenden"
+msgid "< Back"
+msgstr "< Zurück"
 
-# en-hash: 0557fa923dcee4d0f86b1409f5c2167f
-msgid "btn_back"
-msgstr "Zurück"
+msgid "< Prev"
+msgstr "< Zurück"
 
-# en-hash: ea4788705e6873b424c65e91c2846b19
-msgid "btn_cancel"
-msgstr "Abbrechen"
+msgid "About"
+msgstr "Über"
 
-# en-hash: d3d2e617335f08df83599665eef8a418
-msgid "btn_close"
-msgstr "Schließen"
-
-# en-hash: 7b546d0a793a61f3640243be12674e30
-msgid "btn_install"
-msgstr "Installieren"
-
-# en-hash: e0aa021e21dddbd6d8cecec71e9cf564
-msgid "btn_ok"
-msgstr "OK"
-
-# en-hash: 3b878279a04dc47d60932bf294d9e3d2
-msgid "btn_preview"
-msgstr "Vorschau"
-
-# en-hash: 63a6a0e6981e295d47d41541f014b2d4
-msgid "btn_refresh"
-msgstr "Aktualisieren"
-
-# en-hash: 1fef1bb7ae7fe2fa13e0cbca9c5ecdf4
-msgid "btn_release_notes"
-msgstr "Versionshinweise"
-
-# en-hash: bc3b80b0bb11634aebe3a7b6cfbcac7e
-msgid "btn_restart"
-msgstr "KOReader neustarten"
-
-# en-hash: 47a0be8d1015d54fbcf101bf890ab8d8
-msgid "btn_retry"
-msgstr "Wiederholen"
-
-# en-hash: 13348442cc6a27032d2b4aa28b75a5d3
-msgid "btn_search"
-msgstr "Suchen"
-
-# en-hash: ee4943261623910c0ee47a060dff55c1
-msgid "btn_uninstall"
-msgstr "Deinstallieren"
-
-# en-hash: 06933067a9d3be2c4318853b0b7da18a
-msgid "btn_update"
-msgstr "Aktualisieren"
-
-# en-hash: 46c59b20e0fcaedbf19e59546d1bf035
-msgid "btn_view_details"
-msgstr "Details anzeigen"
-
-# en-hash: c0ae6f112c3f87f272a71bf6fb190333
-msgid "confirm_install"
-msgstr "'%s' installieren?"
-
-# en-hash: dbe637db6ff8ddbc1ce24cf9659bca40
-msgid "confirm_uninstall"
-msgstr "'%s' deinstallieren? Dies kann nicht rückgängig gemacht werden."
-
-# en-hash: e99ee5fb3426746cf595700889ecae69
-msgid "confirm_update"
-msgstr "'%s' von v%s auf v%s aktualisieren?"
-
-# en-hash: 0fa6e12e2c5e52a9a7a97ea94cbf0338
-msgid "err_install_failed"
-msgstr "Installation von '%s' fehlgeschlagen."
-
-# en-hash: 5eeaa935ae4cfcefb1c06ca7f35b29fa
-msgid "err_network_failed"
-msgstr "Netzwerkfehler: Katalog konnte nicht heruntergeladen werden."
-
-# en-hash: 8b3a7dc9bf55be1b8166b177893ea30b
-msgid "err_uninstall_failed"
-msgstr "Deinstallation von '%s' fehlgeschlagen."
-
-# en-hash: 8c3bece5fb7eebdfec6cae8d0e7e408d
-msgid "filter_all"
-msgstr "Alle Kategorien"
-
-# en-hash: 4041b65e90f2302e26d9c614b0b14c33
-msgid "filter_installed"
-msgstr "Installiert"
-
-# en-hash: 58628efef0b8dbd0c9ff7ea64cf46cf7
-msgid "filter_updates"
-msgstr "Updates verfügbar"
-
-# en-hash: 9559c5d13028c2e6f4777598177579f1
-msgid "label_author"
-msgstr "Autor"
-
-# en-hash: b5a7adde1af5c87d7594c1f332d961cf
-msgid "label_description"
-msgstr "Beschreibung"
-
-# en-hash: d9426f866418873491edb6156e9c4021
-msgid "label_downloads"
-msgstr "Downloads"
-
-# en-hash: 0a7f14b6fc709f6e6ec3505c2a13a968
-msgid "label_license"
-msgstr "Lizenz"
-
-# en-hash: b4c51e04ae9ff246e7f1df6aa5d8e763
-msgid "label_repository"
-msgstr "Repository"
-
-# en-hash: 6f6cb72d544962fa333e2e34ce64f719
-msgid "label_size"
-msgstr "Größe"
-
-# en-hash: a1fa27779242b4902f7ae3fad5c6d4e5
-msgid "label_type"
-msgstr "Typ"
-
-# en-hash: 02b1f86825c040d2b704c703b41d0637
-msgid "label_version"
-msgstr "Version"
-
-# en-hash: 48b111166683f25c83bc05e2ed36bd32
-msgid "menu_about"
+msgid "About Storefront"
 msgstr "Über Storefront"
 
-# en-hash: 6007ec1bf3a5f973cdb6279f643ee16a
-msgid "menu_settings"
-msgstr "Storefront-Einstellungen"
-
-# en-hash: 8491c7a683ec0bf7fb8aaed4990263f3
-msgid "menu_storefront"
-msgstr "Storefront"
-
-# en-hash: 65bc2337d11fbf81a385f0ef352d192f
-msgid "menu_storefront_desc"
-msgstr "Durchsuchen, Installieren und Aktualisieren von Plugins, Patches und Schriftarten."
-
-# en-hash: 82e3f890e0c52bb3522f7b88df1789c6
-msgid "msg_catalog_updated"
-msgstr "Katalog erfolgreich aktualisiert."
-
-# en-hash: f84dfadcd34fbc8c1aaecf1c7d81a8b9
-msgid "msg_no_results"
-msgstr "Keine passenden Einträge gefunden."
-
-# en-hash: ce9d2aa7e2264ef550f28fbff80eefb1
-msgid "prompt_restart_needed"
-msgstr "Installation abgeschlossen. KOReader jetzt neustarten, um '%s' zu aktivieren?"
-
-# en-hash: 67fce54fd98bd50280eb6d8a3ed3bbcb
-msgid "search_hint"
-msgstr "Storefront durchsuchen..."
-
-# en-hash: beaa7406a6b8ef36329bf6d911b3337a
-msgid "status_builtin"
-msgstr "Integriert"
-
-# en-hash: e3579b1897d264fcf237a3465dd89eb2
-msgid "status_downloading"
-msgstr "Wird heruntergeladen..."
-
-# en-hash: 4041b65e90f2302e26d9c614b0b14c33
-msgid "status_installed"
-msgstr "Installiert"
-
-# en-hash: ce5f053531b790dcfc43555ae9314eb3
-msgid "status_installing"
-msgstr "Wird installiert..."
-
-# en-hash: 0570b201f805a8f4c40b8a24855ad482
-msgid "status_not_installed"
-msgstr "Nicht installiert"
-
-# en-hash: b5b7b9f365bc9a0efba16d9a103c8065
-msgid "status_uninstalling"
-msgstr "Wird deinstalliert..."
-
-# en-hash: 58628efef0b8dbd0c9ff7ea64cf46cf7
-msgid "status_update_available"
-msgstr "Update verfügbar"
-
-# en-hash: 8491c7a683ec0bf7fb8aaed4990263f3
-msgid "storefront_title"
-msgstr "Storefront"
-
-# en-hash: b1c94ca2fbc3e78fc30069c8d0f01680
-msgid "tab_all"
+msgid "All"
 msgstr "Alle"
 
-# en-hash: 827fc29315d0339d67ec1be6f178f566
-msgid "tab_fonts"
-msgstr "Schriftarten"
+msgid "All Types"
+msgstr "Alle"
 
-# en-hash: 3ca92a6df790eb9bcac440c955745100
-msgid "tab_patches"
-msgstr "Patches"
+msgid "Alphabet & Numbers"
+msgstr "Alphabet & Zahlen"
 
-# en-hash: 2755e10e408ec20ee56d0263e804f5e7
-msgid "tab_plugins"
-msgstr "Plugins"
+msgid "Any"
+msgstr "Beliebig"
 
-msgid "filter_installed"
-msgstr "Installiert"
+msgid "Apply"
+msgstr "Anwenden"
 
-msgid "filter_updates"
-msgstr "Updates"
+msgid "Author"
+msgstr "Autor"
 
-msgid "Settings"
-msgstr "Einstellungen"
+msgid "Beta"
+msgstr "Beta"
+
+msgid "By: %s"
+msgstr "Von: %s"
 
 msgid "Catalog & Cache"
 msgstr "Katalog & Cache"
@@ -232,188 +50,89 @@ msgstr "Katalog & Cache"
 msgid "Catalog source"
 msgstr "Katalog-Quelle"
 
-msgid "Direct GitHub API"
-msgstr "Direkte GitHub-API"
-
-msgid "Refresh cache"
-msgstr "Cache aktualisieren"
-
-msgid "Clear README cache"
-msgstr "README-Cache löschen"
-
-msgid "Search & API"
-msgstr "Suche & API"
-
-msgid "Include 0-star forks"
-msgstr "0-Sterne-Forks einschließen"
-
-msgid "GitHub token"
-msgstr "GitHub-Token"
-
-msgid "Not set"
-msgstr "Nicht gesetzt"
-
-msgid "Configured ✓"
-msgstr "Konfiguriert ✓"
-
-msgid "About Storefront"
-msgstr "Über Storefront"
-
-msgid "Update channel"
-msgstr "Kanal für Updates"
-
-msgid "Beta"
-msgstr "Beta"
-
-msgid "Stable"
-msgstr "Stabil"
-
-msgid "Never"
-msgstr "Nie"
-
-msgid "Close"
-msgstr "Schließen"
-
-msgid "About"
-msgstr "Über"
-
-msgid "Updates"
-msgstr "Updates"
-
-msgid "Version"
-msgstr "Version"
-
-msgid "Author"
-msgstr "Autor"
-
-msgid "Check for updates"
-msgstr "Nach Updates suchen"
-
-msgid "Filter & Sort Installed"
-msgstr "Installierte filtern & sortieren"
-
-msgid "Filters"
-msgstr "Filter"
-
-msgid "Sorting"
-msgstr "Sortierung"
-
-msgid "Type"
-msgstr "Typ"
-
-msgid "Origin"
-msgstr "Herkunft"
-
-msgid "Status"
-msgstr "Status"
-
-msgid "Sort mode"
-msgstr "Sortierung"
-
-msgid "Reset filters"
-msgstr "Filter"
-
-msgid "Reset to defaults"
-msgstr "Zurücksetzen"
-
-msgid "Apply"
-msgstr "Anwenden"
-
-msgid "All Types"
-msgstr "Alle"
-
-msgid "User Installed"
-msgstr "Benutzer"
-
-msgid "Default only"
-msgstr "Standard"
-
-msgid "Enabled"
-msgstr "Aktiviert"
-
-msgid "Disabled"
-msgstr "Deaktiviert"
-
-msgid "Last Updated (Newest)"
-msgstr "Neueste"
-
-msgid "Last Updated (Oldest)"
-msgstr "Älteste"
-
-msgid "Name (A-Z)"
-msgstr "Name (A-Z)"
-
-msgid "Name (Z-A)"
-msgstr "Name (Z-A)"
+msgid "Category: %s"
+msgstr "Kategorie: %s"
 
 msgid "Check Updates"
 msgstr "Updates prüfen"
 
-msgid "Update All"
-msgstr "Alle aktualisieren"
+msgid "Check for updates"
+msgstr "Nach Updates suchen"
 
-msgid "Reinstall"
-msgstr "Neu installieren"
+msgid "Checked %d plugin updates"
+msgstr "%d Plugin-Updates geprüft"
 
-msgid "Remove"
-msgstr "Entfernen"
+msgid "Checking for Storefront updates..."
+msgstr "Prüfe auf Storefront-Updates..."
 
-msgid "Enable"
-msgstr "Aktivieren"
+msgid "Checking for Storefront updates…"
+msgstr "Prüfe auf Storefront-Updates…"
+
+msgid "Checking plugin updates"
+msgstr "Plugin-Updates werden geprüft"
+
+msgid "Clear README cache"
+msgstr "README-Cache löschen"
+
+msgid "Close"
+msgstr "Schließen"
+
+msgid "Configured ✓"
+msgstr "Konfiguriert ✓"
+
+msgid "Default only"
+msgstr "Standard"
+
+msgid "Direct GitHub API"
+msgstr "Direkte GitHub-API"
 
 msgid "Disable"
 msgstr "Deaktivieren"
 
-msgid "Sample Text"
-msgstr "Beispieltext"
+msgid "Disabled"
+msgstr "Deaktiviert"
 
-msgid "Alphabet & Numbers"
-msgstr "Alphabet & Zahlen"
+msgid "Downloading %s…"
+msgstr "%s wird heruntergeladen…"
 
-msgid "Pangram Preview"
-msgstr "Pangramm-Vorschau"
+msgid "Enable"
+msgstr "Aktivieren"
 
-msgid "Reading Passage Specimen"
-msgstr "Leseprobe"
+msgid "Enabled"
+msgstr "Aktiviert"
 
-msgid "Category: %s"
-msgstr "Kategorie: %s"
+msgid "Fetching patch file listings…"
+msgstr "Patch-Dateilisten werden abgerufen…"
 
-msgid "License: %s"
-msgstr "Lizenz: %s"
+msgid "Fetching patches via Direct GitHub API…"
+msgstr "Patches werden über die Direct GitHub API abgerufen…"
 
-msgid "By: %s"
-msgstr "Von: %s"
+msgid "Fetching plugins via Direct GitHub API…"
+msgstr "Plugins werden über die Direct GitHub API abgerufen…"
 
-msgid "< Prev"
-msgstr "< Zurück"
+msgid "Filter..."
+msgstr "Filtern..."
 
-msgid "Next >"
-msgstr "Weiter >"
+msgid "Filter & Sort Fonts"
+msgstr "Schriften filtern & sortieren"
 
-msgid "< Back"
-msgstr "< Zurück"
+msgid "Filter & Sort Installed"
+msgstr "Installierte filtern & sortieren"
 
-msgid "updated %s"
-msgstr "aktualisiert am %s"
+msgid "Filter & Sort Patches"
+msgstr "Patches filtern & sortieren"
 
-msgid "updated %s (%s)"
-msgstr "aktualisiert am %s (%s)"
+msgid "Filter & Sort Plugins"
+msgstr "Plugins filtern & sortieren"
 
-msgid "header_updates"
-msgstr "Updates"
+msgid "Filters"
+msgstr "Filter"
 
-msgid "header_about"
-msgstr "Über"
+msgid "GitHub token"
+msgstr "GitHub-Token"
 
-msgid "README"
-msgstr "README"
-
-msgid "Release Notes"
-msgstr "Versionshinweise"
-
-msgid "Versions"
-msgstr "Versionen"
+msgid "Include 0-star forks"
+msgstr "0-Sterne-Forks einschließen"
 
 msgid "Install Font"
 msgstr "Schrift installieren"
@@ -421,68 +140,56 @@ msgstr "Schrift installieren"
 msgid "Install Patch"
 msgstr "Patch installieren"
 
-msgid "The quick brown fox jumps over the lazy dog."
-msgstr "Franz jagt im komplett verwahrlosten Taxi quer durch Bayern."
+msgid "Installed plugin Storefront version %s"
+msgstr "Plugin Storefront Version %s installiert"
 
-msgid "Pack my box with five dozen liquor jugs."
-msgstr "Zwei Boxkämpfer jagen eva durch den sylter Wald."
+msgid "Installing %s…"
+msgstr "%s wird installiert…"
 
 msgid "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters."
 msgstr "Es ist eine allgemein anerkannte Wahrheit, dass ein junger Mann von Vermögen einer Frau bedarf. So wenig die Gefühle oder Ansichten eines solchen Mannes bei seinem ersten Erscheinen in einer Nachbarschaft bekannt sein mögen, ist diese Wahrheit doch in den Köpfen der umliegenden Familien so fest verankert, dass er als das rechtmäßige Eigentum der einen oder anderen ihrer Töchter gilt."
 
-msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
-msgstr "»Mein lieber Mr. Bennet«, sagte seine Dame eines Tages zu ihm, »haben Sie gehört, dass Netherfield Park endlich vermietet ist?« Mr. Bennet antwortete, er habe es nicht gehört. »Aber es ist so«, erwiderte sie; »denn Mrs. Long war gerade hier und hat mir alles erzählt.«"
+msgid "Last Updated (Newest)"
+msgstr "Neueste"
 
-msgid "All"
-msgstr "Alle"
+msgid "Last Updated (Oldest)"
+msgstr "Älteste"
 
-msgid "Sort: Updated"
-msgstr "Sortierung: Datum"
+msgid "License: %s"
+msgstr "Lizenz: %s"
 
-msgid "Sort: Name"
-msgstr "Sortierung: Name"
+msgid "Name (A-Z)"
+msgstr "Name (A-Z)"
 
-msgid "Sort: Stars"
-msgstr "Sortierung: Sterne"
+msgid "Name (Z-A)"
+msgstr "Name (Z-A)"
 
-msgid "Filter..."
-msgstr "Filtern..."
+msgid "Never"
+msgstr "Nie"
 
-msgid "Sort: Stars (high → low)"
-msgstr "Sortierung: Sterne"
+msgid "Next >"
+msgstr "Weiter >"
 
-msgid "Sort: Recently updated"
-msgstr "Sortierung: Datum"
+msgid "Not set"
+msgstr "Nicht gesetzt"
 
-msgid "Sort: Name (A → Z)"
-msgstr "Sortierung: Name (A-Z)"
+msgid "Origin"
+msgstr "Herkunft"
 
-msgid "Sort: Name (Z → A)"
-msgstr "Sortierung: Name (Z-A)"
+msgid "Pack my box with five dozen liquor jugs."
+msgstr "Zwei Boxkämpfer jagen eva durch den sylter Wald."
 
-msgid "Sort: A-Z"
-msgstr "Sortierung: A-Z"
+msgid "Pangram Preview"
+msgstr "Pangramm-Vorschau"
 
-msgid "Sort: Z-A"
-msgstr "Sortierung: Z-A"
+msgid "README"
+msgstr "README"
 
-msgid "Sort: Oldest"
-msgstr "Sortierung: Älteste"
+msgid "Reading Passage Specimen"
+msgstr "Leseprobe"
 
-msgid "Sort: Type"
-msgstr "Sortierung: Typ"
-
-msgid "Sort: Status"
-msgstr "Sortierung: Status"
-
-msgid "Sort"
-msgstr "Sortierung"
-
-msgid "Downloading %s…"
-msgstr "%s wird heruntergeladen…"
-
-msgid "Installing %s…"
-msgstr "%s wird installiert…"
+msgid "Refresh cache"
+msgstr "Cache aktualisieren"
 
 msgid "Refreshing catalog…"
 msgstr "Katalog wird aktualisiert…"
@@ -490,14 +197,284 @@ msgstr "Katalog wird aktualisiert…"
 msgid "Refreshing catalog via Direct GitHub API…"
 msgstr "Katalog wird über die Direct GitHub API aktualisiert…"
 
-msgid "Fetching plugins via Direct GitHub API…"
-msgstr "Plugins werden über die Direct GitHub API abgerufen…"
+msgid "Reinstall"
+msgstr "Neu installieren"
 
-msgid "Fetching patches via Direct GitHub API…"
-msgstr "Patches werden über die Direct GitHub API abgerufen…"
+msgid "Release Notes"
+msgstr "Versionshinweise"
 
-msgid "Fetching patch file listings…"
-msgstr "Patch-Dateilisten werden abgerufen…"
+msgid "Remove"
+msgstr "Entfernen"
 
+msgid "Reset filters"
+msgstr "Filter"
 
+msgid "Reset to defaults"
+msgstr "Zurücksetzen"
 
+msgid "Sample Text"
+msgstr "Beispieltext"
+
+msgid "Search & API"
+msgstr "Suche & API"
+
+msgid "Settings"
+msgstr "Einstellungen"
+
+msgid "Sort"
+msgstr "Sortierung"
+
+msgid "Sort mode"
+msgstr "Sortierung"
+
+msgid "Sort: A-Z"
+msgstr "Sortierung: A-Z"
+
+msgid "Sort: Name"
+msgstr "Sortierung: Name"
+
+msgid "Sort: Name (A → Z)"
+msgstr "Sortierung: Name (A-Z)"
+
+msgid "Sort: Name (Z → A)"
+msgstr "Sortierung: Name (Z-A)"
+
+msgid "Sort: Oldest"
+msgstr "Sortierung: Älteste"
+
+msgid "Sort: Recently updated"
+msgstr "Sortierung: Datum"
+
+msgid "Sort: Stars"
+msgstr "Sortierung: Sterne"
+
+msgid "Sort: Stars (high → low)"
+msgstr "Sortierung: Sterne"
+
+msgid "Sort: Status"
+msgstr "Sortierung: Status"
+
+msgid "Sort: Type"
+msgstr "Sortierung: Typ"
+
+msgid "Sort: Updated"
+msgstr "Sortierung: Datum"
+
+msgid "Sort: Z-A"
+msgstr "Sortierung: Z-A"
+
+msgid "Sorting"
+msgstr "Sortierung"
+
+msgid "Stable"
+msgstr "Stabil"
+
+msgid "Status"
+msgstr "Status"
+
+msgid "Successfully updated %d item(s)."
+msgstr "%d Element(e) erfolgreich aktualisiert."
+
+msgid "Successfully updated %d items."
+msgstr "%d Elemente erfolgreich aktualisiert."
+
+msgid "The quick brown fox jumps over the lazy dog."
+msgstr "Franz jagt im komplett verwahrlosten Taxi quer durch Bayern."
+
+msgid "Type"
+msgstr "Typ"
+
+msgid "Update %d outdated item(s)?"
+msgstr "%d veraltete(s) Element(e) aktualisieren?"
+
+msgid "Update All"
+msgstr "Alle aktualisieren"
+
+msgid "Update all outdated items?"
+msgstr "Alle veralteten Elemente aktualisieren?"
+
+msgid "Update channel"
+msgstr "Kanal für Updates"
+
+msgid "Updates"
+msgstr "Updates"
+
+msgid "User Installed"
+msgstr "Benutzer"
+
+msgid "Version"
+msgstr "Version"
+
+msgid "Versions"
+msgstr "Versionen"
+
+msgid "about_text"
+msgstr "Storefront ist ein Paket-Manager in KOReader für Plugins, Patches und Schriftarten."
+
+msgid "btn_apply"
+msgstr "Anwenden"
+
+msgid "btn_back"
+msgstr "Zurück"
+
+msgid "btn_cancel"
+msgstr "Abbrechen"
+
+msgid "btn_close"
+msgstr "Schließen"
+
+msgid "btn_install"
+msgstr "Installieren"
+
+msgid "btn_ok"
+msgstr "OK"
+
+msgid "btn_preview"
+msgstr "Vorschau"
+
+msgid "btn_refresh"
+msgstr "Aktualisieren"
+
+msgid "btn_release_notes"
+msgstr "Versionshinweise"
+
+msgid "btn_restart"
+msgstr "KOReader neustarten"
+
+msgid "btn_retry"
+msgstr "Wiederholen"
+
+msgid "btn_search"
+msgstr "Suchen"
+
+msgid "btn_uninstall"
+msgstr "Deinstallieren"
+
+msgid "btn_update"
+msgstr "Aktualisieren"
+
+msgid "btn_view_details"
+msgstr "Details anzeigen"
+
+msgid "confirm_install"
+msgstr "'%s' installieren?"
+
+msgid "confirm_uninstall"
+msgstr "'%s' deinstallieren? Dies kann nicht rückgängig gemacht werden."
+
+msgid "confirm_update"
+msgstr "'%s' von v%s auf v%s aktualisieren?"
+
+msgid "err_install_failed"
+msgstr "Installation von '%s' fehlgeschlagen."
+
+msgid "err_network_failed"
+msgstr "Netzwerkfehler: Katalog konnte nicht heruntergeladen werden."
+
+msgid "err_uninstall_failed"
+msgstr "Deinstallation von '%s' fehlgeschlagen."
+
+msgid "filter_all"
+msgstr "Alle Kategorien"
+
+msgid "filter_installed"
+msgstr "Installiert"
+
+msgid "filter_updates"
+msgstr "Updates verfügbar"
+
+msgid "header_about"
+msgstr "Über"
+
+msgid "header_updates"
+msgstr "Updates"
+
+msgid "label_author"
+msgstr "Autor"
+
+msgid "label_description"
+msgstr "Beschreibung"
+
+msgid "label_downloads"
+msgstr "Downloads"
+
+msgid "label_license"
+msgstr "Lizenz"
+
+msgid "label_repository"
+msgstr "Repository"
+
+msgid "label_size"
+msgstr "Größe"
+
+msgid "label_type"
+msgstr "Typ"
+
+msgid "label_version"
+msgstr "Version"
+
+msgid "menu_about"
+msgstr "Über Storefront"
+
+msgid "menu_settings"
+msgstr "Storefront-Einstellungen"
+
+msgid "menu_storefront"
+msgstr "Storefront"
+
+msgid "menu_storefront_desc"
+msgstr "Durchsuchen, Installieren und Aktualisieren von Plugins, Patches und Schriftarten."
+
+msgid "msg_catalog_updated"
+msgstr "Katalog erfolgreich aktualisiert."
+
+msgid "msg_no_results"
+msgstr "Keine passenden Einträge gefunden."
+
+msgid "prompt_restart_needed"
+msgstr "Installation abgeschlossen. KOReader jetzt neustarten, um '%s' zu aktivieren?"
+
+msgid "search_hint"
+msgstr "Storefront durchsuchen..."
+
+msgid "status_builtin"
+msgstr "Integriert"
+
+msgid "status_downloading"
+msgstr "Wird heruntergeladen..."
+
+msgid "status_installed"
+msgstr "Installiert"
+
+msgid "status_installing"
+msgstr "Wird installiert..."
+
+msgid "status_not_installed"
+msgstr "Nicht installiert"
+
+msgid "status_uninstalling"
+msgstr "Wird deinstalliert..."
+
+msgid "status_update_available"
+msgstr "Update verfügbar"
+
+msgid "storefront_title"
+msgstr "Storefront"
+
+msgid "tab_all"
+msgstr "Alle"
+
+msgid "tab_fonts"
+msgstr "Schriftarten"
+
+msgid "tab_patches"
+msgstr "Patches"
+
+msgid "tab_plugins"
+msgstr "Plugins"
+
+msgid "updated %s"
+msgstr "aktualisiert am %s"
+
+msgid "updated %s (%s)"
+msgstr "aktualisiert am %s (%s)"

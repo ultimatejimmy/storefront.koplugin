@@ -5,220 +5,53 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-# en-hash: 775f0a631bf3455122e2f6932ec06f7b
-msgid "about_text"
-msgstr "Storefront — це вбудований менеджер пакунків KOReader для плагінів, патчів та шрифтів."
+msgid "Any"
+msgstr "Будь-які"
 
-# en-hash: d941e779a1f26a117075fb1935c15664
-msgid "btn_apply"
-msgstr "Застосувати"
+msgid "Check for updates"
+msgstr "Перевірити оновлення"
 
-# en-hash: 0557fa923dcee4d0f86b1409f5c2167f
-msgid "btn_back"
-msgstr "Назад"
+msgid "Checked %d plugin updates"
+msgstr "Перевірено %d оновлень плагінів"
 
-# en-hash: ea4788705e6873b424c65e91c2846b19
-msgid "btn_cancel"
-msgstr "Скасувати"
+msgid "Checking for Storefront updates..."
+msgstr "Перевірка оновлень Storefront..."
 
-# en-hash: d3d2e617335f08df83599665eef8a418
-msgid "btn_close"
-msgstr "Закрити"
+msgid "Checking for Storefront updates…"
+msgstr "Перевірка оновлень Storefront…"
 
-# en-hash: 7b546d0a793a61f3640243be12674e30
-msgid "btn_install"
-msgstr "Встановити"
-
-# en-hash: e0aa021e21dddbd6d8cecec71e9cf564
-msgid "btn_ok"
-msgstr "ОК"
-
-# en-hash: 3b878279a04dc47d60932bf294d9e3d2
-msgid "btn_preview"
-msgstr "Попередній перегляд"
-
-# en-hash: 63a6a0e6981e295d47d41541f014b2d4
-msgid "btn_refresh"
-msgstr "Оновити"
-
-# en-hash: 1fef1bb7ae7fe2fa13e0cbca9c5ecdf4
-msgid "btn_release_notes"
-msgstr "Примітки до релізу"
-
-# en-hash: bc3b80b0bb11634aebe3a7b6cfbcac7e
-msgid "btn_restart"
-msgstr "Перезапустити KOReader"
-
-# en-hash: 47a0be8d1015d54fbcf101bf890ab8d8
-msgid "btn_retry"
-msgstr "Повторити"
-
-# en-hash: 13348442cc6a27032d2b4aa28b75a5d3
-msgid "btn_search"
-msgstr "Пошук"
-
-# en-hash: ee4943261623910c0ee47a060dff55c1
-msgid "btn_uninstall"
-msgstr "Видалити"
-
-# en-hash: 06933067a9d3be2c4318853b0b7da18a
-msgid "btn_update"
-msgstr "Оновити"
-
-# en-hash: 46c59b20e0fcaedbf19e59546d1bf035
-msgid "btn_view_details"
-msgstr "Детальніше"
-
-# en-hash: c0ae6f112c3f87f272a71bf6fb190333
-msgid "confirm_install"
-msgstr "Встановити '%s'?"
-
-# en-hash: dbe637db6ff8ddbc1ce24cf9659bca40
-msgid "confirm_uninstall"
-msgstr "Видалити '%s'? Цю дію неможливо скасувати."
-
-# en-hash: e99ee5fb3426746cf595700889ecae69
-msgid "confirm_update"
-msgstr "Оновити '%s' з v%s до v%s?"
-
-# en-hash: 0fa6e12e2c5e52a9a7a97ea94cbf0338
-msgid "err_install_failed"
-msgstr "Помилка встановлення '%s'."
-
-# en-hash: 5eeaa935ae4cfcefb1c06ca7f35b29fa
-msgid "err_network_failed"
-msgstr "Помилка мережі: Не вдалося завантажити каталог."
-
-# en-hash: 8b3a7dc9bf55be1b8166b177893ea30b
-msgid "err_uninstall_failed"
-msgstr "Помилка видалення '%s'."
-
-# en-hash: 8c3bece5fb7eebdfec6cae8d0e7e408d
-msgid "filter_all"
-msgstr "Усі категорії"
-
-# en-hash: 4041b65e90f2302e26d9c614b0b14c33
-msgid "filter_installed"
-msgstr "Встановлені"
-
-# en-hash: 58628efef0b8dbd0c9ff7ea64cf46cf7
-msgid "filter_updates"
-msgstr "Доступні оновлення"
-
-# en-hash: 9559c5d13028c2e6f4777598177579f1
-msgid "label_author"
-msgstr "Автор"
-
-# en-hash: b5a7adde1af5c87d7594c1f332d961cf
-msgid "label_description"
-msgstr "Опис"
-
-# en-hash: d9426f866418873491edb6156e9c4021
-msgid "label_downloads"
-msgstr "Завантаження"
-
-# en-hash: 0a7f14b6fc709f6e6ec3505c2a13a968
-msgid "label_license"
-msgstr "Ліцензія"
-
-# en-hash: b4c51e04ae9ff246e7f1df6aa5d8e763
-msgid "label_repository"
-msgstr "Репозиторій"
-
-# en-hash: 6f6cb72d544962fa333e2e34ce64f719
-msgid "label_size"
-msgstr "Розмір"
-
-# en-hash: a1fa27779242b4902f7ae3fad5c6d4e5
-msgid "label_type"
-msgstr "Тип"
-
-# en-hash: 02b1f86825c040d2b704c703b41d0637
-msgid "label_version"
-msgstr "Версія"
-
-# en-hash: 48b111166683f25c83bc05e2ed36bd32
-msgid "menu_about"
-msgstr "Про Storefront"
-
-# en-hash: 6007ec1bf3a5f973cdb6279f643ee16a
-msgid "menu_settings"
-msgstr "Налаштування Storefront"
-
-# en-hash: 8491c7a683ec0bf7fb8aaed4990263f3
-msgid "menu_storefront"
-msgstr "Storefront"
-
-# en-hash: 65bc2337d11fbf81a385f0ef352d192f
-msgid "menu_storefront_desc"
-msgstr "Перегляд, встановлення та оновлення плагінів, патчів і шрифтів."
-
-# en-hash: 82e3f890e0c52bb3522f7b88df1789c6
-msgid "msg_catalog_updated"
-msgstr "Каталог успішно оновлено."
-
-# en-hash: f84dfadcd34fbc8c1aaecf1c7d81a8b9
-msgid "msg_no_results"
-msgstr "Нічого не знайдено."
-
-# en-hash: ce9d2aa7e2264ef550f28fbff80eefb1
-msgid "prompt_restart_needed"
-msgstr "Встановлення завершено. Перезапустити KOReader зараз для активації '%s'?"
-
-# en-hash: 67fce54fd98bd50280eb6d8a3ed3bbcb
-msgid "search_hint"
-msgstr "Пошук у storefront..."
-
-# en-hash: beaa7406a6b8ef36329bf6d911b3337a
-msgid "status_builtin"
-msgstr "Вбудований"
-
-# en-hash: e3579b1897d264fcf237a3465dd89eb2
-msgid "status_downloading"
-msgstr "Завантаження..."
-
-# en-hash: 4041b65e90f2302e26d9c614b0b14c33
-msgid "status_installed"
-msgstr "Встановлено"
-
-# en-hash: ce5f053531b790dcfc43555ae9314eb3
-msgid "status_installing"
-msgstr "Встановлення..."
-
-# en-hash: 0570b201f805a8f4c40b8a24855ad482
-msgid "status_not_installed"
-msgstr "Не встановлено"
-
-# en-hash: b5b7b9f365bc9a0efba16d9a103c8065
-msgid "status_uninstalling"
-msgstr "Видалення..."
-
-# en-hash: 58628efef0b8dbd0c9ff7ea64cf46cf7
-msgid "status_update_available"
-msgstr "Доступне оновлення"
-
-# en-hash: 8491c7a683ec0bf7fb8aaed4990263f3
-msgid "storefront_title"
-msgstr "Storefront"
-
-# en-hash: b1c94ca2fbc3e78fc30069c8d0f01680
-msgid "tab_all"
-msgstr "Усі"
-
-# en-hash: 827fc29315d0339d67ec1be6f178f566
-msgid "tab_fonts"
-msgstr "Шрифти"
-
-# en-hash: 3ca92a6df790eb9bcac440c955745100
-msgid "tab_patches"
-msgstr "Патчі"
-
-# en-hash: 2755e10e408ec20ee56d0263e804f5e7
-msgid "tab_plugins"
-msgstr "Плагіни"
+msgid "Checking plugin updates"
+msgstr "Перевірка оновлень плагінів"
 
 msgid "Downloading %s…"
 msgstr "Завантаження %s…"
+
+msgid "Fetching patch file listings…"
+msgstr "Отримання списку файлів патчів…"
+
+msgid "Fetching patches via Direct GitHub API…"
+msgstr "Отримання патчів через Direct GitHub API…"
+
+msgid "Fetching plugins via Direct GitHub API…"
+msgstr "Отримання плагінів через Direct GitHub API…"
+
+msgid "Filter..."
+msgstr "Фільтр..."
+
+msgid "Filter & Sort Fonts"
+msgstr "Фільтрація та сортування шрифтів"
+
+msgid "Filter & Sort Installed"
+msgstr "Фільтрація та сортування встановлених"
+
+msgid "Filter & Sort Patches"
+msgstr "Фільтрація та сортування патчів"
+
+msgid "Filter & Sort Plugins"
+msgstr "Фільтрація та сортування плагінів"
+
+msgid "Installed plugin Storefront version %s"
+msgstr "Встановлено плагін Storefront версії %s"
 
 msgid "Installing %s…"
 msgstr "Встановлення %s…"
@@ -229,12 +62,173 @@ msgstr "Оновлення каталогу…"
 msgid "Refreshing catalog via Direct GitHub API…"
 msgstr "Оновлення каталогу через Direct GitHub API…"
 
-msgid "Fetching plugins via Direct GitHub API…"
-msgstr "Отримання плагінів через Direct GitHub API…"
+msgid "Successfully updated %d item(s)."
+msgstr "Успішно оновлено %d елементів."
 
-msgid "Fetching patches via Direct GitHub API…"
-msgstr "Отримання патчів через Direct GitHub API…"
+msgid "Successfully updated %d items."
+msgstr "Успішно оновлено %d елементів."
 
-msgid "Fetching patch file listings…"
-msgstr "Отримання списку файлів патчів…"
+msgid "Update %d outdated item(s)?"
+msgstr "Оновити %d застарілих елементів?"
 
+msgid "Update all outdated items?"
+msgstr "Оновити всі застарілі елементи?"
+
+msgid "about_text"
+msgstr "Storefront — це вбудований менеджер пакунків KOReader для плагінів, патчів та шрифтів."
+
+msgid "btn_apply"
+msgstr "Застосувати"
+
+msgid "btn_back"
+msgstr "Назад"
+
+msgid "btn_cancel"
+msgstr "Скасувати"
+
+msgid "btn_close"
+msgstr "Закрити"
+
+msgid "btn_install"
+msgstr "Встановити"
+
+msgid "btn_ok"
+msgstr "ОК"
+
+msgid "btn_preview"
+msgstr "Попередній перегляд"
+
+msgid "btn_refresh"
+msgstr "Оновити"
+
+msgid "btn_release_notes"
+msgstr "Примітки до релізу"
+
+msgid "btn_restart"
+msgstr "Перезапустити KOReader"
+
+msgid "btn_retry"
+msgstr "Повторити"
+
+msgid "btn_search"
+msgstr "Пошук"
+
+msgid "btn_uninstall"
+msgstr "Видалити"
+
+msgid "btn_update"
+msgstr "Оновити"
+
+msgid "btn_view_details"
+msgstr "Детальніше"
+
+msgid "confirm_install"
+msgstr "Встановити '%s'?"
+
+msgid "confirm_uninstall"
+msgstr "Видалити '%s'? Цю дію неможливо скасувати."
+
+msgid "confirm_update"
+msgstr "Оновити '%s' з v%s до v%s?"
+
+msgid "err_install_failed"
+msgstr "Помилка встановлення '%s'."
+
+msgid "err_network_failed"
+msgstr "Помилка мережі: Не вдалося завантажити каталог."
+
+msgid "err_uninstall_failed"
+msgstr "Помилка видалення '%s'."
+
+msgid "filter_all"
+msgstr "Усі категорії"
+
+msgid "filter_installed"
+msgstr "Встановлені"
+
+msgid "filter_updates"
+msgstr "Доступні оновлення"
+
+msgid "label_author"
+msgstr "Автор"
+
+msgid "label_description"
+msgstr "Опис"
+
+msgid "label_downloads"
+msgstr "Завантаження"
+
+msgid "label_license"
+msgstr "Ліцензія"
+
+msgid "label_repository"
+msgstr "Репозиторій"
+
+msgid "label_size"
+msgstr "Розмір"
+
+msgid "label_type"
+msgstr "Тип"
+
+msgid "label_version"
+msgstr "Версія"
+
+msgid "menu_about"
+msgstr "Про Storefront"
+
+msgid "menu_settings"
+msgstr "Налаштування Storefront"
+
+msgid "menu_storefront"
+msgstr "Storefront"
+
+msgid "menu_storefront_desc"
+msgstr "Перегляд, встановлення та оновлення плагінів, патчів і шрифтів."
+
+msgid "msg_catalog_updated"
+msgstr "Каталог успішно оновлено."
+
+msgid "msg_no_results"
+msgstr "Нічого не знайдено."
+
+msgid "prompt_restart_needed"
+msgstr "Встановлення завершено. Перезапустити KOReader зараз для активації '%s'?"
+
+msgid "search_hint"
+msgstr "Пошук у storefront..."
+
+msgid "status_builtin"
+msgstr "Вбудований"
+
+msgid "status_downloading"
+msgstr "Завантаження..."
+
+msgid "status_installed"
+msgstr "Встановлено"
+
+msgid "status_installing"
+msgstr "Встановлення..."
+
+msgid "status_not_installed"
+msgstr "Не встановлено"
+
+msgid "status_uninstalling"
+msgstr "Видалення..."
+
+msgid "status_update_available"
+msgstr "Доступне оновлення"
+
+msgid "storefront_title"
+msgstr "Storefront"
+
+msgid "tab_all"
+msgstr "Усі"
+
+msgid "tab_fonts"
+msgstr "Шрифти"
+
+msgid "tab_patches"
+msgstr "Патчі"
+
+msgid "tab_plugins"
+msgstr "Плагіни"
