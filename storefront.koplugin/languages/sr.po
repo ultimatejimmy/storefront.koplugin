@@ -5,220 +5,53 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-# en-hash: 775f0a631bf3455122e2f6932ec06f7b
-msgid "about_text"
-msgstr "Storefront је менаџер пакета унутар KOReader-а за прикључке, закрпе и фонтове."
+msgid "Any"
+msgstr "Било ком"
 
-# en-hash: d941e779a1f26a117075fb1935c15664
-msgid "btn_apply"
-msgstr "Примени"
+msgid "Check for updates"
+msgstr "Провери ажурирања"
 
-# en-hash: 0557fa923dcee4d0f86b1409f5c2167f
-msgid "btn_back"
-msgstr "Назад"
+msgid "Checked %d plugin updates"
+msgstr "Проверено %d ажурирања прикључака"
 
-# en-hash: ea4788705e6873b424c65e91c2846b19
-msgid "btn_cancel"
-msgstr "Откажи"
+msgid "Checking for Storefront updates..."
+msgstr "Проверавам ажурирања за Storefront..."
 
-# en-hash: d3d2e617335f08df83599665eef8a418
-msgid "btn_close"
-msgstr "Затвори"
+msgid "Checking for Storefront updates…"
+msgstr "Проверавам ажурирања за Storefront…"
 
-# en-hash: 7b546d0a793a61f3640243be12674e30
-msgid "btn_install"
-msgstr "Инсталирај"
-
-# en-hash: e0aa021e21dddbd6d8cecec71e9cf564
-msgid "btn_ok"
-msgstr "У реду"
-
-# en-hash: 3b878279a04dc47d60932bf294d9e3d2
-msgid "btn_preview"
-msgstr "Преглед"
-
-# en-hash: 63a6a0e6981e295d47d41541f014b2d4
-msgid "btn_refresh"
-msgstr "Освежи"
-
-# en-hash: 1fef1bb7ae7fe2fa13e0cbca9c5ecdf4
-msgid "btn_release_notes"
-msgstr "Белешке о издању"
-
-# en-hash: bc3b80b0bb11634aebe3a7b6cfbcac7e
-msgid "btn_restart"
-msgstr "Рестартуј KOReader"
-
-# en-hash: 47a0be8d1015d54fbcf101bf890ab8d8
-msgid "btn_retry"
-msgstr "Покушај поново"
-
-# en-hash: 13348442cc6a27032d2b4aa28b75a5d3
-msgid "btn_search"
-msgstr "Претражи"
-
-# en-hash: ee4943261623910c0ee47a060dff55c1
-msgid "btn_uninstall"
-msgstr "Уклони"
-
-# en-hash: 06933067a9d3be2c4318853b0b7da18a
-msgid "btn_update"
-msgstr "Ажурирај"
-
-# en-hash: 46c59b20e0fcaedbf19e59546d1bf035
-msgid "btn_view_details"
-msgstr "Прикажи детаље"
-
-# en-hash: c0ae6f112c3f87f272a71bf6fb190333
-msgid "confirm_install"
-msgstr "Инсталирати '%s'?"
-
-# en-hash: dbe637db6ff8ddbc1ce24cf9659bca40
-msgid "confirm_uninstall"
-msgstr "Уклонити '%s'? Ова радња се не може опозвати."
-
-# en-hash: e99ee5fb3426746cf595700889ecae69
-msgid "confirm_update"
-msgstr "Ажурирати '%s' са v%s на v%s?"
-
-# en-hash: 0fa6e12e2c5e52a9a7a97ea94cbf0338
-msgid "err_install_failed"
-msgstr "Инсталација за '%s' није успела."
-
-# en-hash: 5eeaa935ae4cfcefb1c06ca7f35b29fa
-msgid "err_network_failed"
-msgstr "Мрежна грешка: Преузимање каталога није успело."
-
-# en-hash: 8b3a7dc9bf55be1b8166b177893ea30b
-msgid "err_uninstall_failed"
-msgstr "Уклањање за '%s' није успело."
-
-# en-hash: 8c3bece5fb7eebdfec6cae8d0e7e408d
-msgid "filter_all"
-msgstr "Све категорије"
-
-# en-hash: 4041b65e90f2302e26d9c614b0b14c33
-msgid "filter_installed"
-msgstr "Инсталирано"
-
-# en-hash: 58628efef0b8dbd0c9ff7ea64cf46cf7
-msgid "filter_updates"
-msgstr "Доступна ажурирања"
-
-# en-hash: 9559c5d13028c2e6f4777598177579f1
-msgid "label_author"
-msgstr "Аутор"
-
-# en-hash: b5a7adde1af5c87d7594c1f332d961cf
-msgid "label_description"
-msgstr "Опис"
-
-# en-hash: d9426f866418873491edb6156e9c4021
-msgid "label_downloads"
-msgstr "Преузимања"
-
-# en-hash: 0a7f14b6fc709f6e6ec3505c2a13a968
-msgid "label_license"
-msgstr "Лиценца"
-
-# en-hash: b4c51e04ae9ff246e7f1df6aa5d8e763
-msgid "label_repository"
-msgstr "Репозиторијум"
-
-# en-hash: 6f6cb72d544962fa333e2e34ce64f719
-msgid "label_size"
-msgstr "Величина"
-
-# en-hash: a1fa27779242b4902f7ae3fad5c6d4e5
-msgid "label_type"
-msgstr "Тип"
-
-# en-hash: 02b1f86825c040d2b704c703b41d0637
-msgid "label_version"
-msgstr "Верзија"
-
-# en-hash: 48b111166683f25c83bc05e2ed36bd32
-msgid "menu_about"
-msgstr "О Storefront-у"
-
-# en-hash: 6007ec1bf3a5f973cdb6279f643ee16a
-msgid "menu_settings"
-msgstr "Подешавања Storefront-а"
-
-# en-hash: 8491c7a683ec0bf7fb8aaed4990263f3
-msgid "menu_storefront"
-msgstr "Storefront"
-
-# en-hash: 65bc2337d11fbf81a385f0ef352d192f
-msgid "menu_storefront_desc"
-msgstr "Прегледајте, инсталирајте и ажурирајте прикључке, закрпе и фонтове."
-
-# en-hash: 82e3f890e0c52bb3522f7b88df1789c6
-msgid "msg_catalog_updated"
-msgstr "Каталог је успешно ажуриран."
-
-# en-hash: f84dfadcd34fbc8c1aaecf1c7d81a8b9
-msgid "msg_no_results"
-msgstr "Нема пронађених ставки."
-
-# en-hash: ce9d2aa7e2264ef550f28fbff80eefb1
-msgid "prompt_restart_needed"
-msgstr "Инсталација је завршена. Рестартовати KOReader сада ради омогућавања '%s'?"
-
-# en-hash: 67fce54fd98bd50280eb6d8a3ed3bbcb
-msgid "search_hint"
-msgstr "Претражи Storefront..."
-
-# en-hash: beaa7406a6b8ef36329bf6d911b3337a
-msgid "status_builtin"
-msgstr "Уграђено"
-
-# en-hash: e3579b1897d264fcf237a3465dd89eb2
-msgid "status_downloading"
-msgstr "Преузимање..."
-
-# en-hash: 4041b65e90f2302e26d9c614b0b14c33
-msgid "status_installed"
-msgstr "Инсталирано"
-
-# en-hash: ce5f053531b790dcfc43555ae9314eb3
-msgid "status_installing"
-msgstr "Инсталирање..."
-
-# en-hash: 0570b201f805a8f4c40b8a24855ad482
-msgid "status_not_installed"
-msgstr "Није инсталирано"
-
-# en-hash: b5b7b9f365bc9a0efba16d9a103c8065
-msgid "status_uninstalling"
-msgstr "Уклањање..."
-
-# en-hash: 58628efef0b8dbd0c9ff7ea64cf46cf7
-msgid "status_update_available"
-msgstr "Доступно ажурирање"
-
-# en-hash: 8491c7a683ec0bf7fb8aaed4990263f3
-msgid "storefront_title"
-msgstr "Storefront"
-
-# en-hash: b1c94ca2fbc3e78fc30069c8d0f01680
-msgid "tab_all"
-msgstr "Све"
-
-# en-hash: 827fc29315d0339d67ec1be6f178f566
-msgid "tab_fonts"
-msgstr "Фонтови"
-
-# en-hash: 3ca92a6df790eb9bcac440c955745100
-msgid "tab_patches"
-msgstr "Закрпе"
-
-# en-hash: 2755e10e408ec20ee56d0263e804f5e7
-msgid "tab_plugins"
-msgstr "Прикључци"
+msgid "Checking plugin updates"
+msgstr "Проверавам ажурирања прикључака"
 
 msgid "Downloading %s…"
 msgstr "Preuzimanje %s…"
+
+msgid "Fetching patch file listings…"
+msgstr "Preuzimanje liste fajlova zakrpa…"
+
+msgid "Fetching patches via Direct GitHub API…"
+msgstr "Preuzimanje zakrpa putem Direct GitHub API…"
+
+msgid "Fetching plugins via Direct GitHub API…"
+msgstr "Preuzimanje priključaka путем Direct GitHub API…"
+
+msgid "Filter..."
+msgstr "Филтер..."
+
+msgid "Filter & Sort Fonts"
+msgstr "Филтрирај и сортирај фонтове"
+
+msgid "Filter & Sort Installed"
+msgstr "Филтрирај и сортирај инсталирано"
+
+msgid "Filter & Sort Patches"
+msgstr "Филтрирај и сортирај закрпе"
+
+msgid "Filter & Sort Plugins"
+msgstr "Филтрирај и сортирај прикључке"
+
+msgid "Installed plugin Storefront version %s"
+msgstr "Инсталиран прикључак Storefront верзија %s"
 
 msgid "Installing %s…"
 msgstr "Instaliranje %s…"
@@ -229,12 +62,173 @@ msgstr "Osvežavanje kataloga…"
 msgid "Refreshing catalog via Direct GitHub API…"
 msgstr "Osvežavanje kataloga putem Direct GitHub API…"
 
-msgid "Fetching plugins via Direct GitHub API…"
-msgstr "Preuzimanje priključaka putem Direct GitHub API…"
+msgid "Successfully updated %d item(s)."
+msgstr "Успешно ажурирано %d ставки."
 
-msgid "Fetching patches via Direct GitHub API…"
-msgstr "Preuzimanje zakrpa putem Direct GitHub API…"
+msgid "Successfully updated %d items."
+msgstr "Успешно ажурирано %d ставки."
 
-msgid "Fetching patch file listings…"
-msgstr "Preuzimanje liste fajlova zakrpa…"
+msgid "Update %d outdated item(s)?"
+msgstr "Ажурирати %d застарелих ставки?"
 
+msgid "Update all outdated items?"
+msgstr "Ажурирати све застареле ставке?"
+
+msgid "about_text"
+msgstr "Storefront је менаџер пакета унутар KOReader-а за прикључке, закрпе и фонтове."
+
+msgid "btn_apply"
+msgstr "Примени"
+
+msgid "btn_back"
+msgstr "Назад"
+
+msgid "btn_cancel"
+msgstr "Откажи"
+
+msgid "btn_close"
+msgstr "Затвори"
+
+msgid "btn_install"
+msgstr "Инсталирај"
+
+msgid "btn_ok"
+msgstr "У реду"
+
+msgid "btn_preview"
+msgstr "Преглед"
+
+msgid "btn_refresh"
+msgstr "Освежи"
+
+msgid "btn_release_notes"
+msgstr "Белешке о издању"
+
+msgid "btn_restart"
+msgstr "Рестартуј KOReader"
+
+msgid "btn_retry"
+msgstr "Покушај поново"
+
+msgid "btn_search"
+msgstr "Претражи"
+
+msgid "btn_uninstall"
+msgstr "Уклони"
+
+msgid "btn_update"
+msgstr "Ажурирај"
+
+msgid "btn_view_details"
+msgstr "Прикажи детаље"
+
+msgid "confirm_install"
+msgstr "Инсталирати '%s'?"
+
+msgid "confirm_uninstall"
+msgstr "Уклонити '%s'? Ова радња се не може опозвати."
+
+msgid "confirm_update"
+msgstr "Ажурирати '%s' са v%s на v%s?"
+
+msgid "err_install_failed"
+msgstr "Инсталација за '%s' није успела."
+
+msgid "err_network_failed"
+msgstr "Мрежна грешка: Преузимање каталога није успело."
+
+msgid "err_uninstall_failed"
+msgstr "Уклањање за '%s' није успело."
+
+msgid "filter_all"
+msgstr "Све категорије"
+
+msgid "filter_installed"
+msgstr "Инсталирано"
+
+msgid "filter_updates"
+msgstr "Доступна ажурирања"
+
+msgid "label_author"
+msgstr "Аутор"
+
+msgid "label_description"
+msgstr "Опис"
+
+msgid "label_downloads"
+msgstr "Преузимања"
+
+msgid "label_license"
+msgstr "Лиценца"
+
+msgid "label_repository"
+msgstr "Репозиторијум"
+
+msgid "label_size"
+msgstr "Величина"
+
+msgid "label_type"
+msgstr "Тип"
+
+msgid "label_version"
+msgstr "Верзија"
+
+msgid "menu_about"
+msgstr "О Storefront-у"
+
+msgid "menu_settings"
+msgstr "Подешавања Storefront-а"
+
+msgid "menu_storefront"
+msgstr "Storefront"
+
+msgid "menu_storefront_desc"
+msgstr "Прегледајте, инсталирајте и ажурирајте прикључке, закрпе и фонтове."
+
+msgid "msg_catalog_updated"
+msgstr "Каталог је успешно ажуриран."
+
+msgid "msg_no_results"
+msgstr "Нема пронађених ставки."
+
+msgid "prompt_restart_needed"
+msgstr "Инсталација је завршена. Рестартовати KOReader сада ради омогућавања '%s'?"
+
+msgid "search_hint"
+msgstr "Претражи Storefront..."
+
+msgid "status_builtin"
+msgstr "Уграђено"
+
+msgid "status_downloading"
+msgstr "Преузимање..."
+
+msgid "status_installed"
+msgstr "Инсталирано"
+
+msgid "status_installing"
+msgstr "Инсталирање..."
+
+msgid "status_not_installed"
+msgstr "Није инсталирано"
+
+msgid "status_uninstalling"
+msgstr "Уклањање..."
+
+msgid "status_update_available"
+msgstr "Доступно ажурирање"
+
+msgid "storefront_title"
+msgstr "Storefront"
+
+msgid "tab_all"
+msgstr "Све"
+
+msgid "tab_fonts"
+msgstr "Фонтови"
+
+msgid "tab_patches"
+msgstr "Закрпе"
+
+msgid "tab_plugins"
+msgstr "Прикључци"

@@ -1,0 +1,407 @@
+#!/usr/bin/env python3
+import os
+import re
+import sys
+
+LANGUAGES_DIR = os.path.join(os.path.dirname(__file__), '..', 'storefront.koplugin', 'languages')
+
+LANG_NAMES = {
+    'ar': 'Arabic',
+    'de': 'German',
+    'en': 'English',
+    'es': 'Spanish',
+    'fr': 'French',
+    'hu': 'Hungarian',
+    'id': 'Indonesian',
+    'it': 'Italian',
+    'ja': 'Japanese',
+    'nl': 'Dutch',
+    'pl': 'Polish',
+    'pt_br': 'Portuguese (Brazil)',
+    'ru': 'Russian',
+    'sr': 'Serbian',
+    'tr': 'Turkish',
+    'uk': 'Ukrainian',
+    'zh_CN': 'Simplified Chinese',
+}
+
+MASTER_KEYS = {
+    "Filter...": {
+        "en": "Filter...",
+        "pl": "Filtruj...",
+        "es": "Filtrar...",
+        "de": "Filtern...",
+        "fr": "Filtrer...",
+        "ru": "Фильтр...",
+        "zh_CN": "筛选...",
+        "it": "Filtra...",
+        "pt_br": "Filtrar...",
+        "ja": "フィルター...",
+        "nl": "Filteren...",
+        "hu": "Szűrés...",
+        "id": "Filter...",
+        "ar": "تصفية...",
+        "sr": "Филтер...",
+        "tr": "Filtrele...",
+        "uk": "Фільтр...",
+    },
+    "Filter & Sort Plugins": {
+        "en": "Filter & Sort Plugins",
+        "pl": "Filtrowanie i sortowanie wtyczek",
+        "es": "Filtrar y ordenar plugins",
+        "de": "Plugins filtern & sortieren",
+        "fr": "Filtrer & trier les plugins",
+        "ru": "Фильтры и сортировка плагинов",
+        "zh_CN": "筛选与排序插件",
+        "it": "Filtra e ordina plugin",
+        "pt_br": "Filtrar e ordenar plugins",
+        "ja": "プラグインのフィルターと並べ替え",
+        "nl": "Plugins filteren & sorteren",
+        "hu": "Bővítmények szűrése és rendezése",
+        "id": "Filter & Urutkan Plugin",
+        "ar": "تصفية وفرز الإضافات",
+        "sr": "Филтрирај и сортирај прикључке",
+        "tr": "Eklentileri Filtrele ve Sırala",
+        "uk": "Фільтрація та сортування плагінів",
+    },
+    "Filter & Sort Patches": {
+        "en": "Filter & Sort Patches",
+        "pl": "Filtrowanie i sortowanie poprawek",
+        "es": "Filtrar y ordenar parches",
+        "de": "Patches filtern & sortieren",
+        "fr": "Filtrer & trier les patchs",
+        "ru": "Фильтры и сортировка патчей",
+        "zh_CN": "筛选与排序补丁",
+        "it": "Filtra e ordina patch",
+        "pt_br": "Filtrar e ordenar patches",
+        "ja": "パッチのフィルターと並べ替え",
+        "nl": "Patches filteren & sorteren",
+        "hu": "Javítások szűrése és rendezése",
+        "id": "Filter & Urutkan Patch",
+        "ar": "تصفية وفرز التصحيحات",
+        "sr": "Филтрирај и сортирај закрпе",
+        "tr": "Yamaları Filtrele ve Sırala",
+        "uk": "Фільтрація та сортування патчів",
+    },
+    "Filter & Sort Fonts": {
+        "en": "Filter & Sort Fonts",
+        "pl": "Filtrowanie i sortowanie czcionek",
+        "es": "Filtrar y ordenar fuentes",
+        "de": "Schriften filtern & sortieren",
+        "fr": "Filtrer & trier les polices",
+        "ru": "Фильтры и сортировка шрифтов",
+        "zh_CN": "筛选与排序字体",
+        "it": "Filtra e ordina font",
+        "pt_br": "Filtrar e ordenar fontes",
+        "ja": "フォントのフィルターと並べ替え",
+        "nl": "Lettertypen filteren & sorteren",
+        "hu": "Betűtípusok szűrése és rendezése",
+        "id": "Filter & Urutkan Font",
+        "ar": "تصفية وفرز الخطوط",
+        "sr": "Филтрирај и сортирај фонтове",
+        "tr": "Yazı Tiplerini Filtrele ve Sırala",
+        "uk": "Фільтрація та сортування шрифтів",
+    },
+    "Filter & Sort Installed": {
+        "en": "Filter & Sort Installed",
+        "pl": "Filtrowanie i sortowanie zainstalowanych",
+        "es": "Filtrar y ordenar instalados",
+        "de": "Installierte filtern & sortieren",
+        "fr": "Filtrer & trier les éléments installés",
+        "ru": "Фильтры и сортировка установленных",
+        "zh_CN": "筛选与排序已安装项",
+        "it": "Filtra e ordina installati",
+        "pt_br": "Filtrar e ordenar instalados",
+        "ja": "インストール済みのフィルターと並べ替え",
+        "nl": "Geïnstalleerde filteren & sorteren",
+        "hu": "Telepítettek szűrése és rendezése",
+        "id": "Filter & Urutkan Terpasang",
+        "ar": "تصفية وفرز المثبت",
+        "sr": "Филтрирај и сортирај инсталирано",
+        "tr": "Yüklü Öğeleri Filtrele ve Sırala",
+        "uk": "Фільтрація та сортування встановлених",
+    },
+    "Any": {
+        "en": "Any",
+        "pl": "Dowolna",
+        "es": "Cualquiera",
+        "de": "Beliebig",
+        "fr": "Toutes",
+        "ru": "Любые",
+        "zh_CN": "不限",
+        "it": "Qualsiasi",
+        "pt_br": "Qualquer",
+        "ja": "指定なし",
+        "nl": "Willekeurig",
+        "hu": "Bármely",
+        "id": "Semua",
+        "ar": "أي",
+        "sr": "Било ком",
+        "tr": "Herhangi",
+        "uk": "Будь-які",
+    },
+    "Check for updates": {
+        "en": "Check for updates",
+        "pl": "Sprawdź aktualizacje",
+        "es": "Buscar actualizaciones",
+        "de": "Nach Updates suchen",
+        "fr": "Rechercher des mises à jour",
+        "ru": "Проверить обновления",
+        "zh_CN": "检查更新",
+        "it": "Cerca aggiornamenti",
+        "pt_br": "Buscar atualizações",
+        "ja": "更新を確認",
+        "nl": "Controleren op updates",
+        "hu": "Frissítések keresése",
+        "id": "Periksa pembaruan",
+        "ar": "التحقق من التحديثات",
+        "sr": "Провери ажурирања",
+        "tr": "Güncellemeleri kontrol et",
+        "uk": "Перевірити оновлення",
+    },
+    "Installed plugin Storefront version %s": {
+        "en": "Installed plugin Storefront version %s",
+        "pl": "Zainstalowano wtyczkę Storefront w wersji %s",
+        "es": "Se instaló la versión %s del plugin Storefront",
+        "de": "Plugin Storefront Version %s installiert",
+        "fr": "Plugin Storefront version %s installé",
+        "ru": "Установлен плагин Storefront версии %s",
+        "zh_CN": "已安装 Storefront 插件版本 %s",
+        "it": "Installata la versione %s del plugin Storefront",
+        "pt_br": "Plugin Storefront versão %s instalado",
+        "ja": "Storefront プラグイン バージョン %s をインストールしました",
+        "nl": "Plugin Storefront versie %s geïnstalleerd",
+        "hu": "Storefront bővítmény %s verziója telepítve",
+        "id": "Versi plugin Storefront %s terpasang",
+        "ar": "تم تثبيت إضافة Storefront الإصدار %s",
+        "sr": "Инсталиран прикључак Storefront верзија %s",
+        "tr": "Storefront eklentisi %s sürümü yüklendi",
+        "uk": "Встановлено плагін Storefront версії %s",
+    },
+    "Checking for Storefront updates…": {
+        "en": "Checking for Storefront updates…",
+        "pl": "Sprawdzanie aktualizacji Storefront…",
+        "es": "Buscando actualizaciones de Storefront…",
+        "de": "Prüfe auf Storefront-Updates…",
+        "fr": "Recherche de mises à jour de Storefront…",
+        "ru": "Проверка обновлений Storefront…",
+        "zh_CN": "正在检查 Storefront 更新…",
+        "it": "Controllo aggiornamenti Storefront…",
+        "pt_br": "Verificando atualizações do Storefront…",
+        "ja": "Storefront の更新を確認中…",
+        "nl": "Zoeken naar Storefront-updates…",
+        "hu": "Storefront frissítések keresése…",
+        "id": "Memeriksa pembaruan Storefront…",
+        "ar": "جارٍ التحقق من تحديثات Storefront…",
+        "sr": "Проверавам ажурирања за Storefront…",
+        "tr": "Storefront güncellemeleri kontrol ediliyor…",
+        "uk": "Перевірка оновлень Storefront…",
+    },
+    "Checking for Storefront updates...": {
+        "en": "Checking for Storefront updates...",
+        "pl": "Sprawdzanie aktualizacji Storefront...",
+        "es": "Buscando actualizaciones de Storefront...",
+        "de": "Prüfe auf Storefront-Updates...",
+        "fr": "Recherche de mises à jour de Storefront...",
+        "ru": "Проверка обновлений Storefront...",
+        "zh_CN": "正在检查 Storefront 更新...",
+        "it": "Controllo aggiornamenti Storefront...",
+        "pt_br": "Verificando atualizações do Storefront...",
+        "ja": "Storefront の更新を確認中...",
+        "nl": "Zoeken naar Storefront-updates...",
+        "hu": "Storefront frissítések keresése...",
+        "id": "Memeriksa pembaruan Storefront...",
+        "ar": "جارٍ التحقق من تحديثات Storefront...",
+        "sr": "Проверавам ажурирања за Storefront...",
+        "tr": "Storefront güncellemeleri kontrol ediliyor...",
+        "uk": "Перевірка оновлень Storefront...",
+    },
+    "Checking plugin updates": {
+        "en": "Checking plugin updates",
+        "pl": "Sprawdzanie aktualizacji wtyczek",
+        "es": "Buscando actualizaciones de plugins",
+        "de": "Plugin-Updates werden geprüft",
+        "fr": "Recherche de mises à jour des plugins",
+        "ru": "Проверка обновлений плагинов",
+        "zh_CN": "正在检查插件更新",
+        "it": "Controllo aggiornamenti plugin",
+        "pt_br": "Verificando atualizações de plugins",
+        "ja": "プラグインの更新を確認中",
+        "nl": "Plugin-updates controleren",
+        "hu": "Bővítményfrissítések keresése",
+        "id": "Memeriksa pembaruan plugin",
+        "ar": "جارٍ التحقق من تحديثات الإضافات",
+        "sr": "Проверавам ажурирања прикључака",
+        "tr": "Eklenti güncellemeleri kontrol ediliyor",
+        "uk": "Перевірка оновлень плагінів",
+    },
+    "Checked %d plugin updates": {
+        "en": "Checked %d plugin updates",
+        "pl": "Sprawdzono %d aktualizacji wtyczek",
+        "es": "Se comprobaron %d actualizaciones de plugins",
+        "de": "%d Plugin-Updates geprüft",
+        "fr": "%d mises à jour de plugins vérifiées",
+        "ru": "Проверено обновлений плагинов: %d",
+        "zh_CN": "已检查 %d 个插件更新",
+        "it": "Controllati %d aggiornamenti plugin",
+        "pt_br": "Verificadas %d atualizações de plugins",
+        "ja": "%d 件のプラグイン更新を確認しました",
+        "nl": "%d plugin-updates gecontroleerd",
+        "hu": "%d bővítményfrissítés ellenőrizve",
+        "id": "Diperiksa %d pembaruan plugin",
+        "ar": "تم التحقق من %d تحديثات للإضافات",
+        "sr": "Проверено %d ажурирања прикључака",
+        "tr": "%d eklenti güncellemesi kontrol edildi",
+        "uk": "Перевірено %d оновлень плагінів",
+    },
+    "Update all outdated items?": {
+        "en": "Update all outdated items?",
+        "pl": "Zaktualizować wszystkie nieaktualne elementy?",
+        "es": "¿Actualizar todos los elementos desactualizados?",
+        "de": "Alle veralteten Elemente aktualisieren?",
+        "fr": "Mettre à jour tous les éléments obsolètes ?",
+        "ru": "Обновить все устаревшие элементы?",
+        "zh_CN": "更新所有过期的项目？",
+        "it": "Aggiornare tutti gli elementi non aggiornati?",
+        "pt_br": "Atualizar todos os itens desatualizados?",
+        "ja": "すべての古いアイテムを更新しますか？",
+        "nl": "Alle verouderde items bijwerken?",
+        "hu": "Minden elavult elem frissítése?",
+        "id": "Perbarui semua item yang kadaluarsa?",
+        "ar": "تحديث جميع العناصر القديمة؟",
+        "sr": "Ажурирати све застареле ставке?",
+        "tr": "Eskiyen tüm öğeler güncellensin mi?",
+        "uk": "Оновити всі застарілі елементи?",
+    },
+    "Update %d outdated item(s)?": {
+        "en": "Update %d outdated item(s)?",
+        "pl": "Zaktualizować %d nieaktualnych elementów?",
+        "es": "¿Actualizar %d elemento(s) desactualizado(s)?",
+        "de": "%d veraltete(s) Element(e) aktualisieren?",
+        "fr": "Mettre à jour %d élément(s) obsolète(s) ?",
+        "ru": "Обновить устаревшие элементы (%d шт.)?",
+        "zh_CN": "更新 %d 个过期的项目？",
+        "it": "Aggiornare %d elemento/i non aggiornato/i?",
+        "pt_br": "Atualizar %d item(ns) desatualizado(s)?",
+        "ja": "%d 件の古いアイテムを更新しますか？",
+        "nl": "%d verouderde item(s) bijwerken?",
+        "hu": "%d elavult elem frissítése?",
+        "id": "Perbarui %d item yang kadaluarsa?",
+        "ar": "تحديث %d عنصر (عناصر) قديمة؟",
+        "sr": "Ажурирати %d застарелих ставки?",
+        "tr": "%d eskiyen öğe güncellensin mi?",
+        "uk": "Оновити %d застарілих елементів?",
+    },
+    "Successfully updated %d item(s).": {
+        "en": "Successfully updated %d item(s).",
+        "pl": "Pomyślnie zaktualizowano %d elementów.",
+        "es": "Se actualizaron con éxito %d elemento(s).",
+        "de": "%d Element(e) erfolgreich aktualisiert.",
+        "fr": "%d élément(s) mis à jour avec succès.",
+        "ru": "Успешно обновлено элементов: %d.",
+        "zh_CN": "成功更新了 %d 个项目。",
+        "it": "Aggiornati con successo %d elementi.",
+        "pt_br": "Atualizado(s) com sucesso %d item(ns).",
+        "ja": "%d 件のアイテムの更新に成功しました。",
+        "nl": "%d item(s) succesvol bijgewerkt.",
+        "hu": "%d elem sikeresen frissítve.",
+        "id": "Berhasil memperbarui %d item.",
+        "ar": "تم تحديث %d عنصر (عناصر) بنجاح.",
+        "sr": "Успешно ажурирано %d ставки.",
+        "tr": "%d öğe başarıyla güncellendi.",
+        "uk": "Успішно оновлено %d елементів.",
+    },
+    "Successfully updated %d items.": {
+        "en": "Successfully updated %d items.",
+        "pl": "Pomyślnie zaktualizowano %d elementów.",
+        "es": "Se actualizaron con éxito %d elementos.",
+        "de": "%d Elemente erfolgreich aktualisiert.",
+        "fr": "%d éléments mis à jour avec succès.",
+        "ru": "Успешно обновлено элементов: %d.",
+        "zh_CN": "成功更新了 %d 个项目。",
+        "it": "Aggiornati con successo %d elementi.",
+        "pt_br": "Atualizados com sucesso %d itens.",
+        "ja": "%d 件のアイテムの更新に成功しました。",
+        "nl": "%d items succesvol bijgewerkt.",
+        "hu": "%d elem sikeresen frissítve.",
+        "id": "Berhasil memperbarui %d item.",
+        "ar": "تم تحديث %d عناصر بنجاح.",
+        "sr": "Успешно ажурирано %d ставки.",
+        "tr": "%d öğe başarıyla güncellendi.",
+        "uk": "Успішно оновлено %d елементів.",
+    }
+}
+
+def parse_po(file_path):
+    entries = {}
+    if not os.path.exists(file_path):
+        return entries
+    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+        current_msgid = None
+        current_msgstr = None
+        in_msgid = False
+        in_msgstr = False
+        for line in f:
+            line_str = line.strip()
+            if not line_str or line_str.startswith('#'):
+                if current_msgid is not None and current_msgstr is not None:
+                    entries[current_msgid] = current_msgstr
+                    current_msgid = None
+                    current_msgstr = None
+                in_msgid = False
+                in_msgstr = False
+                continue
+            if line_str.startswith('msgid '):
+                if current_msgid is not None and current_msgstr is not None:
+                    entries[current_msgid] = current_msgstr
+                m = re.match(r'^msgid "(.*)"$', line_str)
+                current_msgid = m.group(1).replace('\\"', '"').replace('\\n', '\n') if m else ''
+                current_msgstr = None
+                in_msgid = True
+                in_msgstr = False
+            elif line_str.startswith('msgstr '):
+                m = re.match(r'^msgstr "(.*)"$', line_str)
+                current_msgstr = m.group(1).replace('\\"', '"').replace('\\n', '\n') if m else ''
+                in_msgid = False
+                in_msgstr = True
+            elif line_str.startswith('"'):
+                m = re.match(r'^"(.*)"$', line_str)
+                if m:
+                    val = m.group(1).replace('\\"', '"').replace('\\n', '\n')
+                    if in_msgid and current_msgid is not None:
+                        current_msgid += val
+                    elif in_msgstr and current_msgstr is not None:
+                        current_msgstr += val
+        if current_msgid is not None and current_msgstr is not None:
+            entries[current_msgid] = current_msgstr
+    return entries
+
+def save_po(file_path, lang_name, lang_code, entries):
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    with open(file_path, 'w', encoding='utf-8') as f:
+        f.write(f'msgid ""\nmsgstr ""\n"Language-Team: {lang_name}\\n"\n"Language: {lang_code}\\n"\n"Content-Type: text/plain; charset=UTF-8\\n"\n"Content-Transfer-Encoding: 8bit\\n"\n\n')
+        for key in sorted(entries.keys()):
+            if not key: continue
+            val = entries[key]
+            escaped_key = key.replace('\n', '\\n').replace('"', '\\"')
+            escaped_val = val.replace('\n', '\\n').replace('"', '\\"')
+            f.write(f'msgid "{escaped_key}"\nmsgstr "{escaped_val}"\n\n')
+
+def run_sync():
+    for code, name in LANG_NAMES.items():
+        po_path = os.path.join(LANGUAGES_DIR, f"{code}.po")
+        entries = parse_po(po_path)
+        entries.pop("", None)
+
+        added = 0
+        for master_key, translations in MASTER_KEYS.items():
+            tr = translations.get(code) or translations.get("en")
+            if master_key not in entries or not entries[master_key] or entries[master_key] == master_key:
+                entries[master_key] = tr
+                added += 1
+
+        save_po(po_path, name, code, entries)
+        print(f"Updated {code}.po ({name}) -> added/updated {added} keys. Total keys: {len(entries)}")
+
+if __name__ == '__main__':
+    run_sync()
