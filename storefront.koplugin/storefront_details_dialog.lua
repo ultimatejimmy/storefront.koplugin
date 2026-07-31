@@ -2100,7 +2100,7 @@ function StorefrontVersionDetailsDialog:init()
     }
 
     local back_btn = Button:new{
-        text = "< Back",
+        text = _("< Back"),
         text_font_size = 20,
         bordersize = sc(1),
         padding = sc(8),
@@ -2308,7 +2308,7 @@ a.plain-link { color: #000000 !important; text-decoration: none !important; }
     }
 
     local page_info_btn = Button:new{
-        text = "1 / 1",
+        text = _("1 / 1"),
         text_font_size = 16,
         bordersize = 0,
         padding = sc(4),

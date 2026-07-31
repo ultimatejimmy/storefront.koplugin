@@ -19,7 +19,6 @@ LANGUAGES_DIR = os.path.join(PLUGIN_DIR, 'languages')
 SOURCE_DIR = PLUGIN_DIR
 MASTER_LANG = 'en'
 
-
 LANG_NAMES = {
     'ar': 'Arabic',
     'de': 'German',
@@ -38,13 +37,6 @@ LANG_NAMES = {
     'tr': 'Turkish',
     'uk': 'Ukrainian',
     'zh_CN': 'Simplified Chinese',
-}
-
-ALLOWLIST = {
-    'storefront_title',
-    'menu_storefront',
-    'btn_ok',
-    'status_builtin',
 }
 
 def get_md5(text):
@@ -97,9 +89,15 @@ def save_po(file_path, lang_name, lang_code, keys, translations, fallback_map, e
         for key in sorted(keys):
             if not key: continue
             if lang_code == 'en':
-                val = translations.get(key) or fallback_map.get(key) or key
+                val = translations.get(key)
+                if (not val or val == key) and key in fallback_map:
+                    val = fallback_map[key]
+                elif not val:
+                    val = key
             else:
-                val = translations.get(key, "")
+                # Use translated value, or fall back to English text if empty
+                val = translations.get(key) or en_final.get(key, key)
+
             escaped_val = val.replace('\n', '\\n').replace('"', '\\"')
             
             if lang_code != 'en':
@@ -125,10 +123,10 @@ def call_gemini(prompt):
     
     req = urllib.request.Request(url, data=json.dumps(data).encode('utf-8'), headers=headers, method='POST')
     
-    max_retries = 3
+    max_retries = 5
     for attempt in range(max_retries):
         try:
-            with urllib.request.urlopen(req, timeout=30) as response:
+            with urllib.request.urlopen(req, timeout=120) as response:
                 res_data = json.loads(response.read().decode('utf-8'))
                 text = res_data['candidates'][0]['content']['parts'][0]['text']
                 text_stripped = text.strip()
@@ -152,71 +150,37 @@ def call_gemini(prompt):
             return None
     return None
 
-def translate_all_gemini(all_untranslated, lang_names, max_pairs=60):
-    flat_pairs = []
-    for lang_code, keys in all_untranslated.items():
-        for key, en_val in keys.items():
-            flat_pairs.append((lang_code, key, en_val))
-            
-    if not flat_pairs:
+def translate_language_gemini(lang_code, lang_name, untranslated_keys):
+    if not untranslated_keys:
         return {}
         
-    all_results = {}
+    strings_list = [{"key": k, "english": v} for k, v in untranslated_keys.items()]
     
-    for i in range(0, len(flat_pairs), max_pairs):
-        chunk = flat_pairs[i:i+max_pairs]
-        
-        batch_dict = {}
-        for lang_code, key, en_val in chunk:
-            if lang_code not in batch_dict:
-                batch_dict[lang_code] = []
-            batch_dict[lang_code].append({"key": key, "english": en_val})
-            
-        targets = []
-        for lang_code, strings in batch_dict.items():
-            name = lang_names.get(lang_code, lang_code.capitalize())
-            targets.append({
-                "language_code": lang_code,
-                "language_name": name,
-                "strings": strings
-            })
-            
-        prompt = f"""You are a professional translator and localization expert. Translate the following English key-value pairs for a KOReader Storefront e-reader plugin UI into their respective target languages.
-
-For each target language, you will receive its language name, language code, and a list of key-value pairs where the values are in English. Translate the English values into the target language, keeping them short, clear, and natural for e-reader menus.
+    prompt = f"""You are a professional translator and localization expert. Translate the following English key-value pairs for a KOReader Storefront e-reader plugin UI into {lang_name} ({lang_code}).
 
 CRITICAL rules:
 1. Retain all format specifiers such as %s, %d, %1$s, %2$d, etc. exactly in the translated output.
 2. Retain all literal escaped newlines (\\n) and tabs (\\t) exactly.
-3. Keep the translation concise, natural, and suited for a mobile e-reader display.
+3. Keep translations concise, natural, and suited for a mobile e-reader display.
 4. Return ONLY a valid JSON object matching this exact schema:
 {{
   "translations": {{
-    "<language_code>": {{
-      "key_name": "translated_value"
-    }}
+    "key_name": "translated_value"
   }}
 }}
 
 Input to translate:
-{json.dumps(targets, indent=2, ensure_ascii=False)}
+{json.dumps(strings_list, indent=2, ensure_ascii=False)}
 """
-        res = call_gemini(prompt)
-        if res and isinstance(res, dict) and "translations" in res:
-            res_trans = res["translations"]
-            for lang_code, kvs in res_trans.items():
-                if lang_code not in all_results:
-                    all_results[lang_code] = {}
-                if isinstance(kvs, dict):
-                    for k, v in kvs.items():
-                        all_results[lang_code][k] = str(v)
-                        
-    return all_results
+    res = call_gemini(prompt)
+    if res and isinstance(res, dict) and "translations" in res:
+        return res["translations"]
+    return {}
 
 def sync():
     print("--- Synchronizing Storefront Translation Files ---")
     
-    # 1. Scan source code for used keys
+    # 1. Scan source code for used keys & fallbacks
     used_keys = set()
     fallback_map = {}
     
@@ -228,7 +192,7 @@ def sync():
             if m_fb:
                 fb_block = m_fb.group(1)
                 for line in fb_block.splitlines():
-                    m_kv = re.match(r'^\s*([a-zA-Z0-9_]+)\s*=\s*"(.*)"\s*,?\s*$', line)
+                    m_kv = re.search(r'\[?["\']?([a-zA-Z0-9_]+)["\']?\]?\s*=\s*["\'](.*?)["\']\s*,?', line)
                     if m_kv:
                         k, v = m_kv.group(1), m_kv.group(2)
                         fallback_map[k] = v
@@ -237,11 +201,10 @@ def sync():
             m_ka = re.search(r'local KEY_ALIASES = \{(.*?)\}', content, re.DOTALL)
             if m_ka:
                 for line in m_ka.group(1).splitlines():
-                    m_kv = re.match(r'^\s*\["(.*)"\]\s*=\s*"(.*)"\s*,?\s*$', line)
+                    m_kv = re.search(r'\[?["\']?([a-zA-Z0-9_]+)["\']?\]?\s*=\s*["\'](.*?)["\']\s*,?', line)
                     if m_kv:
                         used_keys.add(m_kv.group(1))
                         used_keys.add(m_kv.group(2))
-
 
     for root, _, files in os.walk(SOURCE_DIR):
         if 'languages' in root: continue
@@ -249,31 +212,34 @@ def sync():
             if file.endswith('.lua'):
                 with open(os.path.join(root, file), 'r', encoding='utf-8', errors='ignore') as f:
                     content = f.read()
-                    matches = re.finditer(r'(?:loc:t|_|Localization:t)\(\s*[\"\']([^\"\']*)[\"\']', content)
+                    matches = re.finditer(r'(?:loc:t|loc:f|_|N_|Localization:t)\(\s*["\']((?:[^"\'\\]|\\.)*)["\']', content)
                     for m in matches:
                         used_keys.add(m.group(1))
 
     used_keys.discard("")
-    print(f"Extracted {len(used_keys)} translation keys from source code.")
 
-    # 2. Update English master
+    # 2. Master Key Union & English Repair
     en_path = os.path.join(LANGUAGES_DIR, f'{MASTER_LANG}.po')
     en_existing = parse_po(en_path)
     en_map = {e['msgid']: e['msgstr'] for e in en_existing if e['msgid']}
     
-    for k in used_keys:
-        if k not in en_map:
+    all_keys = used_keys | set(en_map.keys())
+    print(f"Master key count across source & en.po: {len(all_keys)} keys.")
+
+    for k in all_keys:
+        curr = en_map.get(k)
+        if not curr or curr == k:
             en_map[k] = fallback_map.get(k, k)
             
-    save_po(en_path, 'English', 'en', used_keys, en_map, fallback_map, {})
+    save_po(en_path, 'English', 'en', all_keys, en_map, fallback_map, {})
     print(f"Saved master English file: {en_path}")
 
-    # Re-read final en_map
     en_final = {e['msgid']: e['msgstr'] for e in parse_po(en_path) if e['msgid']}
+    all_keys = set(en_final.keys())
 
-    # 3. Check for untranslated / stale strings across target languages
-    all_untranslated = {}
-    target_languages = [code for code in LANG_NAMES.keys() if code != 'en']
+    # 3. Process each target language individually
+    gemini_key = get_gemini_key()
+    target_languages = [code for code in sorted(LANG_NAMES.keys()) if code != 'en']
 
     for lang_code in target_languages:
         po_path = os.path.join(LANGUAGES_DIR, f'{lang_code}.po')
@@ -282,7 +248,7 @@ def sync():
         hash_map = {e['msgid']: e['en_hash'] for e in entries if e['msgid']}
         
         untranslated = {}
-        for k in used_keys:
+        for k in all_keys:
             en_val = en_final.get(k, k)
             current_val = tr_map.get(k)
             stored_hash = hash_map.get(k)
@@ -291,41 +257,17 @@ def sync():
             if not current_val or (stored_hash and stored_hash != current_hash):
                 untranslated[k] = en_val
                 
-        if untranslated:
-            all_untranslated[lang_code] = untranslated
-
-    # 4. Auto-translate missing strings if Gemini API key present
-    gemini_key = get_gemini_key()
-    if all_untranslated and gemini_key:
-        total_missing = sum(len(v) for v in all_untranslated.values())
-        print(f"Found {total_missing} untranslated or stale strings across {len(all_untranslated)} languages.")
-        print("Calling Gemini API to translate missing strings...")
-        
-        results = translate_all_gemini(all_untranslated, LANG_NAMES)
-        
-        for lang_code, translations in results.items():
-            po_path = os.path.join(LANGUAGES_DIR, f'{lang_code}.po')
-            entries = parse_po(po_path)
-            tr_map = {e['msgid']: e['msgstr'] for e in entries if e['msgid']}
-            for k, v in translations.items():
-                tr_map[k] = v
-            save_po(po_path, LANG_NAMES.get(lang_code, lang_code), lang_code, used_keys, tr_map, fallback_map, en_final)
-            print(f"Updated {lang_code}.po with {len(translations)} new translations.")
-    elif all_untranslated:
-        print("Notice: Untranslated keys found but GEMINI_API_KEY environment variable is not set.")
-        print("Generating placeholder/empty translation entries in target .po files.")
-        for lang_code in target_languages:
-            po_path = os.path.join(LANGUAGES_DIR, f'{lang_code}.po')
-            entries = parse_po(po_path)
-            tr_map = {e['msgid']: e['msgstr'] for e in entries if e['msgid']}
-            save_po(po_path, LANG_NAMES.get(lang_code, lang_code), lang_code, used_keys, tr_map, fallback_map, en_final)
-    else:
-        print("All target languages are up to date!")
-        for lang_code in target_languages:
-            po_path = os.path.join(LANGUAGES_DIR, f'{lang_code}.po')
-            entries = parse_po(po_path)
-            tr_map = {e['msgid']: e['msgstr'] for e in entries if e['msgid']}
-            save_po(po_path, LANG_NAMES.get(lang_code, lang_code), lang_code, used_keys, tr_map, fallback_map, en_final)
+        if untranslated and gemini_key:
+            lang_name = LANG_NAMES.get(lang_code, lang_code)
+            print(f"Translating {len(untranslated)} keys for {lang_name} ({lang_code})...")
+            
+            new_translations = translate_language_gemini(lang_code, lang_name, untranslated)
+            for k, v in new_translations.items():
+                tr_map[k] = str(v)
+            
+            time.sleep(3) # Short pause between languages to stay under 15 RPM
+            
+        save_po(po_path, LANG_NAMES.get(lang_code, lang_code), lang_code, all_keys, tr_map, fallback_map, en_final)
 
     print("\nSync completed successfully.")
 

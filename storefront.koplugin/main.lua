@@ -7530,8 +7530,6 @@ function Storefront:showBrowser(kind)
             text = _("Check Updates"),
             text_font_bold = true,
             callback = function()
-                local Toast = require("storefront_toast")
-                Toast.show(_("Checking for updates..."), 2)
                 local installed_plugins = listInstalledPlugins()
                 local records = getInstallRecordsMap()
                 local plugin_repos = {}

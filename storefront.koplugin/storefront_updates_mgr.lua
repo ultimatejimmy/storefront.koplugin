@@ -5,7 +5,8 @@ local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
 local DataStorage = require("datastorage")
 local LuaSettings = require("luasettings")
-local _ = require("gettext")
+local Localization = require("localization_storefront")
+local _ = function(key, ...) return Localization:t(key, ...) end
 local util = require("util")
 local ok_log, StorefrontLogger = pcall(require, "storefront_logger")
 if not ok_log then StorefrontLogger = { action = function() end, err = function() end, info = function() end, warn = function() end } end

@@ -16,7 +16,8 @@ local GestureRange = require("ui/gesturerange")
 local Size = require("ui/size")
 local Geom = require("ui/geometry")
 local Blitbuffer = require("ffi/blitbuffer")
-local _ = require("gettext")
+local Localization = require("localization_storefront")
+local _ = function(key, ...) return Localization:t(key, ...) end
 
 local UpdatesListItem = InputContainer:extend{
     entry = nil,

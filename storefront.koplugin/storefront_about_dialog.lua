@@ -18,6 +18,7 @@ local DataStorage = require("datastorage")
 local Localization = require("localization_storefront")
 local _ = function(key, ...) return Localization:t(key, ...) end
 local storefront_theme = require("storefront_theme")
+local StorefrontToast = require("storefront_toast")
 
 local StorefrontAboutDialog = {}
 
@@ -76,13 +77,11 @@ end
 
 function StorefrontAboutDialog.checkForUpdates(Storefront)
     local NetworkMgr = require("ui/network/manager")
-    local InfoMessage = require("storefront_toast")
     local ConfirmBox = require("ui/widget/confirmbox")
     local GitHub = require("storefront_net_github")
 
     NetworkMgr:runWhenOnline(function()
-        local progress = InfoMessage:new{ text = _("Checking for Storefront updates…"), timeout = 0 }
-        UIManager:show(progress)
+        local progress = StorefrontToast.show(_("Checking for Storefront updates…"), 0, { dismissable = false })
         UIManager:forceRePaint()
 
         local current_version = StorefrontAboutDialog.getVersion()
@@ -100,14 +99,11 @@ function StorefrontAboutDialog.checkForUpdates(Storefront)
             target_release, err = GitHub.fetchLatestRelease("ultimatejimmy", "storefront.koplugin")
         end
 
-        UIManager:close(progress)
+        if progress and progress.close then progress:close() end
 
         if not target_release then
             local err_msg = (type(err) == "table" and err.body) and tostring(err.body) or tostring(err or _("Unknown error"))
-            UIManager:show(InfoMessage:new{
-                text = string.format(_("Failed to check for Storefront updates: %s"), err_msg),
-                timeout = 5,
-            })
+            StorefrontToast.show(string.format(_("Failed to check for Storefront updates: %s"), err_msg), 5)
             return
         end
 
@@ -160,10 +156,7 @@ function StorefrontAboutDialog.checkForUpdates(Storefront)
             }
             details_dialog:show()
         else
-            UIManager:show(InfoMessage:new{
-                text = string.format(_("Storefront is up to date (v%s)."), current_version),
-                timeout = 4,
-            })
+            StorefrontToast.show(string.format(_("Storefront is up to date (v%s)."), current_version), 4)
         end
     end)
 end

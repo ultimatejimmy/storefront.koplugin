@@ -5,14 +5,47 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
-msgstr "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
+msgid "%d patches"
+msgstr "%d patches"
+
+msgid "%d plugins"
+msgstr "%d plugins"
+
+msgid "%s and %s"
+msgstr "%s and %s"
+
+msgid "%s is up to date (version %s)."
+msgstr "%s is up to date (version %s)."
+
+msgid "%s is up to date."
+msgstr "%s is up to date."
+
+msgid "%s needs an update."
+msgstr "%s needs an update."
+
+msgid "(fork)"
+msgstr "(fork)"
+
+msgid "(showing %d of %d commits)"
+msgstr "(showing %d of %d commits)"
+
+msgid "1 / 1"
+msgstr "1 / 1"
+
+msgid "1 patch"
+msgstr "1 patch"
+
+msgid "1 plugin"
+msgstr "1 plugin"
 
 msgid "< Back"
 msgstr "< Back"
 
 msgid "< Prev"
 msgstr "< Prev"
+
+msgid "?"
+msgstr "?"
 
 msgid "About"
 msgstr "About"
@@ -26,62 +59,284 @@ msgstr "All"
 msgid "All Types"
 msgstr "All Types"
 
+msgid "All items are up to date."
+msgstr "All items are up to date."
+
+msgid "All of your custom plugin folders are currently hidden (see Manage plugin paths). Install to the default plugin folder anyway?"
+msgstr "All of your custom plugin folders are currently hidden (see Manage plugin paths). Install to the default plugin folder anyway?"
+
+msgid "All patches"
+msgstr "All patches"
+
+msgid "All plugins"
+msgstr "All plugins"
+
+msgid "All plugins are already matched."
+msgstr "All plugins are already matched."
+
+msgid "Allow pre-release updates"
+msgstr "Allow pre-release updates"
+
 msgid "Alphabet & Numbers"
 msgstr "Alphabet & Numbers"
+
+msgid "Also delete plugin settings"
+msgstr "Also delete plugin settings"
+
+msgid "Always install here (don"
+msgstr "Always install here (don"
+
+msgid "Always install here (don't ask again)"
+msgstr "Always install here (don't ask again)"
 
 msgid "Any"
 msgstr "Any"
 
+msgid "App Store · Installed patches"
+msgstr "App Store · Installed patches"
+
+msgid "App Store · Installed plugins"
+msgstr "App Store · Installed plugins"
+
 msgid "Apply"
 msgstr "Apply"
+
+msgid "Assets — %s"
+msgstr "Assets — %s"
 
 msgid "Author"
 msgstr "Author"
 
+msgid "Back"
+msgstr "Back"
+
 msgid "Beta"
 msgstr "Beta"
+
+msgid "Both owner and repository name are required."
+msgstr "Both owner and repository name are required."
+
+msgid "Branch: %s"
+msgstr "Branch: %s"
 
 msgid "By: %s"
 msgstr "By: %s"
 
+msgid "Cache empty. Refresh to retrieve repositories."
+msgstr "Cache empty. Refresh to retrieve repositories."
+
+msgid "Cache is older than a week, consider refreshing."
+msgstr "Cache is older than a week, consider refreshing."
+
+msgid "Cached %s patch repositories."
+msgstr "Cached %s patch repositories."
+
+msgid "Cached %s plugins."
+msgstr "Cached %s plugins."
+
+msgid "Can"
+msgstr "Can"
+
+msgid "Can't load readme...."
+msgstr "Can't load readme...."
+
+msgid "Cancel"
+msgstr "Cancel"
+
+msgid "Cancel matching"
+msgstr "Cancel matching"
+
+msgid "Cannot read source file."
+msgstr "Cannot read source file."
+
+msgid "Cannot write destination file."
+msgstr "Cannot write destination file."
+
 msgid "Catalog & Cache"
 msgstr "Catalog & Cache"
+
+msgid "Catalog refresh failed: "
+msgstr "Catalog refresh failed: "
+
+msgid "Catalog refresh is already in progress in the background."
+msgstr "Catalog refresh is already in progress in the background."
+
+msgid "Catalog refreshed successfully."
+msgstr "Catalog refreshed successfully."
 
 msgid "Catalog source"
 msgstr "Catalog source"
 
+msgid "Catalog updated: %d plugins, %d patches, %d fonts."
+msgstr "Catalog updated: %d plugins, %d patches, %d fonts."
+
 msgid "Category: %s"
 msgstr "Category: %s"
+
+msgid "Changelog for %s\n%s \xE2\x86\x92 %s"
+msgstr "Changelog for %s\n%s \xE2\x86\x92 %s"
+
+msgid "Changelog: %s"
+msgstr "Changelog: %s"
 
 msgid "Check Updates"
 msgstr "Check Updates"
 
+msgid "Check all updates"
+msgstr "Check all updates"
+
 msgid "Check for updates"
 msgstr "Check for updates"
 
-msgid "Checked %d plugin updates"
-msgstr "Checked %d plugin updates"
+msgid "Check this patch"
+msgstr "Check this patch"
 
-msgid "Checking for Storefront updates..."
-msgstr "Checking for Storefront updates..."
+msgid "Check this plugin"
+msgstr "Check this plugin"
+
+msgid "Checked %d patches: %d need updates, %d up to date."
+msgstr "Checked %d patches: %d need updates, %d up to date."
+
+msgid "Checked %d plugin(s) for updates."
+msgstr "Checked %d plugin(s) for updates."
+
+msgid "Checking %s…"
+msgstr "Checking %s…"
 
 msgid "Checking for Storefront updates…"
 msgstr "Checking for Storefront updates…"
 
-msgid "Checking plugin updates"
-msgstr "Checking plugin updates"
+msgid "Checking patch updates…"
+msgstr "Checking patch updates…"
+
+msgid "Checking plugin updates…"
+msgstr "Checking plugin updates…"
+
+msgid "Choose Build — %s"
+msgstr "Choose Build — %s"
+
+msgid "Clear"
+msgstr "Clear"
 
 msgid "Clear README cache"
 msgstr "Clear README cache"
 
+msgid "Clear search/filters"
+msgstr "Clear search/filters"
+
 msgid "Close"
 msgstr "Close"
+
+msgid "Commit diff: %s → %s"
+msgstr "Commit diff: %s → %s"
+
+msgid "Commits: %s \xE2\x86\x92 %s"
+msgstr "Commits: %s \xE2\x86\x92 %s"
+
+msgid "Config files only"
+msgstr "Config files only"
 
 msgid "Configured ✓"
 msgstr "Configured ✓"
 
+msgid "Confirm Update"
+msgstr "Confirm Update"
+
+msgid "Confirm Update All"
+msgstr "Confirm Update All"
+
+msgid "Connecting to GitHub…\n\nPlease wait."
+msgstr "Connecting to GitHub…\n\nPlease wait."
+
+msgid "Continue"
+msgstr "Continue"
+
+msgid "Copied to "
+msgstr "Copied to "
+
+msgid "Copied to '%s'."
+msgstr "Copied to '%s'."
+
+msgid "Copy"
+msgstr "Copy"
+
+msgid "Copy file as"
+msgstr "Copy file as"
+
+msgid "Could not detect .koplugin folder in archive"
+msgstr "Could not detect .koplugin folder in archive"
+
+msgid "Could not detect plugin inside archive."
+msgstr "Could not detect plugin inside archive."
+
+msgid "Could not fetch commit comparison."
+msgstr "Could not fetch commit comparison."
+
+msgid "Could not fetch releases for changelog."
+msgstr "Could not fetch releases for changelog."
+
+msgid "Could not fetch releases for this repository."
+msgstr "Could not fetch releases for this repository."
+
+msgid "Could not locate plugin folder (_meta.lua) in archive."
+msgstr "Could not locate plugin folder (_meta.lua) in archive."
+
+msgid "Could not open target file for writing"
+msgstr "Could not open target file for writing"
+
+msgid "Default"
+msgstr "Default"
+
 msgid "Default only"
 msgstr "Default only"
+
+msgid "Delete"
+msgstr "Delete"
+
+msgid "Delete all cached README files? They will be re-downloaded on demand."
+msgstr "Delete all cached README files? They will be re-downloaded on demand."
+
+msgid "Delete file "
+msgstr "Delete file "
+
+msgid "Delete file '%s'?\n\nThis cannot be undone."
+msgstr "Delete file '%s'?\n\nThis cannot be undone."
+
+msgid "Delete font "
+msgstr "Delete font "
+
+msgid "Delete font '%s'?"
+msgstr "Delete font '%s'?"
+
+msgid "Delete patch"
+msgstr "Delete patch"
+
+msgid "Delete patch "
+msgstr "Delete patch "
+
+msgid "Delete patch '%s'?"
+msgstr "Delete patch '%s'?"
+
+msgid "Delete plugin"
+msgstr "Delete plugin"
+
+msgid "Delete plugin "
+msgstr "Delete plugin "
+
+msgid "Delete plugin '%s'?"
+msgstr "Delete plugin '%s'?"
+
+msgid "Deleted "
+msgstr "Deleted "
+
+msgid "Deleted %d cached README file(s)."
+msgstr "Deleted %d cached README file(s)."
+
+msgid "Deleted %d cached README file(s); %d failed."
+msgstr "Deleted %d cached README file(s); %d failed."
+
+msgid "Deleted '%s'."
+msgstr "Deleted '%s'."
 
 msgid "Direct GitHub API"
 msgstr "Direct GitHub API"
@@ -89,17 +344,131 @@ msgstr "Direct GitHub API"
 msgid "Disable"
 msgstr "Disable"
 
+msgid "Disable patch"
+msgstr "Disable patch"
+
+msgid "Disable plugin"
+msgstr "Disable plugin"
+
 msgid "Disabled"
 msgstr "Disabled"
+
+msgid "Download failed: "
+msgstr "Download failed: "
+
+msgid "Download options"
+msgstr "Download options"
+
+msgid "Download options — %s"
+msgstr "Download options — %s"
+
+msgid "Download options — %s (%s)"
+msgstr "Download options — %s (%s)"
+
+msgid "Downloading %s%s…\nThis may take a moment."
+msgstr "Downloading %s%s…\nThis may take a moment."
 
 msgid "Downloading %s…"
 msgstr "Downloading %s…"
 
+msgid "Downloading patch %s…"
+msgstr "Downloading patch %s…"
+
+msgid "Downloading patch \"
+msgstr "Downloading patch \"
+
+msgid "Downloading patch \"%s\"…"
+msgstr "Downloading patch \\\"%s\\\"…"
+
+msgid "Edit"
+msgstr "Edit"
+
 msgid "Enable"
 msgstr "Enable"
 
+msgid "Enable patch"
+msgstr "Enable patch"
+
+msgid "Enable plugin"
+msgstr "Enable plugin"
+
 msgid "Enabled"
 msgstr "Enabled"
+
+msgid "Enter item number"
+msgstr "Enter item number"
+
+msgid "Enter plugin number"
+msgstr "Enter plugin number"
+
+msgid "Extracting and installing plugin…\nPlease wait."
+msgstr "Extracting and installing plugin…\nPlease wait."
+
+msgid "Failed to check %s: %s"
+msgstr "Failed to check %s: %s"
+
+msgid "Failed to check for Storefront updates: %s"
+msgstr "Failed to check for Storefront updates: %s"
+
+msgid "Failed to create patches directory: %s"
+msgstr "Failed to create patches directory: %s"
+
+msgid "Failed to delete patch: %s"
+msgstr "Failed to delete patch: %s"
+
+msgid "Failed to delete plugin: %s"
+msgstr "Failed to delete plugin: %s"
+
+msgid "Failed to delete: %s"
+msgstr "Failed to delete: %s"
+
+msgid "Failed to disable patch "
+msgstr "Failed to disable patch "
+
+msgid "Failed to disable patch '%s'."
+msgstr "Failed to disable patch '%s'."
+
+msgid "Failed to download patch: %s"
+msgstr "Failed to download patch: %s"
+
+msgid "Failed to enable patch "
+msgstr "Failed to enable patch "
+
+msgid "Failed to enable patch '%s'."
+msgstr "Failed to enable patch '%s'."
+
+msgid "Failed to extract file: "
+msgstr "Failed to extract file: "
+
+msgid "Failed to fetch patch list."
+msgstr "Failed to fetch patch list."
+
+msgid "Failed to fetch repository "
+msgstr "Failed to fetch repository "
+
+msgid "Failed to fetch repository '%s/%s': %s"
+msgstr "Failed to fetch repository '%s/%s': %s"
+
+msgid "Failed to install patch: "
+msgstr "Failed to install patch: "
+
+msgid "Failed to open downloaded archive."
+msgstr "Failed to open downloaded archive."
+
+msgid "Failed to prepare patches directory."
+msgstr "Failed to prepare patches directory."
+
+msgid "Failed to toggle patch status."
+msgstr "Failed to toggle patch status."
+
+msgid "Fetching Release Info"
+msgstr "Fetching Release Info"
+
+msgid "Fetching changelog…"
+msgstr "Fetching changelog…"
+
+msgid "Fetching commits…"
+msgstr "Fetching commits…"
 
 msgid "Fetching patch file listings…"
 msgstr "Fetching patch file listings…"
@@ -110,8 +479,17 @@ msgstr "Fetching patches via Direct GitHub API…"
 msgid "Fetching plugins via Direct GitHub API…"
 msgstr "Fetching plugins via Direct GitHub API…"
 
-msgid "Filter..."
-msgstr "Filter..."
+msgid "Fetching release info…"
+msgstr "Fetching release info…"
+
+msgid "Fetching releases…"
+msgstr "Fetching releases…"
+
+msgid "Fetching repository %s/%s..."
+msgstr "Fetching repository %s/%s..."
+
+msgid "Filename cannot be empty."
+msgstr "Filename cannot be empty."
 
 msgid "Filter & Sort Fonts"
 msgstr "Filter & Sort Fonts"
@@ -125,14 +503,95 @@ msgstr "Filter & Sort Patches"
 msgid "Filter & Sort Plugins"
 msgstr "Filter & Sort Plugins"
 
+msgid "Filter Installed Patches"
+msgstr "Filter Installed Patches"
+
+msgid "Filter Installed Plugins"
+msgstr "Filter Installed Plugins"
+
+msgid "Filter pre-releases"
+msgstr "Filter pre-releases"
+
+msgid "Filter..."
+msgstr "Filter..."
+
+msgid "Filter: "
+msgstr "Filter: "
+
 msgid "Filters"
 msgstr "Filters"
+
+msgid "Filters: "
+msgstr "Filters: "
+
+msgid "Filters: (none)"
+msgstr "Filters: (none)"
+
+msgid "Font"
+msgstr "Font"
+
+msgid "Font "
+msgstr "Font "
+
+msgid "Font '%s' deleted."
+msgstr "Font '%s' deleted."
+
+msgid "Font files not found for %s."
+msgstr "Font files not found for %s."
+
+msgid "Font style"
+msgstr "Font style"
+
+msgid "Fonts"
+msgstr "Fonts"
+
+msgid "GitHub API rate limit exceeded. Add a GitHub token in Storefront settings to increase the limit (10→30 req/min)."
+msgstr "GitHub API rate limit exceeded. Add a GitHub token in Storefront settings to increase the limit (10→30 req/min)."
+
+msgid "GitHub API rate limit exceeded. Please wait a few minutes and try again."
+msgstr "GitHub API rate limit exceeded. Please wait a few minutes and try again."
+
+msgid "GitHub personal access token"
+msgstr "GitHub personal access token"
+
+msgid "GitHub rejected this request: fine-grained personal access tokens are not supported for search. Please use a classic token instead (see the Storefront README)."
+msgstr "GitHub rejected this request: fine-grained personal access tokens are not supported for search. Please use a classic token instead (see the Storefront README)."
 
 msgid "GitHub token"
 msgstr "GitHub token"
 
+msgid "GitHub token saved."
+msgstr "GitHub token saved."
+
+msgid "Go"
+msgstr "Go"
+
+msgid "Go to page"
+msgstr "Go to page"
+
+msgid "HTTP error"
+msgstr "HTTP error"
+
+msgid "HTTP request failed"
+msgstr "HTTP request failed"
+
+msgid "Ignore"
+msgstr "Ignore"
+
+msgid "Ignored"
+msgstr "Ignored"
+
+msgid "Image View"
+msgstr "Image View"
+
 msgid "Include 0-star forks"
 msgstr "Include 0-star forks"
+
+msgid "Install"
+msgstr "Install"
+
+msgid "Install %s"
+msgstr "Install %s"
 
 msgid "Install Font"
 msgstr "Install Font"
@@ -140,14 +599,89 @@ msgstr "Install Font"
 msgid "Install Patch"
 msgstr "Install Patch"
 
-msgid "Installed plugin Storefront version %s"
-msgstr "Installed plugin Storefront version %s"
+msgid "Install a patch"
+msgstr "Install a patch"
+
+msgid "Install patch from GitHub"
+msgstr "Install patch from GitHub"
+
+msgid "Install plugin from GitHub"
+msgstr "Install plugin from GitHub"
+
+msgid "Install to default"
+msgstr "Install to default"
+
+msgid "Installation failed: "
+msgstr "Installation failed: "
+
+msgid "Installation is currently only supported for plugins."
+msgstr "Installation is currently only supported for plugins."
+
+msgid "Installed"
+msgstr "Installed"
+
+msgid "Installed Patches Settings"
+msgstr "Installed Patches Settings"
+
+msgid "Installed Plugins Settings"
+msgstr "Installed Plugins Settings"
+
+msgid "Installed Regular font style offline for \"
+msgstr "Installed Regular font style offline for \"
+
+msgid "Installed Regular font style offline for \"%s\". Full font family queued for download when reconnected."
+msgstr "Installed Regular font style offline for \\\"%s\\\". Full font family queued for download when reconnected."
+
+msgid "Installed font \"
+msgstr "Installed font \"
+
+msgid "Installed font \"%s\" (%d file(s))."
+msgstr "Installed font \\\"%s\\\" (%d file(s))."
+
+msgid "Installed full font family \"
+msgstr "Installed full font family \"
+
+msgid "Installed full font family \"%s\" (%d file(s))."
+msgstr "Installed full font family \\\"%s\\\" (%d file(s))."
+
+msgid "Installed patch \"
+msgstr "Installed patch \"
+
+msgid "Installed patch \"%s\"."
+msgstr "Installed patch \\\"%s\\\"."
+
+msgid "Installed plugin \"
+msgstr "Installed plugin \"
+
+msgid "Installed plugin \"%s\" (version %s)."
+msgstr "Installed plugin \\\"%s\\\" (version %s)."
+
+msgid "Installed plugin \"%s\"."
+msgstr "Installed plugin \\\"%s\\\"."
 
 msgid "Installing %s…"
 msgstr "Installing %s…"
 
+msgid "Invalid archive reader"
+msgstr "Invalid archive reader"
+
+msgid "Invalid extraction parameters"
+msgstr "Invalid extraction parameters"
+
+msgid "Invalid patch target filename."
+msgstr "Invalid patch target filename."
+
+msgid "Invalid selection."
+msgstr "Invalid selection."
+
 msgid "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters."
 msgstr "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters."
+
+msgid "Items per page"
+msgstr "Items per page"
+
+msgid "Items per page: %d"
+msgstr "Items per page: %d"
 
 msgid "Last Updated (Newest)"
 msgstr "Last Updated (Newest)"
@@ -155,8 +689,152 @@ msgstr "Last Updated (Newest)"
 msgid "Last Updated (Oldest)"
 msgstr "Last Updated (Oldest)"
 
+msgid "Last check: %s"
+msgstr "Last check: %s"
+
+msgid "Latest Release"
+msgstr "Latest Release"
+
+msgid "Latest release"
+msgstr "Latest release"
+
 msgid "License: %s"
 msgstr "License: %s"
+
+msgid "Linked only"
+msgstr "Linked only"
+
+msgid "Loading README..."
+msgstr "Loading README..."
+
+msgid "Loading Release Notes..."
+msgstr "Loading Release Notes..."
+
+msgid "Loading Versions..."
+msgstr "Loading Versions..."
+
+msgid "Loading Wiki..."
+msgstr "Loading Wiki..."
+
+msgid "Local SHA: %s"
+msgstr "Local SHA: %s"
+
+msgid "Local version: %s"
+msgstr "Local version: %s"
+
+msgid "Local: %s"
+msgstr "Local: %s"
+
+msgid "Local: %s → Remote: %s"
+msgstr "Local: %s → Remote: %s"
+
+msgid "Manage plugin paths"
+msgstr "Manage plugin paths"
+
+msgid "Manage plugin paths\n\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
+msgstr "Manage plugin paths\n\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
+
+msgid "Match"
+msgstr "Match"
+
+msgid "Match from List"
+msgstr "Match from List"
+
+msgid "Match patch with GitHub repository"
+msgstr "Match patch with GitHub repository"
+
+msgid "Match plugin with GitHub repository"
+msgstr "Match plugin with GitHub repository"
+
+msgid "Match plugin: %s"
+msgstr "Match plugin: %s"
+
+msgid "Match this remote patch"
+msgstr "Match this remote patch"
+
+msgid "Match with URL"
+msgstr "Match with URL"
+
+msgid "Match with repo"
+msgstr "Match with repo"
+
+msgid "Match with this repo"
+msgstr "Match with this repo"
+
+msgid "Matched %s with %s."
+msgstr "Matched %s with %s."
+
+msgid "Matched repo: %s/%s"
+msgstr "Matched repo: %s/%s"
+
+msgid "Matching entries: %s / %s"
+msgstr "Matching entries: %s / %s"
+
+msgid "Matching patch: %s — tap to cancel"
+msgstr "Matching patch: %s — tap to cancel"
+
+msgid "Matching patches: %s (repos: %s / %s)"
+msgstr "Matching patches: %s (repos: %s / %s)"
+
+msgid "Matching plugin: %s — tap to cancel"
+msgstr "Matching plugin: %s — tap to cancel"
+
+msgid "Minimum stars"
+msgstr "Minimum stars"
+
+msgid "Missing README path"
+msgstr "Missing README path"
+
+msgid "Missing URL"
+msgstr "Missing URL"
+
+msgid "Missing asset download URL."
+msgstr "Missing asset download URL."
+
+msgid "Missing download URL for release asset."
+msgstr "Missing download URL for release asset."
+
+msgid "Missing font metadata."
+msgstr "Missing font metadata."
+
+msgid "Missing meta path in record."
+msgstr "Missing meta path in record."
+
+msgid "Missing repository info for patch update."
+msgstr "Missing repository info for patch update."
+
+msgid "Missing repository info for update."
+msgstr "Missing repository info for update."
+
+msgid "Missing repository metadata for README download."
+msgstr "Missing repository metadata for README download."
+
+msgid "Missing repository metadata for installation."
+msgstr "Missing repository metadata for installation."
+
+msgid "Missing repository metadata for patch install."
+msgstr "Missing repository metadata for patch install."
+
+msgid "Missing repository metadata for patch."
+msgstr "Missing repository metadata for patch."
+
+msgid "Missing repository metadata for releases."
+msgstr "Missing repository metadata for releases."
+
+msgid "Missing repository metadata for remote fetch."
+msgstr "Missing repository metadata for remote fetch."
+
+msgid "Modify Patch"
+msgstr "Modify Patch"
+
+msgid "Modify Plugin"
+msgstr "Modify Plugin"
+
+msgid "Modify Plugin: %s"
+msgstr "Modify Plugin: %s"
+
+msgid "Multiple custom plugin folders are configured. Where should this plugin be installed?"
+msgstr "Multiple custom plugin folders are configured. Where should this plugin be installed?"
 
 msgid "Name (A-Z)"
 msgstr "Name (A-Z)"
@@ -164,41 +842,377 @@ msgstr "Name (A-Z)"
 msgid "Name (Z-A)"
 msgstr "Name (Z-A)"
 
+msgid "Name, description, topic"
+msgstr "Name, description, topic"
+
+msgid "Needs update"
+msgstr "Needs update"
+
+msgid "Needs update: %d"
+msgstr "Needs update: %d"
+
 msgid "Never"
 msgstr "Never"
+
+msgid "New filename"
+msgstr "New filename"
+
+msgid "Next"
+msgstr "Next"
 
 msgid "Next >"
 msgstr "Next >"
 
+msgid "No Lua files found in plugin directory"
+msgstr "No Lua files found in plugin directory"
+
+msgid "No README available."
+msgstr "No README available."
+
+msgid "No Release Notes available."
+msgstr "No Release Notes available."
+
+msgid "No Wiki available."
+msgstr "No Wiki available."
+
+msgid "No cached README files to delete."
+msgstr "No cached README files to delete."
+
+msgid "No cached entries yet."
+msgstr "No cached entries yet."
+
+msgid "No cached entries yet. Refresh to fetch from GitHub."
+msgstr "No cached entries yet. Refresh to fetch from GitHub."
+
+msgid "No changelog entries found for this range."
+msgstr "No changelog entries found for this range."
+
+msgid "No commits found in this range."
+msgstr "No commits found in this range."
+
+msgid "No config files found — uncheck filter to show all files"
+msgstr "No config files found — uncheck filter to show all files"
+
+msgid "No date"
+msgstr "No date"
+
+msgid "No detailed release notes provided for this version."
+msgstr "No detailed release notes provided for this version."
+
+msgid "No entries match current filters."
+msgstr "No entries match current filters."
+
+msgid "No installed items found."
+msgstr "No installed items found."
+
+msgid "No items found."
+msgstr "No items found."
+
+msgid "No matched patches to check."
+msgstr "No matched patches to check."
+
+msgid "No matched plugins to check."
+msgstr "No matched plugins to check."
+
+msgid "No patch files found in %s/%s."
+msgstr "No patch files found in %s/%s."
+
+msgid "No patch files found in repository %s."
+msgstr "No patch files found in repository %s."
+
+msgid "No patches found in matching repositories."
+msgstr "No patches found in matching repositories."
+
+msgid "No patches need updates."
+msgstr "No patches need updates."
+
+msgid "No patches to display."
+msgstr "No patches to display."
+
+msgid "No plugin files were extracted"
+msgstr "No plugin files were extracted"
+
+msgid "No plugins need updates."
+msgstr "No plugins need updates."
+
+msgid "No plugins to display."
+msgstr "No plugins to display."
+
+msgid "No plugins tracked yet."
+msgstr "No plugins tracked yet."
+
+msgid "No previous page in history"
+msgstr "No previous page in history"
+
+msgid "No release notes provided for this version."
+msgstr "No release notes provided for this version."
+
+msgid "No release notes."
+msgstr "No release notes."
+
+msgid "No releases found for this repository."
+msgstr "No releases found for this repository."
+
+msgid "No remote version info for %s."
+msgstr "No remote version info for %s."
+
+msgid "No stable releases found — uncheck filter to show all releases"
+msgstr "No stable releases found — uncheck filter to show all releases"
+
+msgid "No tracked plugins to check."
+msgstr "No tracked plugins to check."
+
+msgid "Not matched with a repository."
+msgstr "Not matched with a repository."
+
 msgid "Not set"
 msgstr "Not set"
+
+msgid "Notes"
+msgstr "Notes"
+
+msgid "Offline Regular"
+msgstr "Offline Regular"
+
+msgid "Open"
+msgstr "Open"
+
+msgid "Open details"
+msgstr "Open details"
+
+msgid "Optional. Raises the GitHub API rate limit. Generate one (classic, "
+msgstr "Optional. Raises the GitHub API rate limit. Generate one (classic, "
+
+msgid "Optional. Raises the GitHub API rate limit. Generate one (classic, 'public_repo' scope is enough) at github.com/settings/tokens, then paste it here."
+msgstr "Optional. Raises the GitHub API rate limit. Generate one (classic, 'public_repo' scope is enough) at github.com/settings/tokens, then paste it here."
 
 msgid "Origin"
 msgstr "Origin"
 
+msgid "Owner"
+msgstr "Owner"
+
+msgid "Owner %s"
+msgstr "Owner %s"
+
+msgid "Owner: "
+msgstr "Owner: "
+
 msgid "Pack my box with five dozen liquor jugs."
 msgstr "Pack my box with five dozen liquor jugs."
+
+msgid "Page %d of %d"
+msgstr "Page %d of %d"
+
+msgid "Page %d/%d"
+msgstr "Page %d/%d"
 
 msgid "Pangram Preview"
 msgstr "Pangram Preview"
 
+msgid "Patch"
+msgstr "Patch"
+
+msgid "Patch "
+msgstr "Patch "
+
+msgid "Patch %s has been %s."
+msgstr "Patch %s has been %s."
+
+msgid "Patch '%s' disabled."
+msgstr "Patch '%s' disabled."
+
+msgid "Patch '%s' enabled."
+msgstr "Patch '%s' enabled."
+
+msgid "Patch cache is older than a week, consider refreshing."
+msgstr "Patch cache is older than a week, consider refreshing."
+
+msgid "Patch file not found in repository."
+msgstr "Patch file not found in repository."
+
+msgid "Patch file not found locally."
+msgstr "Patch file not found locally."
+
+msgid "Patch file not found."
+msgstr "Patch file not found."
+
+msgid "Patch matching cancelled."
+msgstr "Patch matching cancelled."
+
+msgid "Patch: %s"
+msgstr "Patch: %s"
+
+msgid "Patches"
+msgstr "Patches"
+
+msgid "Patches cached: %s (last update: %s)"
+msgstr "Patches cached: %s (last update: %s)"
+
+msgid "Patches found: %d"
+msgstr "Patches found: %d"
+
+msgid "Path: %s"
+msgstr "Path: %s"
+
+msgid "Plugin"
+msgstr "Plugin"
+
+msgid "Plugin "
+msgstr "Plugin "
+
+msgid "Plugin %s has been %s."
+msgstr "Plugin %s has been %s."
+
+msgid "Plugin '%s' deleted."
+msgstr "Plugin '%s' deleted."
+
+msgid "Plugin '%s' disabled."
+msgstr "Plugin '%s' disabled."
+
+msgid "Plugin '%s' enabled."
+msgstr "Plugin '%s' enabled."
+
+msgid "Plugin and patch browser for KOReader."
+msgstr "Plugin and patch browser for KOReader."
+
+msgid "Plugin cache is older than a week, consider refreshing."
+msgstr "Plugin cache is older than a week, consider refreshing."
+
+msgid "Plugin directory not found."
+msgstr "Plugin directory not found."
+
+msgid "Plugin folder not found."
+msgstr "Plugin folder not found."
+
+msgid "Plugin is not currently loaded, so settings cannot be deleted."
+msgstr "Plugin is not currently loaded, so settings cannot be deleted."
+
+msgid "Plugins"
+msgstr "Plugins"
+
+msgid "Plugins cached: %s (last update: %s)"
+msgstr "Plugins cached: %s (last update: %s)"
+
+msgid "Pre-installed core KOReader plugin."
+msgstr "Pre-installed core KOReader plugin."
+
+msgid "Prev"
+msgstr "Prev"
+
+msgid "Published: %s"
+msgstr "Published: %s"
+
+msgid "README"
+msgstr "README"
+
+msgid "README download failed: "
+msgstr "README download failed: "
+
 msgid "Reading Passage Specimen"
 msgstr "Reading Passage Specimen"
+
+msgid "Refresh"
+msgstr "Refresh"
 
 msgid "Refresh cache"
 msgstr "Refresh cache"
 
+msgid "Refreshing catalog via Direct GitHub API…"
+msgstr "Refreshing catalog via Direct GitHub API…"
+
+msgid "Refreshing catalog..."
+msgstr "Refreshing catalog..."
+
 msgid "Refreshing catalog…"
 msgstr "Refreshing catalog…"
 
-msgid "Refreshing catalog via Direct GitHub API…"
-msgstr "Refreshing catalog via Direct GitHub API…"
+msgid "Refreshing…"
+msgstr "Refreshing…"
 
 msgid "Reinstall"
 msgstr "Reinstall"
 
+msgid "Release"
+msgstr "Release"
+
+msgid "Release Notes"
+msgstr "Release Notes"
+
+msgid "Release notes for %s"
+msgstr "Release notes for %s"
+
+msgid "Release: %s"
+msgstr "Release: %s"
+
+msgid "Releases"
+msgstr "Releases"
+
+msgid "Releases — %s"
+msgstr "Releases — %s"
+
+msgid "Remote SHA: %s"
+msgstr "Remote SHA: %s"
+
+msgid "Remote SHA: %s (checked %s)"
+msgstr "Remote SHA: %s (checked %s)"
+
+msgid "Remote check failed: "
+msgstr "Remote check failed: "
+
+msgid "Remote version for %s: %s."
+msgstr "Remote version for %s: %s."
+
+msgid "Remote version not found."
+msgstr "Remote version not found."
+
+msgid "Remote: %s"
+msgstr "Remote: %s"
+
+msgid "Remote: %s (checked %s)"
+msgstr "Remote: %s (checked %s)"
+
+msgid "Remote: (not checked)"
+msgstr "Remote: (not checked)"
+
 msgid "Remove"
 msgstr "Remove"
+
+msgid "Rename"
+msgstr "Rename"
+
+msgid "Rename failed: %s"
+msgstr "Rename failed: %s"
+
+msgid "Rename file"
+msgstr "Rename file"
+
+msgid "Renamed to "
+msgstr "Renamed to "
+
+msgid "Renamed to '%s'."
+msgstr "Renamed to '%s'."
+
+msgid "Repo: %s/%s"
+msgstr "Repo: %s/%s"
+
+msgid "Repo: (not matched)"
+msgstr "Repo: (not matched)"
+
+msgid "Repository"
+msgstr "Repository"
+
+msgid "Repository %s not found on GitHub."
+msgstr "Repository %s not found on GitHub."
+
+msgid "Repository name"
+msgstr "Repository name"
+
+msgid "Repository owner"
+msgstr "Repository owner"
+
+msgid "Repository: %s"
+msgstr "Repository: %s"
 
 msgid "Reset filters"
 msgstr "Reset filters"
@@ -206,14 +1220,62 @@ msgstr "Reset filters"
 msgid "Reset to defaults"
 msgstr "Reset to defaults"
 
+msgid "Restart later"
+msgstr "Restart later"
+
+msgid "Restart now"
+msgstr "Restart now"
+
 msgid "Sample Text"
 msgstr "Sample Text"
+
+msgid "Save"
+msgstr "Save"
+
+msgid "Search"
+msgstr "Search"
 
 msgid "Search & API"
 msgstr "Search & API"
 
+msgid "Search \"%s\""
+msgstr "Search \\\"%s\\\""
+
+msgid "Search text"
+msgstr "Search text"
+
+msgid "Search: "
+msgstr "Search: "
+
+msgid "Select a repository patch entry to match with the chosen file."
+msgstr "Select a repository patch entry to match with the chosen file."
+
+msgid "Select a repository to match with the chosen plugin."
+msgstr "Select a repository to match with the chosen plugin."
+
+msgid "Select installation directory"
+msgstr "Select installation directory"
+
+msgid "Select patch file from %s"
+msgstr "Select patch file from %s"
+
+msgid "Select patch in %s"
+msgstr "Select patch in %s"
+
+msgid "Select plugin to match"
+msgstr "Select plugin to match"
+
+msgid "Select repository"
+msgstr "Select repository"
+
+msgid "Set"
+msgstr "Set"
+
 msgid "Settings"
 msgstr "Settings"
+
+msgid "Show needs update"
+msgstr "Show needs update"
 
 msgid "Sort"
 msgstr "Sort"
@@ -245,6 +1307,9 @@ msgstr "Sort: Status"
 msgid "Sort: Type"
 msgstr "Sort: Type"
 
+msgid "Sort: Updated"
+msgstr "Sort: Updated"
+
 msgid "Sort: Z-A"
 msgstr "Sort: Z-A"
 
@@ -257,38 +1322,224 @@ msgstr "Stable"
 msgid "Status"
 msgstr "Status"
 
+msgid "Status: Needs matching"
+msgstr "Status: Needs matching"
+
+msgid "Status: Up to date"
+msgstr "Status: Up to date"
+
+msgid "Status: Update available"
+msgstr "Status: Update available"
+
+msgid "Storefront"
+msgstr "Storefront"
+
+msgid "Storefront cache refreshed."
+msgstr "Storefront cache refreshed."
+
+msgid "Storefront is up to date (v%s)."
+msgstr "Storefront is up to date (v%s)."
+
+msgid "Storefront refresh failed: "
+msgstr "Storefront refresh failed: "
+
+msgid "Storefront · Updates"
+msgstr "Storefront · Updates"
+
+msgid "Storefront: Open"
+msgstr "Storefront: Open"
+
+msgid "Style: "
+msgstr "Style: "
+
 msgid "Successfully updated %d item(s)."
 msgstr "Successfully updated %d item(s)."
 
-msgid "Successfully updated %d items."
-msgstr "Successfully updated %d items."
+msgid "Switch to installed patches"
+msgstr "Switch to installed patches"
+
+msgid "Switch to installed plugins"
+msgstr "Switch to installed plugins"
+
+msgid "Switch to patch list"
+msgstr "Switch to patch list"
+
+msgid "Switch to patches"
+msgstr "Switch to patches"
+
+msgid "Switch to plugin list"
+msgstr "Switch to plugin list"
+
+msgid "Tag not found on GitHub (%s or %s)."
+msgstr "Tag not found on GitHub (%s or %s)."
+
+msgid "Text"
+msgstr "Text"
+
+msgid "Text editor plugin is not available."
+msgstr "Text editor plugin is not available."
 
 msgid "The quick brown fox jumps over the lazy dog."
 msgstr "The quick brown fox jumps over the lazy dog."
 
+msgid "This action cannot be undone.\n\nChanges will take effect after restart."
+msgstr "This action cannot be undone.\n\nChanges will take effect after restart."
+
+msgid "This will take effect on next restart."
+msgstr "This will take effect on next restart."
+
+msgid "Total commits: %d"
+msgstr "Total commits: %d"
+
+msgid "Tracked: %d"
+msgstr "Tracked: %d"
+
 msgid "Type"
 msgstr "Type"
 
-msgid "Update %d outdated item(s)?"
-msgstr "Update %d outdated item(s)?"
+msgid "Unable to determine patch download URL."
+msgstr "Unable to determine patch download URL."
+
+msgid "Unable to load wiki page. Tap refresh to retry."
+msgstr "Unable to load wiki page. Tap refresh to retry."
+
+msgid "Unable to read README file"
+msgstr "Unable to read README file"
+
+msgid "Unable to read README. Tap refresh to retry."
+msgstr "Unable to read README. Tap refresh to retry."
+
+msgid "Unable to store match for patch."
+msgstr "Unable to store match for patch."
+
+msgid "Unable to store match for plugin."
+msgstr "Unable to store match for plugin."
+
+msgid "Uninstall"
+msgstr "Uninstall"
+
+msgid "Unknown"
+msgstr "Unknown"
+
+msgid "Unknown error"
+msgstr "Unknown error"
+
+msgid "Unlink the repo"
+msgstr "Unlink the repo"
+
+msgid "Unlinked %s from repository."
+msgstr "Unlinked %s from repository."
+
+msgid "Unmatched: %d"
+msgstr "Unmatched: %d"
+
+msgid "Unnamed release"
+msgstr "Unnamed release"
+
+msgid "Update"
+msgstr "Update"
+
+msgid "Update %s?"
+msgstr "Update %s?"
 
 msgid "Update All"
 msgstr "Update All"
 
-msgid "Update all outdated items?"
-msgstr "Update all outdated items?"
+msgid "Update available for %s: remote %s, installed %s."
+msgstr "Update available for %s: remote %s, installed %s."
 
 msgid "Update channel"
 msgstr "Update channel"
 
+msgid "Update check was cancelled"
+msgstr "Update check was cancelled"
+
+msgid "Update patch"
+msgstr "Update patch"
+
+msgid "Update plugin"
+msgstr "Update plugin"
+
+msgid "Updated %d of %d item(s) (%d failed)."
+msgstr "Updated %d of %d item(s) (%d failed)."
+
+msgid "Updated patch %s."
+msgstr "Updated patch %s."
+
+msgid "Updated patch \"
+msgstr "Updated patch \"
+
+msgid "Updated patch \"%s\"."
+msgstr "Updated patch \\\"%s\\\"."
+
+msgid "Updated plugin \"
+msgstr "Updated plugin \"
+
+msgid "Updated plugin \"%s\" to version %s."
+msgstr "Updated plugin \\\"%s\\\" to version %s."
+
+msgid "Updated plugin \"%s\"."
+msgstr "Updated plugin \\\"%s\\\"."
+
+msgid "Updated: %s"
+msgstr "Updated: %s"
+
 msgid "Updates"
 msgstr "Updates"
+
+msgid "Updating [%d/%d]: %s…"
+msgstr "Updating [%d/%d]: %s…"
 
 msgid "User Installed"
 msgstr "User Installed"
 
+msgid "Verifying repository %s/%s..."
+msgstr "Verifying repository %s/%s..."
+
+msgid "Version"
+msgstr "Version"
+
+msgid "Versions"
+msgstr "Versions"
+
+msgid "View README"
+msgstr "View README"
+
+msgid "View commits (%s \xE2\x86\x92 %s)"
+msgstr "View commits (%s \xE2\x86\x92 %s)"
+
+msgid "Warning: the selected version is older than what is currently installed. You are downgrading."
+msgstr "Warning: the selected version is older than what is currently installed. You are downgrading."
+
+msgid "Wiki"
+msgstr "Wiki"
+
+msgid "Wiki Pages"
+msgstr "Wiki Pages"
+
+msgid "[Ignored]"
+msgstr "[Ignored]"
+
+msgid "[draft]"
+msgstr "[draft]"
+
+msgid "[pre]"
+msgstr "[pre]"
+
+msgid "\"
+msgstr "\"
+
+msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
+msgstr "\\\"My dear Mr. Bennet,\\\" said his lady to him one day, \\\"have you heard that Netherfield Park is let at last?\\\" Mr. Bennet replied that he had not. \\\"But it is,\\\" returned she; \\\"for Mrs. Long has just been here, and she told me all about it.\\\" Mr. Bennet made no answer."
+
+msgid "\xC2\xB7"
+msgstr "\xC2\xB7"
+
 msgid "about_text"
 msgstr "Storefront is an in-app package manager for KOReader plugins, patches, and fonts."
+
+msgid "anyone"
+msgstr "anyone"
 
 msgid "btn_apply"
 msgstr "Apply"
@@ -344,6 +1595,15 @@ msgstr "Uninstall '%s'? This action cannot be undone."
 msgid "confirm_update"
 msgstr "Update '%s' from v%s to v%s?"
 
+msgid "disabled"
+msgstr "disabled"
+
+msgid "e.g., koreader"
+msgstr "e.g., koreader"
+
+msgid "enabled"
+msgstr "enabled"
+
 msgid "err_install_failed"
 msgstr "Installation failed for '%s'."
 
@@ -361,6 +1621,18 @@ msgstr "Installed"
 
 msgid "filter_updates"
 msgstr "Updates Available"
+
+msgid "font"
+msgstr "font"
+
+msgid "ghp_..."
+msgstr "ghp_..."
+
+msgid "header_about"
+msgstr "header_about"
+
+msgid "header_updates"
+msgstr "header_updates"
 
 msgid "label_author"
 msgstr "Author"
@@ -386,6 +1658,9 @@ msgstr "Type"
 msgid "label_version"
 msgstr "Version"
 
+msgid "latest"
+msgstr "latest"
+
 msgid "menu_about"
 msgstr "About Storefront"
 
@@ -404,8 +1679,32 @@ msgstr "Catalog updated successfully."
 msgid "msg_no_results"
 msgstr "No items found matching search."
 
+msgid "new"
+msgstr "new"
+
+msgid "not found"
+msgstr "not found"
+
+msgid "patch"
+msgstr "patch"
+
+msgid "plugin"
+msgstr "plugin"
+
 msgid "prompt_restart_needed"
 msgstr "Installation complete. Restart KOReader now to enable '%s'?"
+
+msgid "release asset"
+msgstr "release asset"
+
+msgid "release is newer by date"
+msgstr "release is newer by date"
+
+msgid "remote is newer by date"
+msgstr "remote is newer by date"
+
+msgid "repository"
+msgstr "repository"
 
 msgid "search_hint"
 msgstr "Search storefront..."
@@ -446,12 +1745,27 @@ msgstr "Patches"
 msgid "tab_plugins"
 msgstr "Plugins"
 
+msgid "tab_readme"
+msgstr "README"
+
+msgid "tab_sample_text"
+msgstr "Sample Text"
+
+msgid "tab_versions"
+msgstr "Versions"
+
+msgid "unknown"
+msgstr "unknown"
+
 msgid "updated %s"
 msgstr "updated %s"
 
 msgid "updated %s (%s)"
 msgstr "updated %s (%s)"
 
-msgid "Can't load readme...."
-msgstr "Can't load readme...."
+msgid "≥ %s ⭐"
+msgstr "≥ %s ⭐"
+
+msgid "✓ Current"
+msgstr "✓ Current"
 

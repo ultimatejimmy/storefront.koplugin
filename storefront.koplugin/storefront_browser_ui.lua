@@ -556,7 +556,7 @@ function StorefrontBrowserDialog:init()
                 if i > 1 then
                     table.insert(grp, HorizontalSpan:new{ width = sc(4) })
                     table.insert(grp, TextWidget:new{
-                        text = "\xC2\xB7",
+                        text = _("\xC2\xB7"),
                         face = Font:getFace("NotoSerif-Regular.ttf", 14),
                         fgcolor = Blitbuffer.COLOR_BLACK,
                     })
