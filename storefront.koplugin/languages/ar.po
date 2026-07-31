@@ -5,8 +5,56 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
+msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
+msgstr "«عزيزي السيد بينيت»، قالت له زوجته يوما ما، «هل سمعت أنه تم تأجير نيثرفيلد بارك وأخيراً؟» فأجاب السيد بينيت بأنه لم يسمع بذلك."
+
+msgid "< Back"
+msgstr "رجوع"
+
+msgid "< Prev"
+msgstr "السابق"
+
+msgid "About"
+msgstr "حول"
+
+msgid "About Storefront"
+msgstr "حول Storefront"
+
+msgid "All"
+msgstr "الكل"
+
+msgid "All Types"
+msgstr "جميع الأنواع"
+
+msgid "Alphabet & Numbers"
+msgstr "الأبجدية والأرقام"
+
 msgid "Any"
 msgstr "أي"
+
+msgid "Apply"
+msgstr "تطبيق"
+
+msgid "Author"
+msgstr "المؤلف"
+
+msgid "Beta"
+msgstr "تجريبي"
+
+msgid "By: %s"
+msgstr "بواسطة: %s"
+
+msgid "Catalog & Cache"
+msgstr "الكتالوج والتخزين المؤقت"
+
+msgid "Catalog source"
+msgstr "مصدر الكتالوج"
+
+msgid "Category: %s"
+msgstr "الفئة: %s"
+
+msgid "Check Updates"
+msgstr "التحقق"
 
 msgid "Check for updates"
 msgstr "التحقق من التحديثات"
@@ -23,8 +71,35 @@ msgstr "جارٍ التحقق من تحديثات Storefront…"
 msgid "Checking plugin updates"
 msgstr "جارٍ التحقق من تحديثات الإضافات"
 
+msgid "Clear README cache"
+msgstr "مسح التخزين المؤقت"
+
+msgid "Close"
+msgstr "إغلاق"
+
+msgid "Configured ✓"
+msgstr "مُعد ✓"
+
+msgid "Default only"
+msgstr "الافتراضي فقط"
+
+msgid "Direct GitHub API"
+msgstr "Direct GitHub API"
+
+msgid "Disable"
+msgstr "تعطيل"
+
+msgid "Disabled"
+msgstr "معطل"
+
 msgid "Downloading %s…"
 msgstr "جاري تحميل %s…"
+
+msgid "Enable"
+msgstr "تمكين"
+
+msgid "Enabled"
+msgstr "مفعل"
 
 msgid "Fetching patch file listings…"
 msgstr "جلب قائمة ملفات التصحيح…"
@@ -50,11 +125,68 @@ msgstr "تصفية وفرز التصحيحات"
 msgid "Filter & Sort Plugins"
 msgstr "تصفية وفرز الإضافات"
 
+msgid "Filters"
+msgstr "فلاتر"
+
+msgid "GitHub token"
+msgstr "رمز GitHub"
+
+msgid "Include 0-star forks"
+msgstr "تضمين تفريعات بدون نجوم"
+
+msgid "Install Font"
+msgstr "تثبيت الخط"
+
+msgid "Install Patch"
+msgstr "تثبيت التصحيح"
+
 msgid "Installed plugin Storefront version %s"
 msgstr "تم تثبيت إضافة Storefront الإصدار %s"
 
 msgid "Installing %s…"
 msgstr "جاري تثبيت %s…"
+
+msgid "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters."
+msgstr "إنها حقيقة معترف بها عالمياً، أن الرجل الأعزب الذي يملك ثروة جيدة لا بد أنه يبحث عن زوجة."
+
+msgid "Last Updated (Newest)"
+msgstr "الأحدث"
+
+msgid "Last Updated (Oldest)"
+msgstr "الأقدم"
+
+msgid "License: %s"
+msgstr "الترخيص: %s"
+
+msgid "Name (A-Z)"
+msgstr "الاسم (أ-ي)"
+
+msgid "Name (Z-A)"
+msgstr "الاسم (ي-أ)"
+
+msgid "Never"
+msgstr "أبداً"
+
+msgid "Next >"
+msgstr "التالي >"
+
+msgid "Not set"
+msgstr "غير محدد"
+
+msgid "Origin"
+msgstr "الأصل"
+
+msgid "Pack my box with five dozen liquor jugs."
+msgstr "صوت صفير البلبل هيج قلبي الثمل."
+
+msgid "Pangram Preview"
+msgstr "معاينة النص"
+
+msgid "Reading Passage Specimen"
+msgstr "عينة القراءة"
+
+msgid "Refresh cache"
+msgstr "تحديث التخزين المؤقت"
 
 msgid "Refreshing catalog…"
 msgstr "جاري تحديث الفهرس…"
@@ -62,17 +194,98 @@ msgstr "جاري تحديث الفهرس…"
 msgid "Refreshing catalog via Direct GitHub API…"
 msgstr "تحديث الفهرس عبر Direct GitHub API…"
 
+msgid "Reinstall"
+msgstr "إعادة التثبيت"
+
+msgid "Remove"
+msgstr "إزالة"
+
+msgid "Reset filters"
+msgstr "إعادة الضبط"
+
+msgid "Reset to defaults"
+msgstr "الافتراضي"
+
+msgid "Sample Text"
+msgstr "نص تجريبي"
+
+msgid "Search & API"
+msgstr "البحث والواجهة"
+
+msgid "Settings"
+msgstr "الإعدادات"
+
+msgid "Sort"
+msgstr "فرز"
+
+msgid "Sort mode"
+msgstr "وضع الفرز"
+
+msgid "Sort: A-Z"
+msgstr "الفرز: أ-ي"
+
+msgid "Sort: Name (A → Z)"
+msgstr "الفرز: الاسم (أ-ي)"
+
+msgid "Sort: Name (Z → A)"
+msgstr "الفرز: الاسم (ي-أ)"
+
+msgid "Sort: Oldest"
+msgstr "الفرز: الأقدم"
+
+msgid "Sort: Recently updated"
+msgstr "الفرز: التاريخ"
+
+msgid "Sort: Stars (high → low)"
+msgstr "الفرز: النجوم"
+
+msgid "Sort: Status"
+msgstr "الفرز: الحالة"
+
+msgid "Sort: Type"
+msgstr "الفرز: النوع"
+
+msgid "Sort: Z-A"
+msgstr "الفرز: ي-أ"
+
+msgid "Sorting"
+msgstr "الفرز"
+
+msgid "Stable"
+msgstr "مستقر"
+
+msgid "Status"
+msgstr "الحالة"
+
 msgid "Successfully updated %d item(s)."
 msgstr "تم تحديث %d عنصر (عناصر) بنجاح."
 
 msgid "Successfully updated %d items."
 msgstr "تم تحديث %d عناصر بنجاح."
 
+msgid "The quick brown fox jumps over the lazy dog."
+msgstr "صوت صفير البلبل هيج قلبي الثمل."
+
+msgid "Type"
+msgstr "النوع"
+
 msgid "Update %d outdated item(s)?"
 msgstr "تحديث %d عنصر (عناصر) قديمة؟"
 
+msgid "Update All"
+msgstr "تحديث الكل"
+
 msgid "Update all outdated items?"
 msgstr "تحديث جميع العناصر القديمة؟"
+
+msgid "Update channel"
+msgstr "قناة التحديث"
+
+msgid "Updates"
+msgstr "التحديثات"
+
+msgid "User Installed"
+msgstr "المستخدم"
 
 msgid "about_text"
 msgstr "Storefront هو مدير حزم مدمج في KOReader للإضافات والتصحيحات والخطوط."
@@ -147,7 +360,7 @@ msgid "filter_installed"
 msgstr "مثبت"
 
 msgid "filter_updates"
-msgstr "التحديثات المتاحة"
+msgstr "تحديثات"
 
 msgid "label_author"
 msgstr "المؤلف"
@@ -232,3 +445,13 @@ msgstr "التصحيحات"
 
 msgid "tab_plugins"
 msgstr "الإضافات"
+
+msgid "updated %s"
+msgstr "تحديث %s"
+
+msgid "updated %s (%s)"
+msgstr "تحديث %s (%s)"
+
+msgid "Can't load readme...."
+msgstr "لا يمكن تحميل ملف Readme...."
+

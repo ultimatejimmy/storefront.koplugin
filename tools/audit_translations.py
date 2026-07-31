@@ -3,8 +3,9 @@ import os
 import re
 import sys
 
-LANGUAGES_DIR = os.path.join(os.path.dirname(__file__), '..', 'languages')
-SOURCE_DIR = os.path.join(os.path.dirname(__file__), '..')
+PLUGIN_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'storefront.koplugin'))
+LANGUAGES_DIR = os.path.join(PLUGIN_DIR, 'languages')
+SOURCE_DIR = PLUGIN_DIR
 
 LANG_NAMES = {
     'ar': 'Arabic',

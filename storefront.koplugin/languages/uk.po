@@ -5,8 +5,56 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
+msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
+msgstr "— Дорогий містере Беннет, — сказала якось його дружина, — чи чули ви, що Незерфілд-парк нарешті здано в оренду? Містер Беннет відповів, що ні."
+
+msgid "< Back"
+msgstr "< Назад"
+
+msgid "< Prev"
+msgstr "< Назад"
+
+msgid "About"
+msgstr "Про програму"
+
+msgid "About Storefront"
+msgstr "Про Storefront"
+
+msgid "All"
+msgstr "Усі"
+
+msgid "All Types"
+msgstr "Усі типи"
+
+msgid "Alphabet & Numbers"
+msgstr "Алфавіт і цифри"
+
 msgid "Any"
-msgstr "Будь-які"
+msgstr "Будь-який"
+
+msgid "Apply"
+msgstr "Застосувати"
+
+msgid "Author"
+msgstr "Автор"
+
+msgid "Beta"
+msgstr "Бета"
+
+msgid "By: %s"
+msgstr "Автор: %s"
+
+msgid "Catalog & Cache"
+msgstr "Каталог і кеш"
+
+msgid "Catalog source"
+msgstr "Джерело каталогу"
+
+msgid "Category: %s"
+msgstr "Категорія: %s"
+
+msgid "Check Updates"
+msgstr "Перевірити"
 
 msgid "Check for updates"
 msgstr "Перевірити оновлення"
@@ -23,32 +71,74 @@ msgstr "Перевірка оновлень Storefront…"
 msgid "Checking plugin updates"
 msgstr "Перевірка оновлень плагінів"
 
+msgid "Clear README cache"
+msgstr "Очистити кеш README"
+
+msgid "Close"
+msgstr "Закрити"
+
+msgid "Configured ✓"
+msgstr "Налаштовано ✓"
+
+msgid "Default only"
+msgstr "Лише стандартні"
+
+msgid "Direct GitHub API"
+msgstr "Прямий API GitHub"
+
+msgid "Disable"
+msgstr "Вимкнути"
+
+msgid "Disabled"
+msgstr "Вимкнено"
+
 msgid "Downloading %s…"
 msgstr "Завантаження %s…"
 
+msgid "Enable"
+msgstr "Увімкнути"
+
+msgid "Enabled"
+msgstr "Увімкнено"
+
 msgid "Fetching patch file listings…"
-msgstr "Отримання списку файлів патчів…"
+msgstr "Отримання списку патчів…"
 
 msgid "Fetching patches via Direct GitHub API…"
-msgstr "Отримання патчів через Direct GitHub API…"
+msgstr "Отримання патчів через прямий API GitHub…"
 
 msgid "Fetching plugins via Direct GitHub API…"
-msgstr "Отримання плагінів через Direct GitHub API…"
+msgstr "Отримання плагінів через прямий API GitHub…"
 
 msgid "Filter..."
 msgstr "Фільтр..."
 
 msgid "Filter & Sort Fonts"
-msgstr "Фільтрація та сортування шрифтів"
+msgstr "Фільтр і сортування шрифтів"
 
 msgid "Filter & Sort Installed"
-msgstr "Фільтрація та сортування встановлених"
+msgstr "Фільтр і сортування встановленого"
 
 msgid "Filter & Sort Patches"
-msgstr "Фільтрація та сортування патчів"
+msgstr "Фільтр і сортування патчів"
 
 msgid "Filter & Sort Plugins"
-msgstr "Фільтрація та сортування плагінів"
+msgstr "Фільтр і сортування плагінів"
+
+msgid "Filters"
+msgstr "Фільтри"
+
+msgid "GitHub token"
+msgstr "Токен GitHub"
+
+msgid "Include 0-star forks"
+msgstr "Включати форки без зірок"
+
+msgid "Install Font"
+msgstr "Встановити шрифт"
+
+msgid "Install Patch"
+msgstr "Встановити патч"
 
 msgid "Installed plugin Storefront version %s"
 msgstr "Встановлено плагін Storefront версії %s"
@@ -56,26 +146,149 @@ msgstr "Встановлено плагін Storefront версії %s"
 msgid "Installing %s…"
 msgstr "Встановлення %s…"
 
+msgid "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters."
+msgstr "Загальновизнаною істиною є те, що неодруженому чоловіку з хорошим статком неодмінно потрібна дружина."
+
+msgid "Last Updated (Newest)"
+msgstr "Спочатку нові"
+
+msgid "Last Updated (Oldest)"
+msgstr "Спочатку старі"
+
+msgid "License: %s"
+msgstr "Ліцензія: %s"
+
+msgid "Name (A-Z)"
+msgstr "Назва (А-Я)"
+
+msgid "Name (Z-A)"
+msgstr "Назва (Я-А)"
+
+msgid "Never"
+msgstr "Ніколи"
+
+msgid "Next >"
+msgstr "Далі >"
+
+msgid "Not set"
+msgstr "Не вказано"
+
+msgid "Origin"
+msgstr "Походження"
+
+msgid "Pack my box with five dozen liquor jugs."
+msgstr "Чуєш їх, доцю, гадюченят малюсіньких, що лізуть без упину?"
+
+msgid "Pangram Preview"
+msgstr "Перегляд панграми"
+
+msgid "Reading Passage Specimen"
+msgstr "Зразок тексту"
+
+msgid "Refresh cache"
+msgstr "Оновити кеш"
+
 msgid "Refreshing catalog…"
 msgstr "Оновлення каталогу…"
 
 msgid "Refreshing catalog via Direct GitHub API…"
-msgstr "Оновлення каталогу через Direct GitHub API…"
+msgstr "Оновлення каталогу через прямий API GitHub…"
+
+msgid "Reinstall"
+msgstr "Перевстановити"
+
+msgid "Remove"
+msgstr "Видалити"
+
+msgid "Reset filters"
+msgstr "Скинути фільтри"
+
+msgid "Reset to defaults"
+msgstr "За замовчуванням"
+
+msgid "Sample Text"
+msgstr "Зразок тексту"
+
+msgid "Search & API"
+msgstr "Пошук та API"
+
+msgid "Settings"
+msgstr "Налаштування"
+
+msgid "Sort"
+msgstr "Сортування"
+
+msgid "Sort mode"
+msgstr "Режим сортування"
+
+msgid "Sort: A-Z"
+msgstr "Сорт: А-Я"
+
+msgid "Sort: Name (A → Z)"
+msgstr "Сорт: Назва (А-Я)"
+
+msgid "Sort: Name (Z → A)"
+msgstr "Сорт: Назва (Я-А)"
+
+msgid "Sort: Oldest"
+msgstr "Сорт: Старі"
+
+msgid "Sort: Recently updated"
+msgstr "Сорт: Дата"
+
+msgid "Sort: Stars (high → low)"
+msgstr "Сорт: Зірки"
+
+msgid "Sort: Status"
+msgstr "Сорт: Статус"
+
+msgid "Sort: Type"
+msgstr "Сорт: Тип"
+
+msgid "Sort: Z-A"
+msgstr "Сорт: Я-А"
+
+msgid "Sorting"
+msgstr "Сортування"
+
+msgid "Stable"
+msgstr "Стабільна"
+
+msgid "Status"
+msgstr "Статус"
 
 msgid "Successfully updated %d item(s)."
-msgstr "Успішно оновлено %d елементів."
+msgstr "Успішно оновлено елементів: %d."
 
 msgid "Successfully updated %d items."
-msgstr "Успішно оновлено %d елементів."
+msgstr "Успішно оновлено елементів: %d."
+
+msgid "The quick brown fox jumps over the lazy dog."
+msgstr "Чуєш їх, доцю, гадюченят малюсіньких, що лізуть без упину?"
+
+msgid "Type"
+msgstr "Тип"
 
 msgid "Update %d outdated item(s)?"
-msgstr "Оновити %d застарілих елементів?"
+msgstr "Оновити застарілі елементи (%d)?"
+
+msgid "Update All"
+msgstr "Оновити все"
 
 msgid "Update all outdated items?"
 msgstr "Оновити всі застарілі елементи?"
 
+msgid "Update channel"
+msgstr "Канал оновлень"
+
+msgid "Updates"
+msgstr "Оновлення"
+
+msgid "User Installed"
+msgstr "Користувацькі"
+
 msgid "about_text"
-msgstr "Storefront — це вбудований менеджер пакунків KOReader для плагінів, патчів та шрифтів."
+msgstr "Storefront — це менеджер пакетів у KOReader для плагінів, патчів та шрифтів."
 
 msgid "btn_apply"
 msgstr "Застосувати"
@@ -96,13 +309,13 @@ msgid "btn_ok"
 msgstr "ОК"
 
 msgid "btn_preview"
-msgstr "Попередній перегляд"
+msgstr "Перегляд"
 
 msgid "btn_refresh"
 msgstr "Оновити"
 
 msgid "btn_release_notes"
-msgstr "Примітки до релізу"
+msgstr "Нотатки до релізу"
 
 msgid "btn_restart"
 msgstr "Перезапустити KOReader"
@@ -144,10 +357,10 @@ msgid "filter_all"
 msgstr "Усі категорії"
 
 msgid "filter_installed"
-msgstr "Встановлені"
+msgstr "Встановлено"
 
 msgid "filter_updates"
-msgstr "Доступні оновлення"
+msgstr "Оновлення"
 
 msgid "label_author"
 msgstr "Автор"
@@ -183,7 +396,7 @@ msgid "menu_storefront"
 msgstr "Storefront"
 
 msgid "menu_storefront_desc"
-msgstr "Перегляд, встановлення та оновлення плагінів, патчів і шрифтів."
+msgstr "Перегляд, встановлення та оновлення плагінів, патчів та шрифтів."
 
 msgid "msg_catalog_updated"
 msgstr "Каталог успішно оновлено."
@@ -192,7 +405,7 @@ msgid "msg_no_results"
 msgstr "Нічого не знайдено."
 
 msgid "prompt_restart_needed"
-msgstr "Встановлення завершено. Перезапустити KOReader зараз для активації '%s'?"
+msgstr "Встановлення завершено. Перезапустити KOReader зараз для увімкнення '%s'?"
 
 msgid "search_hint"
 msgstr "Пошук у storefront..."
@@ -225,10 +438,20 @@ msgid "tab_all"
 msgstr "Усі"
 
 msgid "tab_fonts"
-msgstr "Шрифти"
+msgstr "Шрифт"
 
 msgid "tab_patches"
 msgstr "Патчі"
 
 msgid "tab_plugins"
 msgstr "Плагіни"
+
+msgid "updated %s"
+msgstr "оновлено %s"
+
+msgid "updated %s (%s)"
+msgstr "оновлено %s (%s)"
+
+msgid "Can't load readme...."
+msgstr "Не вдалося завантажити readme...."
+

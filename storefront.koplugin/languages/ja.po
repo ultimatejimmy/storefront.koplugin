@@ -5,35 +5,110 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
+msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
+msgstr "「あなた」とある日ベネット夫人が言った。「ネザーフィールド・パークがやっと貸しに出されたのをご存じ？」ベネット氏は知らないと答えた。"
+
+msgid "< Back"
+msgstr "< 戻る"
+
+msgid "< Prev"
+msgstr "< 前へ"
+
+msgid "About"
+msgstr "情報"
+
+msgid "About Storefront"
+msgstr "Storefrontについて"
+
+msgid "All"
+msgstr "すべて"
+
+msgid "All Types"
+msgstr "すべての種類"
+
+msgid "Alphabet & Numbers"
+msgstr "英数字"
+
 msgid "Any"
-msgstr "指定なし"
+msgstr "すべて"
+
+msgid "Apply"
+msgstr "適用"
+
+msgid "Author"
+msgstr "作者"
+
+msgid "Beta"
+msgstr "ベータ"
+
+msgid "By: %s"
+msgstr "作者: %s"
+
+msgid "Catalog & Cache"
+msgstr "カタログとキャッシュ"
+
+msgid "Catalog source"
+msgstr "カタログソース"
+
+msgid "Category: %s"
+msgstr "カテゴリ: %s"
+
+msgid "Check Updates"
+msgstr "確認"
 
 msgid "Check for updates"
 msgstr "更新を確認"
 
 msgid "Checked %d plugin updates"
-msgstr "%d 件のプラグイン更新を確認しました"
+msgstr "%d 個のプラグイン更新を確認しました"
 
 msgid "Checking for Storefront updates..."
-msgstr "Storefront の更新を確認中..."
+msgstr "Storefrontの更新を確認中..."
 
 msgid "Checking for Storefront updates…"
-msgstr "Storefront の更新を確認中…"
+msgstr "Storefrontの更新を確認中…"
 
 msgid "Checking plugin updates"
 msgstr "プラグインの更新を確認中"
 
+msgid "Clear README cache"
+msgstr "キャッシュをクリア"
+
+msgid "Close"
+msgstr "閉じる"
+
+msgid "Configured ✓"
+msgstr "設定済み ✓"
+
+msgid "Default only"
+msgstr "デフォルトのみ"
+
+msgid "Direct GitHub API"
+msgstr "Direct GitHub API"
+
+msgid "Disable"
+msgstr "無効化"
+
+msgid "Disabled"
+msgstr "無効"
+
 msgid "Downloading %s…"
 msgstr "%s をダウンロード中…"
+
+msgid "Enable"
+msgstr "有効化"
+
+msgid "Enabled"
+msgstr "有効"
 
 msgid "Fetching patch file listings…"
 msgstr "パッチファイル一覧を取得中…"
 
 msgid "Fetching patches via Direct GitHub API…"
-msgstr "Direct GitHub API 経由でパッチを取得中…"
+msgstr "Direct GitHub API経由でパッチを取得中…"
 
 msgid "Fetching plugins via Direct GitHub API…"
-msgstr "Direct GitHub API 経由でプラグインを取得中…"
+msgstr "Direct GitHub API経由でプラグインを取得中…"
 
 msgid "Filter..."
 msgstr "フィルター..."
@@ -50,32 +125,170 @@ msgstr "パッチのフィルターと並べ替え"
 msgid "Filter & Sort Plugins"
 msgstr "プラグインのフィルターと並べ替え"
 
+msgid "Filters"
+msgstr "フィルター"
+
+msgid "GitHub token"
+msgstr "GitHubトークン"
+
+msgid "Include 0-star forks"
+msgstr "スター0のフォークを含める"
+
+msgid "Install Font"
+msgstr "フォントをインストール"
+
+msgid "Install Patch"
+msgstr "パッチをインストール"
+
 msgid "Installed plugin Storefront version %s"
-msgstr "Storefront プラグイン バージョン %s をインストールしました"
+msgstr "Storefrontプラグイン バージョン %s をインストールしました"
 
 msgid "Installing %s…"
 msgstr "%s をインストール中…"
+
+msgid "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters."
+msgstr "資産のある独身男性が妻を求めているということは、世一般的によく知られた真理である。"
+
+msgid "Last Updated (Newest)"
+msgstr "更新日（新しい順）"
+
+msgid "Last Updated (Oldest)"
+msgstr "更新日（古い順）"
+
+msgid "License: %s"
+msgstr "ライセンス: %s"
+
+msgid "Name (A-Z)"
+msgstr "名前（A-Z）"
+
+msgid "Name (Z-A)"
+msgstr "名前（Z-A）"
+
+msgid "Never"
+msgstr "しない"
+
+msgid "Next >"
+msgstr "次へ >"
+
+msgid "Not set"
+msgstr "未設定"
+
+msgid "Origin"
+msgstr "提供元"
+
+msgid "Pack my box with five dozen liquor jugs."
+msgstr "いろはにほへと ちりぬるを わかよたれそ つねならむ"
+
+msgid "Pangram Preview"
+msgstr "プレビュー"
+
+msgid "Reading Passage Specimen"
+msgstr "サンプル文章"
+
+msgid "Refresh cache"
+msgstr "キャッシュを更新"
 
 msgid "Refreshing catalog…"
 msgstr "カタログを更新中…"
 
 msgid "Refreshing catalog via Direct GitHub API…"
-msgstr "Direct GitHub API 経由でカタログを更新中…"
+msgstr "Direct GitHub API経由でカタログを更新中…"
+
+msgid "Reinstall"
+msgstr "再インストール"
+
+msgid "Remove"
+msgstr "削除"
+
+msgid "Reset filters"
+msgstr "フィルター解除"
+
+msgid "Reset to defaults"
+msgstr "デフォルトに戻す"
+
+msgid "Sample Text"
+msgstr "サンプルテキスト"
+
+msgid "Search & API"
+msgstr "検索とAPI"
+
+msgid "Settings"
+msgstr "設定"
+
+msgid "Sort"
+msgstr "並べ替え"
+
+msgid "Sort mode"
+msgstr "並べ替えモード"
+
+msgid "Sort: A-Z"
+msgstr "順序: A-Z"
+
+msgid "Sort: Name (A → Z)"
+msgstr "順序: 名前（昇順）"
+
+msgid "Sort: Name (Z → A)"
+msgstr "順序: 名前（降順）"
+
+msgid "Sort: Oldest"
+msgstr "順序: 古い順"
+
+msgid "Sort: Recently updated"
+msgstr "順序: 更新日順"
+
+msgid "Sort: Stars (high → low)"
+msgstr "順序: スター順"
+
+msgid "Sort: Status"
+msgstr "順序: 状態順"
+
+msgid "Sort: Type"
+msgstr "順序: 種類順"
+
+msgid "Sort: Z-A"
+msgstr "順序: Z-A"
+
+msgid "Sorting"
+msgstr "並べ替え"
+
+msgid "Stable"
+msgstr "安定版"
+
+msgid "Status"
+msgstr "状態"
 
 msgid "Successfully updated %d item(s)."
-msgstr "%d 件のアイテムの更新に成功しました。"
+msgstr "%d 個の項目を更新しました。"
 
 msgid "Successfully updated %d items."
-msgstr "%d 件のアイテムの更新に成功しました。"
+msgstr "%d 個の項目を更新しました。"
+
+msgid "The quick brown fox jumps over the lazy dog."
+msgstr "いろはにほへと ちりぬるを わかよたれそ つねならむ"
+
+msgid "Type"
+msgstr "種類"
 
 msgid "Update %d outdated item(s)?"
-msgstr "%d 件の古いアイテムを更新しますか？"
+msgstr "%d 個の項目を更新しますか？"
+
+msgid "Update All"
+msgstr "すべて更新"
 
 msgid "Update all outdated items?"
-msgstr "すべての古いアイテムを更新しますか？"
+msgstr "すべての更新項目を更新しますか？"
+
+msgid "Update channel"
+msgstr "更新チャンネル"
+
+msgid "Updates"
+msgstr "更新"
+
+msgid "User Installed"
+msgstr "ユーザー追加"
 
 msgid "about_text"
-msgstr "StorefrontはKOReaderのプラグイン、パッチ、フォント用パッケージマネージャーです。"
+msgstr "Storefrontは、KOReader用のプラグイン、パッチ、フォントのパッケージマネージャーです。"
 
 msgid "btn_apply"
 msgstr "適用"
@@ -117,37 +330,37 @@ msgid "btn_uninstall"
 msgstr "アンインストール"
 
 msgid "btn_update"
-msgstr "アップデート"
+msgstr "更新"
 
 msgid "btn_view_details"
 msgstr "詳細を表示"
 
 msgid "confirm_install"
-msgstr "「%s」をインストールしますか？"
+msgstr "'%s' をインストールしますか？"
 
 msgid "confirm_uninstall"
-msgstr "「%s」をアンインストールしますか？この操作は取り消せません。"
+msgstr "'%s' をアンインストールしますか？この操作は取り消せません。"
 
 msgid "confirm_update"
-msgstr "「%s」を v%s から v%s にアップデートしますか？"
+msgstr "'%s' を v%s から v%s に更新しますか？"
 
 msgid "err_install_failed"
-msgstr "「%s」のインストールに失敗しました。"
+msgstr "'%s' のインストールに失敗しました。"
 
 msgid "err_network_failed"
-msgstr "ネットワークエラー: カタログをダウンロードできませんでした。"
+msgstr "ネットワークエラー: カタログをダウンロードできません。"
 
 msgid "err_uninstall_failed"
-msgstr "「%s」のアンインストールに失敗しました。"
+msgstr "'%s' のアンインストールに失敗しました。"
 
 msgid "filter_all"
-msgstr "すべてのカテゴリー"
+msgstr "全カテゴリ"
 
 msgid "filter_installed"
-msgstr "インストール済み"
+msgstr "インストール済"
 
 msgid "filter_updates"
-msgstr "利用可能なアップデート"
+msgstr "更新あり"
 
 msgid "label_author"
 msgstr "作者"
@@ -168,7 +381,7 @@ msgid "label_size"
 msgstr "サイズ"
 
 msgid "label_type"
-msgstr "タイプ"
+msgstr "種類"
 
 msgid "label_version"
 msgstr "バージョン"
@@ -183,19 +396,19 @@ msgid "menu_storefront"
 msgstr "Storefront"
 
 msgid "menu_storefront_desc"
-msgstr "プラグイン、パッチ、フォントの閲覧・インストール・更新。"
+msgstr "プラグイン、パッチ、フォントの閲覧、インストール、更新を行います。"
 
 msgid "msg_catalog_updated"
 msgstr "カタログが正常に更新されました。"
 
 msgid "msg_no_results"
-msgstr "該当する項目が見つかりません。"
+msgstr "一致する項目が見つかりません。"
 
 msgid "prompt_restart_needed"
-msgstr "インストールが完了しました。今すぐKOReaderを再起動して「%s」を有効にしますか？"
+msgstr "インストールが完了しました。'%s' を有効にするために今すぐKOReaderを再起動しますか？"
 
 msgid "search_hint"
-msgstr "Storefrontを検索..."
+msgstr "ストア内を検索..."
 
 msgid "status_builtin"
 msgstr "組み込み"
@@ -216,7 +429,7 @@ msgid "status_uninstalling"
 msgstr "アンインストール中..."
 
 msgid "status_update_available"
-msgstr "アップデート利用可能"
+msgstr "更新可能"
 
 msgid "storefront_title"
 msgstr "Storefront"
@@ -232,3 +445,12 @@ msgstr "パッチ"
 
 msgid "tab_plugins"
 msgstr "プラグイン"
+
+msgid "updated %s"
+msgstr "更新: %s"
+
+msgid "updated %s (%s)"
+msgstr "更新済み %s (%s)"
+
+msgid "Can't load readme...."
+msgstr "READMEを読み込めません...."

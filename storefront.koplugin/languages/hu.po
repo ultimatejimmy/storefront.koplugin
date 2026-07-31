@@ -5,8 +5,56 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
+msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
+msgstr "— Drága Bennet úr — mondta egy napon a felesége —, hallotta-e, hogy végre kiadták Netherfield Parkot? Bennet úr azt felelte, hogy nem hallotta."
+
+msgid "< Back"
+msgstr "< Vissza"
+
+msgid "< Prev"
+msgstr "< Előző"
+
+msgid "About"
+msgstr "Névjegy"
+
+msgid "About Storefront"
+msgstr "Storefront névjegye"
+
+msgid "All"
+msgstr "Mind"
+
+msgid "All Types"
+msgstr "Minden típus"
+
+msgid "Alphabet & Numbers"
+msgstr "ABC és számok"
+
 msgid "Any"
 msgstr "Bármely"
+
+msgid "Apply"
+msgstr "Alkalmaz"
+
+msgid "Author"
+msgstr "Szerző"
+
+msgid "Beta"
+msgstr "Béta"
+
+msgid "By: %s"
+msgstr "Szerző: %s"
+
+msgid "Catalog & Cache"
+msgstr "Katalógus és gyorsítótár"
+
+msgid "Catalog source"
+msgstr "Katalógus forrása"
+
+msgid "Category: %s"
+msgstr "Kategória: %s"
+
+msgid "Check Updates"
+msgstr "Keresés"
 
 msgid "Check for updates"
 msgstr "Frissítések keresése"
@@ -23,8 +71,35 @@ msgstr "Storefront frissítések keresése…"
 msgid "Checking plugin updates"
 msgstr "Bővítményfrissítések keresése"
 
+msgid "Clear README cache"
+msgstr "README törlése"
+
+msgid "Close"
+msgstr "Bezárás"
+
+msgid "Configured ✓"
+msgstr "Beállítva ✓"
+
+msgid "Default only"
+msgstr "Csak alapértelmezett"
+
+msgid "Direct GitHub API"
+msgstr "Közvetlen GitHub API"
+
+msgid "Disable"
+msgstr "Letiltás"
+
+msgid "Disabled"
+msgstr "Letiltva"
+
 msgid "Downloading %s…"
 msgstr "%s letöltése…"
+
+msgid "Enable"
+msgstr "Engedélyezés"
+
+msgid "Enabled"
+msgstr "Engedélyezve"
 
 msgid "Fetching patch file listings…"
 msgstr "Javításfájlok listájának lekérése…"
@@ -50,11 +125,68 @@ msgstr "Javítások szűrése és rendezése"
 msgid "Filter & Sort Plugins"
 msgstr "Bővítmények szűrése és rendezése"
 
+msgid "Filters"
+msgstr "Szűrők"
+
+msgid "GitHub token"
+msgstr "GitHub token"
+
+msgid "Include 0-star forks"
+msgstr "0 csillagos forkok bevonása"
+
+msgid "Install Font"
+msgstr "Betűtípus telepítése"
+
+msgid "Install Patch"
+msgstr "Javítás telepítése"
+
 msgid "Installed plugin Storefront version %s"
 msgstr "Storefront bővítmény %s verziója telepítve"
 
 msgid "Installing %s…"
 msgstr "%s telepítése…"
+
+msgid "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters."
+msgstr "Általánosan elismert igazság, hogy a tehetős nőtlen embernek nyomban feleségre van szüksége."
+
+msgid "Last Updated (Newest)"
+msgstr "Legújabb"
+
+msgid "Last Updated (Oldest)"
+msgstr "Legrégebbi"
+
+msgid "License: %s"
+msgstr "Licenc: %s"
+
+msgid "Name (A-Z)"
+msgstr "Név (A-Z)"
+
+msgid "Name (Z-A)"
+msgstr "Név (Z-A)"
+
+msgid "Never"
+msgstr "Soha"
+
+msgid "Next >"
+msgstr "Következő >"
+
+msgid "Not set"
+msgstr "Nincs megadva"
+
+msgid "Origin"
+msgstr "Eredet"
+
+msgid "Pack my box with five dozen liquor jugs."
+msgstr "Jókedvű víg tengerész ivott édes bort."
+
+msgid "Pangram Preview"
+msgstr "Előnézet"
+
+msgid "Reading Passage Specimen"
+msgstr "Olvasási minta"
+
+msgid "Refresh cache"
+msgstr "Gyorsítótár frissítése"
 
 msgid "Refreshing catalog…"
 msgstr "Katalógus frissítése…"
@@ -62,17 +194,98 @@ msgstr "Katalógus frissítése…"
 msgid "Refreshing catalog via Direct GitHub API…"
 msgstr "Katalógus frissítése Direct GitHub API használatával…"
 
+msgid "Reinstall"
+msgstr "Újratelepítés"
+
+msgid "Remove"
+msgstr "Eltávolítás"
+
+msgid "Reset filters"
+msgstr "Szűrők alaphelyzetbe"
+
+msgid "Reset to defaults"
+msgstr "Alapértelmezések"
+
+msgid "Sample Text"
+msgstr "Mintaszöveg"
+
+msgid "Search & API"
+msgstr "Keresés és API"
+
+msgid "Settings"
+msgstr "Beállítások"
+
+msgid "Sort"
+msgstr "Rendezés"
+
+msgid "Sort mode"
+msgstr "Rendezési mód"
+
+msgid "Sort: A-Z"
+msgstr "Rendezés: A-Z"
+
+msgid "Sort: Name (A → Z)"
+msgstr "Rendezés: Név (A-Z)"
+
+msgid "Sort: Name (Z → A)"
+msgstr "Rendezés: Név (Z-A)"
+
+msgid "Sort: Oldest"
+msgstr "Rendezés: Legrégebbi"
+
+msgid "Sort: Recently updated"
+msgstr "Rendezés: Dátum"
+
+msgid "Sort: Stars (high → low)"
+msgstr "Rendezés: Csillagok"
+
+msgid "Sort: Status"
+msgstr "Rendezés: Állapot"
+
+msgid "Sort: Type"
+msgstr "Rendezés: Típus"
+
+msgid "Sort: Z-A"
+msgstr "Rendezés: Z-A"
+
+msgid "Sorting"
+msgstr "Rendezés"
+
+msgid "Stable"
+msgstr "Stabil"
+
+msgid "Status"
+msgstr "Állapot"
+
 msgid "Successfully updated %d item(s)."
 msgstr "%d elem sikeresen frissítve."
 
 msgid "Successfully updated %d items."
 msgstr "%d elem sikeresen frissítve."
 
+msgid "The quick brown fox jumps over the lazy dog."
+msgstr "Jókedvű víg tengerész ivott édes bort."
+
+msgid "Type"
+msgstr "Típus"
+
 msgid "Update %d outdated item(s)?"
 msgstr "%d elavult elem frissítése?"
 
+msgid "Update All"
+msgstr "Összes frissítése"
+
 msgid "Update all outdated items?"
 msgstr "Minden elavult elem frissítése?"
+
+msgid "Update channel"
+msgstr "Frissítési csatorna"
+
+msgid "Updates"
+msgstr "Frissítések"
+
+msgid "User Installed"
+msgstr "Felhasználó"
 
 msgid "about_text"
 msgstr "A Storefront egy KOReader-be épített csomagkezelő bővítményekhez, javításokhoz és betűtípusokhoz."
@@ -147,7 +360,7 @@ msgid "filter_installed"
 msgstr "Telepítve"
 
 msgid "filter_updates"
-msgstr "Elérhető frissítések"
+msgstr "Frissítések"
 
 msgid "label_author"
 msgstr "Szerző"
@@ -232,3 +445,13 @@ msgstr "Javítások"
 
 msgid "tab_plugins"
 msgstr "Bővítmények"
+
+msgid "updated %s"
+msgstr "frissítve %s"
+
+msgid "updated %s (%s)"
+msgstr "frissítve %s (%s)"
+
+msgid "Can't load readme...."
+msgstr "Nem tölthető be a leírás...."
+

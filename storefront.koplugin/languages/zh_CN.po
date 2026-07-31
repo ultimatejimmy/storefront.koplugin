@@ -5,8 +5,56 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
+msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
+msgstr "“亲爱的班纳特先生，”有一天他的太太对他说，“你听说内瑟菲尔德庄园终于租出去了吗？”班纳特先生回答说没有。"
+
+msgid "< Back"
+msgstr "< 返回"
+
+msgid "< Prev"
+msgstr "< 上一页"
+
+msgid "About"
+msgstr "关于"
+
+msgid "About Storefront"
+msgstr "关于 Storefront"
+
+msgid "All"
+msgstr "全部"
+
+msgid "All Types"
+msgstr "所有类型"
+
+msgid "Alphabet & Numbers"
+msgstr "字母与数字"
+
 msgid "Any"
-msgstr "不限"
+msgstr "任意"
+
+msgid "Apply"
+msgstr "应用"
+
+msgid "Author"
+msgstr "作者"
+
+msgid "Beta"
+msgstr "测试版"
+
+msgid "By: %s"
+msgstr "作者: %s"
+
+msgid "Catalog & Cache"
+msgstr "目录与缓存"
+
+msgid "Catalog source"
+msgstr "目录来源"
+
+msgid "Category: %s"
+msgstr "分类: %s"
+
+msgid "Check Updates"
+msgstr "检查"
 
 msgid "Check for updates"
 msgstr "检查更新"
@@ -23,17 +71,44 @@ msgstr "正在检查 Storefront 更新…"
 msgid "Checking plugin updates"
 msgstr "正在检查插件更新"
 
+msgid "Clear README cache"
+msgstr "清除 README 缓存"
+
+msgid "Close"
+msgstr "关闭"
+
+msgid "Configured ✓"
+msgstr "已配置 ✓"
+
+msgid "Default only"
+msgstr "仅默认"
+
+msgid "Direct GitHub API"
+msgstr "GitHub 直连 API"
+
+msgid "Disable"
+msgstr "禁用"
+
+msgid "Disabled"
+msgstr "已禁用"
+
 msgid "Downloading %s…"
 msgstr "正在下载 %s…"
+
+msgid "Enable"
+msgstr "启用"
+
+msgid "Enabled"
+msgstr "已启用"
 
 msgid "Fetching patch file listings…"
 msgstr "正在获取补丁文件列表…"
 
 msgid "Fetching patches via Direct GitHub API…"
-msgstr "正在通过 Direct GitHub API 获取补丁…"
+msgstr "正在通过 GitHub API 获取补丁…"
 
 msgid "Fetching plugins via Direct GitHub API…"
-msgstr "正在通过 Direct GitHub API 获取插件…"
+msgstr "正在通过 GitHub API 获取插件…"
 
 msgid "Filter..."
 msgstr "筛选..."
@@ -50,32 +125,170 @@ msgstr "筛选与排序补丁"
 msgid "Filter & Sort Plugins"
 msgstr "筛选与排序插件"
 
+msgid "Filters"
+msgstr "筛选器"
+
+msgid "GitHub token"
+msgstr "GitHub 令牌"
+
+msgid "Include 0-star forks"
+msgstr "包含 0 星 Fork 项目"
+
+msgid "Install Font"
+msgstr "安装字体"
+
+msgid "Install Patch"
+msgstr "安装补丁"
+
 msgid "Installed plugin Storefront version %s"
 msgstr "已安装 Storefront 插件版本 %s"
 
 msgid "Installing %s…"
 msgstr "正在安装 %s…"
 
+msgid "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters."
+msgstr "凡是有钱的单身汉，总想娶位太太，这已经成了一条条公认的真理。"
+
+msgid "Last Updated (Newest)"
+msgstr "最近更新 (最新)"
+
+msgid "Last Updated (Oldest)"
+msgstr "最近更新 (最旧)"
+
+msgid "License: %s"
+msgstr "许可证: %s"
+
+msgid "Name (A-Z)"
+msgstr "名称 (A-Z)"
+
+msgid "Name (Z-A)"
+msgstr "名称 (Z-A)"
+
+msgid "Never"
+msgstr "从不"
+
+msgid "Next >"
+msgstr "下一页 >"
+
+msgid "Not set"
+msgstr "未设置"
+
+msgid "Origin"
+msgstr "来源"
+
+msgid "Pack my box with five dozen liquor jugs."
+msgstr "天地玄黄，宇宙洪荒。日月盈昃，辰宿列张。"
+
+msgid "Pangram Preview"
+msgstr "短句预览"
+
+msgid "Reading Passage Specimen"
+msgstr "阅读段落范本"
+
+msgid "Refresh cache"
+msgstr "刷新缓存"
+
 msgid "Refreshing catalog…"
 msgstr "正在刷新目录…"
 
 msgid "Refreshing catalog via Direct GitHub API…"
-msgstr "正在通过 Direct GitHub API 刷新目录…"
+msgstr "正在通过 GitHub API 刷新目录…"
+
+msgid "Reinstall"
+msgstr "重新安装"
+
+msgid "Remove"
+msgstr "移除"
+
+msgid "Reset filters"
+msgstr "重置筛选"
+
+msgid "Reset to defaults"
+msgstr "恢复默认"
+
+msgid "Sample Text"
+msgstr "示例文本"
+
+msgid "Search & API"
+msgstr "搜索与 API"
+
+msgid "Settings"
+msgstr "设置"
+
+msgid "Sort"
+msgstr "排序"
+
+msgid "Sort mode"
+msgstr "排序模式"
+
+msgid "Sort: A-Z"
+msgstr "排序: A-Z"
+
+msgid "Sort: Name (A → Z)"
+msgstr "排序: 名称 (A-Z)"
+
+msgid "Sort: Name (Z → A)"
+msgstr "排序: 名称 (Z-A)"
+
+msgid "Sort: Oldest"
+msgstr "排序: 最旧"
+
+msgid "Sort: Recently updated"
+msgstr "排序: 更新时间"
+
+msgid "Sort: Stars (high → low)"
+msgstr "排序: 星数"
+
+msgid "Sort: Status"
+msgstr "排序: 状态"
+
+msgid "Sort: Type"
+msgstr "排序: 类型"
+
+msgid "Sort: Z-A"
+msgstr "排序: Z-A"
+
+msgid "Sorting"
+msgstr "排序"
+
+msgid "Stable"
+msgstr "稳定版"
+
+msgid "Status"
+msgstr "状态"
 
 msgid "Successfully updated %d item(s)."
-msgstr "成功更新了 %d 个项目。"
+msgstr "已成功更新 %d 个项目。"
 
 msgid "Successfully updated %d items."
-msgstr "成功更新了 %d 个项目。"
+msgstr "已成功更新 %d 个项目。"
+
+msgid "The quick brown fox jumps over the lazy dog."
+msgstr "天地玄黄，宇宙洪荒。日月盈昃，辰宿列张。"
+
+msgid "Type"
+msgstr "类型"
 
 msgid "Update %d outdated item(s)?"
-msgstr "更新 %d 个过期的项目？"
+msgstr "是否更新 %d 个过期项目？"
+
+msgid "Update All"
+msgstr "全部更新"
 
 msgid "Update all outdated items?"
-msgstr "更新所有过期的项目？"
+msgstr "是否更新所有过期项目？"
+
+msgid "Update channel"
+msgstr "更新通道"
+
+msgid "Updates"
+msgstr "更新"
+
+msgid "User Installed"
+msgstr "用户安装"
 
 msgid "about_text"
-msgstr "Storefront 是一个用于 KOReader 的应用内包管理器，支持插件、补丁和字体。"
+msgstr "Storefront 是 KOReader 中用于插件、补丁和字体的内置包管理器。"
 
 msgid "btn_apply"
 msgstr "应用"
@@ -102,7 +315,7 @@ msgid "btn_refresh"
 msgstr "刷新"
 
 msgid "btn_release_notes"
-msgstr "更新说明"
+msgstr "更新日志"
 
 msgid "btn_restart"
 msgstr "重启 KOReader"
@@ -123,22 +336,22 @@ msgid "btn_view_details"
 msgstr "查看详情"
 
 msgid "confirm_install"
-msgstr "是否安装“%s”？"
+msgstr "是否安装 '%s'？"
 
 msgid "confirm_uninstall"
-msgstr "是否卸载“%s”？此操作无法撤销。"
+msgstr "是否卸载 '%s'？此操作无法撤销。"
 
 msgid "confirm_update"
-msgstr "是否将“%s”从 v%s 更新至 v%s？"
+msgstr "是否将 '%s' 从 v%s 更新至 v%s？"
 
 msgid "err_install_failed"
-msgstr "“%s”安装失败。"
+msgstr "'%s' 安装失败。"
 
 msgid "err_network_failed"
 msgstr "网络错误：无法下载目录。"
 
 msgid "err_uninstall_failed"
-msgstr "“%s”卸载失败。"
+msgstr "'%s' 卸载失败。"
 
 msgid "filter_all"
 msgstr "所有分类"
@@ -147,7 +360,7 @@ msgid "filter_installed"
 msgstr "已安装"
 
 msgid "filter_updates"
-msgstr "有可用更新"
+msgstr "有更新"
 
 msgid "label_author"
 msgstr "作者"
@@ -180,22 +393,22 @@ msgid "menu_settings"
 msgstr "Storefront 设置"
 
 msgid "menu_storefront"
-msgstr "Storefront 商店"
+msgstr "Storefront"
 
 msgid "menu_storefront_desc"
-msgstr "浏览、安装与更新插件、补丁和字体。"
+msgstr "浏览、安装和更新插件、补丁与字体。"
 
 msgid "msg_catalog_updated"
 msgstr "目录已成功更新。"
 
 msgid "msg_no_results"
-msgstr "未找到符合搜索条件的项目。"
+msgstr "未找到匹配的项目。"
 
 msgid "prompt_restart_needed"
-msgstr "安装完成。是否立即重启 KOReader 以启用“%s”？"
+msgstr "安装完成。是否立即重启 KOReader 以启用 '%s'？"
 
 msgid "search_hint"
-msgstr "搜索 Storefront..."
+msgstr "搜索商店..."
 
 msgid "status_builtin"
 msgstr "内置"
@@ -216,7 +429,7 @@ msgid "status_uninstalling"
 msgstr "正在卸载..."
 
 msgid "status_update_available"
-msgstr "有可用更新"
+msgstr "可更新"
 
 msgid "storefront_title"
 msgstr "Storefront"
@@ -232,3 +445,12 @@ msgstr "补丁"
 
 msgid "tab_plugins"
 msgstr "插件"
+
+msgid "updated %s"
+msgstr "更新于 %s"
+
+msgid "updated %s (%s)"
+msgstr "已更新 %s (%s)"
+
+msgid "Can't load readme...."
+msgstr "无法加载 Readme...."

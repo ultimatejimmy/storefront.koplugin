@@ -5,35 +5,110 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
+msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
+msgstr "„Драги мој г. Бенет”, рекла му је ћегова госпођа једног дана, „јесте ли чули да је Недерфилд Парк коначно издат?” Г. Бенет је одговорио да није."
+
+msgid "< Back"
+msgstr "< Назад"
+
+msgid "< Prev"
+msgstr "< Претх"
+
+msgid "About"
+msgstr "О апликацији"
+
+msgid "About Storefront"
+msgstr "О Storefront-у"
+
+msgid "All"
+msgstr "Све"
+
+msgid "All Types"
+msgstr "Сви типови"
+
+msgid "Alphabet & Numbers"
+msgstr "Абецеда и бројеви"
+
 msgid "Any"
-msgstr "Било ком"
+msgstr "Било који"
+
+msgid "Apply"
+msgstr "Примени"
+
+msgid "Author"
+msgstr "Аутор"
+
+msgid "Beta"
+msgstr "Бета"
+
+msgid "By: %s"
+msgstr "Аутор: %s"
+
+msgid "Catalog & Cache"
+msgstr "Каталог и кеш"
+
+msgid "Catalog source"
+msgstr "Извор каталога"
+
+msgid "Category: %s"
+msgstr "Категорија: %s"
+
+msgid "Check Updates"
+msgstr "Провери"
 
 msgid "Check for updates"
 msgstr "Провери ажурирања"
 
 msgid "Checked %d plugin updates"
-msgstr "Проверено %d ажурирања прикључака"
+msgstr "Проверено %d ажурирања плагина"
 
 msgid "Checking for Storefront updates..."
-msgstr "Проверавам ажурирања за Storefront..."
+msgstr "Провера ажурирања за Storefront..."
 
 msgid "Checking for Storefront updates…"
-msgstr "Проверавам ажурирања за Storefront…"
+msgstr "Провера ажурирања за Storefront…"
 
 msgid "Checking plugin updates"
-msgstr "Проверавам ажурирања прикључака"
+msgstr "Провера ажурирања плагина"
+
+msgid "Clear README cache"
+msgstr "Очисти кеш"
+
+msgid "Close"
+msgstr "Затвори"
+
+msgid "Configured ✓"
+msgstr "Подешено ✓"
+
+msgid "Default only"
+msgstr "Само подразумевано"
+
+msgid "Direct GitHub API"
+msgstr "Директан GitHub API"
+
+msgid "Disable"
+msgstr "Онемогући"
+
+msgid "Disabled"
+msgstr "Онемогућено"
 
 msgid "Downloading %s…"
-msgstr "Preuzimanje %s…"
+msgstr "Преузимање %s…"
+
+msgid "Enable"
+msgstr "Омогући"
+
+msgid "Enabled"
+msgstr "Омогућено"
 
 msgid "Fetching patch file listings…"
-msgstr "Preuzimanje liste fajlova zakrpa…"
+msgstr "Преузимање листе закрпа…"
 
 msgid "Fetching patches via Direct GitHub API…"
-msgstr "Preuzimanje zakrpa putem Direct GitHub API…"
+msgstr "Преузимање закрпа преко Direct GitHub API…"
 
 msgid "Fetching plugins via Direct GitHub API…"
-msgstr "Preuzimanje priključaka путем Direct GitHub API…"
+msgstr "Преузимање плагина преко Direct GitHub API…"
 
 msgid "Filter..."
 msgstr "Филтер..."
@@ -48,19 +123,139 @@ msgid "Filter & Sort Patches"
 msgstr "Филтрирај и сортирај закрпе"
 
 msgid "Filter & Sort Plugins"
-msgstr "Филтрирај и сортирај прикључке"
+msgstr "Филтрирај и сортирај плагине"
+
+msgid "Filters"
+msgstr "Филтери"
+
+msgid "GitHub token"
+msgstr "GitHub токен"
+
+msgid "Include 0-star forks"
+msgstr "Укључи форкове без звездица"
+
+msgid "Install Font"
+msgstr "Инсталирај фонт"
+
+msgid "Install Patch"
+msgstr "Инсталирај закрпу"
 
 msgid "Installed plugin Storefront version %s"
-msgstr "Инсталиран прикључак Storefront верзија %s"
+msgstr "Инсталиран плагин Storefront верзија %s"
 
 msgid "Installing %s…"
-msgstr "Instaliranje %s…"
+msgstr "Инсталирање %s…"
+
+msgid "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters."
+msgstr "Општеприхваћена је истина да је неожењеном човеку са лепим имањем потребна жена."
+
+msgid "Last Updated (Newest)"
+msgstr "Најновије"
+
+msgid "Last Updated (Oldest)"
+msgstr "Најстарије"
+
+msgid "License: %s"
+msgstr "Лиценца: %s"
+
+msgid "Name (A-Z)"
+msgstr "Назив (А-Ш)"
+
+msgid "Name (Z-A)"
+msgstr "Назив (Ш-А)"
+
+msgid "Never"
+msgstr "Никад"
+
+msgid "Next >"
+msgstr "Следеће >"
+
+msgid "Not set"
+msgstr "Није постављено"
+
+msgid "Origin"
+msgstr "Порекло"
+
+msgid "Pack my box with five dozen liquor jugs."
+msgstr "Чешаљем са жутим зубима џунглом шета фини ђак."
+
+msgid "Pangram Preview"
+msgstr "Преглед панграма"
+
+msgid "Reading Passage Specimen"
+msgstr "Узорак за читање"
+
+msgid "Refresh cache"
+msgstr "Освежи кеш"
 
 msgid "Refreshing catalog…"
-msgstr "Osvežavanje kataloga…"
+msgstr "Освежавање каталога…"
 
 msgid "Refreshing catalog via Direct GitHub API…"
-msgstr "Osvežavanje kataloga putem Direct GitHub API…"
+msgstr "Освежавање каталога преко Direct GitHub API…"
+
+msgid "Reinstall"
+msgstr "Поново инсталирај"
+
+msgid "Remove"
+msgstr "Уклони"
+
+msgid "Reset filters"
+msgstr "Ресетуј филтере"
+
+msgid "Reset to defaults"
+msgstr "Подразумевано"
+
+msgid "Sample Text"
+msgstr "Пример текста"
+
+msgid "Search & API"
+msgstr "Претрага и API"
+
+msgid "Settings"
+msgstr "Подешавања"
+
+msgid "Sort"
+msgstr "Сортирање"
+
+msgid "Sort mode"
+msgstr "Режим сортирања"
+
+msgid "Sort: A-Z"
+msgstr "Сортирај: А-Ш"
+
+msgid "Sort: Name (A → Z)"
+msgstr "Сортирај: Назив (А-Ш)"
+
+msgid "Sort: Name (Z → A)"
+msgstr "Сортирај: Назив (Ш-А)"
+
+msgid "Sort: Oldest"
+msgstr "Сортирај: Најстарије"
+
+msgid "Sort: Recently updated"
+msgstr "Сортирај: Датум"
+
+msgid "Sort: Stars (high → low)"
+msgstr "Сортирај: Звездице"
+
+msgid "Sort: Status"
+msgstr "Сортирај: Статус"
+
+msgid "Sort: Type"
+msgstr "Сортирај: Тип"
+
+msgid "Sort: Z-A"
+msgstr "Сортирај: Ш-А"
+
+msgid "Sorting"
+msgstr "Сортирање"
+
+msgid "Stable"
+msgstr "Стабилно"
+
+msgid "Status"
+msgstr "Статус"
 
 msgid "Successfully updated %d item(s)."
 msgstr "Успешно ажурирано %d ставки."
@@ -68,14 +263,32 @@ msgstr "Успешно ажурирано %d ставки."
 msgid "Successfully updated %d items."
 msgstr "Успешно ажурирано %d ставки."
 
+msgid "The quick brown fox jumps over the lazy dog."
+msgstr "Чешаљем са жутим зубима џунглом шета фини ђак."
+
+msgid "Type"
+msgstr "Тип"
+
 msgid "Update %d outdated item(s)?"
 msgstr "Ажурирати %d застарелих ставки?"
+
+msgid "Update All"
+msgstr "Ажурирај све"
 
 msgid "Update all outdated items?"
 msgstr "Ажурирати све застареле ставке?"
 
+msgid "Update channel"
+msgstr "Канал ажурирања"
+
+msgid "Updates"
+msgstr "Ажурирања"
+
+msgid "User Installed"
+msgstr "Кориснички"
+
 msgid "about_text"
-msgstr "Storefront је менаџер пакета унутар KOReader-а за прикључке, закрпе и фонтове."
+msgstr "Storefront је менаџер пакета у KOReader-у за плагине, закрпе и фонтове."
 
 msgid "btn_apply"
 msgstr "Примени"
@@ -105,7 +318,7 @@ msgid "btn_release_notes"
 msgstr "Белешке о издању"
 
 msgid "btn_restart"
-msgstr "Рестартуј KOReader"
+msgstr "Поново покрени KOReader"
 
 msgid "btn_retry"
 msgstr "Покушај поново"
@@ -114,31 +327,31 @@ msgid "btn_search"
 msgstr "Претражи"
 
 msgid "btn_uninstall"
-msgstr "Уклони"
+msgstr "Деинсталирај"
 
 msgid "btn_update"
 msgstr "Ажурирај"
 
 msgid "btn_view_details"
-msgstr "Прикажи детаље"
+msgstr "Детаљи"
 
 msgid "confirm_install"
 msgstr "Инсталирати '%s'?"
 
 msgid "confirm_uninstall"
-msgstr "Уклонити '%s'? Ова радња се не може опозвати."
+msgstr "Деинсталирати '%s'? Ова радња се не може опозвати."
 
 msgid "confirm_update"
 msgstr "Ажурирати '%s' са v%s на v%s?"
 
 msgid "err_install_failed"
-msgstr "Инсталација за '%s' није успела."
+msgstr "Инсталација није успела за '%s'."
 
 msgid "err_network_failed"
 msgstr "Мрежна грешка: Преузимање каталога није успело."
 
 msgid "err_uninstall_failed"
-msgstr "Уклањање за '%s' није успело."
+msgstr "Деинсталација није успела за '%s'."
 
 msgid "filter_all"
 msgstr "Све категорије"
@@ -147,7 +360,7 @@ msgid "filter_installed"
 msgstr "Инсталирано"
 
 msgid "filter_updates"
-msgstr "Доступна ажурирања"
+msgstr "Ажурирања"
 
 msgid "label_author"
 msgstr "Аутор"
@@ -183,19 +396,19 @@ msgid "menu_storefront"
 msgstr "Storefront"
 
 msgid "menu_storefront_desc"
-msgstr "Прегледајте, инсталирајте и ажурирајте прикључке, закрпе и фонтове."
+msgstr "Прегледајте, инсталирајте и ажурирајте плагине, закрпе и фонтове."
 
 msgid "msg_catalog_updated"
 msgstr "Каталог је успешно ажуриран."
 
 msgid "msg_no_results"
-msgstr "Нема пронађених ставки."
+msgstr "Нема резултата претраге."
 
 msgid "prompt_restart_needed"
-msgstr "Инсталација је завршена. Рестартовати KOReader сада ради омогућавања '%s'?"
+msgstr "Инсталација је завршена. Поново покренути KOReader да бисте омогућили '%s'?"
 
 msgid "search_hint"
-msgstr "Претражи Storefront..."
+msgstr "Претражи у storefront-у..."
 
 msgid "status_builtin"
 msgstr "Уграђено"
@@ -213,7 +426,7 @@ msgid "status_not_installed"
 msgstr "Није инсталирано"
 
 msgid "status_uninstalling"
-msgstr "Уклањање..."
+msgstr "Деинсталирање..."
 
 msgid "status_update_available"
 msgstr "Доступно ажурирање"
@@ -231,4 +444,14 @@ msgid "tab_patches"
 msgstr "Закрпе"
 
 msgid "tab_plugins"
-msgstr "Прикључци"
+msgstr "Плагини"
+
+msgid "updated %s"
+msgstr "ажурирано %s"
+
+msgid "updated %s (%s)"
+msgstr "ажурирано %s (%s)"
+
+msgid "Can't load readme...."
+msgstr "Не могу учитати readme...."
+

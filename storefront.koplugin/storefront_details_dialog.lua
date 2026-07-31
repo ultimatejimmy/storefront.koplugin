@@ -1720,9 +1720,20 @@ tr:nth-child(even) td { background-color: #f5f5f5 !important; }
                 expected_path = string.format("%s/%s_%s_README.html", cache_dir, safe_owner, safe_repo)
             end
 
-            -- Render cached content immediately or show instant e-ink loading skeleton (<5ms)
+            -- Render cached content immediately or convert catalog pre-built readme (<1ms)
             html_box.page_number = 1
             local cached_html = (not force_refresh and lfs.attributes(expected_path, "mode") == "file") and util.readFromFile(expected_path) or nil
+            if not cached_html and tab_name == "readme" then
+                local catalog_md = (self.repo and self.repo.readme) or (self.update_item and self.update_item.record and self.update_item.record.readme)
+                if catalog_md and type(catalog_md) == "string" and catalog_md ~= "" then
+                    local converted_html = (GitHubClient and type(GitHubClient.markdownToHtml) == "function") and GitHubClient.markdownToHtml(catalog_md, owner, repo_name) or nil
+                    if converted_html and converted_html ~= "" then
+                        cached_html = converted_html
+                        util.writeToFile(converted_html, expected_path)
+                    end
+                end
+            end
+
             if cached_html and cached_html ~= "" then
                 pcall(function()
                     html_box:setContent(cached_html, readme_css, sc(18), false, false, cache_dir)

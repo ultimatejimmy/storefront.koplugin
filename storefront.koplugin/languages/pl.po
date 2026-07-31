@@ -26,14 +26,8 @@ msgstr "Wszystkie"
 msgid "All Types"
 msgstr "Wszystkie kateg."
 
-msgid "Allow pre-release updates"
-msgstr "Zezwól na wersje beta"
-
 msgid "Alphabet & Numbers"
 msgstr "Alfabet i cyfry"
-
-msgid "Also delete plugin settings"
-msgstr "Usuń także ustawienia wtyczki"
 
 msgid "Any"
 msgstr "Dowolna"
@@ -59,9 +53,6 @@ msgstr "Źródło katalogu"
 msgid "Category: %s"
 msgstr "Kategoria: %s"
 
-msgid "Changes will take effect after restart."
-msgstr "Zmiany wejdą w życie po restarcie."
-
 msgid "Check Updates"
 msgstr "Sprawdź aktualizacje"
 
@@ -77,38 +68,20 @@ msgstr "Sprawdzanie aktualizacji Storefront..."
 msgid "Checking for Storefront updates…"
 msgstr "Sprawdzanie aktualizacji Storefront…"
 
-msgid "Checking for updates..."
-msgstr "Sprawdzanie aktualizacji..."
-
 msgid "Checking plugin updates"
 msgstr "Sprawdzanie aktualizacji wtyczek"
-
-msgid "Clear"
-msgstr "Wyczyść"
 
 msgid "Clear README cache"
 msgstr "Wyczyść pamięć README"
 
+msgid "Close"
+msgstr "Zamknij"
+
 msgid "Configured ✓"
 msgstr "Skonfigurowano ✓"
 
-msgid "Default"
-msgstr "Wbudowana"
-
 msgid "Default only"
 msgstr "Tylko wbudowane"
-
-msgid "Delete"
-msgstr "Usuń"
-
-msgid "Delete font '%s'?"
-msgstr "Usunąć czcionkę '%s'?"
-
-msgid "Delete patch '%s'?"
-msgstr "Usunąć poprawkę '%s'?"
-
-msgid "Delete plugin '%s'?"
-msgstr "Usunąć wtyczkę '%s'?"
 
 msgid "Direct GitHub API"
 msgstr "Bezpośrednie API GitHub"
@@ -155,20 +128,11 @@ msgstr "Filtrowanie i sortowanie wtyczek"
 msgid "Filters"
 msgstr "Filtry"
 
-msgid "Font"
-msgstr "Czcionka"
-
-msgid "Font '%s' deleted."
-msgstr "Czcionka '%s' została usunięta."
-
 msgid "GitHub token"
 msgstr "Token GitHub"
 
 msgid "Include 0-star forks"
 msgstr "Uwzględnij forki bez gwiazdek"
-
-msgid "Install"
-msgstr "Zainstaluj"
 
 msgid "Install Font"
 msgstr "Zainstaluj czcionkę"
@@ -194,23 +158,17 @@ msgstr "Najstarsze"
 msgid "License: %s"
 msgstr "Licencja: %s"
 
-msgid "Minimum stars"
-msgstr "Minimalna liczba gwiazdek"
-
 msgid "Name (A-Z)"
 msgstr "Nazwa (A-Z)"
 
 msgid "Name (Z-A)"
 msgstr "Nazwa (Z-A)"
 
-msgid "Name, description, topic"
-msgstr "Nazwa, opis, temat"
+msgid "Never"
+msgstr "Nigdy"
 
 msgid "Next >"
 msgstr "Następna >"
-
-msgid "No tracked plugins to check."
-msgstr "Brak śledzonych wtyczek do sprawdzenia."
 
 msgid "Not set"
 msgstr "Nie ustawiono"
@@ -218,29 +176,11 @@ msgstr "Nie ustawiono"
 msgid "Origin"
 msgstr "Pochodzenie"
 
-msgid "Owner"
-msgstr "Właściciel"
-
 msgid "Pack my box with five dozen liquor jugs."
 msgstr "Mężny bądź, chroń pułk twój i sześć flag."
 
-msgid "Page %d of %d"
-msgstr "Strona %d z %d"
-
 msgid "Pangram Preview"
 msgstr "Podgląd pangramu"
-
-msgid "Patch"
-msgstr "Poprawka"
-
-msgid "Patch '%s' deleted."
-msgstr "Poprawka '%s' została usunięta."
-
-msgid "Plugin"
-msgstr "Wtyczka"
-
-msgid "Plugin '%s' deleted."
-msgstr "Wtyczka '%s' została usunięta."
 
 msgid "Reading Passage Specimen"
 msgstr "Próbka czytania"
@@ -266,20 +206,11 @@ msgstr "Resetuj filtry"
 msgid "Reset to defaults"
 msgstr "Przywróć domyślne"
 
-msgid "Restart later"
-msgstr "Uruchom później"
-
-msgid "Restart now"
-msgstr "Uruchom teraz"
-
 msgid "Sample Text"
 msgstr "Próbka tekstu"
 
 msgid "Search & API"
 msgstr "Wyszukiwanie i API"
-
-msgid "Search text"
-msgstr "Tekst wyszukiwania"
 
 msgid "Settings"
 msgstr "Ustawienia"
@@ -326,9 +257,6 @@ msgstr "Stabilny"
 msgid "Status"
 msgstr "Status"
 
-msgid "Storefront"
-msgstr "Storefront"
-
 msgid "Successfully updated %d item(s)."
 msgstr "Pomyślnie zaktualizowano %d elementów."
 
@@ -337,12 +265,6 @@ msgstr "Pomyślnie zaktualizowano %d elementów."
 
 msgid "The quick brown fox jumps over the lazy dog."
 msgstr "Pchnąć w tę łódź jeża lub ośm skrzyń fig."
-
-msgid "This action cannot be undone."
-msgstr "Tej operacji nie można cofnąć."
-
-msgid "This will take effect on next restart."
-msgstr "Zmiany wejdą w życie po ponownym uruchomieniu."
 
 msgid "Type"
 msgstr "Typ"
@@ -359,14 +281,14 @@ msgstr "Zaktualizować wszystkie nieaktualne elementy?"
 msgid "Update channel"
 msgstr "Kanał aktualizacji"
 
+msgid "Updates"
+msgstr "Aktualizacje"
+
 msgid "User Installed"
 msgstr "Użytkownika"
 
 msgid "about_text"
 msgstr "Storefront to menedżer pakietów dla wtyczek, poprawek i czcionek KOReader."
-
-msgid "anyone"
-msgstr "dowolny"
 
 msgid "btn_apply"
 msgstr "Zastosuj"
@@ -438,13 +360,7 @@ msgid "filter_installed"
 msgstr "Zainstal."
 
 msgid "filter_updates"
-msgstr "Aktualizacje"
-
-msgid "header_about"
-msgstr "O programie"
-
-msgid "header_updates"
-msgstr "Aktualizacje"
+msgstr "Aktualiz."
 
 msgid "label_author"
 msgstr "Autor"
@@ -464,11 +380,17 @@ msgstr "Repozytorium"
 msgid "label_size"
 msgstr "Rozmiar"
 
-msgid "label_status"
-msgstr "Status"
+msgid "label_type"
+msgstr "Typ"
 
 msgid "label_version"
 msgstr "Wersja"
+
+msgid "menu_about"
+msgstr "O Storefront"
+
+msgid "menu_settings"
+msgstr "Ustawienia Storefront"
 
 msgid "menu_storefront"
 msgstr "Storefront"
@@ -482,8 +404,8 @@ msgstr "Katalog zaktualizowany."
 msgid "msg_no_results"
 msgstr "Brak wyników wyszukiwania."
 
-msgid "msg_restart_required"
-msgstr "Wymagany restart KOReadera."
+msgid "prompt_restart_needed"
+msgstr "Instalacja zakończona. Uruchomić ponownie KOReadera, aby włączyć '%s'?"
 
 msgid "search_hint"
 msgstr "Szukaj w Storefront..."
@@ -491,20 +413,29 @@ msgstr "Szukaj w Storefront..."
 msgid "status_builtin"
 msgstr "Wbudowane"
 
-msgid "status_disabled"
-msgstr "Wyłączone"
-
-msgid "status_enabled"
-msgstr "Włączone"
+msgid "status_downloading"
+msgstr "Pobieranie..."
 
 msgid "status_installed"
-msgstr "Zainstalowane"
+msgstr "Zainstalowano"
+
+msgid "status_installing"
+msgstr "Instalowanie..."
+
+msgid "status_not_installed"
+msgstr "Niezainstalowane"
+
+msgid "status_uninstalling"
+msgstr "Odinstalowywanie..."
 
 msgid "status_update_available"
 msgstr "Dostępna aktualizacja"
 
 msgid "storefront_title"
 msgstr "Storefront"
+
+msgid "tab_all"
+msgstr "Wszystkie"
 
 msgid "tab_fonts"
 msgstr "Czcionki"
@@ -515,17 +446,12 @@ msgstr "Poprawki"
 msgid "tab_plugins"
 msgstr "Wtyczki"
 
-msgid "tab_readme"
-msgstr "README"
-
-msgid "tab_sample_text"
-msgstr "Próbka tekstu"
-
-msgid "tab_versions"
-msgstr "Wersje"
-
 msgid "updated %s"
 msgstr "zaktualizowano %s"
 
 msgid "updated %s (%s)"
 msgstr "zaktualizowano %s (%s)"
+
+msgid "Can't load readme...."
+msgstr "Nie można wczytać pliku readme...."
+

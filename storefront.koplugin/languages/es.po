@@ -478,3 +478,6 @@ msgstr "actualizado el %s"
 
 msgid "updated %s (%s)"
 msgstr "actualizado el %s (%s)"
+
+msgid "Can't load readme...."
+msgstr "No se puede cargar el archivo leame...."

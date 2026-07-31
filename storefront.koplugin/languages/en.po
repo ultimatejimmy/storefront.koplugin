@@ -451,3 +451,7 @@ msgstr "updated %s"
 
 msgid "updated %s (%s)"
 msgstr "updated %s (%s)"
+
+msgid "Can't load readme...."
+msgstr "Can't load readme...."
+

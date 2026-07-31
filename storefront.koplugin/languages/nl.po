@@ -5,8 +5,56 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
+msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
+msgstr "\"Mijn beste Mr. Bennet,\" zei zijn echtgenote op een dag, \"heeft u gehoord dat Netherfield Park eindelijk is verhuurd?\" Mr. Bennet antwoordde van niet."
+
+msgid "< Back"
+msgstr "< Terug"
+
+msgid "< Prev"
+msgstr "< Vorig"
+
+msgid "About"
+msgstr "Over"
+
+msgid "About Storefront"
+msgstr "Over Storefront"
+
+msgid "All"
+msgstr "Alle"
+
+msgid "All Types"
+msgstr "Alle typen"
+
+msgid "Alphabet & Numbers"
+msgstr "Alphabet & Cijfers"
+
 msgid "Any"
-msgstr "Willekeurig"
+msgstr "Alle"
+
+msgid "Apply"
+msgstr "Toepassen"
+
+msgid "Author"
+msgstr "Auteur"
+
+msgid "Beta"
+msgstr "Beta"
+
+msgid "By: %s"
+msgstr "Door: %s"
+
+msgid "Catalog & Cache"
+msgstr "Catalogus & Cache"
+
+msgid "Catalog source"
+msgstr "Catalogusbron"
+
+msgid "Category: %s"
+msgstr "Categorie: %s"
+
+msgid "Check Updates"
+msgstr "Controleren"
 
 msgid "Check for updates"
 msgstr "Controleren op updates"
@@ -15,25 +63,52 @@ msgid "Checked %d plugin updates"
 msgstr "%d plugin-updates gecontroleerd"
 
 msgid "Checking for Storefront updates..."
-msgstr "Zoeken naar Storefront-updates..."
+msgstr "Storefront-updates controleren..."
 
 msgid "Checking for Storefront updates…"
-msgstr "Zoeken naar Storefront-updates…"
+msgstr "Storefront-updates controleren…"
 
 msgid "Checking plugin updates"
 msgstr "Plugin-updates controleren"
 
+msgid "Clear README cache"
+msgstr "README-cache wissen"
+
+msgid "Close"
+msgstr "Sluiten"
+
+msgid "Configured ✓"
+msgstr "Geconfigureerd ✓"
+
+msgid "Default only"
+msgstr "Alleen standaard"
+
+msgid "Direct GitHub API"
+msgstr "Directe GitHub API"
+
+msgid "Disable"
+msgstr "Uitschakelen"
+
+msgid "Disabled"
+msgstr "Uitgeschakeld"
+
 msgid "Downloading %s…"
 msgstr "%s downloaden…"
 
+msgid "Enable"
+msgstr "Inschakelen"
+
+msgid "Enabled"
+msgstr "Ingeschakeld"
+
 msgid "Fetching patch file listings…"
-msgstr "Lijst met patchbestanden ophalen…"
+msgstr "Patchbestanden ophalen…"
 
 msgid "Fetching patches via Direct GitHub API…"
-msgstr "Patches ophalen via Direct GitHub API…"
+msgstr "Patches ophalen via Directe GitHub API…"
 
 msgid "Fetching plugins via Direct GitHub API…"
-msgstr "Plugins ophalen via Direct GitHub API…"
+msgstr "Plugins ophalen via Directe GitHub API…"
 
 msgid "Filter..."
 msgstr "Filteren..."
@@ -42,7 +117,7 @@ msgid "Filter & Sort Fonts"
 msgstr "Lettertypen filteren & sorteren"
 
 msgid "Filter & Sort Installed"
-msgstr "Geïnstalleerde filteren & sorteren"
+msgstr "Geïnstalleerd filteren & sorteren"
 
 msgid "Filter & Sort Patches"
 msgstr "Patches filteren & sorteren"
@@ -50,17 +125,137 @@ msgstr "Patches filteren & sorteren"
 msgid "Filter & Sort Plugins"
 msgstr "Plugins filteren & sorteren"
 
+msgid "Filters"
+msgstr "Filters"
+
+msgid "GitHub token"
+msgstr "GitHub-token"
+
+msgid "Include 0-star forks"
+msgstr "Inclusief 0-sterren forks"
+
+msgid "Install Font"
+msgstr "Lettertype installeren"
+
+msgid "Install Patch"
+msgstr "Patch installeren"
+
 msgid "Installed plugin Storefront version %s"
-msgstr "Plugin Storefront versie %s geïnstalleerd"
+msgstr "Storefront-plugin versie %s geïnstalleerd"
 
 msgid "Installing %s…"
 msgstr "%s installeren…"
 
+msgid "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters."
+msgstr "Het is een algemeen erkende waarheid dat een alleenstaande man met een aanzienlijk vermogen behoefte moet hebben aan een echtgenote."
+
+msgid "Last Updated (Newest)"
+msgstr "Nieuwste"
+
+msgid "Last Updated (Oldest)"
+msgstr "Oudste"
+
+msgid "License: %s"
+msgstr "Licentie: %s"
+
+msgid "Name (A-Z)"
+msgstr "Naam (A-Z)"
+
+msgid "Name (Z-A)"
+msgstr "Naam (Z-A)"
+
+msgid "Never"
+msgstr "Nooit"
+
+msgid "Next >"
+msgstr "Volgende >"
+
+msgid "Not set"
+msgstr "Niet ingesteld"
+
+msgid "Origin"
+msgstr "Herkomst"
+
+msgid "Pack my box with five dozen liquor jugs."
+msgstr "Pa's wize fytser wol net graach op de dyk rride."
+
+msgid "Pangram Preview"
+msgstr "Pangram-weergave"
+
+msgid "Reading Passage Specimen"
+msgstr "Leesvoorbeeld"
+
+msgid "Refresh cache"
+msgstr "Cache verversen"
+
 msgid "Refreshing catalog…"
-msgstr "Catalogus vernieuwen…"
+msgstr "Catalogus verversen…"
 
 msgid "Refreshing catalog via Direct GitHub API…"
-msgstr "Catalogus vernieuwen via Direct GitHub API…"
+msgstr "Catalogus verversen via Directe GitHub API…"
+
+msgid "Reinstall"
+msgstr "Herinstalleren"
+
+msgid "Remove"
+msgstr "Verwijderen"
+
+msgid "Reset filters"
+msgstr "Filters herstellen"
+
+msgid "Reset to defaults"
+msgstr "Standaard herstellen"
+
+msgid "Sample Text"
+msgstr "Voorbeeldtekst"
+
+msgid "Search & API"
+msgstr "Zoeken & API"
+
+msgid "Settings"
+msgstr "Instellingen"
+
+msgid "Sort"
+msgstr "Sorteren"
+
+msgid "Sort mode"
+msgstr "Sorteermodus"
+
+msgid "Sort: A-Z"
+msgstr "Sorteren: A-Z"
+
+msgid "Sort: Name (A → Z)"
+msgstr "Sorteren: Naam (A-Z)"
+
+msgid "Sort: Name (Z → A)"
+msgstr "Sorteren: Naam (Z-A)"
+
+msgid "Sort: Oldest"
+msgstr "Sorteren: Oudste"
+
+msgid "Sort: Recently updated"
+msgstr "Sorteren: Datum"
+
+msgid "Sort: Stars (high → low)"
+msgstr "Sorteren: Sterren"
+
+msgid "Sort: Status"
+msgstr "Sorteren: Status"
+
+msgid "Sort: Type"
+msgstr "Sorteren: Type"
+
+msgid "Sort: Z-A"
+msgstr "Sorteren: Z-A"
+
+msgid "Sorting"
+msgstr "Sorteren"
+
+msgid "Stable"
+msgstr "Stabiel"
+
+msgid "Status"
+msgstr "Status"
 
 msgid "Successfully updated %d item(s)."
 msgstr "%d item(s) succesvol bijgewerkt."
@@ -68,14 +263,32 @@ msgstr "%d item(s) succesvol bijgewerkt."
 msgid "Successfully updated %d items."
 msgstr "%d items succesvol bijgewerkt."
 
+msgid "The quick brown fox jumps over the lazy dog."
+msgstr "Pa's wize fytser wol net graach op de dyk rride."
+
+msgid "Type"
+msgstr "Type"
+
 msgid "Update %d outdated item(s)?"
-msgstr "%d verouderde item(s) bijwerken?"
+msgstr "%d verouderd(e) item(s) bijwerken?"
+
+msgid "Update All"
+msgstr "Alles bijwerken"
 
 msgid "Update all outdated items?"
 msgstr "Alle verouderde items bijwerken?"
 
+msgid "Update channel"
+msgstr "Updatekanaal"
+
+msgid "Updates"
+msgstr "Updates"
+
+msgid "User Installed"
+msgstr "Gebruiker"
+
 msgid "about_text"
-msgstr "Storefront is een pakketbeheerder in KOReader voor plugins, patches en lettertypen."
+msgstr "Storefront is een ingebouwde pakketbeheerder in KOReader voor plugins, patches en lettertypen."
 
 msgid "btn_apply"
 msgstr "Toepassen"
@@ -96,19 +309,19 @@ msgid "btn_ok"
 msgstr "OK"
 
 msgid "btn_preview"
-msgstr "Voorbeeld"
+msgstr "Weergave"
 
 msgid "btn_refresh"
-msgstr "Vernieuwen"
+msgstr "Verversen"
 
 msgid "btn_release_notes"
-msgstr "Uitgavenotities"
+msgstr "Releasenotes"
 
 msgid "btn_restart"
 msgstr "KOReader herstarten"
 
 msgid "btn_retry"
-msgstr "Opnieuw proberen"
+msgstr "Opnieuw"
 
 msgid "btn_search"
 msgstr "Zoeken"
@@ -120,7 +333,7 @@ msgid "btn_update"
 msgstr "Bijwerken"
 
 msgid "btn_view_details"
-msgstr "Details bekijken"
+msgstr "Details tonen"
 
 msgid "confirm_install"
 msgstr "'%s' installeren?"
@@ -135,19 +348,19 @@ msgid "err_install_failed"
 msgstr "Installatie van '%s' mislukt."
 
 msgid "err_network_failed"
-msgstr "Netwerkfout: Kan catalogus niet downloaden."
+msgstr "Netwerkfout: Catalogus kan niet worden gedownload."
 
 msgid "err_uninstall_failed"
 msgstr "Verwijderen van '%s' mislukt."
 
 msgid "filter_all"
-msgstr "Alle categorieën"
+msgstr "Alle Categorieën"
 
 msgid "filter_installed"
-msgstr "Geïnstalleerd"
+msgstr "Geïnstall."
 
 msgid "filter_updates"
-msgstr "Updates beschikbaar"
+msgstr "Updates"
 
 msgid "label_author"
 msgstr "Auteur"
@@ -189,7 +402,7 @@ msgid "msg_catalog_updated"
 msgstr "Catalogus succesvol bijgewerkt."
 
 msgid "msg_no_results"
-msgstr "Geen overeenkomende items gevonden."
+msgstr "Geen overeenkomstige items gevonden."
 
 msgid "prompt_restart_needed"
 msgstr "Installatie voltooid. KOReader nu herstarten om '%s' in te schakelen?"
@@ -222,7 +435,7 @@ msgid "storefront_title"
 msgstr "Storefront"
 
 msgid "tab_all"
-msgstr "Alles"
+msgstr "Alle"
 
 msgid "tab_fonts"
 msgstr "Lettertypen"
@@ -232,3 +445,12 @@ msgstr "Patches"
 
 msgid "tab_plugins"
 msgstr "Plugins"
+
+msgid "updated %s"
+msgstr "bijgewerkt op %s"
+
+msgid "updated %s (%s)"
+msgstr "bijgewerkt %s (%s)"
+
+msgid "Can't load readme...."
+msgstr "Kan leesmij niet laden...."

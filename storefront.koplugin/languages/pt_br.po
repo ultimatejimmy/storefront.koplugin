@@ -5,11 +5,59 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
+msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
+msgstr "— Meu caro Sr. Bennet — disse-lhe um dia a sua esposa —, ouviu dizer que Netherfield Park foi finalmente alugado? O Sr. Bennet respondeu que não."
+
+msgid "< Back"
+msgstr "< Voltar"
+
+msgid "< Prev"
+msgstr "< Ant"
+
+msgid "About"
+msgstr "Sobre"
+
+msgid "About Storefront"
+msgstr "Sobre o Storefront"
+
+msgid "All"
+msgstr "Todos"
+
+msgid "All Types"
+msgstr "Todos os tipos"
+
+msgid "Alphabet & Numbers"
+msgstr "Alfabeto e números"
+
 msgid "Any"
 msgstr "Qualquer"
 
+msgid "Apply"
+msgstr "Aplicar"
+
+msgid "Author"
+msgstr "Autor"
+
+msgid "Beta"
+msgstr "Beta"
+
+msgid "By: %s"
+msgstr "Por: %s"
+
+msgid "Catalog & Cache"
+msgstr "Catálogo e cache"
+
+msgid "Catalog source"
+msgstr "Fonte do catálogo"
+
+msgid "Category: %s"
+msgstr "Categoria: %s"
+
+msgid "Check Updates"
+msgstr "Verificar"
+
 msgid "Check for updates"
-msgstr "Buscar atualizações"
+msgstr "Verificar atualizações"
 
 msgid "Checked %d plugin updates"
 msgstr "Verificadas %d atualizações de plugins"
@@ -23,17 +71,44 @@ msgstr "Verificando atualizações do Storefront…"
 msgid "Checking plugin updates"
 msgstr "Verificando atualizações de plugins"
 
+msgid "Clear README cache"
+msgstr "Limpar cache do README"
+
+msgid "Close"
+msgstr "Fechar"
+
+msgid "Configured ✓"
+msgstr "Configurado ✓"
+
+msgid "Default only"
+msgstr "Apenas padrão"
+
+msgid "Direct GitHub API"
+msgstr "API direta do GitHub"
+
+msgid "Disable"
+msgstr "Desativar"
+
+msgid "Disabled"
+msgstr "Desativado"
+
 msgid "Downloading %s…"
 msgstr "Baixando %s…"
 
+msgid "Enable"
+msgstr "Ativar"
+
+msgid "Enabled"
+msgstr "Ativado"
+
 msgid "Fetching patch file listings…"
-msgstr "Buscando lista de arquivos de patch…"
+msgstr "Obtendo listas de arquivos de patch…"
 
 msgid "Fetching patches via Direct GitHub API…"
-msgstr "Buscando patches via Direct GitHub API…"
+msgstr "Obtendo patches via API direta do GitHub…"
 
 msgid "Fetching plugins via Direct GitHub API…"
-msgstr "Buscando plugins via Direct GitHub API…"
+msgstr "Obtendo plugins via API direta do GitHub…"
 
 msgid "Filter..."
 msgstr "Filtrar..."
@@ -50,32 +125,170 @@ msgstr "Filtrar e ordenar patches"
 msgid "Filter & Sort Plugins"
 msgstr "Filtrar e ordenar plugins"
 
+msgid "Filters"
+msgstr "Filtros"
+
+msgid "GitHub token"
+msgstr "Token do GitHub"
+
+msgid "Include 0-star forks"
+msgstr "Incluir forks com 0 estrelas"
+
+msgid "Install Font"
+msgstr "Instalar fonte"
+
+msgid "Install Patch"
+msgstr "Instalar patch"
+
 msgid "Installed plugin Storefront version %s"
-msgstr "Plugin Storefront versão %s instalado"
+msgstr "Instalado plugin Storefront versão %s"
 
 msgid "Installing %s…"
 msgstr "Instalando %s…"
+
+msgid "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters."
+msgstr "É uma verdade universalmente conhecida que um homem solteiro, possuidor de uma grande fortuna, deve precisar de uma esposa."
+
+msgid "Last Updated (Newest)"
+msgstr "Mais recentes"
+
+msgid "Last Updated (Oldest)"
+msgstr "Mais antigos"
+
+msgid "License: %s"
+msgstr "Licença: %s"
+
+msgid "Name (A-Z)"
+msgstr "Nome (A-Z)"
+
+msgid "Name (Z-A)"
+msgstr "Nome (Z-A)"
+
+msgid "Never"
+msgstr "Nunca"
+
+msgid "Next >"
+msgstr "Próx >"
+
+msgid "Not set"
+msgstr "Não definido"
+
+msgid "Origin"
+msgstr "Origem"
+
+msgid "Pack my box with five dozen liquor jugs."
+msgstr "Um pequeno jabuti xereta viu dois caçadores de aves na foz do rio."
+
+msgid "Pangram Preview"
+msgstr "Pré-visualização"
+
+msgid "Reading Passage Specimen"
+msgstr "Amostra de leitura"
+
+msgid "Refresh cache"
+msgstr "Atualizar cache"
 
 msgid "Refreshing catalog…"
 msgstr "Atualizando catálogo…"
 
 msgid "Refreshing catalog via Direct GitHub API…"
-msgstr "Atualizando catálogo via Direct GitHub API…"
+msgstr "Atualizando catálogo via API direta do GitHub…"
+
+msgid "Reinstall"
+msgstr "Reinstalar"
+
+msgid "Remove"
+msgstr "Remover"
+
+msgid "Reset filters"
+msgstr "Resetar filtros"
+
+msgid "Reset to defaults"
+msgstr "Restaurar padrão"
+
+msgid "Sample Text"
+msgstr "Texto de exemplo"
+
+msgid "Search & API"
+msgstr "Busca e API"
+
+msgid "Settings"
+msgstr "Configurações"
+
+msgid "Sort"
+msgstr "Ordenar"
+
+msgid "Sort mode"
+msgstr "Modo de ordenação"
+
+msgid "Sort: A-Z"
+msgstr "Ordenar: A-Z"
+
+msgid "Sort: Name (A → Z)"
+msgstr "Ordenar: Nome (A-Z)"
+
+msgid "Sort: Name (Z → A)"
+msgstr "Ordenar: Nome (Z-A)"
+
+msgid "Sort: Oldest"
+msgstr "Ordenar: Mais antigos"
+
+msgid "Sort: Recently updated"
+msgstr "Ordenar: Data"
+
+msgid "Sort: Stars (high → low)"
+msgstr "Ordenar: Estrelas"
+
+msgid "Sort: Status"
+msgstr "Ordenar: Status"
+
+msgid "Sort: Type"
+msgstr "Ordenar: Tipo"
+
+msgid "Sort: Z-A"
+msgstr "Ordenar: Z-A"
+
+msgid "Sorting"
+msgstr "Ordenação"
+
+msgid "Stable"
+msgstr "Estável"
+
+msgid "Status"
+msgstr "Status"
 
 msgid "Successfully updated %d item(s)."
-msgstr "Atualizado(s) com sucesso %d item(ns)."
+msgstr "%d item(ns) atualizado(s) com sucesso."
 
 msgid "Successfully updated %d items."
-msgstr "Atualizados com sucesso %d itens."
+msgstr "%d itens atualizados com sucesso."
+
+msgid "The quick brown fox jumps over the lazy dog."
+msgstr "Um pequeno jabuti xereta viu dois caçadores de aves na foz do rio."
+
+msgid "Type"
+msgstr "Tipo"
 
 msgid "Update %d outdated item(s)?"
 msgstr "Atualizar %d item(ns) desatualizado(s)?"
 
+msgid "Update All"
+msgstr "Atualizar tudo"
+
 msgid "Update all outdated items?"
 msgstr "Atualizar todos os itens desatualizados?"
 
+msgid "Update channel"
+msgstr "Canal de atualização"
+
+msgid "Updates"
+msgstr "Atualizações"
+
+msgid "User Installed"
+msgstr "Usuário"
+
 msgid "about_text"
-msgstr "O Storefront é um gerenciador de pacotes integrado ao KOReader para plugins, patches e fontes."
+msgstr "Storefront é um gerenciador de pacotes integrado no KOReader para plugins, patches e fontes."
 
 msgid "btn_apply"
 msgstr "Aplicar"
@@ -96,13 +309,13 @@ msgid "btn_ok"
 msgstr "OK"
 
 msgid "btn_preview"
-msgstr "Visualizar"
+msgstr "Pré-visualizar"
 
 msgid "btn_refresh"
 msgstr "Atualizar"
 
 msgid "btn_release_notes"
-msgstr "Notas de versão"
+msgstr "Notas da versão"
 
 msgid "btn_restart"
 msgstr "Reiniciar KOReader"
@@ -147,7 +360,7 @@ msgid "filter_installed"
 msgstr "Instalado"
 
 msgid "filter_updates"
-msgstr "Atualizações disponíveis"
+msgstr "Atualiz."
 
 msgid "label_author"
 msgstr "Autor"
@@ -183,13 +396,13 @@ msgid "menu_storefront"
 msgstr "Storefront"
 
 msgid "menu_storefront_desc"
-msgstr "Navegar, instalar e atualizar plugins, patches e fontes."
+msgstr "Navegue, instale e atualize plugins, patches e fontes."
 
 msgid "msg_catalog_updated"
 msgstr "Catálogo atualizado com sucesso."
 
 msgid "msg_no_results"
-msgstr "Nenhum item encontrado para a busca."
+msgstr "Nenhum item encontrado."
 
 msgid "prompt_restart_needed"
 msgstr "Instalação concluída. Reiniciar o KOReader agora para ativar '%s'?"
@@ -232,3 +445,13 @@ msgstr "Patches"
 
 msgid "tab_plugins"
 msgstr "Plugins"
+
+msgid "updated %s"
+msgstr "atualizado em %s"
+
+msgid "updated %s (%s)"
+msgstr "atualizado em %s (%s)"
+
+msgid "Can't load readme...."
+msgstr "Não foi possível carregar o leia-me...."
+

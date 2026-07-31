@@ -111,7 +111,7 @@ local function getAuthHeaders()
 end
 
 local function request(path, query)
-    pcall(function() http.TIMEOUT = 5 end)
+    pcall(function() http.TIMEOUT = 4 end)
     local response_body = {}
     local target = BASE_URL .. path
     if query and query ~= "" then
@@ -128,13 +128,17 @@ local function request(path, query)
             headers[key] = value
         end
     end
-    local _, code = http.request{
-        url = target,
-        headers = headers,
-        sink = newTableSink(response_body),
-    }
+    local code
+    pcall(function()
+        _, code = http.request{
+            url = target,
+            headers = headers,
+            sink = newTableSink(response_body),
+            timeout = 4,
+        }
+    end)
     local body = table.concat(response_body)
-    return tonumber(code), body
+    return tonumber(code) or 0, body
 end
 
 local function buildQuery(opts)
@@ -471,21 +475,7 @@ local function markdownToHtml(md, owner, repo)
             local escaped = line:gsub("&", "&amp;"):gsub("<", "&lt;"):gsub(">", "&gt;")
             table.insert(lines, escaped)
         else
-            local processed = line:gsub("&", "&amp;"):gsub("<", "&lt;"):gsub(">", "&gt;")
-
-            -- Restore table HTML tags if present from pre-conversion
-            processed = processed:gsub("&lt;table&gt;", "<table>")
-            processed = processed:gsub("&lt;/table&gt;", "</table>")
-            processed = processed:gsub("&lt;thead&gt;", "<thead>")
-            processed = processed:gsub("&lt;/thead&gt;", "</thead>")
-            processed = processed:gsub("&lt;tbody&gt;", "<tbody>")
-            processed = processed:gsub("&lt;/tbody&gt;", "</tbody>")
-            processed = processed:gsub("&lt;tr&gt;", "<tr>")
-            processed = processed:gsub("&lt;/tr&gt;", "</tr>")
-            processed = processed:gsub("&lt;th&gt;", "<th>")
-            processed = processed:gsub("&lt;/th&gt;", "</th>")
-            processed = processed:gsub("&lt;td&gt;", "<td>")
-            processed = processed:gsub("&lt;/td&gt;", "</td>")
+            local processed = line
 
             -- Convert Markdown Images: ![alt](url) -> <img src="url" alt="alt"/>
             processed = processed:gsub("!%[([^%]]*)%]%(([^%)]+)%)", function(alt, src)
@@ -500,9 +490,9 @@ local function markdownToHtml(md, owner, repo)
                 return string.format('<img src="%s" alt="%s"/>', src, alt)
             end)
 
-            -- Restore/convert raw HTML img tags that got escaped by &lt;img ... &gt;
-            processed = processed:gsub("&lt;img%s+(.-)/?&gt;", function(attrs)
-                local unescaped_attrs = attrs:gsub("&quot;", '"'):gsub("&amp;", "&")
+            -- Clean/resolve raw HTML img tags
+            processed = processed:gsub("<img%s+(.-)/?>", function(attrs)
+                local unescaped_attrs = attrs:gsub("&quot;", '"')
                 if owner and repo and type(owner) == "string" and type(repo) == "string" then
                     unescaped_attrs = unescaped_attrs:gsub('src=["\']([^"\']+)["\']', function(src)
                         if not src:find("^https?://") and not src:find("^data:") then
@@ -519,12 +509,12 @@ local function markdownToHtml(md, owner, repo)
                 return string.format('<img %s/>', unescaped_attrs)
             end)
 
-            -- Convert/clean problematic raw HTML tags (e.g. details/summary/table)
-            processed = processed:gsub("&lt;details&gt;", "<div>")
-            processed = processed:gsub("&lt;/details&gt;", "</div>")
-            processed = processed:gsub("&lt;summary&gt;", "<p><b>")
-            processed = processed:gsub("&lt;/summary&gt;", "</b></p>")
-            processed = processed:gsub("&lt;br%s*/?&gt;", "<br/>")
+            -- Convert details/summary HTML tags for MuPDF compatibility
+            processed = processed:gsub("<details>", "<div>")
+            processed = processed:gsub("</details>", "</div>")
+            processed = processed:gsub("<summary>", "<p><b>")
+            processed = processed:gsub("</summary>", "</b></p>")
+            processed = processed:gsub("<br%s*/?>", "<br/>")
 
             local function isImageFile(str)
                 if not str or type(str) ~= "string" then return false end
@@ -712,6 +702,15 @@ function GitHubClient.fetchReadmeHtml(owner, repo)
     }
     local body = table.concat(response_body)
     if tonumber(code) == 200 and body ~= "" then
+        
+        -- 1. Nuke massive Base64 strings using a fast C-level pattern match
+        body = body:gsub('src=["\']data:[^"\']+["\']', 'src=""')
+        
+        -- 2. Hard-cap HTML length so the Kindle CPU never hangs
+        if #body > 80000 then
+            body = body:sub(1, 80000) .. "\n\n<p><i>(Readme truncated to prevent device freeze...)</i></p>"
+        end
+
         body = body:gsub('src=["\']([^"\']+)["\']', function(src)
             if not src:find("^https?://") and not src:find("^data:") and owner and repo then
                 local clean_src = src:gsub("^%./", "")

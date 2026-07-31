@@ -381,7 +381,7 @@ msgid "filter_installed"
 msgstr "Installati"
 
 msgid "filter_updates"
-msgstr "Aggiornamenti disponibili"
+msgstr "Updates"
 
 msgid "header_about"
 msgstr "Info"
@@ -478,3 +478,6 @@ msgstr "aggiornato il %s"
 
 msgid "updated %s (%s)"
 msgstr "aggiornato il %s (%s)"
+
+msgid "Can't load readme...."
+msgstr "Impossibile caricare il leggimi...."
