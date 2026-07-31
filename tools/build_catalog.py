@@ -152,6 +152,7 @@ def process_single_repo(repo_item, is_patch):
         "language": repo_item.get("language") or "",
         "homepage": repo_item.get("homepage") or "",
         "default_branch": default_branch,
+        "has_wiki": repo_item.get("has_wiki", False),
         "pushed_at": repo_item.get("pushed_at") or "",
         "updated_at": repo_item.get("updated_at") or "",
         "html_url": repo_item.get("html_url") or f"https://github.com/{full_name}",

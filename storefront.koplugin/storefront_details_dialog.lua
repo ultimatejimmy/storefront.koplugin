@@ -141,13 +141,31 @@ function StorefrontDetailsDialog:init()
         or (self.update_item and self.update_item.record and self.update_item.record.repo)
         or ""
 
-    if self.has_wiki == nil and owner ~= "" and repo_name ~= "" then
-        if RepoContent and type(RepoContent.checkWikiExists) == "function" then
-            local ok_check, has_w = pcall(RepoContent.checkWikiExists, owner, repo_name)
-            if ok_check then
-                self.has_wiki = (has_w == true)
+    if self.has_wiki == nil then
+        if self.repo then
+            if self.repo.has_wiki ~= nil then
+                self.has_wiki = (self.repo.has_wiki == true)
+            elseif self.repo.data and self.repo.data.has_wiki ~= nil then
+                self.has_wiki = (self.repo.data.has_wiki == true)
             end
         end
+        if self.has_wiki == nil and self.update_item and self.update_item.record and self.update_item.record.has_wiki ~= nil then
+            self.has_wiki = (self.update_item.record.has_wiki == true)
+        end
+    end
+    if self.has_wiki == nil and owner ~= "" and repo_name ~= "" then
+        UIManager:scheduleIn(0.2, function()
+            if self.has_wiki == nil and RepoContent and type(RepoContent.checkWikiExists) == "function" then
+                local ok_check, has_w = pcall(RepoContent.checkWikiExists, owner, repo_name)
+                if ok_check and has_w then
+                    self.has_wiki = true
+                    if self.tab_bar_box then
+                        self.tab_bar_box[1] = self:buildTabBar()
+                        UIManager:setDirty(self, "ui")
+                    end
+                end
+            end
+        end)
     end
     local stars = tonumber(self.repo.stars) or (self.repo.data and tonumber(self.repo.data.stargazers_count)) or 0
     local stars_fmt = stars >= 1000 and string.format("%.1fk", stars / 1000):gsub("%.0k", "k") or tostring(stars)
@@ -1746,6 +1764,29 @@ tr:nth-child(even) td { background-color: #f5f5f5 !important; }
                     if rawget(html_box, "_bb") then html_box._bb = nil end
                     if rawget(html_box, "bb") then html_box.bb = nil end
                     updatePagination()
+                    if RepoContent and type(RepoContent.processPendingImages) == "function" then
+                        UIManager:scheduleIn(0.5, function()
+                            RepoContent.processPendingImages(function(updated_html_path)
+                                UIManager:scheduleIn(0.1, function()
+                                    if self.active_tab == tab_name and self._html_box then
+                                        local fresh_html = util.readFromFile(updated_html_path)
+                                        if fresh_html and fresh_html ~= "" then
+                                            local cur_page = self._html_box.page_number or 1
+                                            pcall(function()
+                                                self._html_box:setContent(fresh_html, readme_css, sc(18), false, false, cache_dir)
+                                            end)
+                                            self._html_box.page_number = cur_page
+                                            if rawget(self._html_box, "_bb") then self._html_box._bb = nil end
+                                            if rawget(self._html_box, "bb") then self._html_box.bb = nil end
+                                            if self._updatePagination then self._updatePagination() end
+                                            UIManager:setDirty(self, "ui")
+                                            UIManager:setDirty(self._html_box, "ui")
+                                        end
+                                    end
+                                end)
+                            end)
+                        end)
+                    end
                 else
                     if tab_name == "wiki" then
                         if self.has_wiki == true or (self.active_wiki_page and self.active_wiki_page ~= "Home") then
@@ -2424,7 +2465,13 @@ function StorefrontVersionDetailsDialog:onSwipe(arg, ges_ev)
 end
 
 function StorefrontVersionDetailsDialog:onClose()
+    if self._html_box then
+        if rawget(self._html_box, "_bb") then self._html_box._bb = nil end
+        if rawget(self._html_box, "bb") then self._html_box.bb = nil end
+        self._html_box = nil
+    end
     UIManager:close(self, "ui")
+    pcall(collectgarbage, "collect")
     return true
 end
 

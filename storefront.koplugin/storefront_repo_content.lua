@@ -23,6 +23,35 @@ local function safeString(val)
 end
 
 local RepoContent = {}
+RepoContent.pending_images = {}
+local downloadImage
+
+function RepoContent.processPendingImages(on_update_cb)
+    if not RepoContent.pending_images or #RepoContent.pending_images == 0 then
+        return
+    end
+    local task = table.remove(RepoContent.pending_images, 1)
+    if task and task.url and task.dest then
+        local downloaded = false
+        if lfs.attributes(task.dest, "mode") ~= "file" and type(downloadImage) == "function" then
+            local ok = pcall(downloadImage, task.url, task.dest)
+            if ok and lfs.attributes(task.dest, "mode") == "file" then
+                downloaded = true
+            end
+        else
+            downloaded = true
+        end
+        if downloaded and on_update_cb then
+            pcall(on_update_cb, task.html_path)
+        end
+    end
+    if RepoContent.pending_images and #RepoContent.pending_images > 0 then
+        local UIManager = require("ui/uimanager")
+        UIManager:scheduleIn(0.2, function()
+            RepoContent.processPendingImages(on_update_cb)
+        end)
+    end
+end
 
 local function getCacheDir()
     local dir = DataStorage:getDataDir() .. "/cache/Storefront/readme"
@@ -73,7 +102,7 @@ local CONTENT_TYPE_EXT = {
 -- served through camo, whose proxy URLs never contain ".svg".
 local USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
-local function downloadImage(url, dest, max_redirects)
+downloadImage = function(url, dest, max_redirects)
     max_redirects = max_redirects or 5
     if max_redirects <= 0 then return false end
     dest = dest:gsub("\\", "/")
@@ -131,6 +160,12 @@ local function downloadImage(url, dest, max_redirects)
             logger.info("Storefront image download:", current_url, "code=", code)
 
             if code == 200 then
+                local sz = lfs.attributes(dest, "size") or 0
+                if sz > 1572864 then
+                    logger.warn("Storefront: image exceeds 1.5MB safety cap, removing to protect device memory:", current_url, sz)
+                    os.remove(dest)
+                    return false
+                end
                 local content_type = (headers and (headers["content-type"] or headers["Content-Type"]) or ""):lower()
                 if content_type:find("svg", 1, true) then
                     os.remove(dest)
@@ -335,15 +370,9 @@ function RepoContent.fetchReadmeHtml(owner, repo, force_refresh)
             return string.format('<a href="storefront-img:%s">%s</a>', img_dest, img_html)
         end
 
-        local ok_img, final_path = downloadImage(url, img_dest)
-        if ok_img and final_path then
-            local clean_path = final_path:gsub("\\", "/")
-            local final_filename = clean_path:match("[^/]+$") or img_filename
-            local img_html = prefix .. final_filename .. suffix
-            return string.format('<a href="storefront-img:%s">%s</a>', clean_path, img_html)
-        end
-
-        return prefix .. url .. suffix
+        table.insert(RepoContent.pending_images, { url = url, dest = img_dest, html_path = path })
+        local img_html = prefix .. img_filename .. suffix
+        return string.format('<a href="storefront-img:%s">%s</a>', img_dest, img_html)
     end)
 
     -- Clean up double-nested <a> tags so storefront-img links take precedence
@@ -667,9 +696,10 @@ function RepoContent.fetchWikiPageHtml(owner, repo, page_name, force_refresh)
         if #clean_url > 40 then clean_url = clean_url:sub(-40) end
         local img_filename = string.format("%s_%s_wiki_img_%s.%s", safe_owner, safe_repo, clean_url, ext)
         local img_dest = dir .. "/" .. img_filename
-        local ok_img, final_path = downloadImage(img_url, img_dest)
-        local final_filename = (final_path and final_path:match("[^/]+$")) or img_filename
-        local html = string.format('<div class="markdown-body"><p><b>%s</b></p><hr/><img src="%s"/></div>', page_name, final_filename)
+        if lfs.attributes(img_dest, "mode") ~= "file" then
+            table.insert(RepoContent.pending_images, { url = img_url, dest = img_dest, html_path = path })
+        end
+        local html = string.format('<div class="markdown-body"><p><b>%s</b></p><hr/><a href="storefront-img:%s"><img src="%s"/></a></div>', page_name, img_dest, img_filename)
         util.writeToFile(html, path)
         return true, path
     end
@@ -737,14 +767,9 @@ function RepoContent.fetchWikiPageHtml(owner, repo, page_name, force_refresh)
             return string.format('<a href="storefront-img:%s">%s</a>', img_dest, img_html)
         end
 
-        local ok_img, final_path = downloadImage(url, img_dest)
-        if ok_img and final_path then
-            local clean_path = final_path:gsub("\\", "/")
-            local final_filename = clean_path:match("[^/]+$") or img_filename
-            local img_html = prefix .. final_filename .. suffix
-            return string.format('<a href="storefront-img:%s">%s</a>', clean_path, img_html)
-        end
-        return prefix .. url .. suffix
+        table.insert(RepoContent.pending_images, { url = url, dest = img_dest, html_path = path })
+        local img_html = prefix .. img_filename .. suffix
+        return string.format('<a href="storefront-img:%s">%s</a>', img_dest, img_html)
     end)
 
     body = body:gsub('<a[^>]+href=["\'][^"\']+["\'][^>]*>%s*(<a%s+href=["\']storefront%-img:[^"\']+["\'][^>]*>.-</a>)%s*</a>', "%1")
