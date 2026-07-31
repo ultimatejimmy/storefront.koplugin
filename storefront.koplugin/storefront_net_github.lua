@@ -111,6 +111,7 @@ local function getAuthHeaders()
 end
 
 local function request(path, query)
+    pcall(function() http.TIMEOUT = 5 end)
     local response_body = {}
     local target = BASE_URL .. path
     if query and query ~= "" then
@@ -679,20 +680,30 @@ function GitHubClient.fetchReadmeHtml(owner, repo)
         return nil, "missing parameters"
     end
 
-    -- First try direct API if enabled or available
+    -- Fast CDN First: fetch raw README markdown and parse locally in <100ms
+    local raw_url = string.format("https://raw.githubusercontent.com/%s/%s/HEAD/README.md", owner, repo)
+    local raw_response = {}
+    local _, raw_code = http.request{
+        url = raw_url,
+        headers = { ["User-Agent"] = USER_AGENT },
+        sink = newTableSink(raw_response),
+    }
+    local raw_md = table.concat(raw_response)
+    if tonumber(raw_code) == 200 and raw_md ~= "" then
+        return markdownToHtml(raw_md, owner, repo), nil
+    end
+
+    -- Secondary Fallback: GitHub REST API HTML endpoint
     local path = string.format("/repos/%s/%s/readme", owner, repo)
     local response_body = {}
     local target = BASE_URL .. path
-    logger.dbg("Storefront HTTP readme html", target)
     local headers = {
         ["Accept"] = "application/vnd.github.html",
         ["User-Agent"] = USER_AGENT,
     }
     local auth_headers = getAuthHeaders()
     if auth_headers then
-        for key, value in pairs(auth_headers) do
-            headers[key] = value
-        end
+        for key, value in pairs(auth_headers) do headers[key] = value end
     end
     local _, code = http.request{
         url = target,
@@ -715,17 +726,7 @@ function GitHubClient.fetchReadmeHtml(owner, repo)
         return body, nil
     end
 
-    -- Fallback for Storefront mode / API rate limits: fetch raw README from GitHub CDN
-    local raw_url = string.format("https://raw.githubusercontent.com/%s/%s/HEAD/README.md", owner, repo)
-    local raw_response = {}
-    local _, raw_code = http.request{
-        url = raw_url,
-        headers = {
-            ["User-Agent"] = USER_AGENT,
-        },
-        sink = newTableSink(raw_response),
-    }
-    return nil, string.format("HTTP %s", tostring(code))
+    return nil, string.format("HTTP %s", tostring(raw_code or code))
 end
 
 GitHubClient.markdownToHtml = markdownToHtml

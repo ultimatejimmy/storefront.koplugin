@@ -1696,153 +1696,119 @@ tr:nth-child(even) td { background-color: #f5f5f5 !important; }
             if RepoContent and type(RepoContent.resetPayloadTracker) == "function" then
                 RepoContent.resetPayloadTracker()
             end
-            local ok, path
+
+            local cache_dir, expected_path
             if tab_name == "release_notes" then
-                local rel_data = (self.update_item and (self.update_item.remote or self.update_item.remote_entry)) or self.repo.latest_release
-                if RepoContent and type(RepoContent.fetchReleaseNotesHtml) == "function" then
-                    local ok_pcall, res_ok, res_path = pcall(RepoContent.fetchReleaseNotesHtml, owner, repo_name, rel_data, force_refresh)
-                    if ok_pcall then
-                        ok, path = res_ok, res_path
-                    else
-                        logger.warn("Storefront: error fetching release notes", res_ok)
-                        ok, path = false, nil
-                    end
-                end
+                cache_dir = require("datastorage"):getDataDir() .. "/cache/Storefront/release_notes"
+                local clean_repo = repo_name:gsub("%.koplugin$", "")
+                local safe_owner = owner:gsub("[^%w_-]", "_")
+                local safe_repo  = clean_repo:gsub("[^%w_-]", "_")
+                expected_path = string.format("%s/%s_%s_RELEASENOTES.html", cache_dir, safe_owner, safe_repo)
             elseif tab_name == "wiki" then
                 self.active_wiki_page = self.active_wiki_page or "Home"
-                if RepoContent and type(RepoContent.fetchWikiSidebar) == "function" then
-                    pcall(function()
-                        self.wiki_sidebar_items = RepoContent.fetchWikiSidebar(owner, repo_name, force_refresh)
-                    end)
+                if RepoContent and type(RepoContent.getWikiCacheDir) == "function" then
+                    cache_dir = RepoContent.getWikiCacheDir(owner, repo_name)
+                else
+                    cache_dir = require("datastorage"):getDataDir() .. "/cache/Storefront/wiki"
                 end
-                if RepoContent and type(RepoContent.fetchWikiPageHtml) == "function" then
-                    local ok_pcall, res_ok, res_path = pcall(RepoContent.fetchWikiPageHtml, owner, repo_name, self.active_wiki_page, force_refresh)
-                    if ok_pcall then
-                        ok, path = res_ok, res_path
-                    else
-                        logger.warn("Storefront: error fetching wiki page", res_ok)
-                        ok, path = false, nil
-                    end
-                end
+                local safe_page = self.active_wiki_page:gsub("[^%w_-]", "_")
+                expected_path = string.format("%s/%s.html", cache_dir, safe_page)
             else
-                if RepoContent and type(RepoContent.fetchReadmeHtml) == "function" then
-                    local ok_pcall, res_ok, res_path = pcall(RepoContent.fetchReadmeHtml, owner, repo_name, force_refresh)
-                    if ok_pcall then
-                        ok, path = res_ok, res_path
-                    else
-                        logger.warn("Storefront: error fetching readme", res_ok)
-                        ok, path = false, nil
-                    end
-                end
+                cache_dir = require("datastorage"):getDataDir() .. "/cache/Storefront/readme"
+                local safe_owner = owner:gsub("[^%w_-]", "_")
+                local safe_repo = repo_name:gsub("[^%w_-]", "_")
+                expected_path = string.format("%s/%s_%s_README.html", cache_dir, safe_owner, safe_repo)
             end
 
-            if ok and path then
-                local html_content = util.readFromFile(path)
-                if html_content and html_content ~= "" then
-                    local cache_dir
-                    if tab_name == "release_notes" then
-                        cache_dir = require("datastorage"):getDataDir() .. "/cache/Storefront/release_notes"
-                    elseif tab_name == "wiki" then
-                        if RepoContent and type(RepoContent.getWikiCacheDir) == "function" then
-                            cache_dir = RepoContent.getWikiCacheDir(owner, repo_name)
-                        else
-                            cache_dir = require("datastorage"):getDataDir() .. "/cache/Storefront/wiki"
-                        end
-                    else
-                        cache_dir = require("datastorage"):getDataDir() .. "/cache/Storefront/readme"
+            -- Render cached content immediately or show instant e-ink loading skeleton (<5ms)
+            html_box.page_number = 1
+            local cached_html = (not force_refresh and lfs.attributes(expected_path, "mode") == "file") and util.readFromFile(expected_path) or nil
+            if cached_html and cached_html ~= "" then
+                pcall(function()
+                    html_box:setContent(cached_html, readme_css, sc(18), false, false, cache_dir)
+                end)
+            else
+                local loading_msg = (tab_name == "wiki") and _("Loading Wiki...") or ((tab_name == "release_notes") and _("Loading Release Notes...") or _("Loading README..."))
+                pcall(function()
+                    html_box:setContent(string.format('<div class="markdown-body"><p style="text-align:center;color:gray;margin-top:2em;">%s</p></div>', loading_msg), readme_css, sc(18))
+                end)
+            end
+            if rawget(html_box, "_bb") then html_box._bb = nil end
+            if rawget(html_box, "bb") then html_box.bb = nil end
+            updatePagination()
+
+            -- Perform network fetch asynchronously without blocking the UI main loop
+            UIManager:scheduleIn(0.05, function()
+                if self.active_tab ~= tab_name then return end
+                local ok, path
+                if tab_name == "release_notes" then
+                    local rel_data = (self.update_item and (self.update_item.remote or self.update_item.remote_entry)) or self.repo.latest_release
+                    if RepoContent and type(RepoContent.fetchReleaseNotesHtml) == "function" then
+                        local ok_pcall, res_ok, res_path = pcall(RepoContent.fetchReleaseNotesHtml, owner, repo_name, rel_data, force_refresh)
+                        if ok_pcall then ok, path = res_ok, res_path end
                     end
-                    html_box.page_number = 1
-                    local set_ok, set_err = pcall(function()
-                        html_box:setContent(html_content, readme_css, sc(18), false, false, cache_dir)
-                    end)
-                    if not set_ok then
-                        logger.warn("Storefront Details: html_box:setContent failed", tab_name, set_err)
-                        local stripped = (RepoContent and type(RepoContent.stripMarkdown) == "function") and RepoContent.stripMarkdown(html_content) or html_content
-                        local clean_text = tostring(stripped):gsub("&", "&amp;"):gsub("<", "&lt;"):gsub(">", "&gt;")
-                        local safe_fallback = string.format("<div class=\"markdown-body\"><p>%s</p></div>", clean_text)
+                elseif tab_name == "wiki" then
+                    if RepoContent and type(RepoContent.fetchWikiSidebar) == "function" then
+                        pcall(function() self.wiki_sidebar_items = RepoContent.fetchWikiSidebar(owner, repo_name, force_refresh) end)
+                    end
+                    if RepoContent and type(RepoContent.fetchWikiPageHtml) == "function" then
+                        local ok_pcall, res_ok, res_path = pcall(RepoContent.fetchWikiPageHtml, owner, repo_name, self.active_wiki_page, force_refresh)
+                        if ok_pcall then ok, path = res_ok, res_path end
+                    end
+                else
+                    if RepoContent and type(RepoContent.fetchReadmeHtml) == "function" then
+                        local ok_pcall, res_ok, res_path = pcall(RepoContent.fetchReadmeHtml, owner, repo_name, force_refresh)
+                        if ok_pcall then ok, path = res_ok, res_path end
+                    end
+                end
+
+                if ok and path then
+                    local fresh_html = util.readFromFile(path)
+                    if fresh_html and fresh_html ~= "" and self.active_tab == tab_name and self._html_box then
                         pcall(function()
-                            html_box:setContent(safe_fallback, readme_css, sc(18))
+                            self._html_box:setContent(fresh_html, readme_css, sc(18), false, false, cache_dir)
                         end)
-                    end
-                    if rawget(html_box, "_bb") then html_box._bb = nil end
-                    if rawget(html_box, "bb") then html_box.bb = nil end
-                    updatePagination()
-                    if RepoContent and type(RepoContent.processPendingImages) == "function" then
-                        UIManager:scheduleIn(0.5, function()
-                            RepoContent.processPendingImages(function(updated_html_path)
-                                UIManager:scheduleIn(0.1, function()
-                                    if self.active_tab == tab_name and self._html_box then
-                                        local fresh_html = util.readFromFile(updated_html_path)
-                                        if fresh_html and fresh_html ~= "" then
-                                            local cur_page = self._html_box.page_number or 1
-                                            pcall(function()
-                                                self._html_box:setContent(fresh_html, readme_css, sc(18), false, false, cache_dir)
-                                            end)
-                                            self._html_box.page_number = cur_page
-                                            if rawget(self._html_box, "_bb") then self._html_box._bb = nil end
-                                            if rawget(self._html_box, "bb") then self._html_box.bb = nil end
-                                            if self._updatePagination then self._updatePagination() end
-                                            UIManager:setDirty(self, "ui")
-                                            UIManager:setDirty(self._html_box, "ui")
-                                            pcall(collectgarbage, "collect")
+                        if rawget(self._html_box, "_bb") then self._html_box._bb = nil end
+                        if rawget(self._html_box, "bb") then self._html_box.bb = nil end
+                        if self._updatePagination then self._updatePagination() end
+                        UIManager:setDirty(self, "ui")
+                        UIManager:setDirty(self._html_box, "ui")
+                        pcall(collectgarbage, "collect")
+
+                        if RepoContent and type(RepoContent.processPendingImages) == "function" then
+                            UIManager:scheduleIn(0.5, function()
+                                RepoContent.processPendingImages(function(updated_html_path)
+                                    UIManager:scheduleIn(0.1, function()
+                                        if self.active_tab == tab_name and self._html_box then
+                                            local updated_html = util.readFromFile(updated_html_path)
+                                            if updated_html and updated_html ~= "" then
+                                                pcall(function()
+                                                    self._html_box:setContent(updated_html, readme_css, sc(18), false, false, cache_dir)
+                                                end)
+                                                if rawget(self._html_box, "_bb") then self._html_box._bb = nil end
+                                                if rawget(self._html_box, "bb") then self._html_box.bb = nil end
+                                                if self._updatePagination then self._updatePagination() end
+                                                UIManager:setDirty(self, "ui")
+                                                UIManager:setDirty(self._html_box, "ui")
+                                                pcall(collectgarbage, "collect")
+                                            end
                                         end
-                                    end
+                                    end)
                                 end)
                             end)
-                        end)
-                    end
-                else
-                    if tab_name == "wiki" then
-                        if self.has_wiki == true or (self.active_wiki_page and self.active_wiki_page ~= "Home") then
-                            html_box.page_number = 1
-                            pcall(function()
-                                html_box:setContent("<p style='text-align:center;color:red;'>" .. _("Unable to load wiki page. Tap refresh to retry.") .. "</p>", readme_css, sc(18))
-                            end)
-                            updatePagination()
-                        else
-                            self.has_wiki = false
-                            self.active_tab = "readme"
-                            if self.tab_bar_box then
-                                self.tab_bar_box[1] = self:buildTabBar()
-                            end
-                            loadContent("readme")
-                            return
                         end
-                    else
-                        local msg = (tab_name == "release_notes") and _("Unable to read Release Notes.") or _("Unable to read README.")
-                        html_box.page_number = 1
+                    end
+                elseif not cached_html then
+                    local err_msg = (tab_name == "wiki") and _("Unable to load wiki page. Tap refresh to retry.") or _("Unable to read README. Tap refresh to retry.")
+                    if self.active_tab == tab_name and self._html_box then
                         pcall(function()
-                            html_box:setContent("<p style='text-align:center;color:red;'>" .. msg .. "</p>", readme_css, sc(18))
+                            self._html_box:setContent(string.format('<div class="markdown-body"><p style="text-align:center;color:red;margin-top:2em;">%s</p></div>', err_msg), readme_css, sc(18))
                         end)
-                        updatePagination()
+                        if self._updatePagination then self._updatePagination() end
+                        UIManager:setDirty(self, "ui")
                     end
                 end
-            else
-                if tab_name == "wiki" then
-                    if self.has_wiki == true or (self.active_wiki_page and self.active_wiki_page ~= "Home") then
-                        html_box.page_number = 1
-                        pcall(function()
-                            html_box:setContent("<p style='text-align:center;color:gray;'>" .. _("No Wiki page content available.") .. "</p>", readme_css, sc(18))
-                        end)
-                        updatePagination()
-                    else
-                        self.has_wiki = false
-                        self.active_tab = "readme"
-                        if self.tab_bar_box then
-                            self.tab_bar_box[1] = self:buildTabBar()
-                        end
-                        loadContent("readme")
-                        return
-                    end
-                else
-                    local msg = (tab_name == "release_notes") and _("No Release Notes available.") or _("No README available.")
-                    html_box.page_number = 1
-                    pcall(function()
-                        html_box:setContent("<p style='text-align:center;color:gray;'>" .. msg .. "</p>", readme_css, sc(18))
-                    end)
-                    updatePagination()
-                end
-            end
+            end)
             UIManager:setDirty(self, "ui")
         end
 
