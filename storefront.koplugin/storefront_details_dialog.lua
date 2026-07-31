@@ -1693,6 +1693,9 @@ tr:nth-child(even) td { background-color: #f5f5f5 !important; }
                 self.pagination_bar_container[1] = pagination_bar
             end
 
+            if RepoContent and type(RepoContent.resetPayloadTracker) == "function" then
+                RepoContent.resetPayloadTracker()
+            end
             local ok, path
             if tab_name == "release_notes" then
                 local rel_data = (self.update_item and (self.update_item.remote or self.update_item.remote_entry)) or self.repo.latest_release
@@ -1781,6 +1784,7 @@ tr:nth-child(even) td { background-color: #f5f5f5 !important; }
                                             if self._updatePagination then self._updatePagination() end
                                             UIManager:setDirty(self, "ui")
                                             UIManager:setDirty(self._html_box, "ui")
+                                            pcall(collectgarbage, "collect")
                                         end
                                     end
                                 end)

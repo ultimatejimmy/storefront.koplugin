@@ -24,32 +24,50 @@ end
 
 local RepoContent = {}
 RepoContent.pending_images = {}
+RepoContent.cumulative_page_bytes = 0
+local MAX_PAGE_PAYLOAD_BYTES = 6291456 -- 6 MB cumulative limit per page
 local downloadImage
+
+function RepoContent.resetPayloadTracker()
+    RepoContent.cumulative_page_bytes = 0
+    RepoContent.pending_images = {}
+end
 
 function RepoContent.processPendingImages(on_update_cb)
     if not RepoContent.pending_images or #RepoContent.pending_images == 0 then
         return
     end
+
+    if RepoContent.cumulative_page_bytes >= MAX_PAGE_PAYLOAD_BYTES then
+        logger.info("Storefront: 6MB cumulative image payload threshold reached for page.")
+        RepoContent.pending_images = {}
+        return
+    end
+
     local task = table.remove(RepoContent.pending_images, 1)
+    local downloaded_new = false
+
     if task and task.url and task.dest then
-        local downloaded = false
         if lfs.attributes(task.dest, "mode") ~= "file" and type(downloadImage) == "function" then
             local ok = pcall(downloadImage, task.url, task.dest)
-            if ok and lfs.attributes(task.dest, "mode") == "file" then
-                downloaded = true
+            local sz = lfs.attributes(task.dest, "size") or 0
+            if ok and sz > 0 then
+                RepoContent.cumulative_page_bytes = RepoContent.cumulative_page_bytes + sz
+                downloaded_new = true
             end
-        else
-            downloaded = true
-        end
-        if downloaded and on_update_cb then
-            pcall(on_update_cb, task.html_path)
         end
     end
-    if RepoContent.pending_images and #RepoContent.pending_images > 0 then
+
+    if RepoContent.pending_images and #RepoContent.pending_images > 0 and RepoContent.cumulative_page_bytes < MAX_PAGE_PAYLOAD_BYTES then
         local UIManager = require("ui/uimanager")
-        UIManager:scheduleIn(0.2, function()
+        UIManager:scheduleIn(0.4, function()
             RepoContent.processPendingImages(on_update_cb)
         end)
+    else
+        -- Batch completed or cap reached: trigger viewer update ONCE
+        if on_update_cb and task then
+            pcall(on_update_cb, task.html_path)
+        end
     end
 end
 
@@ -110,8 +128,14 @@ downloadImage = function(url, dest, max_redirects)
     -- Clean HTML tags from URL if any got through
     url = url:gsub("<[^>]+>", "")
 
+    -- Immediately reject badge / shield / SVG URLs before network requests
+    local lower_url = url:lower()
+    if lower_url:find("%.svg") or lower_url:find("shields%.io") or lower_url:find("badge") or lower_url:find("liberapay") or lower_url:find("github%-actions") or lower_url:find("travis%-ci") or lower_url:find("codecov") then
+        return false
+    end
+
     -- Do not attempt to download directory paths like .../wiki/img or .../img
-    local clean_check = url:lower():gsub("%?.*$", "")
+    local clean_check = lower_url:gsub("%?.*$", "")
     if clean_check:match("/img$") or clean_check:match("/images$") or clean_check:match("/wiki$") then
         return false
     end
@@ -161,8 +185,8 @@ downloadImage = function(url, dest, max_redirects)
 
             if code == 200 then
                 local sz = lfs.attributes(dest, "size") or 0
-                if sz > 1572864 then
-                    logger.warn("Storefront: image exceeds 1.5MB safety cap, removing to protect device memory:", current_url, sz)
+                if sz > 1258291 then
+                    logger.warn("Storefront: image exceeds 1.2MB safety cap, removing to protect device memory:", current_url, sz)
                     os.remove(dest)
                     return false
                 end
@@ -365,12 +389,18 @@ function RepoContent.fetchReadmeHtml(owner, repo, force_refresh)
         local img_filename = string.format("%s_%s_img_%s.%s", safe_owner, safe_repo, clean_url, ext)
         local img_dest = dir .. "/" .. img_filename
 
-        if lfs.attributes(img_dest, "mode") == "file" then
+        local cached_sz = lfs.attributes(img_dest, "size") or 0
+        if cached_sz > 0 then
+            RepoContent.cumulative_page_bytes = RepoContent.cumulative_page_bytes + cached_sz
             local img_html = prefix .. img_filename .. suffix
             return string.format('<a href="storefront-img:%s">%s</a>', img_dest, img_html)
         end
 
-        table.insert(RepoContent.pending_images, { url = url, dest = img_dest, html_path = path })
+        if RepoContent.cumulative_page_bytes < MAX_PAGE_PAYLOAD_BYTES then
+            table.insert(RepoContent.pending_images, { url = url, dest = img_dest, html_path = path })
+        else
+            logger.info("Storefront: Skipping image enqueue, 6MB page payload limit reached:", url)
+        end
         local img_html = prefix .. img_filename .. suffix
         return string.format('<a href="storefront-img:%s">%s</a>', img_dest, img_html)
     end)
@@ -696,7 +726,10 @@ function RepoContent.fetchWikiPageHtml(owner, repo, page_name, force_refresh)
         if #clean_url > 40 then clean_url = clean_url:sub(-40) end
         local img_filename = string.format("%s_%s_wiki_img_%s.%s", safe_owner, safe_repo, clean_url, ext)
         local img_dest = dir .. "/" .. img_filename
-        if lfs.attributes(img_dest, "mode") ~= "file" then
+        local cached_sz = lfs.attributes(img_dest, "size") or 0
+        if cached_sz > 0 then
+            RepoContent.cumulative_page_bytes = RepoContent.cumulative_page_bytes + cached_sz
+        elseif RepoContent.cumulative_page_bytes < MAX_PAGE_PAYLOAD_BYTES then
             table.insert(RepoContent.pending_images, { url = img_url, dest = img_dest, html_path = path })
         end
         local html = string.format('<div class="markdown-body"><p><b>%s</b></p><hr/><a href="storefront-img:%s"><img src="%s"/></a></div>', page_name, img_dest, img_filename)
@@ -762,12 +795,18 @@ function RepoContent.fetchWikiPageHtml(owner, repo, page_name, force_refresh)
         local img_filename = string.format("%s_%s_wiki_img_%s.%s", safe_owner, safe_repo, clean_url, ext)
         local img_dest = dir .. "/" .. img_filename
 
-        if lfs.attributes(img_dest, "mode") == "file" then
+        local cached_sz = lfs.attributes(img_dest, "size") or 0
+        if cached_sz > 0 then
+            RepoContent.cumulative_page_bytes = RepoContent.cumulative_page_bytes + cached_sz
             local img_html = prefix .. img_filename .. suffix
             return string.format('<a href="storefront-img:%s">%s</a>', img_dest, img_html)
         end
 
-        table.insert(RepoContent.pending_images, { url = url, dest = img_dest, html_path = path })
+        if RepoContent.cumulative_page_bytes < MAX_PAGE_PAYLOAD_BYTES then
+            table.insert(RepoContent.pending_images, { url = url, dest = img_dest, html_path = path })
+        else
+            logger.info("Storefront: Skipping wiki image enqueue, 6MB page payload limit reached:", url)
+        end
         local img_html = prefix .. img_filename .. suffix
         return string.format('<a href="storefront-img:%s">%s</a>', img_dest, img_html)
     end)
