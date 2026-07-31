@@ -1172,19 +1172,21 @@ local function parseVersionFromTag(tag_name)
     if not tag_name then
         return nil
     end
-    
+
     local cleaned = tag_name:gsub("^[vV]", "")
     cleaned = cleaned:gsub("^release%-?", "")
     cleaned = cleaned:gsub("^version%-?", "")
     cleaned = cleaned:gsub("^plugin%-?", "")
-    
-    local raw_version = cleaned:match("^(%d+[%d%.]*)")
-    if raw_version and raw_version ~= "" then
-        local version = raw_version:gsub("%.$", "")
-        return version
+
+    -- Must start with a digit to be a valid version
+    if not cleaned:match("^%d") then
+        return nil
     end
-    
-    return nil
+
+    -- Return the full cleaned string (including any prerelease suffix like -beta2, -rc1)
+    -- so that isVersionNewer() can correctly compare prerelease numbers.
+    -- e.g. "v26.7.31-beta2" -> "26.7.31-beta2"  (NOT just "26.7.31")
+    return cleaned
 end
 
 
@@ -1319,7 +1321,9 @@ local function listInstalledPlugins()
         end
     end
     table.sort(plugins, function(a, b)
-        return (a.name or a.dirname) < (b.name or b.dirname)
+        local na = tostring(a and (a.name or a.dirname) or ""):lower()
+        local nb = tostring(b and (b.name or b.dirname) or ""):lower()
+        return na < nb
     end)
     G_installed_plugins_cache = {
         generation = generation,
@@ -1609,6 +1613,30 @@ function Storefront:getPatchUpdatesSummaryText(summary)
     return table.concat(parts, " • ")
 end
 
+local function isPreReleaseAllowedForPlugin(repo, record, dirname)
+    local keys = {}
+    if repo then
+        if repo.name then table.insert(keys, repo.name) end
+        if repo.full_name then table.insert(keys, repo.full_name) end
+    end
+    if record then
+        if record.repo then table.insert(keys, record.repo) end
+        if record.repo_full_name then table.insert(keys, record.repo_full_name) end
+        if record.dirname then table.insert(keys, record.dirname) end
+    end
+    if dirname then table.insert(keys, dirname) end
+    for _, key in ipairs(keys) do
+        if InstallStore.isPreReleaseAllowed(key) then
+            return true
+        end
+    end
+    return false
+end
+
+function Storefront:isPreReleaseAllowedForPlugin(repo, record, dirname)
+    return isPreReleaseAllowedForPlugin(repo, record, dirname)
+end
+
 function Storefront:collectUpdateSummary()
     self:ensureUpdatesState()
     local current_generation = InstallStore.getGeneration and InstallStore.getGeneration() or 0
@@ -1717,11 +1745,19 @@ function Storefront:collectUpdateSummary()
                 local remote_repo_ts = pushed_at_str and parseGitHubTimestamp(pushed_at_str) or 0
 
                 if cat_tag then
-                    -- Use catalog data if remote_info is missing, errored, or has an older tag
+                    -- Use catalog data if remote_info is missing, errored, or has an older tag.
+                    -- But never override a stable live-scanned tag with a prerelease catalog tag
+                    -- unless the plugin explicitly allows prereleases.
                     local existing_tag = remote and remote.release_tag_name
-                    local should_use_catalog = not existing_tag
+                    local cat_is_prerelease = isPreReleaseTag(cat_tag)
+                    local allow_pre_for_plugin = isPreReleaseAllowedForPlugin(nil, record, plugin.dirname)
+                    local catalog_tag_is_usable = not cat_is_prerelease or allow_pre_for_plugin
+
+                    local should_use_catalog = catalog_tag_is_usable and (
+                        not existing_tag
                         or (remote and remote.error ~= nil)
                         or isVersionNewer(cat_tag, existing_tag)
+                    )
 
                     if should_use_catalog then
                         if StorefrontLogger and StorefrontLogger.debug then
@@ -2915,7 +2951,16 @@ function Storefront:_scanUpdatesForDirectApi(tracked)
                 if not owner or not repo_name then
                     last_err = "Missing repository info."
                 else
-                    local allow_prerelease = isPreReleaseAllowedForPlugin(nil, record, dirname)
+                    local is_storefront_worker = dirname == "storefront.koplugin"
+                        or (repo_name and repo_name:lower():match("storefront%.koplugin"))
+                    local allow_beta_worker = false
+                    if is_storefront_worker then
+                        local ok_ab, about_dialog = pcall(require, "storefront_about_dialog")
+                        if ok_ab and about_dialog and type(about_dialog.getChannel) == "function" then
+                            allow_beta_worker = about_dialog.getChannel() == "beta"
+                        end
+                    end
+                    local allow_prerelease = allow_beta_worker or isPreReleaseAllowedForPlugin(nil, record, dirname)
                     if allow_prerelease then
                         local releases, fetch_err = GitHub.fetchReleases(owner, repo_name, {
                             per_page = 10,
@@ -3153,29 +3198,7 @@ function Storefront:_checkAllUpdatesInternal(records)
     Toast.show(string.format(_("Checked %d plugin(s) for updates."), checked_count), 3)
 end
 
-local function isPreReleaseAllowedForPlugin(repo, record, dirname)
-    local keys = {}
-    if repo then
-        if repo.name then table.insert(keys, repo.name) end
-        if repo.full_name then table.insert(keys, repo.full_name) end
-    end
-    if record then
-        if record.repo then table.insert(keys, record.repo) end
-        if record.repo_full_name then table.insert(keys, record.repo_full_name) end
-        if record.dirname then table.insert(keys, record.dirname) end
-    end
-    if dirname then table.insert(keys, dirname) end
-    for _, key in ipairs(keys) do
-        if InstallStore.isPreReleaseAllowed(key) then
-            return true
-        end
-    end
-    return false
-end
 
-function Storefront:isPreReleaseAllowedForPlugin(repo, record, dirname)
-    return isPreReleaseAllowedForPlugin(repo, record, dirname)
-end
 
 local function findLatestRelease(owner, repo, allow_prerelease)
     local GitHub = require("storefront_net_github")
@@ -7024,25 +7047,28 @@ function Storefront:buildInstalledEntries()
         end
     end
     table.sort(items, function(a, b)
+        local na = tostring(a and a.name or ""):lower()
+        local nb = tostring(b and b.name or ""):lower()
         if sort_mode == "name_desc" then
-            return (a.name or ""):lower() > (b.name or ""):lower()
+            if na ~= nb then return na > nb end
         elseif sort_mode == "date_desc" then
-            return (a.mtime or 0) > (b.mtime or 0)
+            local ma = tonumber(a and a.mtime) or 0
+            local mb = tonumber(b and b.mtime) or 0
+            if ma ~= mb then return ma > mb end
         elseif sort_mode == "date_asc" then
-            return (a.mtime or 0) < (b.mtime or 0)
+            local ma = tonumber(a and a.mtime) or 0
+            local mb = tonumber(b and b.mtime) or 0
+            if ma ~= mb then return ma < mb end
         elseif sort_mode == "type" then
-            if a.kind_label ~= b.kind_label then
-                return a.kind_label < b.kind_label
-            end
-            return (a.name or ""):lower() < (b.name or ""):lower()
+            local ka = tostring(a and a.kind_label or "")
+            local kb = tostring(b and b.kind_label or "")
+            if ka ~= kb then return ka < kb end
         elseif sort_mode == "status" then
-            if a.is_disabled ~= b.is_disabled then
-                return not a.is_disabled
-            end
-            return (a.name or ""):lower() < (b.name or ""):lower()
-        else -- name_asc
-            return (a.name or ""):lower() < (b.name or ""):lower()
+            local da = (a and a.is_disabled) and true or false
+            local db = (b and b.is_disabled) and true or false
+            if da ~= db then return not da end
         end
+        return na < nb
     end)
 
     if #items == 0 then

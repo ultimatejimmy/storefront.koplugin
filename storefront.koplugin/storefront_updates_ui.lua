@@ -237,9 +237,9 @@ function StorefrontUpdatesUi:init(StorefrontClass)
 
         -- Sort merged list by name A-Z
         table.sort(merged, function(a, b)
-            local aname = a.name or ""
-            local bname = b.name or ""
-            return aname:lower() < bname:lower()
+            local aname = tostring(a and a.name or ""):lower()
+            local bname = tostring(b and b.name or ""):lower()
+            return aname < bname
         end)
 
         self._merged_updates_cache = {
