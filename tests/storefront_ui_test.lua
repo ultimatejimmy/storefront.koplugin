@@ -1013,6 +1013,39 @@ if ok_browser then
             end
         end
         check("togglePluginDisabled triggers UIManager:show with restart confirmation dialog", restart_dialog_found, true)
+
+        -- The primary restart button is always black, so its localized label must
+        -- stay white even when the device reports a dark theme state.
+        local restart_buttons = {}
+        local Button = package.loaded["ui/widget/button"]
+        local Localization = require("localization_storefront")
+        local orig_button_new = Button.new
+        local orig_localization_t = Localization.t
+        Button.new = function(_, args)
+            table.insert(restart_buttons, args)
+            return args
+        end
+        Localization.t = function(self, key, ...)
+            if key == "Restart now" then
+                return "Uruchom ponownie teraz"
+            end
+            return orig_localization_t(self, key, ...)
+        end
+
+        MainStorefront:showRestartConfirmation("Test restart message")
+
+        local restart_now_button
+        for _, button in ipairs(restart_buttons) do
+            if button.text == "Uruchom ponownie teraz" then
+                restart_now_button = button
+                break
+            end
+        end
+        check("localized restart button uses a white label on its black background", restart_now_button and restart_now_button.text_font_color, package.loaded["ffi/blitbuffer"].COLOR_WHITE)
+
+        Button.new = orig_button_new
+        Localization.t = orig_localization_t
+
         -- Test collectUpdateSummary caching (prevents CPU/memory thrashing on Kindle)
         MainStorefront.collectUpdateSummary = orig_collect_plugin
         MainStorefront._cached_plugin_summary = nil
