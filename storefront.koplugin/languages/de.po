@@ -1631,7 +1631,7 @@ msgstr "Später neu starten"
 
 # en-hash: 1f4f5533443045d7cc68e7e6a885df3d
 msgid "Restart now"
-msgstr "Jetzt neu starten"
+msgstr "Jetzt starten"
 
 # en-hash: 83936a3f80ba44c78c9911f5445f2994
 msgid "Sample Text"
@@ -2356,4 +2356,3 @@ msgstr "≥ %s ⭐"
 # en-hash: 55930f171c863808f8dba67599ec1d70
 msgid "✓ Current"
 msgstr "✓ Aktuell"
-

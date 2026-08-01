@@ -36,6 +36,12 @@ UI_WIDGET_PATTERNS = [
     r'InputDialog:new\s*\{\s*description\s*=\s*"([^"]+)"',
 ]
 
+# Keep fixed-width action buttons safe for localized text. These limits count
+# Unicode characters, not UTF-8 bytes.
+TRANSLATION_MAX_LENGTHS = {
+    'Restart now': 16,
+}
+
 def scan_unwrapped_ui_strings():
     unwrapped = []
     for root, _, files in os.walk(SOURCE_DIR):
@@ -213,9 +219,13 @@ def run_audit():
             elif key in tab_keys and len(val) > 11:
                 too_long.append((key, val))
 
+            max_length = TRANSLATION_MAX_LENGTHS.get(key)
+            if max_length is not None and len(val) > max_length:
+                too_long.append((key, val))
+
         if missing or empty or too_long:
             total_issues += len(missing) + len(empty) + len(too_long)
-            print(f"❌ {lang_code}.po ({lang_name}): {len(entries)}/{len(en_entries)} keys | {len(missing)} missing | {len(empty)} empty | {len(too_long)} long tabs")
+            print(f"❌ {lang_code}.po ({lang_name}): {len(entries)}/{len(en_entries)} keys | {len(missing)} missing | {len(empty)} empty | {len(too_long)} length violations")
         else:
             print(f"✅ {lang_code}.po ({lang_name}): 100% complete ({len(entries)}/{len(en_entries)} keys)")
 

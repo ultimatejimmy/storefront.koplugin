@@ -39,6 +39,12 @@ LANG_NAMES = {
     'zh_CN': 'Simplified Chinese',
 }
 
+# Keep fixed-width action buttons safe for localized text. The audit script
+# enforces these limits; this metadata also guides automated translation.
+TRANSLATION_MAX_LENGTHS = {
+    'Restart now': 16,
+}
+
 def get_md5(text):
     return hashlib.md5(text.encode('utf-8')).hexdigest()
 
@@ -162,7 +168,9 @@ CRITICAL rules:
 1. Retain all format specifiers such as %s, %d, %1$s, %2$d, etc. exactly in the translated output.
 2. Retain all literal escaped newlines (\\n) and tabs (\\t) exactly.
 3. Keep translations concise, natural, and suited for a mobile e-reader display.
-4. Return ONLY a valid JSON object matching this exact schema:
+4. Respect these maximum character limits for fixed-width UI labels:
+{json.dumps(TRANSLATION_MAX_LENGTHS, ensure_ascii=False)}
+5. Return ONLY a valid JSON object matching this exact schema:
 {{
   "translations": {{
     "key_name": "translated_value"
