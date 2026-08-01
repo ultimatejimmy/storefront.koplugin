@@ -506,6 +506,33 @@ if ok_browser then
         local real_installs = require("storefront_installs")
         real_installs.list = function() return dummy_records end
         local MainStorefront = require("main")
+
+        -- Browser pagination must use the dialog's measured viewport for every
+        -- tab that can show a filter toolbar.  This keeps a future tab-specific
+        -- toolbar change from letting the final row fall behind the footer.
+        for _, tab_name in ipairs({ "Plugins", "Patches", "Fonts", "Installed" }) do
+            local measured_height = StorefrontBrowserDialog:measureListViewport{
+                current_tab = tab_name,
+                toolbar_buttons = {
+                    { id = "filter", text = "Filter...", callback = function() end },
+                },
+                show_filter_bar_plugins = tab_name == "Plugins",
+                show_filter_bar_patches = tab_name == "Patches",
+                show_filter_bar_fonts = tab_name == "Fonts",
+                show_filter_bar_installed = tab_name == "Installed",
+            }
+            check("Measured list viewport is positive with " .. tab_name .. " filter bar", measured_height > 0, true)
+        end
+
+        MainStorefront.browser_state = { page = 1 }
+        local constrained_items, constrained_pages = MainStorefront:paginateEntries({
+            { name = "One", is_entry = true },
+            { name = "Two", is_entry = true },
+            { name = "Three", is_entry = true },
+        }, "Fonts", 50)
+        check("Pagination honors the supplied measured viewport", #constrained_items, 1)
+        check("Pagination moves overflow rows to later pages", constrained_pages, 3)
+
         MainStorefront.getInstallRecordsMap = function() return dummy_records end
         MainStorefront._installed_lookup_cache = nil
         MainStorefront._installed_lookup_gen = nil

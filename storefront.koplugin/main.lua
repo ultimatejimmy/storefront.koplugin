@@ -6571,6 +6571,7 @@ function Storefront:calculateDynamicPageSize(tab_name)
     local has_toolbar = (tab_name == "Installed" and self.browser_state and self.browser_state.show_filter_bar_installed ~= false)
         or (tab_name == "Plugins" and self.browser_state and self.browser_state.show_filter_bar_plugins == true)
         or (tab_name == "Patches" and self.browser_state and self.browser_state.show_filter_bar_patches == true)
+        or (tab_name == "Fonts" and self.browser_state and self.browser_state.show_filter_bar_fonts == true)
 
     local toolbar_height = 0
     local divider_height = thin + span
@@ -6645,6 +6646,7 @@ function Storefront:calculateAvailableListHeight(tab_name)
     local has_toolbar = (tab_name == "Installed" and self.browser_state and self.browser_state.show_filter_bar_installed ~= false)
         or (tab_name == "Plugins" and self.browser_state and self.browser_state.show_filter_bar_plugins == true)
         or (tab_name == "Patches" and self.browser_state and self.browser_state.show_filter_bar_patches == true)
+        or (tab_name == "Fonts" and self.browser_state and self.browser_state.show_filter_bar_fonts == true)
 
     local toolbar_height = 0
     local divider_height = thin + span
@@ -6663,12 +6665,15 @@ function Storefront:calculateAvailableListHeight(tab_name)
     return body_height - container_padding + thin
 end
 
-function Storefront:paginateEntries(items, tab_name)
+function Storefront:paginateEntries(items, tab_name, available_list_height)
     if not items or #items == 0 then
         return {}, 1
     end
 
-    local avail_height = self:calculateAvailableListHeight(tab_name)
+    -- The browser dialog owns its chrome.  Its measured viewport is passed in
+    -- by showBrowser so this pagination cannot drift when a tab gains a
+    -- toolbar, a larger button label, or a different screen scale.
+    local avail_height = available_list_height or self:calculateAvailableListHeight(tab_name)
     local screen_w = Device.screen:getWidth()
     local pad = Size.padding.default
     local thin = Size.line.thin
@@ -6755,7 +6760,7 @@ function Storefront:saveInstalledState()
     end
 end
 
-function Storefront:buildInstalledEntries()
+function Storefront:buildInstalledEntries(available_list_height)
     self:ensureBrowserState()
     self:ensureInstalledState()
 
@@ -7084,7 +7089,7 @@ function Storefront:buildInstalledEntries()
         return page_items, 1
     end
 
-    return self:paginateEntries(items, "Installed")
+    return self:paginateEntries(items, "Installed", available_list_height)
 end
 
 function Storefront:clearSearchAndFilters()
@@ -7116,7 +7121,7 @@ function Storefront:clearSearchAndFilters()
     self:reopenBrowser()
 end
 
-function Storefront:buildBrowserEntries()
+function Storefront:buildBrowserEntries(available_list_height)
     self:ensureBrowserState()
     local tab = self.browser_state.tab or "Plugins"
     if tab == "Updates" then
@@ -7125,7 +7130,7 @@ function Storefront:buildBrowserEntries()
         self._last_total_kind = self.browser_state.kind or "plugin"
         return items, total_pages
     elseif tab == "Installed" then
-        local items, total_pages = self:buildInstalledEntries()
+        local items, total_pages = self:buildInstalledEntries(available_list_height)
         self._last_total_pages = total_pages
         self._last_total_kind = "installed"
         return items, total_pages
@@ -7222,7 +7227,7 @@ function Storefront:buildBrowserEntries()
         end
     end
 
-    local page_items, total_pages = self:paginateEntries(items, tab)
+    local page_items, total_pages = self:paginateEntries(items, tab, available_list_height)
 
     self._last_total_kind = kind
     self._last_total_pages = total_pages
@@ -7497,7 +7502,6 @@ function Storefront:showBrowser(kind)
     local Trapper = require("ui/trapper")
     Trapper:wrap(function()
         local ok, err = pcall(function()
-            local items, total_pages = self:buildBrowserEntries()
             local initial_focus = self.browser_focus_hint
             self.browser_focus_hint = nil
 
@@ -7654,6 +7658,18 @@ function Storefront:showBrowser(kind)
         self._cached_patch_remote_info = patch_remote_info_key
     end
     local updates_count = self._cached_updates_count or 0
+
+    local available_list_height = StorefrontBrowserDialog:measureListViewport{
+        title = title,
+        toolbar_buttons = toolbar_buttons,
+        current_tab = current_tab,
+        updates_count = updates_count,
+        show_filter_bar_plugins = self.browser_state and self.browser_state.show_filter_bar_plugins == true,
+        show_filter_bar_patches = self.browser_state and self.browser_state.show_filter_bar_patches == true,
+        show_filter_bar_fonts = self.browser_state and self.browser_state.show_filter_bar_fonts == true,
+        show_filter_bar_installed = self.browser_state and self.browser_state.show_filter_bar_installed ~= false,
+    }
+    local items, total_pages = self:buildBrowserEntries(available_list_height)
 
     local dialog = StorefrontBrowserDialog:new{
         title = title,
@@ -9134,4 +9150,3 @@ Storefront.getPatchRecordsMap = getPatchRecordsMap
 Storefront.getBrowserPageSize = getBrowserPageSize
 
 return Storefront
-

@@ -255,6 +255,35 @@ function StorefrontBrowserDialog:buildTabBar()
     }
 end
 
+-- Build an off-screen dialog with the same chrome as the browser and return
+-- the exact vertical space available to list content.  Pagination is decided
+-- before the real dialog is created, so keeping this measurement here avoids
+-- mirroring the header, tab bar, toolbar, footer, and spacer geometry in the
+-- controller.
+function StorefrontBrowserDialog:measureListViewport(options)
+    options = options or {}
+    local probe = StorefrontBrowserDialog:new{
+        title = options.title or _("Storefront"),
+        items = {},
+        page = 1,
+        total_pages = 1,
+        toolbar_buttons = options.toolbar_buttons,
+        current_tab = options.current_tab or "Plugins",
+        updates_count = options.updates_count or 0,
+        show_filter_bar_plugins = options.show_filter_bar_plugins == true,
+        show_filter_bar_patches = options.show_filter_bar_patches == true,
+        show_filter_bar_fonts = options.show_filter_bar_fonts == true,
+        show_filter_bar_installed = options.show_filter_bar_installed ~= false,
+    }
+    -- KOReader's Widget:new initializes instances, while the lightweight
+    -- headless test doubles do not.
+    if not probe.list_scroller then
+        probe:init()
+    end
+    local viewport_h = probe.list_scroller:getSize().h
+    return math.max(1, viewport_h - 2 * Size.padding.default)
+end
+
 function StorefrontBrowserDialog:init()
     self.show_parent = self
     self.screen_w = Device.screen:getWidth()
