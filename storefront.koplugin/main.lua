@@ -255,6 +255,7 @@ local function showRestartConfirmation(message)
         bordersize = sc(1),
         radius = storefront_theme.radius_btn or sc(4),
         padding = sc(10),
+        height = sc(58),
         width = math.floor((inner_w - sc(12)) / 2),
         callback = function()
             if overlay then UIManager:close(overlay, "ui") end
@@ -271,6 +272,7 @@ local function showRestartConfirmation(message)
         bordersize = 0,
         radius = storefront_theme.radius_btn or sc(4),
         padding = sc(10),
+        height = sc(58),
         width = math.floor((inner_w - sc(12)) / 2),
         callback = function()
             if overlay then UIManager:close(overlay, "ui") end

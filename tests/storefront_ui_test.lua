@@ -1054,7 +1054,7 @@ if ok_browser then
         end
         Localization.t = function(self, key, ...)
             if key == "Restart now" then
-                return "Uruchom ponownie teraz"
+                return "Uruchom teraz"
             end
             return orig_localization_t(self, key, ...)
         end
@@ -1063,12 +1063,13 @@ if ok_browser then
 
         local restart_now_button
         for _, button in ipairs(restart_buttons) do
-            if button.text == "Uruchom ponownie teraz" then
+            if button.text == "Uruchom teraz" then
                 restart_now_button = button
                 break
             end
         end
         check("localized restart button uses a white label on its black background", restart_now_button and restart_now_button.text_font_color, package.loaded["ffi/blitbuffer"].COLOR_WHITE)
+        check("localized restart button reserves height for two lines", restart_now_button and restart_now_button.height, 58)
 
         Button.new = orig_button_new
         Localization.t = orig_localization_t
