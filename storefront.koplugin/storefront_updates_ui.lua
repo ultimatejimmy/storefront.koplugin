@@ -129,7 +129,7 @@ function StorefrontUpdatesUi:init(StorefrontClass)
                             Storefront = self,
                             repo = repo,
                             kind = "update",
-                            update_item = { plugin = plugin, record = record, needs_update = has_update },
+                            update_item = { plugin = plugin, record = record, remote = remote, needs_update = has_update },
                             default_tab = "release_notes",
                         }
                         details_dialog:show()

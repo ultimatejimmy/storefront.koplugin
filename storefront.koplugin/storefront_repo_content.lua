@@ -648,11 +648,24 @@ function RepoContent.fetchReleaseNotesHtml(owner, repo, release_override)
     local published_at = is_rel_table and safeString(rel_data.published_at or rel_data.created_at)
     local body         = is_rel_table and safeString(rel_data.body)
 
-    -- If release notes body is missing from catalog/cache data, fetch live from GitHub API
+    -- If release notes body is missing from catalog/cache data, fetch live from GitHub API.
+    -- If we already know the specific tag (e.g. from update scan), fetch THAT release, not
+    -- fetchLatestRelease which always returns the latest stable.
     if not body or body == "" then
-        local fetched_rel, err = GitHubClient.fetchLatestRelease(owner, repo)
-        if not fetched_rel and repo ~= clean_repo then
-            fetched_rel, err = GitHubClient.fetchLatestRelease(owner, clean_repo)
+        local fetched_rel, err
+        if tag_name and tag_name ~= "" and GitHubClient.fetchReleaseByTag then
+            -- Known tag: fetch the specific release (handles prereleases correctly)
+            fetched_rel, err = GitHubClient.fetchReleaseByTag(owner, repo, tag_name)
+            if not fetched_rel and repo ~= clean_repo then
+                fetched_rel, err = GitHubClient.fetchReleaseByTag(owner, clean_repo, tag_name)
+            end
+        end
+        -- Fall back to latest release only when we have no specific tag to look up
+        if not fetched_rel then
+            fetched_rel, err = GitHubClient.fetchLatestRelease(owner, repo)
+            if not fetched_rel and repo ~= clean_repo then
+                fetched_rel, err = GitHubClient.fetchLatestRelease(owner, clean_repo)
+            end
         end
         if fetched_rel and type(fetched_rel) == "table" then
             tag_name     = tag_name or safeString(fetched_rel.tag_name or fetched_rel.name)

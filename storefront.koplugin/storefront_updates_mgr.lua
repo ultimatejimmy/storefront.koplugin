@@ -88,6 +88,7 @@ function UpdatesMgr:init(Storefront)
             ok_text = _("Update All"),
             cancel_text = _("Cancel"),
             ok_callback = function()
+                _G.G_storefront_batch_updating = true
                 UIManager:nextTick(function()
                     sf:_processBatchUpdateQueue(pending_queue, 1, { success = 0, failed = 0 })
                 end)
@@ -97,6 +98,7 @@ function UpdatesMgr:init(Storefront)
 
     Storefront._processBatchUpdateQueue = function(sf, queue, index, stats)
         stats = stats or { success = 0, failed = 0 }
+        _G.G_storefront_batch_updating = true
         if index > #queue then
             _G.G_storefront_batch_updating = false
             sf.pending_install_context = nil
@@ -129,7 +131,6 @@ function UpdatesMgr:init(Storefront)
             return
         end
 
-        _G.G_storefront_batch_updating = true
         local item = queue[index]
 
         local StorefrontToast = require("storefront_toast")
@@ -173,6 +174,7 @@ function UpdatesMgr:init(Storefront)
             sf.pending_install_context = {
                 mode = "update",
                 plugin = plugin,
+                is_batch = true,
                 batch_callback = next_step,
             }
             local descriptor = {
@@ -211,6 +213,7 @@ function UpdatesMgr:init(Storefront)
             sf.pending_patch_install = {
                 mode = "update",
                 patch = installed_patch,
+                is_batch = true,
                 batch_callback = next_step,
             }
             sf:installPatchFromRepo(repo, patch_entry)

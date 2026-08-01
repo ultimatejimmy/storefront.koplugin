@@ -220,10 +220,8 @@ local function getManagePageSize()
     return DEFAULT_MANAGE_PAGE_SIZE
 end
 
-local G_storefront_batch_updating = false
-
 local function showRestartConfirmation(message)
-    if G_storefront_batch_updating then
+    if _G.G_storefront_batch_updating then
         return
     end
 

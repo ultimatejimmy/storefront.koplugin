@@ -782,8 +782,11 @@ function M:init(Storefront)
                 end
             end
 
+            local is_batch = (_G.G_storefront_batch_updating == true) or (self.pending_install_context and self.pending_install_context.is_batch == true)
             StorefrontLogger.action(msg)
-            self:showRestartConfirmation(msg)
+            if not is_batch and not _G.G_storefront_batch_updating then
+                self:showRestartConfirmation(msg)
+            end
 
             self:handlePostInstall(info, repo)
             if self.updates_menu then
@@ -936,7 +939,7 @@ function M:init(Storefront)
             end
 
             StorefrontLogger.action(msg)
-            if not is_batch then
+            if not is_batch and not _G.G_storefront_batch_updating then
                 self:showRestartConfirmation(msg)
             end
 
