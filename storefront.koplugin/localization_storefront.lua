@@ -49,14 +49,17 @@ function Localization:parsePO(filepath)
                     translations[msgid] = msgstr
                 end
                 
-                msgid = line:match('^msgid%s+"(.-)"')
+                -- Use a greedy match so escaped quotes inside a msgid do not
+                -- terminate the entry early (for example, Installed plugin
+                -- \"%s\" (version %s).).
+                msgid = line:match('^msgid%s+"(.*)"$')
                 msgstr = nil
                 in_msgid = true
                 in_msgstr = false
             
             -- Start of msgstr
             elseif line:match('^msgstr%s+"') then
-                msgstr = line:match('^msgstr%s+"(.-)"')
+                msgstr = line:match('^msgstr%s+"(.*)"$')
                 in_msgid = false
                 in_msgstr = true
             
