@@ -14,6 +14,7 @@ if not ok_cfg then
 end
 
 local GitHubClient = {}
+local MAX_README_MARKDOWN_BYTES = 100000
 
 local BASE_URL = "https://api.github.com"
 local USER_AGENT = "KOReader-Storefront"
@@ -680,6 +681,10 @@ function GitHubClient.fetchReadmeHtml(owner, repo)
     }
     local raw_md = table.concat(raw_response)
     if tonumber(raw_code) == 200 and raw_md ~= "" then
+        if #raw_md > MAX_README_MARKDOWN_BYTES then
+            raw_md = raw_md:sub(1, MAX_README_MARKDOWN_BYTES)
+                .. "\n\n(Readme truncated to protect device memory.)"
+        end
         return markdownToHtml(raw_md, owner, repo), nil
     end
 

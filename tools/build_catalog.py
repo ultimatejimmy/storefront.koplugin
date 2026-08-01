@@ -129,19 +129,6 @@ def fetch_patch_files(owner, repo, default_branch="HEAD"):
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-def fetch_raw_readme(owner, repo, default_branch="main"):
-    url = f"https://raw.githubusercontent.com/{owner}/{repo}/{default_branch}/README.md"
-    try:
-        req = urllib.request.Request(url)
-        req.add_header("User-Agent", USER_AGENT)
-        with urllib.request.urlopen(req, timeout=5) as resp:
-            if resp.status == 200:
-                text = resp.read().decode("utf-8", errors="ignore")
-                return text[:25000] if len(text) > 25000 else text
-    except Exception:
-        pass
-    return None
-
 def check_wiki_content(owner, repo):
     """
     Checks if the wiki actually has a Home page, filtering out repos 
@@ -193,7 +180,6 @@ def process_single_repo(repo_item, is_patch):
         "homepage": repo_item.get("homepage") or "",
         "default_branch": default_branch,
         "has_wiki": actual_wiki_exists,
-        "readme": fetch_raw_readme(owner, repo_name, default_branch),
         "pushed_at": repo_item.get("pushed_at") or "",
         "updated_at": repo_item.get("updated_at") or "",
         "html_url": repo_item.get("html_url") or f"https://github.com/{full_name}",

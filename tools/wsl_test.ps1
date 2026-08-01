@@ -40,6 +40,17 @@ function Run-Workflow {
         Write-Host " FAILED" -ForegroundColor Red
         return $false
     }
+
+    # The config is intentionally excluded above so a local WSL token is not
+    # overwritten. Bootstrap it only when the destination does not have one.
+    Write-Host "Ensuring WSL config module..." -NoNewline
+    wsl rsync -av --ignore-existing "./storefront.koplugin/storefront_config.lua" "$WSLDest/storefront_config.lua"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host " FAILED (config sync)" -ForegroundColor Red
+        return $false
+    }
+    Write-Host " SUCCESS" -ForegroundColor Green
+
     wsl rsync -rv --delete "./tests/" "$WSLDest/tests/"
     if ($LASTEXITCODE -ne 0) {
         Write-Host " FAILED" -ForegroundColor Red
