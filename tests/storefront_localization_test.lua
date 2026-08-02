@@ -111,6 +111,13 @@ local function runTests()
     local str_update = Localization:t("confirm_update", "TestPlugin", "1.0", "2.0")
     assertTest(str_update == "Update 'TestPlugin' from v1.0 to v2.0?", "Multi-Argument Format Specifiers", "Got: " .. tostring(str_update))
 
+    -- Quoted msgids must unescape correctly so install notifications do not
+    -- fall back to English in translated locales.
+    Localization.current_language = "es"
+    Localization:loadTranslations()
+    local str_es_install = Localization:t("Installed plugin \"%s\" (version %s).", "koinsight", "0.2.3")
+    assertTest(str_es_install == "Conector \"koinsight\" (versión 0.2.3) instalado.", "Spanish quoted install notification", "Got: " .. tostring(str_es_install))
+
     -- Test German translation loading
     Localization.current_language = "de"
     Localization:loadTranslations()

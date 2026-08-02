@@ -497,9 +497,6 @@ msgstr "Pobieranie %s…"
 msgid "Downloading patch %s…"
 msgstr "Pobieranie łaty %s…"
 
-# en-hash: e3ad76a5c1fe1adc9cb76e725fe13bdf
-msgid "Downloading patch \"
-msgstr "Pobieranie łaty \"
 
 # en-hash: 1365cfba3d0cecdf7368aa4235ef334d
 msgid "Downloading patch \"%s\"…"
@@ -833,41 +830,26 @@ msgstr "Ustawienia zainstalowanych łat"
 msgid "Installed Plugins Settings"
 msgstr "Ustawienia zainstalowanych wtyczek"
 
-# en-hash: 271542f034334ede3929b45c4008cc44
-msgid "Installed Regular font style offline for \"
-msgstr "Zainstalowano czcionkę w stylu Regular offline dla \"
 
 # en-hash: 10f632c761c202cba1b72f9e022ad928
 msgid "Installed Regular font style offline for \"%s\". Full font family queued for download when reconnected."
 msgstr "Zainstalowano odmianę regularną czcionki offline dla \"%s\". Pełna rodzina czcionek została dodana do kolejki pobierania po ponownym połączeniu."
 
-# en-hash: 1a552daacb7b89f057f07cf76395ef13
-msgid "Installed font \"
-msgstr "Zainstalowano czcionkę \"
 
 # en-hash: d9a3ac1edbacaccbeb7c16d1a787d6c6
 msgid "Installed font \"%s\" (%d file(s))."
 msgstr "Zainstalowano czcionkę \"%s\" (%d plik(ów))."
 
-# en-hash: 3e4646b050c603dee4da8f76601dffc0
-msgid "Installed full font family \"
-msgstr "Zainstalowano pełną rodzinę czcionek \"
 
 # en-hash: 7920a8880acb9ea143b7526ac53cf3a0
 msgid "Installed full font family \"%s\" (%d file(s))."
 msgstr "Zainstalowano pełną rodzinę czcionek \"%s\" (%d plik(ów))."
 
-# en-hash: e0d6727402514e966be09f5a32898ae7
-msgid "Installed patch \"
-msgstr "Zainstalowano łatę \"
 
 # en-hash: e65824e5fef4fd9e3e8a1242e6f26077
 msgid "Installed patch \"%s\"."
 msgstr "Zainstalowano łatkę \"%s\"."
 
-# en-hash: ef4fe338ff2780c5ca191fd661732c07
-msgid "Installed plugin \"
-msgstr "Zainstalowano wtyczkę \"
 
 # en-hash: 729d3430f2b779066b4efb0a3dc93f5b
 msgid "Installed plugin \"%s\" (version %s)."
@@ -1953,17 +1935,11 @@ msgstr "Zaktualizowano %d z %d elementów (błąd: %d)."
 msgid "Updated patch %s."
 msgstr "Zaktualizowano łatkę %s."
 
-# en-hash: 5acc2e6d984581a93589bdc1d2e6602f
-msgid "Updated patch \"
-msgstr "Zaktualizowano łatkę \"
 
 # en-hash: 2d1cf6daf9d267b25ac38660ec2067d4
 msgid "Updated patch \"%s\"."
 msgstr "Zaktualizowano łatkę \"%s\"."
 
-# en-hash: 9228dbc538960da6bc0a130ca79f1fb3
-msgid "Updated plugin \"
-msgstr "Zaktualizowano wtyczkę \"
 
 # en-hash: f8ae9429cf57975595afe3e9c95ed235
 msgid "Updated plugin \"%s\" to version %s."
@@ -2033,9 +2009,6 @@ msgstr "[szkic]"
 msgid "[pre]"
 msgstr "[pre]"
 
-# en-hash: 28d397e87306b8631f3ed80d858d35f0
-msgid "\"
-msgstr "\"
 
 # en-hash: 6e612162deb4baa04d1253d7a9f19b33
 msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
@@ -2356,3 +2329,13 @@ msgstr "≥ %s ⭐"
 # en-hash: 55930f171c863808f8dba67599ec1d70
 msgid "✓ Current"
 msgstr "✓ Aktualna"
+
+msgid "msg_installed_plugin"
+msgstr "Zainstalowano wtyczk? \"%s\"."
+
+msgid "msg_installed_plugin_version"
+msgstr "Zainstalowano wtyczk? \"%s\" (wersja %s)."
+
+msgid "progress_please_wait"
+msgstr "Prosz? czeka?"
+

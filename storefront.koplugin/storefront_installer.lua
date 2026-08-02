@@ -776,9 +776,9 @@ function M:init(Storefront)
                 end
             else
                 if info.plugin_version and info.plugin_version ~= "" then
-                    msg = string.format(_("Installed plugin \"%s\" (version %s)."), info.plugin_name, info.plugin_version)
+                    msg = string.format(_("msg_installed_plugin_version"), info.plugin_name, info.plugin_version)
                 else
-                    msg = string.format(_("Installed plugin \"%s\"."), info.plugin_name)
+                    msg = string.format(_("msg_installed_plugin"), info.plugin_name)
                 end
             end
 
@@ -932,9 +932,9 @@ function M:init(Storefront)
                 end
             else
                 if info.plugin_version and info.plugin_version ~= "" then
-                    msg = string.format(_("Installed plugin \"%s\" (version %s)."), info.plugin_name, info.plugin_version)
+                    msg = string.format(_("msg_installed_plugin_version"), info.plugin_name, info.plugin_version)
                 else
-                    msg = string.format(_("Installed plugin \"%s\"."), info.plugin_name)
+                    msg = string.format(_("msg_installed_plugin"), info.plugin_name)
                 end
             end
 

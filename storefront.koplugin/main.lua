@@ -475,11 +475,13 @@ local function showFetchingProgress(message)
     local ui_font_size = storefront_theme.face_label_size or 18
     local title_font_size = storefront_theme.title_font_size or 22
 
-    local title_label = TextWidget:new{
-        text = _("Fetching Release Info"),
+    local title_label = TextBoxWidget:new{
+        text = _("progress_please_wait"),
         face = Font:getFace("NotoSerif-Regular.ttf", title_font_size),
         bold = true,
         fgcolor = Blitbuffer.COLOR_BLACK,
+        width = dialog_w - sc(40),
+        alignment = "center",
     }
 
     local title_container = FrameContainer:new{
@@ -5381,9 +5383,9 @@ function Storefront:installPluginFromReleaseAsset(repo, release, asset)
                 end
             else
                 if info.plugin_version and info.plugin_version ~= "" then
-                    msg = string.format(_("Installed plugin \"%s\" (version %s)."), info.plugin_name, info.plugin_version)
+                    msg = string.format(_("msg_installed_plugin_version"), info.plugin_name, info.plugin_version)
                 else
-                    msg = string.format(_("Installed plugin \"%s\"."), info.plugin_name)
+                    msg = string.format(_("msg_installed_plugin"), info.plugin_name)
                 end
             end
 

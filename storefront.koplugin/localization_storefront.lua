@@ -84,11 +84,19 @@ function Localization:parsePO(filepath)
     
     -- Process escape sequences
     for key, value in pairs(translations) do
+        local normalized_key = key
+        normalized_key = normalized_key:gsub("\\\\n", "\n")
+        normalized_key = normalized_key:gsub("\\\\t", "\t")
+        normalized_key = normalized_key:gsub('\\\\"', '"')
+        normalized_key = normalized_key:gsub("\\\\\\\\", "\\\\")
         value = value:gsub("\\n", "\n")
         value = value:gsub("\\t", "\t")
         value = value:gsub('\\"', '"')
         value = value:gsub("\\\\", "\\")
-        translations[key] = value
+        translations[normalized_key] = value
+        if normalized_key ~= key then
+            translations[key] = nil
+        end
     end
     
     return translations
@@ -307,6 +315,9 @@ local FALLBACKS = {
     btn_preview = "Preview",
     btn_ok = "OK",
     btn_retry = "Retry",
+    msg_installed_plugin = "Installed plugin \"%s\".",
+    msg_installed_plugin_version = "Installed plugin \"%s\" (version %s).",
+    progress_please_wait = "Please wait",
 
     -- Item Badges & Statuses
     status_installed = "Installed",
