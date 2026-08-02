@@ -5,6 +5,10 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
+# en-hash: 8b58398aa916952e63218ac09281abb5
+msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
+msgstr "“亲爱的班纳特先生，”一天他的太太对他说，“你听说内瑟菲尔德庄园终于租出去了吗？”班纳特先生回答说没有。“可确实租出去了，”她回答道，“朗格太太刚才来过，把这事全告诉我了。”班纳特先生没有作声。"
+
 # en-hash: 7c23d2c4c06ff10d27bdaad6897814f6
 msgid "%d patches"
 msgstr "%d 个补丁"
@@ -229,9 +233,9 @@ msgstr "目录已更新：%d 个插件，%d 个补丁，%d 个字体。"
 msgid "Category: %s"
 msgstr "分类: %s"
 
-# en-hash: 1d7424fa26277204a05aead87ecb8cb7
-msgid "Changelog for %s\n%s \xE2\x86\x92 %s"
-msgstr "%s 的更新日志\n%s \xE2\x86\x92 %s"
+# en-hash: f2fe0cf2f0f795d65316611894a68e7b
+msgid "Changelog for %s\n%s → %s"
+msgstr "%s 的更新日志\n%s → %s"
 
 # en-hash: 4f52ad17d9ef55d023b50ecf6c5ac7c3
 msgid "Changelog: %s"
@@ -305,9 +309,9 @@ msgstr "关闭"
 msgid "Commit diff: %s → %s"
 msgstr "提交差异：%s → %s"
 
-# en-hash: d768bb0d8ad380d796d8e3922bd2ecb0
-msgid "Commits: %s \xE2\x86\x92 %s"
-msgstr "提交：%s \xE2\x86\x92 %s"
+# en-hash: 23b31366190a2a573a9a590f599770f0
+msgid "Commits: %s → %s"
+msgstr "提交：%s → %s"
 
 # en-hash: fdd273d186bb6db8f5f2c72285324aec
 msgid "Config files only"
@@ -325,9 +329,9 @@ msgstr "确认更新"
 msgid "Confirm Update All"
 msgstr "确认全部更新"
 
-# en-hash: c26fea8084ab2889b58e315423ae3384
+# en-hash: c85b3d1d3702a046bab4caeeb4e55f64
 msgid "Connecting to GitHub…\n\nPlease wait."
-msgstr "正在连接到 GitHub…\n\n请稍候。"
+msgstr "正在连接至 GitHub…\n\n请稍候。"
 
 # en-hash: a0bfb8e59e6c13fc8d990781f77694fe
 msgid "Continue"
@@ -397,9 +401,9 @@ msgstr "删除所有已缓存的 README 文件？需要时将重新下载。"
 msgid "Delete file "
 msgstr "删除文件 "
 
-# en-hash: 18a53f2cfb050b48df63dccad4847238
+# en-hash: e17fae40f782a9317818bea081c40854
 msgid "Delete file '%s'?\n\nThis cannot be undone."
-msgstr "是否删除文件“%s”？\n\n此操作无法撤销。"
+msgstr "删除文件“%s”？\n\n此操作无法撤销。"
 
 # en-hash: 36ce89d0b222e5cc95ecfa70ccc14b61
 msgid "Delete font "
@@ -485,21 +489,21 @@ msgstr "下载选项 — %s"
 msgid "Download options — %s (%s)"
 msgstr "下载选项 — %s (%s)"
 
-# en-hash: 62a8179dd03af852fb825c8f272e066a
+# en-hash: 78d1065d0a2922c1259f01ab88225abe
 msgid "Downloading %s%s…\nThis may take a moment."
-msgstr "正在下载 %s%s…\n这可能需要一些时间。"
+msgstr "正在下载 %s%s…\n这可能需要一点时间。"
 
 # en-hash: aec53a66ffe56182ba4a5dcf0e90a275
 msgid "Downloading %s…"
 msgstr "正在下载 %s…"
 
+# en-hash: d761b1cd179dbcdc3903cc15b6f0d4b3
+msgid "Downloading patch \"%s\"…"
+msgstr "正在下载补丁“%s”…"
+
 # en-hash: 6bbf43b6305abafd484e7fd8cba628bd
 msgid "Downloading patch %s…"
 msgstr "正在下载补丁 %s…"
-
-# en-hash: c5603716dc35e3e5aa81f2c950479bb9
-msgid "Downloading patch \"%s\"…"
-msgstr "正在下载补丁“%s”…"
 
 # en-hash: 7dce122004969d56ae2e0245cb754d35
 msgid "Edit"
@@ -529,7 +533,7 @@ msgstr "输入项目编号"
 msgid "Enter plugin number"
 msgstr "输入插件编号"
 
-# en-hash: 89b4b26f6ba354f0a2c9046ce4f07628
+# en-hash: 9e003fc25fa42082e9ed5d3d6aac6922
 msgid "Extracting and installing plugin…\nPlease wait."
 msgstr "正在解压并安装插件…\n请稍候。"
 
@@ -829,27 +833,27 @@ msgstr "已安装补丁设置"
 msgid "Installed Plugins Settings"
 msgstr "已安装插件设置"
 
-# en-hash: 6e6502af239b8a79ecdad9ed69e1e0f8
+# en-hash: 038f35c2f842d3e81468493c8f38723f
 msgid "Installed Regular font style offline for \"%s\". Full font family queued for download when reconnected."
-msgstr "已离线安装“%s”的常规体样式。网络恢复后将自动排队下载完整字体族。"
+msgstr "已离线安装“%s”的常规字形。重新连接后将排队下载全套字体族。"
 
-# en-hash: 4b5d575203c94284e093b7a4a758ac4b
+# en-hash: 5fcc7f067fee6def71086742d8e42a95
 msgid "Installed font \"%s\" (%d file(s))."
 msgstr "已安装字体“%s”（%d 个文件）。"
 
-# en-hash: ea1c8e53423eeb83107fe20e06741269
+# en-hash: 895249f0b65de25b747f8c273baf1377
 msgid "Installed full font family \"%s\" (%d file(s))."
-msgstr "已安装完整字体族“%s”（%d 个文件）。"
+msgstr "已安装全套字体族“%s”（%d 个文件）。"
 
-# en-hash: 8c51f348955266029fd98e4d39ca72f5
+# en-hash: 7ff35e7a7a86c5238f127b89f7a51091
 msgid "Installed patch \"%s\"."
 msgstr "已安装补丁“%s”。"
 
-# en-hash: bc342f2375c94847e1fddaf0bfba6bf3
+# en-hash: 1ea8b0189bc054c587a78d1b13f5dc9d
 msgid "Installed plugin \"%s\" (version %s)."
 msgstr "已安装插件“%s”（版本 %s）。"
 
-# en-hash: 0267ec5f3149d17e65ae2188165839cf
+# en-hash: ea7009546a19031e6fddcf0ad7e2d5a9
 msgid "Installed plugin \"%s\"."
 msgstr "已安装插件“%s”。"
 
@@ -949,9 +953,9 @@ msgstr "本地：%s → 远程：%s"
 msgid "Manage plugin paths"
 msgstr "管理插件路径"
 
-# en-hash: 93a977626dd8c809f61e9546cedfcbe1
+# en-hash: f54d902bf6fa9de2c25b5e7fcff35637
 msgid "Manage plugin paths\n\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
-msgstr "管理插件路径\n\n隐藏路径仅影响商店在此处的显示/管理。KOReader 仍会从中加载插件。"
+msgstr "管理插件路径\n\n隐藏路径仅影响 Storefront 在此处的显示与管理。KOReader 仍会从中加载插件。"
 
 # en-hash: 6da89265a9a8b0b28eb4946bb2ec0c6d
 msgid "Match"
@@ -1621,13 +1625,13 @@ msgstr "保存"
 msgid "Search"
 msgstr "搜索"
 
+# en-hash: f2ecdcba091a518fcb585529186fa60b
+msgid "Search \"%s\""
+msgstr "搜索“%s”"
+
 # en-hash: 02aebab4da8f3c3506b5f7841b74771e
 msgid "Search & API"
 msgstr "搜索与 API"
-
-# en-hash: e9b9fb1b4ba8f6e75efc75ae5aed363c
-msgid "Search \"%s\""
-msgstr "搜索“%s”"
 
 # en-hash: 5535a0cf45d5824d5a8d3c306ff6b30c
 msgid "Search text"
@@ -1817,7 +1821,7 @@ msgstr "文本编辑器插件不可用。"
 msgid "The quick brown fox jumps over the lazy dog."
 msgstr "天地玄黄，宇宙洪荒。日月盈昃，辰宿列张。"
 
-# en-hash: 6b11d54b770901ba08efa2f9f15a6ff8
+# en-hash: a26abb5b7dd05b79763d7799a9f6ecbb
 msgid "This action cannot be undone.\n\nChanges will take effect after restart."
 msgstr "此操作无法撤销。\n\n更改将在重启后生效。"
 
@@ -1925,19 +1929,19 @@ msgstr "更新插件"
 msgid "Updated %d of %d item(s) (%d failed)."
 msgstr "已更新 %d / %d 个项目（%d 个失败）。"
 
+# en-hash: bda1a603a6d50386060b8dd0ff3a1c27
+msgid "Updated patch \"%s\"."
+msgstr "已更新补丁“%s”。"
+
 # en-hash: b07f486d167967e8af0ce9e7761d5a5e
 msgid "Updated patch %s."
 msgstr "已更新补丁 %s。"
 
-# en-hash: 40d9d912891a7b4db8333ca51498ddaa
-msgid "Updated patch \"%s\"."
-msgstr "已更新补丁“%s”。"
-
-# en-hash: 00cf5a27788eb66c299ecdb6eccc564b
+# en-hash: ea03cc9fdc791c9e882185f9871e2d19
 msgid "Updated plugin \"%s\" to version %s."
 msgstr "已将插件“%s”更新至版本 %s。"
 
-# en-hash: d61ad01c787c9df22e7eedb1fafa7766
+# en-hash: cfba84643992b94389217ecb4b0e89c5
 msgid "Updated plugin \"%s\"."
 msgstr "已更新插件“%s”。"
 
@@ -1973,9 +1977,9 @@ msgstr "版本"
 msgid "View README"
 msgstr "查看 README"
 
-# en-hash: f9cce0734db25075f1c8f3f1a1e01186
-msgid "View commits (%s \xE2\x86\x92 %s)"
-msgstr "查看提交 (%s \xE2\x86\x92 %s)"
+# en-hash: 033b69530c7d38c7bcda12b16b97b203
+msgid "View commits (%s → %s)"
+msgstr "查看提交 (%s → %s)"
 
 # en-hash: 5debabbcc269798b673cbe19cd73e8e7
 msgid "Warning: the selected version is older than what is currently installed. You are downgrading."
@@ -2000,14 +2004,6 @@ msgstr "[草稿]"
 # en-hash: 59db44a5d1552a390f72a7e83935bca0
 msgid "[pre]"
 msgstr "[预发布]"
-
-# en-hash: 340830b7124edf0ca3245b03344d52bd
-msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
-msgstr "“亲爱的班纳特先生，”有一天他的太太对他说，“你听说内瑟菲尔德庄园终于租出去了吗？”班纳特先生回答说没听说。“但确实租出去了，”她回答道，“因为朗格太太刚刚来过，把这件事全告诉我了。”班纳特先生没有做声。"
-
-# en-hash: e06861ef2b440f06c4e9fa35ff735112
-msgid "\xC2\xB7"
-msgstr "\xC2\xB7"
 
 # en-hash: 452444be4c6a56f22e40e23472b8c748
 msgid "about_text"
@@ -2197,11 +2193,11 @@ msgstr "浏览、安装和更新插件、补丁与字体。"
 msgid "msg_catalog_updated"
 msgstr "目录已成功更新。"
 
-# en-hash: 0267ec5f3149d17e65ae2188165839cf
+# en-hash: ea7009546a19031e6fddcf0ad7e2d5a9
 msgid "msg_installed_plugin"
 msgstr "已安装插件“%s”。"
 
-# en-hash: bc342f2375c94847e1fddaf0bfba6bf3
+# en-hash: 1ea8b0189bc054c587a78d1b13f5dc9d
 msgid "msg_installed_plugin_version"
 msgstr "已安装插件“%s”（版本 %s）。"
 
@@ -2324,6 +2320,10 @@ msgstr "更新于 %s"
 # en-hash: 4fb9820991bd18f6c55eb72a24b1c411
 msgid "updated %s (%s)"
 msgstr "已更新 %s (%s)"
+
+# en-hash: 176848afabe6f93c3e23a470037ab74f
+msgid "·"
+msgstr "·"
 
 # en-hash: a565c660107f7ea24918e8be382b38bd
 msgid "≥ %s ⭐"

@@ -5,6 +5,9 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
+msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
+msgstr "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
+
 msgid "%d patches"
 msgstr "%d patches"
 
@@ -173,8 +176,8 @@ msgstr "Catalog updated: %d plugins, %d patches, %d fonts."
 msgid "Category: %s"
 msgstr "Category: %s"
 
-msgid "Changelog for %s\n%s \xE2\x86\x92 %s"
-msgstr "Changelog for %s\n%s \xE2\x86\x92 %s"
+msgid "Changelog for %s\n%s → %s"
+msgstr "Changelog for %s\n%s → %s"
 
 msgid "Changelog: %s"
 msgstr "Changelog: %s"
@@ -230,8 +233,8 @@ msgstr "Close"
 msgid "Commit diff: %s → %s"
 msgstr "Commit diff: %s → %s"
 
-msgid "Commits: %s \xE2\x86\x92 %s"
-msgstr "Commits: %s \xE2\x86\x92 %s"
+msgid "Commits: %s → %s"
+msgstr "Commits: %s → %s"
 
 msgid "Config files only"
 msgstr "Config files only"
@@ -371,11 +374,11 @@ msgstr "Downloading %s%s…\nThis may take a moment."
 msgid "Downloading %s…"
 msgstr "Downloading %s…"
 
+msgid "Downloading patch \"%s\"…"
+msgstr "Downloading patch \"%s\"…"
+
 msgid "Downloading patch %s…"
 msgstr "Downloading patch %s…"
-
-msgid "Downloading patch \"%s\"…"
-msgstr "Downloading patch \\\\\\\"%s\\\\\\\"…"
 
 msgid "Edit"
 msgstr "Edit"
@@ -624,22 +627,22 @@ msgid "Installed Plugins Settings"
 msgstr "Installed Plugins Settings"
 
 msgid "Installed Regular font style offline for \"%s\". Full font family queued for download when reconnected."
-msgstr "Installed Regular font style offline for \\\\\\\"%s\\\\\\\". Full font family queued for download when reconnected."
+msgstr "Installed Regular font style offline for \"%s\". Full font family queued for download when reconnected."
 
 msgid "Installed font \"%s\" (%d file(s))."
-msgstr "Installed font \\\\\\\"%s\\\\\\\" (%d file(s))."
+msgstr "Installed font \"%s\" (%d file(s))."
 
 msgid "Installed full font family \"%s\" (%d file(s))."
-msgstr "Installed full font family \\\\\\\"%s\\\\\\\" (%d file(s))."
+msgstr "Installed full font family \"%s\" (%d file(s))."
 
 msgid "Installed patch \"%s\"."
-msgstr "Installed patch \\\\\\\"%s\\\\\\\"."
+msgstr "Installed patch \"%s\"."
 
 msgid "Installed plugin \"%s\" (version %s)."
-msgstr "Installed plugin \\\\\\\"%s\\\\\\\" (version %s)."
+msgstr "Installed plugin \"%s\" (version %s)."
 
 msgid "Installed plugin \"%s\"."
-msgstr "Installed plugin \\\\\\\"%s\\\\\\\"."
+msgstr "Installed plugin \"%s\"."
 
 msgid "Installing %s…"
 msgstr "Installing %s…"
@@ -1217,11 +1220,11 @@ msgstr "Save"
 msgid "Search"
 msgstr "Search"
 
+msgid "Search \"%s\""
+msgstr "Search \"%s\""
+
 msgid "Search & API"
 msgstr "Search & API"
-
-msgid "Search \"%s\""
-msgstr "Search \\\\\\\"%s\\\\\\\""
 
 msgid "Search text"
 msgstr "Search text"
@@ -1445,17 +1448,17 @@ msgstr "Update plugin"
 msgid "Updated %d of %d item(s) (%d failed)."
 msgstr "Updated %d of %d item(s) (%d failed)."
 
+msgid "Updated patch \"%s\"."
+msgstr "Updated patch \"%s\"."
+
 msgid "Updated patch %s."
 msgstr "Updated patch %s."
 
-msgid "Updated patch \"%s\"."
-msgstr "Updated patch \\\\\\\"%s\\\\\\\"."
-
 msgid "Updated plugin \"%s\" to version %s."
-msgstr "Updated plugin \\\\\\\"%s\\\\\\\" to version %s."
+msgstr "Updated plugin \"%s\" to version %s."
 
 msgid "Updated plugin \"%s\"."
-msgstr "Updated plugin \\\\\\\"%s\\\\\\\"."
+msgstr "Updated plugin \"%s\"."
 
 msgid "Updated: %s"
 msgstr "Updated: %s"
@@ -1481,8 +1484,8 @@ msgstr "Versions"
 msgid "View README"
 msgstr "View README"
 
-msgid "View commits (%s \xE2\x86\x92 %s)"
-msgstr "View commits (%s \xE2\x86\x92 %s)"
+msgid "View commits (%s → %s)"
+msgstr "View commits (%s → %s)"
 
 msgid "Warning: the selected version is older than what is currently installed. You are downgrading."
 msgstr "Warning: the selected version is older than what is currently installed. You are downgrading."
@@ -1501,12 +1504,6 @@ msgstr "[draft]"
 
 msgid "[pre]"
 msgstr "[pre]"
-
-msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
-msgstr "\\\\\\\"My dear Mr. Bennet,\\\\\\\" said his lady to him one day, \\\\\\\"have you heard that Netherfield Park is let at last?\\\\\\\" Mr. Bennet replied that he had not. \\\\\\\"But it is,\\\\\\\" returned she; \\\\\\\"for Mrs. Long has just been here, and she told me all about it.\\\\\\\" Mr. Bennet made no answer."
-
-msgid "\xC2\xB7"
-msgstr "\xC2\xB7"
 
 msgid "about_text"
 msgstr "Storefront is an in-app package manager for KOReader plugins, patches, and fonts."
@@ -1650,10 +1647,10 @@ msgid "msg_catalog_updated"
 msgstr "Catalog updated successfully."
 
 msgid "msg_installed_plugin"
-msgstr "Installed plugin \\\\\\\"%s\\\\\\\"."
+msgstr "Installed plugin \"%s\"."
 
 msgid "msg_installed_plugin_version"
-msgstr "Installed plugin \\\\\\\"%s\\\\\\\" (version %s)."
+msgstr "Installed plugin \"%s\" (version %s)."
 
 msgid "msg_no_results"
 msgstr "No items found matching search."
@@ -1744,6 +1741,9 @@ msgstr "updated %s"
 
 msgid "updated %s (%s)"
 msgstr "updated %s (%s)"
+
+msgid "·"
+msgstr "·"
 
 msgid "≥ %s ⭐"
 msgstr "≥ %s ⭐"

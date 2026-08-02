@@ -2,6 +2,7 @@
 import os
 import re
 import sys
+import sync_translations
 
 PLUGIN_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'storefront.koplugin'))
 LANGUAGES_DIR = os.path.join(PLUGIN_DIR, 'languages')
@@ -101,11 +102,13 @@ def extract_keys_from_lua():
                     # 1. Double quoted _("...")
                     for m in re.finditer(r'(?:_|_G\._|loc:t|Localization:t)\s*\(\s*"((?:[^"\\]|\\.)*)"\s*[\),]', content):
                         s = m.group(1).replace('\\"', '"').replace('\\n', '\n').replace('\\\\', '\\')
+                        s = s.replace('\\xC2\\xB7', '·').replace('\\xE2\\x86\\x92', '→').replace('\\xE2\\x80\\x94', '—').replace('\\xE2\\x80\\xA2', '•')
                         if s and not s.startswith('%'): keys.add(s)
 
                     # 2. Single quoted _('...')
                     for m in re.finditer(r'(?:_|_G\._|loc:t|Localization:t)\s*\(\s*\'((?:[^\'\\]|\\.)*)\'\s*[\),]', content):
                         s = m.group(1).replace("\\'", "'").replace('\\n', '\n').replace('\\\\', '\\')
+                        s = s.replace('\\xC2\\xB7', '·').replace('\\xE2\\x86\\x92', '→').replace('\\xE2\\x80\\x94', '—').replace('\\xE2\\x80\\xA2', '•')
                         if s and not s.startswith('%'): keys.add(s)
 
                     # 3. Block quoted _([[...]])
@@ -139,19 +142,19 @@ def parse_po(file_path):
                 if current_msgid is not None and current_msgstr is not None:
                     entries[current_msgid] = current_msgstr
                 m = re.match(r'^msgid "(.*)"$', line_str)
-                current_msgid = m.group(1).replace('\\"', '"').replace('\\n', '\n') if m else ''
+                current_msgid = sync_translations.decode_po_string(m.group(1)) if m else ''
                 current_msgstr = None
                 in_msgid = True
                 in_msgstr = False
             elif line_str.startswith('msgstr '):
                 m = re.match(r'^msgstr "(.*)"$', line_str)
-                current_msgstr = m.group(1).replace('\\"', '"').replace('\\n', '\n') if m else ''
+                current_msgstr = sync_translations.decode_po_string(m.group(1)) if m else ''
                 in_msgid = False
                 in_msgstr = True
             elif line_str.startswith('"'):
                 m = re.match(r'^"(.*)"$', line_str)
                 if m:
-                    val = m.group(1).replace('\\"', '"').replace('\\n', '\n')
+                    val = sync_translations.decode_po_string(m.group(1))
                     if in_msgid and current_msgid is not None:
                         current_msgid += val
                     elif in_msgstr and current_msgstr is not None:

@@ -5,6 +5,10 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
+# en-hash: 8b58398aa916952e63218ac09281abb5
+msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
+msgstr "\"Meu caro Sr. Bennet,\" disse sua esposa um dia, \"ouviu dizer que Netherfield Park foi finalmente alugado?\" O Sr. Bennet respondeu que não. \"Pois foi,\" respondeu ela; \"a Sra. Long esteve aqui e contou-me tudo sobre isso.\" O Sr. Bennet não deu resposta."
+
 # en-hash: 7c23d2c4c06ff10d27bdaad6897814f6
 msgid "%d patches"
 msgstr "%d patches"
@@ -229,9 +233,9 @@ msgstr "Catálogo atualizado: %d plugins, %d patches, %d fontes."
 msgid "Category: %s"
 msgstr "Categoria: %s"
 
-# en-hash: 1d7424fa26277204a05aead87ecb8cb7
-msgid "Changelog for %s\n%s \xE2\x86\x92 %s"
-msgstr "Registro de alterações de %s\n%s \xE2\x86\x92 %s"
+# en-hash: f2fe0cf2f0f795d65316611894a68e7b
+msgid "Changelog for %s\n%s → %s"
+msgstr "Histórico de alterações de %s\n%s → %s"
 
 # en-hash: 4f52ad17d9ef55d023b50ecf6c5ac7c3
 msgid "Changelog: %s"
@@ -305,9 +309,9 @@ msgstr "Fechar"
 msgid "Commit diff: %s → %s"
 msgstr "Diferença de commits: %s → %s"
 
-# en-hash: d768bb0d8ad380d796d8e3922bd2ecb0
-msgid "Commits: %s \xE2\x86\x92 %s"
-msgstr "Commits: %s \xE2\x86\x92 %s"
+# en-hash: 23b31366190a2a573a9a590f599770f0
+msgid "Commits: %s → %s"
+msgstr "Commits: %s → %s"
 
 # en-hash: fdd273d186bb6db8f5f2c72285324aec
 msgid "Config files only"
@@ -325,7 +329,7 @@ msgstr "Confirmar atualização"
 msgid "Confirm Update All"
 msgstr "Confirmar atualizar tudo"
 
-# en-hash: c26fea8084ab2889b58e315423ae3384
+# en-hash: c85b3d1d3702a046bab4caeeb4e55f64
 msgid "Connecting to GitHub…\n\nPlease wait."
 msgstr "Conectando ao GitHub…\n\nAguarde."
 
@@ -397,9 +401,9 @@ msgstr "Excluir todos os arquivos README em cache? Eles serão baixados novament
 msgid "Delete file "
 msgstr "Excluir arquivo "
 
-# en-hash: 18a53f2cfb050b48df63dccad4847238
+# en-hash: e17fae40f782a9317818bea081c40854
 msgid "Delete file '%s'?\n\nThis cannot be undone."
-msgstr "Excluir o arquivo '%s'?\n\nEsta ação não pode ser desfeita."
+msgstr "Excluir arquivo '%s'?\n\nEsta ação não pode ser desfeita."
 
 # en-hash: 36ce89d0b222e5cc95ecfa70ccc14b61
 msgid "Delete font "
@@ -485,7 +489,7 @@ msgstr "Opções de download — %s"
 msgid "Download options — %s (%s)"
 msgstr "Opções de download — %s (%s)"
 
-# en-hash: 62a8179dd03af852fb825c8f272e066a
+# en-hash: 78d1065d0a2922c1259f01ab88225abe
 msgid "Downloading %s%s…\nThis may take a moment."
 msgstr "Baixando %s%s…\nIsso pode levar um momento."
 
@@ -493,13 +497,13 @@ msgstr "Baixando %s%s…\nIsso pode levar um momento."
 msgid "Downloading %s…"
 msgstr "Baixando %s…"
 
+# en-hash: d761b1cd179dbcdc3903cc15b6f0d4b3
+msgid "Downloading patch \"%s\"…"
+msgstr "Baixando patch \"%s\"…"
+
 # en-hash: 6bbf43b6305abafd484e7fd8cba628bd
 msgid "Downloading patch %s…"
 msgstr "Baixando patch %s…"
-
-# en-hash: c5603716dc35e3e5aa81f2c950479bb9
-msgid "Downloading patch \"%s\"…"
-msgstr "Baixando o patch \\\\\\\"%s\\\\\\\"…"
 
 # en-hash: 7dce122004969d56ae2e0245cb754d35
 msgid "Edit"
@@ -529,7 +533,7 @@ msgstr "Digite o número do item"
 msgid "Enter plugin number"
 msgstr "Digite o número do plugin"
 
-# en-hash: 89b4b26f6ba354f0a2c9046ce4f07628
+# en-hash: 9e003fc25fa42082e9ed5d3d6aac6922
 msgid "Extracting and installing plugin…\nPlease wait."
 msgstr "Extraindo e instalando plugin…\nAguarde."
 
@@ -829,29 +833,29 @@ msgstr "Configurações de patches instalados"
 msgid "Installed Plugins Settings"
 msgstr "Configurações de plugins instalados"
 
-# en-hash: 6e6502af239b8a79ecdad9ed69e1e0f8
+# en-hash: 038f35c2f842d3e81468493c8f38723f
 msgid "Installed Regular font style offline for \"%s\". Full font family queued for download when reconnected."
-msgstr "Estilo de fonte Regular instalado offline para \\\\\\\"%s\\\\\\\". Família completa de fontes na fila para download ao reconectar."
+msgstr "Estilo de fonte Regular instalado offline para \"%s\". Família de fontes completa na fila para download quando reconectado."
 
-# en-hash: 4b5d575203c94284e093b7a4a758ac4b
+# en-hash: 5fcc7f067fee6def71086742d8e42a95
 msgid "Installed font \"%s\" (%d file(s))."
-msgstr "Fonte \\\\\\\"%s\\\\\\\" instalada (%d arquivo(s))."
+msgstr "Fonte \"%s\" instalada (%d arquivo(s))."
 
-# en-hash: ea1c8e53423eeb83107fe20e06741269
+# en-hash: 895249f0b65de25b747f8c273baf1377
 msgid "Installed full font family \"%s\" (%d file(s))."
-msgstr "Família completa de fontes \\\\\\\"%s\\\\\\\" instalada (%d arquivo(s))."
+msgstr "Família de fontes completa \"%s\" instalada (%d arquivo(s))."
 
-# en-hash: 8c51f348955266029fd98e4d39ca72f5
+# en-hash: 7ff35e7a7a86c5238f127b89f7a51091
 msgid "Installed patch \"%s\"."
-msgstr "Patch \\\\\\\"%s\\\\\\\" instalado."
+msgstr "Patch \"%s\" instalado."
 
-# en-hash: bc342f2375c94847e1fddaf0bfba6bf3
+# en-hash: 1ea8b0189bc054c587a78d1b13f5dc9d
 msgid "Installed plugin \"%s\" (version %s)."
-msgstr "Plugin \\\\\\\"%s\\\\\\\" instalado (versão %s)."
+msgstr "Plugin \"%s\" instalado (versão %s)."
 
-# en-hash: 0267ec5f3149d17e65ae2188165839cf
+# en-hash: ea7009546a19031e6fddcf0ad7e2d5a9
 msgid "Installed plugin \"%s\"."
-msgstr "Plugin \\\\\\\"%s\\\\\\\" instalado."
+msgstr "Plugin \"%s\" instalado."
 
 # en-hash: c98f920c29f4d2f367f11f8aad8c6b98
 msgid "Installing %s…"
@@ -949,9 +953,9 @@ msgstr "Local: %s → Remoto: %s"
 msgid "Manage plugin paths"
 msgstr "Gerenciar caminhos de plugins"
 
-# en-hash: 93a977626dd8c809f61e9546cedfcbe1
+# en-hash: f54d902bf6fa9de2c25b5e7fcff35637
 msgid "Manage plugin paths\n\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
-msgstr "Gerenciar caminhos de plugins\n\nOcultar um caminho afeta apenas o que o Storefront exibe/gerencia aqui. O KOReader ainda carregará os plugins desse caminho."
+msgstr "Gerenciar caminhos de plugins\n\nOcultar um caminho afeta apenas o que o Storefront exibe/gerencia aqui. O KOReader ainda carregará os plugins dele."
 
 # en-hash: 6da89265a9a8b0b28eb4946bb2ec0c6d
 msgid "Match"
@@ -1621,13 +1625,13 @@ msgstr "Salvar"
 msgid "Search"
 msgstr "Buscar"
 
+# en-hash: f2ecdcba091a518fcb585529186fa60b
+msgid "Search \"%s\""
+msgstr "Pesquisar \"%s\""
+
 # en-hash: 02aebab4da8f3c3506b5f7841b74771e
 msgid "Search & API"
 msgstr "Busca e API"
-
-# en-hash: e9b9fb1b4ba8f6e75efc75ae5aed363c
-msgid "Search \"%s\""
-msgstr "Pesquisar \\\\\\\"%s\\\\\\\""
 
 # en-hash: 5535a0cf45d5824d5a8d3c306ff6b30c
 msgid "Search text"
@@ -1817,9 +1821,9 @@ msgstr "O plugin de editor de texto não está disponível."
 msgid "The quick brown fox jumps over the lazy dog."
 msgstr "Um pequeno jabuti xereta viu dois caçadores de aves na foz do rio."
 
-# en-hash: 6b11d54b770901ba08efa2f9f15a6ff8
+# en-hash: a26abb5b7dd05b79763d7799a9f6ecbb
 msgid "This action cannot be undone.\n\nChanges will take effect after restart."
-msgstr "Esta ação não pode ser desfeita.\n\nAs alterações surtirão efeito após reiniciar."
+msgstr "Esta ação não pode ser desfeita.\n\nAs alterações farão efeito após reiniciar."
 
 # en-hash: 638ec245e32c807a8e2b0998d3165411
 msgid "This will take effect on next restart."
@@ -1925,21 +1929,21 @@ msgstr "Atualizar plugin"
 msgid "Updated %d of %d item(s) (%d failed)."
 msgstr "Atualizado %d de %d item(ns) (%d com falha)."
 
+# en-hash: bda1a603a6d50386060b8dd0ff3a1c27
+msgid "Updated patch \"%s\"."
+msgstr "Patch \"%s\" atualizado."
+
 # en-hash: b07f486d167967e8af0ce9e7761d5a5e
 msgid "Updated patch %s."
 msgstr "Patch %s atualizado."
 
-# en-hash: 40d9d912891a7b4db8333ca51498ddaa
-msgid "Updated patch \"%s\"."
-msgstr "Patch \\\\\\\"%s\\\\\\\" atualizado."
-
-# en-hash: 00cf5a27788eb66c299ecdb6eccc564b
+# en-hash: ea03cc9fdc791c9e882185f9871e2d19
 msgid "Updated plugin \"%s\" to version %s."
-msgstr "Plugin \\\\\\\"%s\\\\\\\" atualizado para a versão %s."
+msgstr "Plugin \"%s\" atualizado para a versão %s."
 
-# en-hash: d61ad01c787c9df22e7eedb1fafa7766
+# en-hash: cfba84643992b94389217ecb4b0e89c5
 msgid "Updated plugin \"%s\"."
-msgstr "Plugin \\\\\\\"%s\\\\\\\" atualizado."
+msgstr "Plugin \"%s\" atualizado."
 
 # en-hash: 700f08e43a1a17d018812444cc9391e9
 msgid "Updated: %s"
@@ -1973,9 +1977,9 @@ msgstr "Versões"
 msgid "View README"
 msgstr "Ver README"
 
-# en-hash: f9cce0734db25075f1c8f3f1a1e01186
-msgid "View commits (%s \xE2\x86\x92 %s)"
-msgstr "Ver commits (%s \xE2\x86\x92 %s)"
+# en-hash: 033b69530c7d38c7bcda12b16b97b203
+msgid "View commits (%s → %s)"
+msgstr "Ver commits (%s → %s)"
 
 # en-hash: 5debabbcc269798b673cbe19cd73e8e7
 msgid "Warning: the selected version is older than what is currently installed. You are downgrading."
@@ -2000,14 +2004,6 @@ msgstr "[rascunho]"
 # en-hash: 59db44a5d1552a390f72a7e83935bca0
 msgid "[pre]"
 msgstr "[pre]"
-
-# en-hash: 340830b7124edf0ca3245b03344d52bd
-msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
-msgstr "\\\\\\\"Meu caro Sr. Bennet\\\\\\\", disse-lhe sua esposa certo dia, \\\\\\\"ouviu dizer que Netherfield Park foi finalmente alugado?\\\\\\\" O Sr. Bennet respondeu que não. \\\\\\\"Pois foi\\\\\\\", disse ela, \\\\\\\"porque a Sra. Long esteve aqui e me contou tudo.\\\\\\\" O Sr. Bennet não respondeu nada."
-
-# en-hash: e06861ef2b440f06c4e9fa35ff735112
-msgid "\xC2\xB7"
-msgstr "\xC2\xB7"
 
 # en-hash: 452444be4c6a56f22e40e23472b8c748
 msgid "about_text"
@@ -2197,13 +2193,13 @@ msgstr "Navegue, instale e atualize plugins, patches e fontes."
 msgid "msg_catalog_updated"
 msgstr "Catálogo atualizado com sucesso."
 
-# en-hash: 0267ec5f3149d17e65ae2188165839cf
+# en-hash: ea7009546a19031e6fddcf0ad7e2d5a9
 msgid "msg_installed_plugin"
 msgstr "Plugin \"%s\" instalado."
 
-# en-hash: bc342f2375c94847e1fddaf0bfba6bf3
+# en-hash: 1ea8b0189bc054c587a78d1b13f5dc9d
 msgid "msg_installed_plugin_version"
-msgstr "Plugin \"%s\" (versão %s) instalado."
+msgstr "Plugin \"%s\" instalado (versão %s)."
 
 # en-hash: 666d2dad00473f02da8e25031ea9c9fa
 msgid "msg_no_results"
@@ -2324,6 +2320,10 @@ msgstr "atualizado em %s"
 # en-hash: 4fb9820991bd18f6c55eb72a24b1c411
 msgid "updated %s (%s)"
 msgstr "atualizado em %s (%s)"
+
+# en-hash: 176848afabe6f93c3e23a470037ab74f
+msgid "·"
+msgstr "·"
 
 # en-hash: a565c660107f7ea24918e8be382b38bd
 msgid "≥ %s ⭐"

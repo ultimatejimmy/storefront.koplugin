@@ -5,6 +5,10 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
+# en-hash: 8b58398aa916952e63218ac09281abb5
+msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
+msgstr "\"Dragi moj g. Benete,\" rekla mu je supruga jednog dana, \"jeste li čuli da je Nederfild Park konačno izdat?\" G. Benet je odgovorio da nije. \"Ali jeste,\" uzvratila je ona; \"jer je gđa Long upravo bila ovde i sve mi je ispričala.\" G. Benet nije odgovorio."
+
 # en-hash: 7c23d2c4c06ff10d27bdaad6897814f6
 msgid "%d patches"
 msgstr "%d закрпа"
@@ -229,9 +233,9 @@ msgstr "Katalog ažuriran: %d priključaka, %d zakrpa, %d fontova."
 msgid "Category: %s"
 msgstr "Категорија: %s"
 
-# en-hash: 1d7424fa26277204a05aead87ecb8cb7
-msgid "Changelog for %s\n%s \xE2\x86\x92 %s"
-msgstr "Дневник промена за %s\n%s \xE2\x86\x92 %s"
+# en-hash: f2fe0cf2f0f795d65316611894a68e7b
+msgid "Changelog for %s\n%s → %s"
+msgstr "Дневник промена за %s\n%s → %s"
 
 # en-hash: 4f52ad17d9ef55d023b50ecf6c5ac7c3
 msgid "Changelog: %s"
@@ -305,9 +309,9 @@ msgstr "Затвори"
 msgid "Commit diff: %s → %s"
 msgstr "Разлика измена: %s → %s"
 
-# en-hash: d768bb0d8ad380d796d8e3922bd2ecb0
-msgid "Commits: %s \xE2\x86\x92 %s"
-msgstr "Izmene: %s \xE2\x86\x92 %s"
+# en-hash: 23b31366190a2a573a9a590f599770f0
+msgid "Commits: %s → %s"
+msgstr "Izmene: %s → %s"
 
 # en-hash: fdd273d186bb6db8f5f2c72285324aec
 msgid "Config files only"
@@ -325,7 +329,7 @@ msgstr "Потврди ажурирање"
 msgid "Confirm Update All"
 msgstr "Потврди ажурирање свега"
 
-# en-hash: c26fea8084ab2889b58e315423ae3384
+# en-hash: c85b3d1d3702a046bab4caeeb4e55f64
 msgid "Connecting to GitHub…\n\nPlease wait."
 msgstr "Повезивање са GitHub-ом…\n\nСачекајте."
 
@@ -397,7 +401,7 @@ msgstr "Обрисати све кеширане README датотеке? Бић
 msgid "Delete file "
 msgstr "Обриши датотеку "
 
-# en-hash: 18a53f2cfb050b48df63dccad4847238
+# en-hash: e17fae40f782a9317818bea081c40854
 msgid "Delete file '%s'?\n\nThis cannot be undone."
 msgstr "Izbrisati datoteku '%s'?\n\nOvo se ne može poništiti."
 
@@ -485,7 +489,7 @@ msgstr "Опције преузимања — %s"
 msgid "Download options — %s (%s)"
 msgstr "Opcije preuzimanja — %s (%s)"
 
-# en-hash: 62a8179dd03af852fb825c8f272e066a
+# en-hash: 78d1065d0a2922c1259f01ab88225abe
 msgid "Downloading %s%s…\nThis may take a moment."
 msgstr "Преузимање %s%s…\nОво може потрајати."
 
@@ -493,13 +497,13 @@ msgstr "Преузимање %s%s…\nОво може потрајати."
 msgid "Downloading %s…"
 msgstr "Преузимање %s…"
 
+# en-hash: d761b1cd179dbcdc3903cc15b6f0d4b3
+msgid "Downloading patch \"%s\"…"
+msgstr "Preuzimanje zakrpe \"%s\"…"
+
 # en-hash: 6bbf43b6305abafd484e7fd8cba628bd
 msgid "Downloading patch %s…"
 msgstr "Преузимање закрпе %s…"
-
-# en-hash: c5603716dc35e3e5aa81f2c950479bb9
-msgid "Downloading patch \"%s\"…"
-msgstr "Preuzimanje zakrpe \\\\\\\"%s\\\\\\\"…"
 
 # en-hash: 7dce122004969d56ae2e0245cb754d35
 msgid "Edit"
@@ -529,7 +533,7 @@ msgstr "Unesite broj stavke"
 msgid "Enter plugin number"
 msgstr "Унесите број додатка"
 
-# en-hash: 89b4b26f6ba354f0a2c9046ce4f07628
+# en-hash: 9e003fc25fa42082e9ed5d3d6aac6922
 msgid "Extracting and installing plugin…\nPlease wait."
 msgstr "Распакивање и инсталирање додатка…\nСачекајте."
 
@@ -829,29 +833,29 @@ msgstr "Подешавања инсталираних закрпи"
 msgid "Installed Plugins Settings"
 msgstr "Подешавања инсталираних додатака"
 
-# en-hash: 6e6502af239b8a79ecdad9ed69e1e0f8
+# en-hash: 038f35c2f842d3e81468493c8f38723f
 msgid "Installed Regular font style offline for \"%s\". Full font family queued for download when reconnected."
-msgstr "Instaliran običan stil fonta van mreže za \\\\\\\"%s\\\\\\\". Cela porodica fontova je na čekanju za preuzimanje po ponovnom povezivanju."
+msgstr "Instaliran običan stil fonta van mreže za \"%s\". Cela porodica fontova je na čekanju za preuzimanje po ponovnom povezivanju."
 
-# en-hash: 4b5d575203c94284e093b7a4a758ac4b
+# en-hash: 5fcc7f067fee6def71086742d8e42a95
 msgid "Installed font \"%s\" (%d file(s))."
-msgstr "Instaliran font \\\\\\\"%s\\\\\\\" (%d datoteka)."
+msgstr "Instaliran font \"%s\" (%d datoteka)."
 
-# en-hash: ea1c8e53423eeb83107fe20e06741269
+# en-hash: 895249f0b65de25b747f8c273baf1377
 msgid "Installed full font family \"%s\" (%d file(s))."
-msgstr "Instalirana cela porodica fontova \\\\\\\"%s\\\\\\\" (%d datoteka)."
+msgstr "Instalirana cela porodica fontova \"%s\" (%d datoteka)."
 
-# en-hash: 8c51f348955266029fd98e4d39ca72f5
+# en-hash: 7ff35e7a7a86c5238f127b89f7a51091
 msgid "Installed patch \"%s\"."
-msgstr "Instalirana zakrpa \\\\\\\"%s\\\\\\\"."
+msgstr "Instalirana zakrpa \"%s\"."
 
-# en-hash: bc342f2375c94847e1fddaf0bfba6bf3
+# en-hash: 1ea8b0189bc054c587a78d1b13f5dc9d
 msgid "Installed plugin \"%s\" (version %s)."
-msgstr "Instaliran dodatak \\\\\\\"%s\\\\\\\" (verzija %s)."
+msgstr "Instaliran dodatak \"%s\" (verzija %s)."
 
-# en-hash: 0267ec5f3149d17e65ae2188165839cf
+# en-hash: ea7009546a19031e6fddcf0ad7e2d5a9
 msgid "Installed plugin \"%s\"."
-msgstr "Instaliran dodatak \\\\\\\"%s\\\\\\\"."
+msgstr "Instaliran dodatak \"%s\"."
 
 # en-hash: c98f920c29f4d2f367f11f8aad8c6b98
 msgid "Installing %s…"
@@ -949,7 +953,7 @@ msgstr "Локално: %s → Удаљено: %s"
 msgid "Manage plugin paths"
 msgstr "Управљање путањама додатака"
 
-# en-hash: 93a977626dd8c809f61e9546cedfcbe1
+# en-hash: f54d902bf6fa9de2c25b5e7fcff35637
 msgid "Manage plugin paths\n\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
 msgstr "Управљање путањама додатака\n\nСкривање путање утиче само на оно што Storefront овде приказује/управља. KOReader ће и даље учитавати додатке одатле."
 
@@ -1621,13 +1625,13 @@ msgstr "Сачувај"
 msgid "Search"
 msgstr "Претрага"
 
+# en-hash: f2ecdcba091a518fcb585529186fa60b
+msgid "Search \"%s\""
+msgstr "Pretraži \"%s\""
+
 # en-hash: 02aebab4da8f3c3506b5f7841b74771e
 msgid "Search & API"
 msgstr "Претрага и API"
-
-# en-hash: e9b9fb1b4ba8f6e75efc75ae5aed363c
-msgid "Search \"%s\""
-msgstr "Pretraži \\\\\\\"%s\\\\\\\""
 
 # en-hash: 5535a0cf45d5824d5a8d3c306ff6b30c
 msgid "Search text"
@@ -1817,7 +1821,7 @@ msgstr "Додатак уређивача текста није доступан
 msgid "The quick brown fox jumps over the lazy dog."
 msgstr "Чешаљем са жутим зубима џунглом шета фини ђак."
 
-# en-hash: 6b11d54b770901ba08efa2f9f15a6ff8
+# en-hash: a26abb5b7dd05b79763d7799a9f6ecbb
 msgid "This action cannot be undone.\n\nChanges will take effect after restart."
 msgstr "Ова радња се не може опозвати.\n\nИзмене ће ступити на снагу након поновног покретања."
 
@@ -1925,21 +1929,21 @@ msgstr "Ажурирај додатак"
 msgid "Updated %d of %d item(s) (%d failed)."
 msgstr "Ажурирано %d од %d ставки (%d неуспешно)."
 
+# en-hash: bda1a603a6d50386060b8dd0ff3a1c27
+msgid "Updated patch \"%s\"."
+msgstr "Ažurirana zakrpa \"%s\"."
+
 # en-hash: b07f486d167967e8af0ce9e7761d5a5e
 msgid "Updated patch %s."
 msgstr "Ažurirana zakrpa %s."
 
-# en-hash: 40d9d912891a7b4db8333ca51498ddaa
-msgid "Updated patch \"%s\"."
-msgstr "Ažurirana zakrpa \\\\\\\"%s\\\\\\\"."
-
-# en-hash: 00cf5a27788eb66c299ecdb6eccc564b
+# en-hash: ea03cc9fdc791c9e882185f9871e2d19
 msgid "Updated plugin \"%s\" to version %s."
-msgstr "Ažuriran dodatak \\\\\\\"%s\\\\\\\" na verziju %s."
+msgstr "Ažuriran dodatak \"%s\" na verziju %s."
 
-# en-hash: d61ad01c787c9df22e7eedb1fafa7766
+# en-hash: cfba84643992b94389217ecb4b0e89c5
 msgid "Updated plugin \"%s\"."
-msgstr "Ažuriran dodatak \\\\\\\"%s\\\\\\\"."
+msgstr "Ažuriran dodatak \"%s\"."
 
 # en-hash: 700f08e43a1a17d018812444cc9391e9
 msgid "Updated: %s"
@@ -1973,9 +1977,9 @@ msgstr "Верзије"
 msgid "View README"
 msgstr "Прикажи README"
 
-# en-hash: f9cce0734db25075f1c8f3f1a1e01186
-msgid "View commits (%s \xE2\x86\x92 %s)"
-msgstr "Прикажи измене (%s \xE2\x86\x92 %s)"
+# en-hash: 033b69530c7d38c7bcda12b16b97b203
+msgid "View commits (%s → %s)"
+msgstr "Прикажи измене (%s → %s)"
 
 # en-hash: 5debabbcc269798b673cbe19cd73e8e7
 msgid "Warning: the selected version is older than what is currently installed. You are downgrading."
@@ -2000,14 +2004,6 @@ msgstr "[нацрт]"
 # en-hash: 59db44a5d1552a390f72a7e83935bca0
 msgid "[pre]"
 msgstr "[pred]"
-
-# en-hash: 340830b7124edf0ca3245b03344d52bd
-msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
-msgstr "\\\\\\\"Dragi moj g. Benete,\\\\\\\" rekla mu je supruga jednog dana, \\\\\\\"jeste li čuli da je Nederfild Park konačno izdat?\\\\\\\" G. Benet je odgovorio da nije. \\\\\\\"Ali jeste,\\\\\\\" uzvratila je ona; \\\\\\\"jer je gđa Long upravo bila ovde i sve mi je ispričala.\\\\\\\" G. Benet nije odgovorio."
-
-# en-hash: e06861ef2b440f06c4e9fa35ff735112
-msgid "\xC2\xB7"
-msgstr "\xC2\xB7"
 
 # en-hash: 452444be4c6a56f22e40e23472b8c748
 msgid "about_text"
@@ -2197,11 +2193,11 @@ msgstr "Прегледајте, инсталирајте и ажурирајте
 msgid "msg_catalog_updated"
 msgstr "Каталог је успешно ажуриран."
 
-# en-hash: 0267ec5f3149d17e65ae2188165839cf
+# en-hash: ea7009546a19031e6fddcf0ad7e2d5a9
 msgid "msg_installed_plugin"
 msgstr "Додатак „%s“ је инсталиран."
 
-# en-hash: bc342f2375c94847e1fddaf0bfba6bf3
+# en-hash: 1ea8b0189bc054c587a78d1b13f5dc9d
 msgid "msg_installed_plugin_version"
 msgstr "Додатак „%s“ (верзија %s) је инсталиран."
 
@@ -2324,6 +2320,10 @@ msgstr "ажурирано %s"
 # en-hash: 4fb9820991bd18f6c55eb72a24b1c411
 msgid "updated %s (%s)"
 msgstr "ажурирано %s (%s)"
+
+# en-hash: 176848afabe6f93c3e23a470037ab74f
+msgid "·"
+msgstr "·"
 
 # en-hash: a565c660107f7ea24918e8be382b38bd
 msgid "≥ %s ⭐"

@@ -268,9 +268,10 @@ def sync():
             if m_fb:
                 fb_block = m_fb.group(1)
                 for line in fb_block.splitlines():
-                    m_kv = re.search(r'\[?["\']?([a-zA-Z0-9_]+)["\']?\]?\s*=\s*["\'](.*?)["\']\s*,?', line)
+                    m_kv = re.search(r'^\s*([a-zA-Z0-9_]+)\s*=\s*"((?:[^"\\]|\\.)*)"', line)
                     if m_kv:
                         k, v = m_kv.group(1), m_kv.group(2)
+                        v = v.replace('\\"', '"').replace('\\\\', '\\')
                         fallback_map[k] = v
                         used_keys.add(k)
 
@@ -309,6 +310,12 @@ def sync():
             
     save_po(en_path, 'English', 'en', all_keys, en_map, fallback_map, {})
     print(f"Saved master English file: {en_path}")
+
+    # Verify en.po saved values for REPAIR_TRANSLATION_KEYS match expected unescaped strings
+    en_parsed_verify = {e['msgid']: e['msgstr'] for e in parse_po(en_path) if e['msgid']}
+    for rep_key in REPAIR_TRANSLATION_KEYS:
+        if rep_key in fallback_map and en_parsed_verify.get(rep_key) != fallback_map[rep_key]:
+            raise ValueError(f"en.po round-trip mismatch for key {rep_key!r}: expected {fallback_map[rep_key]!r}, got {en_parsed_verify.get(rep_key)!r}")
 
     en_final = {e['msgid']: e['msgstr'] for e in parse_po(en_path) if e['msgid']}
     all_keys = set(en_final.keys())

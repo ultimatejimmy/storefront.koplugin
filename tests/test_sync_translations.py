@@ -54,6 +54,13 @@ class SyncTranslationTests(unittest.TestCase):
         )
         self.assertTrue(errors)
 
+    def test_fallback_scraper_unescapes_lua_quotes(self):
+        val = 'Installed plugin \\"%s\\".'
+        unescaped = val.replace('\\"', '"').replace('\\\\', '\\')
+        self.assertEqual(unescaped, 'Installed plugin "%s".')
+        encoded = sync_translations.encode_po_string(unescaped)
+        self.assertEqual(encoded, 'Installed plugin \\"%s\\".')
+
 
 if __name__ == "__main__":
     unittest.main()
