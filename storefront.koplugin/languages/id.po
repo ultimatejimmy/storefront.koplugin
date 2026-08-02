@@ -503,7 +503,7 @@ msgstr "Mengunduh patch \"
 
 # en-hash: 1365cfba3d0cecdf7368aa4235ef334d
 msgid "Downloading patch \"%s\"…"
-msgstr "Mengunduh tambalan \\\"%s\\\"…"
+msgstr "Mengunduh tambalan \"%s\"…"
 
 # en-hash: 7dce122004969d56ae2e0245cb754d35
 msgid "Edit"
@@ -839,7 +839,7 @@ msgstr "Gaya font Regular terpasang secara luring untuk \"
 
 # en-hash: 10f632c761c202cba1b72f9e022ad928
 msgid "Installed Regular font style offline for \"%s\". Full font family queued for download when reconnected."
-msgstr "Gaya font Regular dipasang secara luring untuk \\\"%s\\\". Keluarga font lengkap dimasukkan ke antrean unduhan saat terhubung kembali."
+msgstr "Gaya font Regular dipasang secara luring untuk \"%s\". Keluarga font lengkap dimasukkan ke antrean unduhan saat terhubung kembali."
 
 # en-hash: 1a552daacb7b89f057f07cf76395ef13
 msgid "Installed font \"
@@ -847,7 +847,7 @@ msgstr "Font terpasang \"
 
 # en-hash: d9a3ac1edbacaccbeb7c16d1a787d6c6
 msgid "Installed font \"%s\" (%d file(s))."
-msgstr "Font \\\"%s\\\" (%d berkas) berhasil dipasang."
+msgstr "Font \"%s\" (%d berkas) berhasil dipasang."
 
 # en-hash: 3e4646b050c603dee4da8f76601dffc0
 msgid "Installed full font family \"
@@ -855,7 +855,7 @@ msgstr "Keluarga font lengkap terpasang \"
 
 # en-hash: 7920a8880acb9ea143b7526ac53cf3a0
 msgid "Installed full font family \"%s\" (%d file(s))."
-msgstr "Keluarga font lengkap \\\"%s\\\" (%d berkas) berhasil dipasang."
+msgstr "Keluarga font lengkap \"%s\" (%d berkas) berhasil dipasang."
 
 # en-hash: e0d6727402514e966be09f5a32898ae7
 msgid "Installed patch \"
@@ -863,7 +863,7 @@ msgstr "Patch terpasang \"
 
 # en-hash: e65824e5fef4fd9e3e8a1242e6f26077
 msgid "Installed patch \"%s\"."
-msgstr "Tambalan \\\"%s\\\" berhasil dipasang."
+msgstr "Tambalan \"%s\" berhasil dipasang."
 
 # en-hash: ef4fe338ff2780c5ca191fd661732c07
 msgid "Installed plugin \"
@@ -871,11 +871,11 @@ msgstr "Plugin terpasang \"
 
 # en-hash: 729d3430f2b779066b4efb0a3dc93f5b
 msgid "Installed plugin \"%s\" (version %s)."
-msgstr "Plugin \\\"%s\\\" (versi %s) berhasil dipasang."
+msgstr "Plugin \"%s\" (versi %s) berhasil dipasang."
 
 # en-hash: 710ec02b1a849915c1f8f775f20eb1f4
 msgid "Installed plugin \"%s\"."
-msgstr "Plugin \\\"%s\\\" berhasil dipasang."
+msgstr "Plugin \"%s\" berhasil dipasang."
 
 # en-hash: c98f920c29f4d2f367f11f8aad8c6b98
 msgid "Installing %s…"
@@ -1651,7 +1651,7 @@ msgstr "Cari & API"
 
 # en-hash: b725a5d292b3d2ebe9eb4b8e1db2efd5
 msgid "Search \"%s\""
-msgstr "Cari \\\"%s\\\""
+msgstr "Cari \"%s\""
 
 # en-hash: 5535a0cf45d5824d5a8d3c306ff6b30c
 msgid "Search text"
@@ -1959,7 +1959,7 @@ msgstr "Patch diperbarui \"
 
 # en-hash: 2d1cf6daf9d267b25ac38660ec2067d4
 msgid "Updated patch \"%s\"."
-msgstr "Tambalan \\\"%s\\\" diperbarui."
+msgstr "Tambalan \"%s\" diperbarui."
 
 # en-hash: 9228dbc538960da6bc0a130ca79f1fb3
 msgid "Updated plugin \"
@@ -1967,11 +1967,11 @@ msgstr "Plugin diperbarui \"
 
 # en-hash: f8ae9429cf57975595afe3e9c95ed235
 msgid "Updated plugin \"%s\" to version %s."
-msgstr "Plugin \\\"%s\\\" diperbarui ke versi %s."
+msgstr "Plugin \"%s\" diperbarui ke versi %s."
 
 # en-hash: 19c03f54eb9d069ba59ba8d50ae18767
 msgid "Updated plugin \"%s\"."
-msgstr "Plugin \\\"%s\\\" diperbarui."
+msgstr "Plugin \"%s\" diperbarui."
 
 # en-hash: 700f08e43a1a17d018812444cc9391e9
 msgid "Updated: %s"
@@ -2039,7 +2039,7 @@ msgstr "\"
 
 # en-hash: 6e612162deb4baa04d1253d7a9f19b33
 msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
-msgstr "\\\"Tuan Bennet yang baik,\\\" kata istrinya suatu hari, \\\"apakah Anda sudah mendengar bahwa Netherfield Park akhirnya disewakan?\\\" Tuan Bennet menjawab belum. \\\"Tapi memang benar,\\\" jawab sang istri; \\\"sebab Nyonya Long baru saja dari sini, dan menceritakan semuanya.\\\" Tuan Bennet tidak menjawab."
+msgstr "\"Tuan Bennet yang baik,\" kata istrinya suatu hari, \"apakah Anda sudah mendengar bahwa Netherfield Park akhirnya disewakan?\" Tuan Bennet menjawab belum. \"Tapi memang benar,\" jawab sang istri; \"sebab Nyonya Long baru saja dari sini, dan menceritakan semuanya.\" Tuan Bennet tidak menjawab."
 
 # en-hash: e06861ef2b440f06c4e9fa35ff735112
 msgid "\xC2\xB7"

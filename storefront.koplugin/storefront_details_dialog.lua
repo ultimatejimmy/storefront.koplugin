@@ -940,7 +940,7 @@ tr:nth-child(even) td { background-color: #f5f5f5 !important; }
     -- 5. Pagination controls
     -- -----------------------------------------------------------------------
     local page_indicator = TextWidget:new{
-        text = "1 / 1",
+        text = _("1 / 1"),
         face = Font:getFace("cfont", 18),
         fgcolor = Blitbuffer.COLOR_BLACK,
     }
@@ -967,7 +967,7 @@ tr:nth-child(even) td { background-color: #f5f5f5 !important; }
     end
 
     prev_btn = Button:new{
-        text = "< Prev",
+        text = _("< Prev"),
         text_font_size = 16,
         padding = sc(8),
         bordersize = 0,
@@ -991,7 +991,7 @@ tr:nth-child(even) td { background-color: #f5f5f5 !important; }
     }
 
     next_btn = Button:new{
-        text = "Next >",
+            text = _("Next >"),
         text_font_size = 16,
         padding = sc(8),
         bordersize = 0,
@@ -2469,4 +2469,3 @@ function StorefrontVersionDetailsDialog:show()
 end
 
 return StorefrontDetailsDialog
-

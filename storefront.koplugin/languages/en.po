@@ -378,7 +378,7 @@ msgid "Downloading patch \"
 msgstr "Downloading patch \"
 
 msgid "Downloading patch \"%s\"…"
-msgstr "Downloading patch \\\"%s\\\"…"
+msgstr "Downloading patch \"%s\"…"
 
 msgid "Edit"
 msgstr "Edit"
@@ -630,34 +630,34 @@ msgid "Installed Regular font style offline for \"
 msgstr "Installed Regular font style offline for \"
 
 msgid "Installed Regular font style offline for \"%s\". Full font family queued for download when reconnected."
-msgstr "Installed Regular font style offline for \\\"%s\\\". Full font family queued for download when reconnected."
+msgstr "Installed Regular font style offline for \"%s\". Full font family queued for download when reconnected."
 
 msgid "Installed font \"
 msgstr "Installed font \"
 
 msgid "Installed font \"%s\" (%d file(s))."
-msgstr "Installed font \\\"%s\\\" (%d file(s))."
+msgstr "Installed font \"%s\" (%d file(s))."
 
 msgid "Installed full font family \"
 msgstr "Installed full font family \"
 
 msgid "Installed full font family \"%s\" (%d file(s))."
-msgstr "Installed full font family \\\"%s\\\" (%d file(s))."
+msgstr "Installed full font family \"%s\" (%d file(s))."
 
 msgid "Installed patch \"
 msgstr "Installed patch \"
 
 msgid "Installed patch \"%s\"."
-msgstr "Installed patch \\\"%s\\\"."
+msgstr "Installed patch \"%s\"."
 
 msgid "Installed plugin \"
 msgstr "Installed plugin \"
 
 msgid "Installed plugin \"%s\" (version %s)."
-msgstr "Installed plugin \\\"%s\\\" (version %s)."
+msgstr "Installed plugin \"%s\" (version %s)."
 
 msgid "Installed plugin \"%s\"."
-msgstr "Installed plugin \\\"%s\\\"."
+msgstr "Installed plugin \"%s\"."
 
 msgid "Installing %s…"
 msgstr "Installing %s…"
@@ -1239,7 +1239,7 @@ msgid "Search & API"
 msgstr "Search & API"
 
 msgid "Search \"%s\""
-msgstr "Search \\\"%s\\\""
+msgstr "Search \"%s\""
 
 msgid "Search text"
 msgstr "Search text"
@@ -1470,16 +1470,16 @@ msgid "Updated patch \"
 msgstr "Updated patch \"
 
 msgid "Updated patch \"%s\"."
-msgstr "Updated patch \\\"%s\\\"."
+msgstr "Updated patch \"%s\"."
 
 msgid "Updated plugin \"
 msgstr "Updated plugin \"
 
 msgid "Updated plugin \"%s\" to version %s."
-msgstr "Updated plugin \\\"%s\\\" to version %s."
+msgstr "Updated plugin \"%s\" to version %s."
 
 msgid "Updated plugin \"%s\"."
-msgstr "Updated plugin \\\"%s\\\"."
+msgstr "Updated plugin \"%s\"."
 
 msgid "Updated: %s"
 msgstr "Updated: %s"
@@ -1530,7 +1530,7 @@ msgid "\"
 msgstr "\"
 
 msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
-msgstr "\\\"My dear Mr. Bennet,\\\" said his lady to him one day, \\\"have you heard that Netherfield Park is let at last?\\\" Mr. Bennet replied that he had not. \\\"But it is,\\\" returned she; \\\"for Mrs. Long has just been here, and she told me all about it.\\\" Mr. Bennet made no answer."
+msgstr "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
 
 msgid "\xC2\xB7"
 msgstr "\xC2\xB7"

@@ -503,7 +503,7 @@ msgstr "パッチをダウンロード中 \"
 
 # en-hash: 1365cfba3d0cecdf7368aa4235ef334d
 msgid "Downloading patch \"%s\"…"
-msgstr "パッチ \\\"%s\\\" をダウンロード中…"
+msgstr "パッチ \"%s\" をダウンロード中…"
 
 # en-hash: 7dce122004969d56ae2e0245cb754d35
 msgid "Edit"
@@ -839,7 +839,7 @@ msgstr "オフラインでレギュラーフォントスタイルをインスト
 
 # en-hash: 10f632c761c202cba1b72f9e022ad928
 msgid "Installed Regular font style offline for \"%s\". Full font family queued for download when reconnected."
-msgstr "\\\"%s\\\" の標準スタイルをオフラインでインストールしました。再接続時に完全なフォントファミリーがダウンロードされます。"
+msgstr "\"%s\" の標準スタイルをオフラインでインストールしました。再接続時に完全なフォントファミリーがダウンロードされます。"
 
 # en-hash: 1a552daacb7b89f057f07cf76395ef13
 msgid "Installed font \"
@@ -847,7 +847,7 @@ msgstr "インストール済みフォント \"
 
 # en-hash: d9a3ac1edbacaccbeb7c16d1a787d6c6
 msgid "Installed font \"%s\" (%d file(s))."
-msgstr "フォント \\\"%s\\\" (%d個のファイル) をインストールしました。"
+msgstr "フォント \"%s\" (%d個のファイル) をインストールしました。"
 
 # en-hash: 3e4646b050c603dee4da8f76601dffc0
 msgid "Installed full font family \"
@@ -855,7 +855,7 @@ msgstr "フルフォントファミリーをインストールしました \"
 
 # en-hash: 7920a8880acb9ea143b7526ac53cf3a0
 msgid "Installed full font family \"%s\" (%d file(s))."
-msgstr "フォントファミリー \\\"%s\\\" (%d個のファイル) を完全にインストールしました。"
+msgstr "フォントファミリー \"%s\" (%d個のファイル) を完全にインストールしました。"
 
 # en-hash: e0d6727402514e966be09f5a32898ae7
 msgid "Installed patch \"
@@ -863,7 +863,7 @@ msgstr "インストールされたパッチ \"
 
 # en-hash: e65824e5fef4fd9e3e8a1242e6f26077
 msgid "Installed patch \"%s\"."
-msgstr "パッチ \\\"%s\\\" をインストールしました。"
+msgstr "パッチ \"%s\" をインストールしました。"
 
 # en-hash: ef4fe338ff2780c5ca191fd661732c07
 msgid "Installed plugin \"
@@ -871,11 +871,11 @@ msgstr "インストールされたプラグイン \"
 
 # en-hash: 729d3430f2b779066b4efb0a3dc93f5b
 msgid "Installed plugin \"%s\" (version %s)."
-msgstr "プラグイン \\\"%s\\\" (バージョン %s) をインストールしました。"
+msgstr "プラグイン \"%s\" (バージョン %s) をインストールしました。"
 
 # en-hash: 710ec02b1a849915c1f8f775f20eb1f4
 msgid "Installed plugin \"%s\"."
-msgstr "プラグイン \\\"%s\\\" をインストールしました。"
+msgstr "プラグイン \"%s\" をインストールしました。"
 
 # en-hash: c98f920c29f4d2f367f11f8aad8c6b98
 msgid "Installing %s…"
@@ -1651,7 +1651,7 @@ msgstr "検索とAPI"
 
 # en-hash: b725a5d292b3d2ebe9eb4b8e1db2efd5
 msgid "Search \"%s\""
-msgstr "\\\"%s\\\" を検索"
+msgstr "\"%s\" を検索"
 
 # en-hash: 5535a0cf45d5824d5a8d3c306ff6b30c
 msgid "Search text"
@@ -1959,7 +1959,7 @@ msgstr "更新されたパッチ \"
 
 # en-hash: 2d1cf6daf9d267b25ac38660ec2067d4
 msgid "Updated patch \"%s\"."
-msgstr "パッチ \\\"%s\\\" を更新しました。"
+msgstr "パッチ \"%s\" を更新しました。"
 
 # en-hash: 9228dbc538960da6bc0a130ca79f1fb3
 msgid "Updated plugin \"
@@ -1967,11 +1967,11 @@ msgstr "更新されたプラグイン \"
 
 # en-hash: f8ae9429cf57975595afe3e9c95ed235
 msgid "Updated plugin \"%s\" to version %s."
-msgstr "プラグイン \\\"%s\\\" をバージョン %s に更新しました。"
+msgstr "プラグイン \"%s\" をバージョン %s に更新しました。"
 
 # en-hash: 19c03f54eb9d069ba59ba8d50ae18767
 msgid "Updated plugin \"%s\"."
-msgstr "プラグイン \\\"%s\\\" を更新しました。"
+msgstr "プラグイン \"%s\" を更新しました。"
 
 # en-hash: 700f08e43a1a17d018812444cc9391e9
 msgid "Updated: %s"
