@@ -42,6 +42,14 @@ TRANSLATION_MAX_LENGTHS = {
     'Restart now': 16,
 }
 
+# These status strings never legitimately contain question marks. Treat one as
+# an encoding-corruption marker so it is caught before a release.
+ENCODING_SENSITIVE_KEYS = {
+    'msg_installed_plugin',
+    'msg_installed_plugin_version',
+    'progress_please_wait',
+}
+
 def scan_unwrapped_ui_strings():
     unwrapped = []
     for root, _, files in os.walk(SOURCE_DIR):
@@ -215,6 +223,10 @@ def run_audit():
             if key not in entries:
                 missing.append(key)
             elif not val or val.strip() == "":
+                empty.append(key)
+            elif "???" in val:
+                empty.append(key)
+            elif key in ENCODING_SENSITIVE_KEYS and "?" in val:
                 empty.append(key)
             elif key in tab_keys and len(val) > 11:
                 too_long.append((key, val))

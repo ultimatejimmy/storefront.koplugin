@@ -497,8 +497,7 @@ msgstr "正在下载 %s…"
 msgid "Downloading patch %s…"
 msgstr "正在下载补丁 %s…"
 
-
-# en-hash: 1365cfba3d0cecdf7368aa4235ef334d
+# en-hash: c5603716dc35e3e5aa81f2c950479bb9
 msgid "Downloading patch \"%s\"…"
 msgstr "正在下载补丁“%s”…"
 
@@ -830,32 +829,27 @@ msgstr "已安装补丁设置"
 msgid "Installed Plugins Settings"
 msgstr "已安装插件设置"
 
-
-# en-hash: 10f632c761c202cba1b72f9e022ad928
+# en-hash: 6e6502af239b8a79ecdad9ed69e1e0f8
 msgid "Installed Regular font style offline for \"%s\". Full font family queued for download when reconnected."
 msgstr "已离线安装“%s”的常规体样式。网络恢复后将自动排队下载完整字体族。"
 
-
-# en-hash: d9a3ac1edbacaccbeb7c16d1a787d6c6
+# en-hash: 4b5d575203c94284e093b7a4a758ac4b
 msgid "Installed font \"%s\" (%d file(s))."
 msgstr "已安装字体“%s”（%d 个文件）。"
 
-
-# en-hash: 7920a8880acb9ea143b7526ac53cf3a0
+# en-hash: ea1c8e53423eeb83107fe20e06741269
 msgid "Installed full font family \"%s\" (%d file(s))."
 msgstr "已安装完整字体族“%s”（%d 个文件）。"
 
-
-# en-hash: e65824e5fef4fd9e3e8a1242e6f26077
+# en-hash: 8c51f348955266029fd98e4d39ca72f5
 msgid "Installed patch \"%s\"."
 msgstr "已安装补丁“%s”。"
 
-
-# en-hash: 729d3430f2b779066b4efb0a3dc93f5b
+# en-hash: bc342f2375c94847e1fddaf0bfba6bf3
 msgid "Installed plugin \"%s\" (version %s)."
 msgstr "已安装插件“%s”（版本 %s）。"
 
-# en-hash: 710ec02b1a849915c1f8f775f20eb1f4
+# en-hash: 0267ec5f3149d17e65ae2188165839cf
 msgid "Installed plugin \"%s\"."
 msgstr "已安装插件“%s”。"
 
@@ -1631,7 +1625,7 @@ msgstr "搜索"
 msgid "Search & API"
 msgstr "搜索与 API"
 
-# en-hash: b725a5d292b3d2ebe9eb4b8e1db2efd5
+# en-hash: e9b9fb1b4ba8f6e75efc75ae5aed363c
 msgid "Search \"%s\""
 msgstr "搜索“%s”"
 
@@ -1935,17 +1929,15 @@ msgstr "已更新 %d / %d 个项目（%d 个失败）。"
 msgid "Updated patch %s."
 msgstr "已更新补丁 %s。"
 
-
-# en-hash: 2d1cf6daf9d267b25ac38660ec2067d4
+# en-hash: 40d9d912891a7b4db8333ca51498ddaa
 msgid "Updated patch \"%s\"."
 msgstr "已更新补丁“%s”。"
 
-
-# en-hash: f8ae9429cf57975595afe3e9c95ed235
+# en-hash: 00cf5a27788eb66c299ecdb6eccc564b
 msgid "Updated plugin \"%s\" to version %s."
 msgstr "已将插件“%s”更新至版本 %s。"
 
-# en-hash: 19c03f54eb9d069ba59ba8d50ae18767
+# en-hash: d61ad01c787c9df22e7eedb1fafa7766
 msgid "Updated plugin \"%s\"."
 msgstr "已更新插件“%s”。"
 
@@ -2009,8 +2001,7 @@ msgstr "[草稿]"
 msgid "[pre]"
 msgstr "[预发布]"
 
-
-# en-hash: 6e612162deb4baa04d1253d7a9f19b33
+# en-hash: 340830b7124edf0ca3245b03344d52bd
 msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
 msgstr "“亲爱的班纳特先生，”有一天他的太太对他说，“你听说内瑟菲尔德庄园终于租出去了吗？”班纳特先生回答说没听说。“但确实租出去了，”她回答道，“因为朗格太太刚刚来过，把这件事全告诉我了。”班纳特先生没有做声。"
 
@@ -2206,6 +2197,14 @@ msgstr "浏览、安装和更新插件、补丁与字体。"
 msgid "msg_catalog_updated"
 msgstr "目录已成功更新。"
 
+# en-hash: 0267ec5f3149d17e65ae2188165839cf
+msgid "msg_installed_plugin"
+msgstr "已安装插件“%s”。"
+
+# en-hash: bc342f2375c94847e1fddaf0bfba6bf3
+msgid "msg_installed_plugin_version"
+msgstr "已安装插件“%s”（版本 %s）。"
+
 # en-hash: 666d2dad00473f02da8e25031ea9c9fa
 msgid "msg_no_results"
 msgstr "未找到匹配的项目。"
@@ -2225,6 +2224,10 @@ msgstr "补丁"
 # en-hash: a24bcf2198b1b13ad985304483f7f324
 msgid "plugin"
 msgstr "插件"
+
+# en-hash: c360639f51cb2625a9439974e865a683
+msgid "progress_please_wait"
+msgstr "请稍候"
 
 # en-hash: ffed49d9612d727a79f49a2a024f8c14
 msgid "prompt_restart_needed"
@@ -2329,13 +2332,4 @@ msgstr "≥ %s ⭐"
 # en-hash: 55930f171c863808f8dba67599ec1d70
 msgid "✓ Current"
 msgstr "✓ 当前版本"
-
-msgid "msg_installed_plugin"
-msgstr "??????%s??"
-
-msgid "msg_installed_plugin_version"
-msgstr "??????%s???? %s??"
-
-msgid "progress_please_wait"
-msgstr "???"
 

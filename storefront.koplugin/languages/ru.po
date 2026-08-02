@@ -497,8 +497,7 @@ msgstr "Загрузка %s…"
 msgid "Downloading patch %s…"
 msgstr "Загрузка патча %s…"
 
-
-# en-hash: 1365cfba3d0cecdf7368aa4235ef334d
+# en-hash: c5603716dc35e3e5aa81f2c950479bb9
 msgid "Downloading patch \"%s\"…"
 msgstr "Загрузка патча «%s»…"
 
@@ -830,32 +829,27 @@ msgstr "Настройки установленных патчей"
 msgid "Installed Plugins Settings"
 msgstr "Настройки установленных плагинов"
 
-
-# en-hash: 10f632c761c202cba1b72f9e022ad928
+# en-hash: 6e6502af239b8a79ecdad9ed69e1e0f8
 msgid "Installed Regular font style offline for \"%s\". Full font family queued for download when reconnected."
 msgstr "Офлайн установлен обычный стиль шрифта (Regular) для «%s». Загрузка полного семейства шрифта поставлена в очередь до подключения к сети."
 
-
-# en-hash: d9a3ac1edbacaccbeb7c16d1a787d6c6
+# en-hash: 4b5d575203c94284e093b7a4a758ac4b
 msgid "Installed font \"%s\" (%d file(s))."
 msgstr "Установлен шрифт «%s» (%d файл(ов))."
 
-
-# en-hash: 7920a8880acb9ea143b7526ac53cf3a0
+# en-hash: ea1c8e53423eeb83107fe20e06741269
 msgid "Installed full font family \"%s\" (%d file(s))."
 msgstr "Установлено полное семейство шрифтов «%s» (%d файл(ов))."
 
-
-# en-hash: e65824e5fef4fd9e3e8a1242e6f26077
+# en-hash: 8c51f348955266029fd98e4d39ca72f5
 msgid "Installed patch \"%s\"."
 msgstr "Патч «%s» установлен."
 
-
-# en-hash: 729d3430f2b779066b4efb0a3dc93f5b
+# en-hash: bc342f2375c94847e1fddaf0bfba6bf3
 msgid "Installed plugin \"%s\" (version %s)."
 msgstr "Установлен плагин «%s» (версия %s)."
 
-# en-hash: 710ec02b1a849915c1f8f775f20eb1f4
+# en-hash: 0267ec5f3149d17e65ae2188165839cf
 msgid "Installed plugin \"%s\"."
 msgstr "Плагин «%s» установлен."
 
@@ -1631,7 +1625,7 @@ msgstr "Поиск"
 msgid "Search & API"
 msgstr "Поиск и API"
 
-# en-hash: b725a5d292b3d2ebe9eb4b8e1db2efd5
+# en-hash: e9b9fb1b4ba8f6e75efc75ae5aed363c
 msgid "Search \"%s\""
 msgstr "Поиск «%s»"
 
@@ -1935,17 +1929,15 @@ msgstr "Обновлено %d из %d элементов (%d с ошибкой).
 msgid "Updated patch %s."
 msgstr "Патч %s обновлен."
 
-
-# en-hash: 2d1cf6daf9d267b25ac38660ec2067d4
+# en-hash: 40d9d912891a7b4db8333ca51498ddaa
 msgid "Updated patch \"%s\"."
 msgstr "Патч «%s» обновлён."
 
-
-# en-hash: f8ae9429cf57975595afe3e9c95ed235
+# en-hash: 00cf5a27788eb66c299ecdb6eccc564b
 msgid "Updated plugin \"%s\" to version %s."
 msgstr "Плагин «%s» обновлён до версии %s."
 
-# en-hash: 19c03f54eb9d069ba59ba8d50ae18767
+# en-hash: d61ad01c787c9df22e7eedb1fafa7766
 msgid "Updated plugin \"%s\"."
 msgstr "Плагин «%s» обновлён."
 
@@ -2009,8 +2001,7 @@ msgstr "[черновик]"
 msgid "[pre]"
 msgstr "[пре]"
 
-
-# en-hash: 6e612162deb4baa04d1253d7a9f19b33
+# en-hash: 340830b7124edf0ca3245b03344d52bd
 msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
 msgstr "«Дорогой мистер Беннет, — сказала ему однажды супруга, — слышали ли вы, что Незерфилд-парк наконец сдан?» Мистер Беннет ответил, что не слышал. «А между тем это так, — продолжала она, — миссис Лонг только что была здесь и рассказала мне всё об этом». Мистер Беннет ничего не ответил."
 
@@ -2206,6 +2197,14 @@ msgstr "Просмотр, установка и обновление плаги�
 msgid "msg_catalog_updated"
 msgstr "Каталог успешно обновлен."
 
+# en-hash: 0267ec5f3149d17e65ae2188165839cf
+msgid "msg_installed_plugin"
+msgstr "Плагин \"%s\" установлен."
+
+# en-hash: bc342f2375c94847e1fddaf0bfba6bf3
+msgid "msg_installed_plugin_version"
+msgstr "Плагин \"%s\" (версия %s) установлен."
+
 # en-hash: 666d2dad00473f02da8e25031ea9c9fa
 msgid "msg_no_results"
 msgstr "Ничего не найдено."
@@ -2225,6 +2224,10 @@ msgstr "патч"
 # en-hash: a24bcf2198b1b13ad985304483f7f324
 msgid "plugin"
 msgstr "плагин"
+
+# en-hash: c360639f51cb2625a9439974e865a683
+msgid "progress_please_wait"
+msgstr "Подождите"
 
 # en-hash: ffed49d9612d727a79f49a2a024f8c14
 msgid "prompt_restart_needed"
@@ -2329,13 +2332,4 @@ msgstr "≥ %s ⭐"
 # en-hash: 55930f171c863808f8dba67599ec1d70
 msgid "✓ Current"
 msgstr "✓ Текущая"
-
-msgid "msg_installed_plugin"
-msgstr "?????? \"%s\" ??????????."
-
-msgid "msg_installed_plugin_version"
-msgstr "?????? \"%s\" (?????? %s) ??????????."
-
-msgid "progress_please_wait"
-msgstr "?????????"
 

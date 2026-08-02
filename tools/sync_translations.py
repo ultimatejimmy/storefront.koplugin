@@ -6,6 +6,7 @@ import json
 import urllib.request
 import time
 import hashlib
+import tempfile
 
 if sys.version_info >= (3, 7):
     try:
@@ -45,8 +46,32 @@ TRANSLATION_MAX_LENGTHS = {
     'Restart now': 16,
 }
 
+# Regenerate these recently added stable keys if a locale contains an encoding
+# replacement marker or merely falls back to the English master text.
+REPAIR_TRANSLATION_KEYS = {
+    'msg_installed_plugin',
+    'msg_installed_plugin_version',
+    'progress_please_wait',
+}
+
 def get_md5(text):
     return hashlib.md5(text.encode('utf-8')).hexdigest()
+
+def is_placeholder_translation(value):
+    """Return true for strings corrupted into question-mark placeholders."""
+    return isinstance(value, str) and "?" in value
+
+def decode_po_string(value):
+    """Decode the PO escapes emitted by encode_po_string."""
+    escapes = {"n": "\n", "t": "\t", '"': '"', "\\": "\\"}
+    return re.sub(r'\\([nt"\\])', lambda m: escapes[m.group(1)], value)
+
+def encode_po_string(value):
+    """Encode a PO string symmetrically so repeated syncs are byte-stable."""
+    return (value.replace("\\", "\\\\")
+                 .replace("\n", "\\n")
+                 .replace("\t", "\\t")
+                 .replace('"', '\\"'))
 
 def parse_po(file_path):
     entries = []
@@ -70,47 +95,90 @@ def parse_po(file_path):
             elif line.startswith('msgid '):
                 m = re.match(r'^msgid "(.*)"$', line)
                 if m:
-                    current_entry['msgid'] = m.group(1)
+                    current_entry['msgid'] = decode_po_string(m.group(1))
                 current_field = 'msgid'
             elif line.startswith('msgstr '):
                 m = re.match(r'^msgstr "(.*)"$', line)
                 if m:
-                    current_entry['msgstr'] = m.group(1)
+                    current_entry['msgstr'] = decode_po_string(m.group(1))
                 current_field = 'msgstr'
             elif line.startswith('"'):
                 m = re.match(r'^"(.*)"$', line)
                 if m:
                     if current_field == 'msgid':
-                        current_entry['msgid'] += m.group(1)
+                        current_entry['msgid'] += decode_po_string(m.group(1))
                     elif current_field == 'msgstr':
-                        current_entry['msgstr'] += m.group(1)
+                        current_entry['msgstr'] += decode_po_string(m.group(1))
         if current_entry['msgid'] or current_entry['msgstr']:
             entries.append(current_entry)
     return entries
 
-def save_po(file_path, lang_name, lang_code, keys, translations, fallback_map, en_final):
-    os.makedirs(os.path.dirname(file_path), exist_ok=True)
-    with open(file_path, 'w', encoding='utf-8') as f:
-        f.write(f'msgid ""\nmsgstr ""\n"Language-Team: {lang_name}\\n"\n"Language: {lang_code}\\n"\n"Content-Type: text/plain; charset=UTF-8\\n"\n"Content-Transfer-Encoding: 8bit\\n"\n\n')
-        for key in sorted(keys):
-            if not key: continue
-            if lang_code == 'en':
-                val = translations.get(key)
-                if (not val or val == key) and key in fallback_map:
-                    val = fallback_map[key]
-                elif not val:
-                    val = key
-            else:
-                # Use translated value, or fall back to English text if empty
-                val = translations.get(key) or en_final.get(key, key)
+def render_po(lang_name, lang_code, keys, translations, fallback_map, en_final):
+    chunks = [
+        'msgid ""\nmsgstr ""\n',
+        f'"Language-Team: {lang_name}\\n"\n',
+        f'"Language: {lang_code}\\n"\n',
+        '"Content-Type: text/plain; charset=UTF-8\\n"\n',
+        '"Content-Transfer-Encoding: 8bit\\n"\n\n',
+    ]
+    for key in sorted(keys):
+        if not key:
+            continue
+        if lang_code == 'en':
+            val = translations.get(key)
+            if (not val or val == key) and key in fallback_map:
+                val = fallback_map[key]
+            elif not val:
+                val = key
+        else:
+            val = translations.get(key)
+            if not val:
+                raise ValueError(f"{lang_code}: refusing to write missing translation for {key!r}")
 
-            escaped_val = val.replace('\n', '\\n').replace('"', '\\"')
-            
-            if lang_code != 'en':
-                en_val = en_final.get(key, "")
-                if en_val:
-                    f.write(f'# en-hash: {get_md5(en_val)}\n')
-            f.write(f'msgid "{key}"\nmsgstr "{escaped_val}"\n\n')
+        if lang_code != 'en':
+            en_val = en_final.get(key, "")
+            if en_val:
+                chunks.append(f'# en-hash: {get_md5(en_val)}\n')
+        chunks.append(f'msgid "{encode_po_string(key)}"\n')
+        chunks.append(f'msgstr "{encode_po_string(val)}"\n\n')
+    return ''.join(chunks)
+
+def save_po(file_path, lang_name, lang_code, keys, translations, fallback_map, en_final):
+    contents = render_po(lang_name, lang_code, keys, translations, fallback_map, en_final)
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    fd, temporary_path = tempfile.mkstemp(
+        dir=os.path.dirname(file_path), prefix='.sync-', suffix='.po', text=True,
+    )
+    try:
+        with os.fdopen(fd, 'w', encoding='utf-8', newline='\n') as f:
+            f.write(contents)
+        os.replace(temporary_path, file_path)
+    except Exception:
+        try:
+            os.unlink(temporary_path)
+        except FileNotFoundError:
+            pass
+        raise
+
+def format_specifiers(value):
+    return re.findall(r'%(?:\d+\$)?[sd]', value)
+
+def validate_translations(lang_code, requested, translated):
+    if not isinstance(translated, dict):
+        return [f"{lang_code}: provider did not return a translations object"]
+
+    errors = []
+    for key, english in requested.items():
+        value = translated.get(key)
+        if not isinstance(value, str) or not value.strip():
+            errors.append(f"{lang_code}: missing translation for {key!r}")
+        elif "???" in value or (key in REPAIR_TRANSLATION_KEYS and "?" in value):
+            errors.append(f"{lang_code}: placeholder/corrupt translation for {key!r}")
+        elif value == english:
+            errors.append(f"{lang_code}: English fallback returned for {key!r}")
+        elif format_specifiers(value) != format_specifiers(english):
+            errors.append(f"{lang_code}: format specifiers differ for {key!r}")
+    return errors
 
 def get_gemini_key():
     return os.environ.get("GEMINI_API_KEY")
@@ -249,6 +317,7 @@ def sync():
     gemini_key = get_gemini_key()
     target_languages = [code for code in sorted(LANG_NAMES.keys()) if code != 'en']
 
+    failures = []
     for lang_code in target_languages:
         po_path = os.path.join(LANGUAGES_DIR, f'{lang_code}.po')
         entries = parse_po(po_path)
@@ -262,22 +331,40 @@ def sync():
             stored_hash = hash_map.get(k)
             current_hash = get_md5(en_val)
             
-            if not current_val or (stored_hash and stored_hash != current_hash):
+            needs_targeted_repair = (
+                k in REPAIR_TRANSLATION_KEYS
+                and (is_placeholder_translation(current_val) or current_val == en_val)
+            )
+            if (not current_val or needs_targeted_repair
+                    or (stored_hash and stored_hash != current_hash)):
                 untranslated[k] = en_val
                 
-        if untranslated and gemini_key:
+        if untranslated:
             lang_name = LANG_NAMES.get(lang_code, lang_code)
+            if not gemini_key:
+                failures.append(f"{lang_name} ({lang_code}): {len(untranslated)} translations need the Gemini API key")
+                continue
             print(f"Translating {len(untranslated)} keys for {lang_name} ({lang_code})...")
-            
             new_translations = translate_language_gemini(lang_code, lang_name, untranslated)
+            errors = validate_translations(lang_code, untranslated, new_translations)
+            if errors:
+                failures.extend(errors)
+                print(f"  - Skipping {lang_name}; provider response failed validation.")
+                continue
             for k, v in new_translations.items():
                 tr_map[k] = str(v)
-            
             time.sleep(3) # Short pause between languages to stay under 15 RPM
             
         save_po(po_path, LANG_NAMES.get(lang_code, lang_code), lang_code, all_keys, tr_map, fallback_map, en_final)
 
+    if failures:
+        print("\nSync failed without overwriting affected locale files:")
+        for failure in failures:
+            print(f"  - {failure}")
+        return 1
+
     print("\nSync completed successfully.")
+    return 0
 
 if __name__ == "__main__":
-    sync()
+    sys.exit(sync())

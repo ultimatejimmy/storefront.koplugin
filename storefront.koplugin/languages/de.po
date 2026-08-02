@@ -497,10 +497,9 @@ msgstr "%s wird heruntergeladen…"
 msgid "Downloading patch %s…"
 msgstr "Patch %s wird heruntergeladen…"
 
-
-# en-hash: 1365cfba3d0cecdf7368aa4235ef334d
+# en-hash: c5603716dc35e3e5aa81f2c950479bb9
 msgid "Downloading patch \"%s\"…"
-msgstr "Patch \"%s\" wird heruntergeladen…"
+msgstr "Patch \\\\\\\"%s\\\\\\\" wird heruntergeladen…"
 
 # en-hash: 7dce122004969d56ae2e0245cb754d35
 msgid "Edit"
@@ -830,34 +829,29 @@ msgstr "Einstellungen für installierte Patches"
 msgid "Installed Plugins Settings"
 msgstr "Einstellungen für installierte Plugins"
 
-
-# en-hash: 10f632c761c202cba1b72f9e022ad928
+# en-hash: 6e6502af239b8a79ecdad9ed69e1e0f8
 msgid "Installed Regular font style offline for \"%s\". Full font family queued for download when reconnected."
-msgstr "Regulärer Schriftstil für \"%s\" offline installiert. Vollständige Schriftfamilie für den Download vorgemerkt, sobald wieder online."
+msgstr "Regulärer Schriftstil für \\\\\\\"%s\\\\\\\" offline installiert. Vollständige Schriftfamilie für den Download vorgemerkt, sobald wieder online."
 
-
-# en-hash: d9a3ac1edbacaccbeb7c16d1a787d6c6
+# en-hash: 4b5d575203c94284e093b7a4a758ac4b
 msgid "Installed font \"%s\" (%d file(s))."
-msgstr "Schriftart \"%s\" (%d Datei(en)) installiert."
+msgstr "Schriftart \\\\\\\"%s\\\\\\\" (%d Datei(en)) installiert."
 
-
-# en-hash: 7920a8880acb9ea143b7526ac53cf3a0
+# en-hash: ea1c8e53423eeb83107fe20e06741269
 msgid "Installed full font family \"%s\" (%d file(s))."
-msgstr "Vollständige Schriftfamilie \"%s\" (%d Datei(en)) installiert."
+msgstr "Vollständige Schriftfamilie \\\\\\\"%s\\\\\\\" (%d Datei(en)) installiert."
 
-
-# en-hash: e65824e5fef4fd9e3e8a1242e6f26077
+# en-hash: 8c51f348955266029fd98e4d39ca72f5
 msgid "Installed patch \"%s\"."
-msgstr "Patch \"%s\" installiert."
+msgstr "Patch \\\\\\\"%s\\\\\\\" installiert."
 
-
-# en-hash: 729d3430f2b779066b4efb0a3dc93f5b
+# en-hash: bc342f2375c94847e1fddaf0bfba6bf3
 msgid "Installed plugin \"%s\" (version %s)."
-msgstr "Plugin \"%s\" (Version %s) installiert."
+msgstr "Plugin \\\\\\\"%s\\\\\\\" (Version %s) installiert."
 
-# en-hash: 710ec02b1a849915c1f8f775f20eb1f4
+# en-hash: 0267ec5f3149d17e65ae2188165839cf
 msgid "Installed plugin \"%s\"."
-msgstr "Plugin \"%s\" installiert."
+msgstr "Plugin \\\\\\\"%s\\\\\\\" installiert."
 
 # en-hash: c98f920c29f4d2f367f11f8aad8c6b98
 msgid "Installing %s…"
@@ -1631,9 +1625,9 @@ msgstr "Suchen"
 msgid "Search & API"
 msgstr "Suche & API"
 
-# en-hash: b725a5d292b3d2ebe9eb4b8e1db2efd5
+# en-hash: e9b9fb1b4ba8f6e75efc75ae5aed363c
 msgid "Search \"%s\""
-msgstr "Suche \"%s\""
+msgstr "Suche \\\\\\\"%s\\\\\\\""
 
 # en-hash: 5535a0cf45d5824d5a8d3c306ff6b30c
 msgid "Search text"
@@ -1935,19 +1929,17 @@ msgstr "%d von %d Element(en) aktualisiert (%d fehlgeschlagen)."
 msgid "Updated patch %s."
 msgstr "Patch %s aktualisiert."
 
-
-# en-hash: 2d1cf6daf9d267b25ac38660ec2067d4
+# en-hash: 40d9d912891a7b4db8333ca51498ddaa
 msgid "Updated patch \"%s\"."
-msgstr "Patch \"%s\" aktualisiert."
+msgstr "Patch \\\\\\\"%s\\\\\\\" aktualisiert."
 
-
-# en-hash: f8ae9429cf57975595afe3e9c95ed235
+# en-hash: 00cf5a27788eb66c299ecdb6eccc564b
 msgid "Updated plugin \"%s\" to version %s."
-msgstr "Plugin \"%s\" auf Version %s aktualisiert."
+msgstr "Plugin \\\\\\\"%s\\\\\\\" auf Version %s aktualisiert."
 
-# en-hash: 19c03f54eb9d069ba59ba8d50ae18767
+# en-hash: d61ad01c787c9df22e7eedb1fafa7766
 msgid "Updated plugin \"%s\"."
-msgstr "Plugin \"%s\" aktualisiert."
+msgstr "Plugin \\\\\\\"%s\\\\\\\" aktualisiert."
 
 # en-hash: 700f08e43a1a17d018812444cc9391e9
 msgid "Updated: %s"
@@ -2009,10 +2001,9 @@ msgstr "[Entwurf]"
 msgid "[pre]"
 msgstr "[pre]"
 
-
-# en-hash: 6e612162deb4baa04d1253d7a9f19b33
+# en-hash: 340830b7124edf0ca3245b03344d52bd
 msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
-msgstr "\"Mein lieber Mr. Bennet\", sagte seine Dame eines Tages zu ihm, \"haben Sie gehört, dass Netherfield Park endlich vermietet ist?\" Mr. Bennet antwortete, dass er es nicht gehört habe. \"Aber es ist so\", erwiderte sie; \"denn Mrs. Long war gerade hier und hat mir alles darüber erzählt.\" Mr. Bennet gab keine Antwort."
+msgstr "\\\\\\\"Mein lieber Mr. Bennet\\\\\\\", sagte seine Dame eines Tages zu ihm, \\\\\\\"haben Sie gehört, dass Netherfield Park endlich vermietet ist?\\\\\\\" Mr. Bennet antwortete, dass er es nicht gehört habe. \\\\\\\"Aber es ist so\\\\\\\", erwiderte sie; \\\\\\\"denn Mrs. Long war gerade hier und hat mir alles darüber erzählt.\\\\\\\" Mr. Bennet gab keine Antwort."
 
 # en-hash: e06861ef2b440f06c4e9fa35ff735112
 msgid "\xC2\xB7"
@@ -2206,6 +2197,14 @@ msgstr "Durchsuchen, Installieren und Aktualisieren von Plugins, Patches und Sch
 msgid "msg_catalog_updated"
 msgstr "Katalog erfolgreich aktualisiert."
 
+# en-hash: 0267ec5f3149d17e65ae2188165839cf
+msgid "msg_installed_plugin"
+msgstr "Plugin \"%s\" installiert."
+
+# en-hash: bc342f2375c94847e1fddaf0bfba6bf3
+msgid "msg_installed_plugin_version"
+msgstr "Plugin \"%s\" (Version %s) installiert."
+
 # en-hash: 666d2dad00473f02da8e25031ea9c9fa
 msgid "msg_no_results"
 msgstr "Keine passenden Einträge gefunden."
@@ -2225,6 +2224,10 @@ msgstr "Patch"
 # en-hash: a24bcf2198b1b13ad985304483f7f324
 msgid "plugin"
 msgstr "Plugin"
+
+# en-hash: c360639f51cb2625a9439974e865a683
+msgid "progress_please_wait"
+msgstr "Bitte warten"
 
 # en-hash: ffed49d9612d727a79f49a2a024f8c14
 msgid "prompt_restart_needed"
@@ -2329,13 +2332,4 @@ msgstr "≥ %s ⭐"
 # en-hash: 55930f171c863808f8dba67599ec1d70
 msgid "✓ Current"
 msgstr "✓ Aktuell"
-
-msgid "msg_installed_plugin"
-msgstr "Plugin \"%s\" installiert."
-
-msgid "msg_installed_plugin_version"
-msgstr "Plugin \"%s\" (Version %s) installiert."
-
-msgid "progress_please_wait"
-msgstr "Bitte warten"
 
