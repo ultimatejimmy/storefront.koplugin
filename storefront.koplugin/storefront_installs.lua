@@ -323,6 +323,13 @@ function InstallStore.toggleReleaseIgnored(item_key, tag_name)
     return InstallStore.setItemOptions(item_key, opts)
 end
 
+function InstallStore.isReleaseIgnoredByRepo(owner, repo_name, tag_name)
+    if not owner or not repo_name or not tag_name then return false end
+    local item_key = string.format("%s/%s", owner, repo_name)
+    return InstallStore.isReleaseIgnored(item_key, tag_name)
+        or InstallStore.isReleaseIgnored(repo_name, tag_name)
+end
+
 function InstallStore.getPreferredAsset(item_key)
     if not item_key or item_key == "" then return nil end
     local opts = InstallStore.getItemOptions(item_key)

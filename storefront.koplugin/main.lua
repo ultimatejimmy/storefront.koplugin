@@ -1836,13 +1836,8 @@ function Storefront:collectUpdateSummary()
                 end
 
                 if has_update and record.owner and record.repo then
-                    if isReleaseIgnored(record.owner, record.repo, release_tag) then
+                    if InstallStore.isReleaseIgnoredByRepo(record.owner, record.repo, release_tag) then
                         has_update = false
-                    else
-                        local ignored_version = getIgnoredVersion(record.owner, record.repo)
-                        if ignored_version and ignored_version ~= release_tag then
-                            clearIgnoredRelease(record.owner, record.repo)
-                        end
                     end
                 end
             else
@@ -4956,7 +4951,7 @@ local function buildDownloadOptionsTitle(release, owner, repo_name)
         end
     end
     
-    if owner and repo_name and tag and isReleaseIgnored(owner, repo_name, tag) then
+    if owner and repo_name and tag and InstallStore.isReleaseIgnoredByRepo(owner, repo_name, tag) then
         result = result .. " " .. _("[Ignored]")
     end
     
@@ -5182,7 +5177,7 @@ function Storefront:renderReleaseListPage(repo, releases, page, current_release,
         end
         
         local owner = repo.owner or (repo.data and repo.data.owner and repo.data.owner.login)
-        if owner and repo.name and tag and isReleaseIgnored(owner, repo.name, tag) then
+        if owner and repo.name and tag and InstallStore.isReleaseIgnoredByRepo(owner, repo.name, tag) then
             text = text .. " " .. _("[Ignored]")
         end
         table.insert(button_rows, {
@@ -8981,6 +8976,33 @@ function Storefront:init()
                     end
                 end
             end
+        end
+    end
+
+    -- One-time migration: import legacy StorefrontSettings ignored_releases into InstallStore.
+    -- The old system stored a single ignored tag per repo under "owner/repo" keys.
+    -- The new system (InstallStore) stores per-tag flags under item_options[item_key].ignored_releases.
+    do
+        local MIGRATED_KEY = "ignored_releases_migrated_v1"
+        if not StorefrontSettings:readSetting(MIGRATED_KEY) then
+            local legacy_ignored = StorefrontSettings:readSetting(IGNORED_RELEASES_KEY) or {}
+            for repo_key, tag in pairs(legacy_ignored) do
+                if type(repo_key) == "string" and type(tag) == "string" and tag ~= "" then
+                    local owner_part, repo_part = repo_key:match("^([^/]+)/(.+)$")
+                    if owner_part and repo_part then
+                        -- Write into InstallStore keyed by both "owner/repo" and bare "repo"
+                        local full_key = string.format("%s/%s", owner_part, repo_part)
+                        local opts_full = InstallStore.getItemOptions(full_key)
+                        opts_full.ignored_releases[tag] = true
+                        InstallStore.setItemOptions(full_key, opts_full)
+                        local opts_bare = InstallStore.getItemOptions(repo_part)
+                        opts_bare.ignored_releases[tag] = true
+                        InstallStore.setItemOptions(repo_part, opts_bare)
+                    end
+                end
+            end
+            StorefrontSettings:saveSetting(MIGRATED_KEY, true)
+            StorefrontSettings:flush()
         end
     end
 
