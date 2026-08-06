@@ -267,7 +267,7 @@ function UpdatesMgr:init(Storefront)
                         sf:updateUpdatesDialog()
                     end
                     UIManager:setDirty(nil, "full")
-                    sf:softRefreshCurrentBrowserView()
+                    sf:refreshCurrentBrowserTab()
                     Toast.show(_("Catalog refreshed successfully."), 3)
                 else
                     StorefrontLogger.warn("Storefront UI: manual refresh failed: " .. tostring(err))

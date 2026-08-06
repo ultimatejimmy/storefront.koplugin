@@ -38,6 +38,7 @@ LANG_NAMES = {
     'tr': 'Turkish',
     'uk': 'Ukrainian',
     'zh_CN': 'Simplified Chinese',
+    'ko': 'Korean',
 }
 
 # Keep fixed-width action buttons safe for localized text. The audit script

@@ -179,6 +179,9 @@ msgstr "Category: %s"
 msgid "Changelog for %s\n%s → %s"
 msgstr "Changelog for %s\n%s → %s"
 
+msgid "Changelog for %s\\n%s \\xE2\\x86\\x92 %s"
+msgstr "Changelog for %s\\n%s \\xE2\\x86\\x92 %s"
+
 msgid "Changelog: %s"
 msgstr "Changelog: %s"
 
@@ -233,6 +236,9 @@ msgstr "Close"
 msgid "Commit diff: %s → %s"
 msgstr "Commit diff: %s → %s"
 
+msgid "Commits: %s \\xE2\\x86\\x92 %s"
+msgstr "Commits: %s \\xE2\\x86\\x92 %s"
+
 msgid "Commits: %s → %s"
 msgstr "Commits: %s → %s"
 
@@ -250,6 +256,9 @@ msgstr "Confirm Update All"
 
 msgid "Connecting to GitHub…\n\nPlease wait."
 msgstr "Connecting to GitHub…\n\nPlease wait."
+
+msgid "Connecting to GitHub…\\n\\nPlease wait."
+msgstr "Connecting to GitHub…\\n\\nPlease wait."
 
 msgid "Continue"
 msgstr "Continue"
@@ -371,6 +380,9 @@ msgstr "Download options — %s (%s)"
 msgid "Downloading %s%s…\nThis may take a moment."
 msgstr "Downloading %s%s…\nThis may take a moment."
 
+msgid "Downloading %s%s…\\nThis may take a moment."
+msgstr "Downloading %s%s…\\nThis may take a moment."
+
 msgid "Downloading %s…"
 msgstr "Downloading %s…"
 
@@ -379,6 +391,9 @@ msgstr "Downloading patch \"%s\"…"
 
 msgid "Downloading patch %s…"
 msgstr "Downloading patch %s…"
+
+msgid "Downloading patch \\\"%s\\\"…"
+msgstr "Downloading patch \\\"%s\\\"…"
 
 msgid "Edit"
 msgstr "Edit"
@@ -403,6 +418,9 @@ msgstr "Enter plugin number"
 
 msgid "Extracting and installing plugin…\nPlease wait."
 msgstr "Extracting and installing plugin…\nPlease wait."
+
+msgid "Extracting and installing plugin…\\nPlease wait."
+msgstr "Extracting and installing plugin…\\nPlease wait."
 
 msgid "Failed to check %s: %s"
 msgstr "Failed to check %s: %s"
@@ -629,14 +647,26 @@ msgstr "Installed Plugins Settings"
 msgid "Installed Regular font style offline for \"%s\". Full font family queued for download when reconnected."
 msgstr "Installed Regular font style offline for \"%s\". Full font family queued for download when reconnected."
 
+msgid "Installed Regular font style offline for \\\"%s\\\". Full font family queued for download when reconnected."
+msgstr "Installed Regular font style offline for \\\"%s\\\". Full font family queued for download when reconnected."
+
 msgid "Installed font \"%s\" (%d file(s))."
 msgstr "Installed font \"%s\" (%d file(s))."
+
+msgid "Installed font \\\"%s\\\" (%d file(s))."
+msgstr "Installed font \\\"%s\\\" (%d file(s))."
 
 msgid "Installed full font family \"%s\" (%d file(s))."
 msgstr "Installed full font family \"%s\" (%d file(s))."
 
+msgid "Installed full font family \\\"%s\\\" (%d file(s))."
+msgstr "Installed full font family \\\"%s\\\" (%d file(s))."
+
 msgid "Installed patch \"%s\"."
 msgstr "Installed patch \"%s\"."
+
+msgid "Installed patch \\\"%s\\\"."
+msgstr "Installed patch \\\"%s\\\"."
 
 msgid "Installed plugin \"%s\" (version %s)."
 msgstr "Installed plugin \"%s\" (version %s)."
@@ -718,6 +748,9 @@ msgstr "Manage plugin paths"
 
 msgid "Manage plugin paths\n\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
 msgstr "Manage plugin paths\n\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
+
+msgid "Manage plugin paths\\n\\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
+msgstr "Manage plugin paths\\n\\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
 
 msgid "Match"
 msgstr "Match"
@@ -1370,6 +1403,9 @@ msgstr "The quick brown fox jumps over the lazy dog."
 msgid "This action cannot be undone.\n\nChanges will take effect after restart."
 msgstr "This action cannot be undone.\n\nChanges will take effect after restart."
 
+msgid "This action cannot be undone.\\n\\nChanges will take effect after restart."
+msgstr "This action cannot be undone.\\n\\nChanges will take effect after restart."
+
 msgid "This will take effect on next restart."
 msgstr "This will take effect on next restart."
 
@@ -1454,11 +1490,20 @@ msgstr "Updated patch \"%s\"."
 msgid "Updated patch %s."
 msgstr "Updated patch %s."
 
+msgid "Updated patch \\\"%s\\\"."
+msgstr "Updated patch \\\"%s\\\"."
+
 msgid "Updated plugin \"%s\" to version %s."
 msgstr "Updated plugin \"%s\" to version %s."
 
 msgid "Updated plugin \"%s\"."
 msgstr "Updated plugin \"%s\"."
+
+msgid "Updated plugin \\\"%s\\\" to version %s."
+msgstr "Updated plugin \\\"%s\\\" to version %s."
+
+msgid "Updated plugin \\\"%s\\\"."
+msgstr "Updated plugin \\\"%s\\\"."
 
 msgid "Updated: %s"
 msgstr "Updated: %s"
@@ -1484,6 +1529,9 @@ msgstr "Versions"
 msgid "View README"
 msgstr "View README"
 
+msgid "View commits (%s \\xE2\\x86\\x92 %s)"
+msgstr "View commits (%s \\xE2\\x86\\x92 %s)"
+
 msgid "View commits (%s → %s)"
 msgstr "View commits (%s → %s)"
 
@@ -1504,6 +1552,12 @@ msgstr "[draft]"
 
 msgid "[pre]"
 msgstr "[pre]"
+
+msgid "\\\"My dear Mr. Bennet,\\\" said his lady to him one day, \\\"have you heard that Netherfield Park is let at last?\\\" Mr. Bennet replied that he had not. \\\"But it is,\\\" returned she; \\\"for Mrs. Long has just been here, and she told me all about it.\\\" Mr. Bennet made no answer."
+msgstr "\\\"My dear Mr. Bennet,\\\" said his lady to him one day, \\\"have you heard that Netherfield Park is let at last?\\\" Mr. Bennet replied that he had not. \\\"But it is,\\\" returned she; \\\"for Mrs. Long has just been here, and she told me all about it.\\\" Mr. Bennet made no answer."
+
+msgid "\\xC2\\xB7"
+msgstr "\\xC2\\xB7"
 
 msgid "about_text"
 msgstr "Storefront is an in-app package manager for KOReader plugins, patches, and fonts."

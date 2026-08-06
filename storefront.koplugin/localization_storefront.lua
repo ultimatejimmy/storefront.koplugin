@@ -217,7 +217,7 @@ function Localization:discoverLanguages()
     
     if not lfs then
         logger.warn("Localization: lfs not available, using fallback language discovery")
-        self.available_languages = { "ar", "de", "en", "es", "fr", "hu", "id", "it", "ja", "nl", "pl", "pt_br", "ru", "sr", "tr", "uk", "zh_CN" }
+        self.available_languages = { "ar", "de", "en", "es", "fr", "hu", "id", "it", "ja", "ko", "nl", "pl", "pt_br", "ru", "sr", "tr", "uk", "zh_CN" }
         return
     end
 
@@ -225,7 +225,7 @@ function Localization:discoverLanguages()
     if not attr or attr.mode ~= "directory" then
         logger.warn("Localization: Languages directory not found at:", lang_dir)
         -- Fallback to default list
-        self.available_languages = { "ar", "de", "en", "es", "fr", "hu", "id", "it", "ja", "nl", "pl", "pt_br", "ru", "sr", "tr", "uk", "zh_CN" }
+        self.available_languages = { "ar", "de", "en", "es", "fr", "hu", "id", "it", "ja", "ko", "nl", "pl", "pt_br", "ru", "sr", "tr", "uk", "zh_CN" }
         return
     end
     

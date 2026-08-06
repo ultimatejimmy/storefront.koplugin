@@ -330,7 +330,7 @@ function StorefrontUpdatesUi:init(StorefrontClass)
             if self.browser_menu then
                 UIManager:nextTick(function()
                     if self.browser_menu then
-                        self:softRefreshCurrentBrowserView()
+                        self:refreshCurrentBrowserTab()
                     end
                 end)
             end

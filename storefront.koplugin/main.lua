@@ -844,6 +844,7 @@ function Storefront:_refreshPatchUpdatesInternal(records)
         self:updatePatchUpdatesDialog()
     end
     self:savePatchUpdatesState()
+    self:refreshCurrentBrowserTab()  -- rebuilds browser if on Updates tab
 
     UIManager:setDirty(nil, "full")
 end
@@ -3184,8 +3185,8 @@ function Storefront:_checkAllUpdatesInternal(records)
     invalidateInstalledPluginsCache()
     self._cached_plugin_summary = nil
     self._merged_updates_cache = nil
-    self:updateUpdatesDialog()        -- refreshes legacy standalone dialog if open
-    self:softRefreshCurrentBrowserView()  -- refreshes browser list view
+    self:updateUpdatesDialog()           -- refreshes legacy standalone dialog if open
+    self:refreshCurrentBrowserTab()      -- rebuilds browser if on Updates tab
     self:saveUpdatesState()
     UIManager:setDirty(nil, "full")
     -- Show completion toast
@@ -7404,6 +7405,26 @@ function Storefront:softRefreshCurrentBrowserView()
 
     if self.browser_menu then
         UIManager:setDirty(self.browser_menu)
+    end
+end
+
+-- Rebuilds the browser list in-place if the browser is open.
+-- On the Updates or Installed tab, closes and reopens the browser so the
+-- item list is rebuilt from fresh data (a dirty mark alone is not enough
+-- since those tabs build their items inside showBrowser).
+-- On other tabs, falls back to softRefreshCurrentBrowserView — just
+-- marking the frame dirty is sufficient because catalog-tab content
+-- is rebuilt from the cache which is already invalidated.
+function Storefront:refreshCurrentBrowserTab()
+    self:softRefreshCurrentBrowserView()
+    if self.browser_menu and self.browser_state then
+        local tab = self.browser_state.tab or "Plugins"
+        if tab == "Updates" or tab == "Installed" then
+            self:closeBrowserMenu()
+            UIManager:nextTick(function()
+                self:showBrowser()
+            end)
+        end
     end
 end
 
