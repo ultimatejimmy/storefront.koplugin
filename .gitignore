@@ -1,3 +1,4 @@
 .superpowers/
 /storefront.koplugin.zip
 /scratch
+tools/__pycache__/
