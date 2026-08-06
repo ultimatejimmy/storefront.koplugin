@@ -212,9 +212,30 @@ package.loaded["dispatcher"] = {
     end,
 }
 
+local _mock_cache_data = { plugin = { fetched_at = 1234567890, repos = {} } }
 package.loaded["storefront_cache"] = {
-    getLastFetched = function() return 1234567890 end,
-    listRepos = function() return {} end,
+    getLastFetched = function(kind)
+        kind = kind or "plugin"
+        local repos = _mock_cache_data[kind] and _mock_cache_data[kind].repos or {}
+        if #repos == 0 then return 0 end
+        return _mock_cache_data[kind] and _mock_cache_data[kind].fetched_at or 0
+    end,
+    countRepos = function(kind)
+        kind = kind or "plugin"
+        return _mock_cache_data[kind] and _mock_cache_data[kind].repos and #_mock_cache_data[kind].repos or 0
+    end,
+    storeRepos = function(kind, repos, custom_fetched_at)
+        kind = kind or "plugin"
+        local fetched_at = tonumber(custom_fetched_at) or os.time()
+        _mock_cache_data[kind] = { fetched_at = fetched_at, repos = repos }
+    end,
+    clear = function()
+        _mock_cache_data = { plugin = { fetched_at = 0, repos = {} } }
+    end,
+    invalidate = function()
+        _mock_cache_data = { plugin = { fetched_at = 0, repos = {} } }
+    end,
+    listRepos = function() return _mock_cache_data.plugin and _mock_cache_data.plugin.repos or {} end,
     isLegacyFormat = function() return false end,
     getRepo = function() return nil end,
     getRepoByName = function(owner, name) return nil end,
@@ -1001,6 +1022,34 @@ if ok_browser then
 
         check("fetchAndUpdateCacheAsync executed callback on subprocess failure", async_cb_called, true)
         check("fetchAndUpdateCacheAsync returned false on subprocess failure", async_cb_ok, false)
+
+        -- Test Cache.getLastFetched returns 0 when repos count is 0
+        local Cache = require("storefront_cache")
+        Cache.clear()
+        check("Cache.getLastFetched returns 0 for empty cache", Cache.getLastFetched("plugin"), 0)
+
+        -- Test CatalogClient bundled catalog seed sets fetched_at to 0
+        local sample_catalog = { plugins = { { id = 1, name = "SamplePlugin", owner = "test" } } }
+        CatalogClient.updateCacheFromCatalog(sample_catalog, true)
+        check("Bundled catalog seed leaves getLastFetched as 0", Cache.getLastFetched("plugin"), 0)
+        check("Bundled catalog seed populates countRepos", Cache.countRepos("plugin"), 1)
+
+        -- Test maybeCheckCatalogBackground triggers fetch when last_fetched is 0 even if _last_catalog_check_time is recent
+        local fetch_attempted = false
+        local orig_fetchAsync = CatalogClient.fetchAndUpdateCacheAsync
+        CatalogClient.fetchAndUpdateCacheAsync = function(url, cb)
+            fetch_attempted = true
+        end
+
+        local NetworkMgr = require("ui/network/manager")
+        local orig_isOnline = NetworkMgr.isOnline
+        NetworkMgr.isOnline = function() return true end
+
+        MainStorefront._last_catalog_check_time = os.time()
+        MainStorefront:maybeCheckCatalogBackground()
+        check("maybeCheckCatalogBackground triggers fetch for unfetched catalog despite recent check_time", fetch_attempted, true)
+        CatalogClient.fetchAndUpdateCacheAsync = orig_fetchAsync
+        NetworkMgr.isOnline = orig_isOnline
 
         -- Test togglePluginDisabled settings state toggle and return values
         local dis_state1, dis_name1 = MainStorefront:togglePluginDisabled("test_plugin.koplugin", true)

@@ -7414,9 +7414,6 @@ end
 
 function Storefront:maybeCheckCatalogBackground()
     local now = os.time()
-    if self._last_catalog_check_time and (now - self._last_catalog_check_time) < MIN_CATALOG_CHECK_INTERVAL then
-        return
-    end
 
     local GitHub = require("storefront_net_github")
     if GitHub.isDirectApiEnabled() then
@@ -7441,18 +7438,24 @@ function Storefront:maybeCheckCatalogBackground()
         return
     end
 
+    local Cache = require("storefront_cache")
+    local current_tab = (self.browser_state and self.browser_state.tab) or "Plugins"
+    local check_kind = (current_tab == "Patches") and "patch" or "plugin"
+    local repo_count = Cache.countRepos(check_kind) or 0
+    local last_fetched = Cache.getLastFetched(check_kind) or 0
+    local age = (last_fetched > 0) and (now - last_fetched) or 999999
+
+    local needs_fetch = (last_fetched == 0 or repo_count == 0 or age > 3600)
+    if not needs_fetch and self._last_catalog_check_time and (now - self._last_catalog_check_time) < MIN_CATALOG_CHECK_INTERVAL then
+        return
+    end
+
     pcall(function() self:syncPendingFontDownloads() end)
 
     self._last_catalog_check_time = now
 
-    local Cache = require("storefront_cache")
-    local current_tab = (self.browser_state and self.browser_state.tab) or "Plugins"
-    local check_kind = (current_tab == "Patches") and "patch" or "plugin"
-    local last_fetched = Cache.getLastFetched(check_kind) or 0
-    local age = (last_fetched > 0) and (now - last_fetched) or 999999
-
-    if last_fetched == 0 or age > 3600 then
-        local msg = string.format("Storefront: catalog cache is stale (%ds old > 3600s), triggering background fetch", age)
+    if needs_fetch then
+        local msg = string.format("Storefront: catalog cache is stale/unfetched (count: %d, %ds old), triggering background fetch", repo_count, age)
         logger.info(msg)
         StorefrontLogger.info(msg)
 
@@ -9044,16 +9047,21 @@ function Storefront:init()
             return
         end
 
-        if Storefront.instance then
-            Storefront.instance._last_catalog_check_time = os.time()
-        end
         local Cache = require("storefront_cache")
+        local plugin_count = Cache.countRepos("plugin") or 0
+        local patch_count = Cache.countRepos("patch") or 0
         local plugin_fetched = Cache.getLastFetched("plugin") or 0
         local patch_fetched = Cache.getLastFetched("patch") or 0
         local last_fetched = (plugin_fetched > 0 and patch_fetched > 0) and math.min(plugin_fetched, patch_fetched) or 0
         local age = (last_fetched > 0) and (os.time() - last_fetched) or 999999
-        if not GitHub.isDirectApiEnabled() and (last_fetched == 0 or age > 3600) then
-            local msg = string.format("Storefront init: catalog cache is stale (%ds old > 3600s), triggering background fetch", age)
+
+        local needs_fetch = (last_fetched == 0 or plugin_count == 0 or patch_count == 0 or age > 3600)
+        if Storefront.instance and needs_fetch then
+            Storefront.instance._last_catalog_check_time = os.time()
+        end
+
+        if not GitHub.isDirectApiEnabled() and needs_fetch then
+            local msg = string.format("Storefront init: catalog cache is stale/unfetched (plugins: %d, patches: %d, %ds old), triggering background fetch", plugin_count, patch_count, age)
             logger.info(msg)
             StorefrontLogger.info(msg)
             local CatalogClient = require("storefront_net_catalog")

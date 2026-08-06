@@ -128,7 +128,7 @@ function CatalogClient.fetchCatalog(url_to_fetch)
     return nil, last_err
 end
 
-function CatalogClient.updateCacheFromCatalog(catalog_data)
+function CatalogClient.updateCacheFromCatalog(catalog_data, is_bundled)
     if not catalog_data or type(catalog_data) ~= "table" then
         return false, "invalid catalog format"
     end
@@ -137,16 +137,17 @@ function CatalogClient.updateCacheFromCatalog(catalog_data)
     local patches = catalog_data.patches or {}
     local fonts   = catalog_data.fonts or {}
     
-    logger.info("Storefront: updating cache from static catalog", "plugins:", #plugins, "patches:", #patches, "fonts:", #fonts)
+    local custom_fetched_at = is_bundled and 0 or nil
+    logger.info("Storefront: updating cache from static catalog", "plugins:", #plugins, "patches:", #patches, "fonts:", #fonts, "is_bundled:", tostring(is_bundled))
     
     -- Store plugin repositories
-    Cache.storeRepos("plugin", plugins)
+    Cache.storeRepos("plugin", plugins, custom_fetched_at)
     
     -- Store patch repositories
-    Cache.storeRepos("patch", patches)
+    Cache.storeRepos("patch", patches, custom_fetched_at)
     
     -- Store font repositories
-    Cache.storeRepos("font", fonts)
+    Cache.storeRepos("font", fonts, custom_fetched_at)
     
     -- Store patch file metadata for patch repositories
     for _, repo in ipairs(patches) do
@@ -567,9 +568,26 @@ function CatalogClient.getBundledCatalogPath()
     local candidates = {
         dir .. "catalog.json",
         dir .. "../catalog.json",
-        DataStorage:getDataDir() .. "/plugins/storefront.koplugin/catalog.json",
-        DataStorage:getDataDir() .. "/plugins/storefront.koplugin/storefront.koplugin/catalog.json",
     }
+
+    local ok_sf, Storefront = pcall(require, "main")
+    local instance_path = (ok_sf and Storefront and Storefront.instance and Storefront.instance.path) or nil
+    if instance_path then
+        table.insert(candidates, instance_path .. "/catalog.json")
+        table.insert(candidates, instance_path .. "/storefront.koplugin/catalog.json")
+    end
+
+    local ok_pp, PluginPaths = pcall(require, "storefront_plugin_paths")
+    if ok_pp and PluginPaths and PluginPaths.getLookupPaths then
+        local lookup_paths = PluginPaths.getLookupPaths() or {}
+        for _, p in ipairs(lookup_paths) do
+            table.insert(candidates, p .. "/storefront.koplugin/catalog.json")
+            table.insert(candidates, p .. "/storefront.koplugin/storefront.koplugin/catalog.json")
+        end
+    end
+
+    table.insert(candidates, DataStorage:getDataDir() .. "/plugins/storefront.koplugin/catalog.json")
+    table.insert(candidates, DataStorage:getDataDir() .. "/plugins/storefront.koplugin/storefront.koplugin/catalog.json")
 
     for _, path in ipairs(candidates) do
         local f = io.open(path, "r")
@@ -608,7 +626,7 @@ function CatalogClient.loadBundledCatalog()
     end
 
     logger.info("Storefront: seeding cache from bundled catalog.json at", path)
-    return CatalogClient.updateCacheFromCatalog(parsed)
+    return CatalogClient.updateCacheFromCatalog(parsed, true)
 end
 
 function CatalogClient.fetchAndUpdateCache(url_to_fetch)

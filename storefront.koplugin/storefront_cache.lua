@@ -144,11 +144,11 @@ function Cache.init()
     _loaded = true
 end
 
-function Cache.storeRepos(kind, repos)
+function Cache.storeRepos(kind, repos, custom_fetched_at)
     if not kind or type(repos) ~= "table" then return end
     Cache.init()
     
-    local fetched_at = os.time()
+    local fetched_at = tonumber(custom_fetched_at) or os.time()
     local list = {}
     
     local existing_patches = {}
@@ -304,6 +304,9 @@ end
 function Cache.getLastFetched(kind)
     kind = kind or "plugin"
     Cache.init()
+    if Cache.countRepos(kind) == 0 then
+        return 0
+    end
     return _data[kind] and _data[kind].fetched_at or 0
 end
 
