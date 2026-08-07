@@ -1,10 +1,7 @@
 name: Build and Deploy Catalog
 
 on:
-  push:
-    branches:
-      - main
-  workflow_dispatch: # Allows manual triggering from Actions tab
+  workflow_dispatch: # Allows manual triggering from Actions tab or external API
 
 permissions:
   contents: read
