@@ -2042,6 +2042,14 @@ function Storefront:buildUpdateItems(summary)
         end
     end
 
+    if util.trim(self.browser_state and self.browser_state.search_text or "") ~= "" then
+        table.insert(entries, 1, {
+            text = "ℹ " .. string.format(_("Search filter (\"%s\") is not applied to Updates."), self.browser_state.search_text),
+            select_enabled = false,
+            separator = true,
+        })
+    end
+
     return entries
 end
 
@@ -5562,6 +5570,11 @@ function Storefront:repoMatchesSearch(repo, search)
     end
     addField(repo.full_name)
     addField(repo.name)
+    addField(repo.font_family)
+    addField(repo.font_name)
+    addField(repo.owner)
+    addField(repo.author)
+    addField(repo.category)
     addField(repo.description)
     addField(repo.language)
     if repo.data and type(repo.data.topics) == "table" then
@@ -6767,7 +6780,8 @@ function Storefront:buildInstalledEntries(available_list_height)
     local filter_type = self.installed_state.filter_type or "all"
     local filter_default = self.installed_state.filter_default or "all"
     local filter_status = self.installed_state.filter_status or "all"
-    local search_text = util.trim(self.installed_state.search_text or (self.browser_state and self.browser_state.search_text) or ""):lower()
+    local raw_search = (self.installed_state and self.installed_state.search_text ~= "" and self.installed_state.search_text) or (self.browser_state and self.browser_state.search_text) or ""
+    local search_text = util.trim(raw_search):lower()
     local filter_owner = util.trim(self.browser_state and self.browser_state.owner or ""):lower()
     local filter_min_stars = tonumber(self.browser_state and self.browser_state.min_stars) or 0
     local sort_mode = self.installed_state.sort_mode or "name_asc"
@@ -6925,7 +6939,22 @@ function Storefront:buildInstalledEntries(available_list_height)
                 local filename = (patch.filename or ""):lower()
                 local owner = (record and record.owner or ""):lower()
                 local desc = (record and record.repo_description or ""):lower()
-                if not (filename:find(search_text, 1, true) or owner:find(search_text, 1, true) or desc:find(search_text, 1, true)) then
+                local repo = (record and record.repo or ""):lower()
+                if not (filename:find(search_text, 1, true) or owner:find(search_text, 1, true) or desc:find(search_text, 1, true) or repo:find(search_text, 1, true)) then
+                    match_search = false
+                end
+            end
+
+            if filter_owner ~= "" then
+                local owner = (record and record.owner or ""):lower()
+                if not owner:find(filter_owner, 1, true) then
+                    match_search = false
+                end
+            end
+
+            if filter_min_stars > 0 then
+                local stars = (record and tonumber(record.stars)) or 0
+                if stars < filter_min_stars then
                     match_search = false
                 end
             end
@@ -6991,20 +7020,40 @@ function Storefront:buildInstalledEntries(available_list_height)
             local font_name = font_rec.font_name or font_rec.repo or ""
             if font_name == "" then goto continue_font end
 
+            local catalog_repo = nil
+            local ok_cache, Cache2 = pcall(require, "storefront_cache")
+            if ok_cache and Cache2 then
+                catalog_repo = Cache2.getRepoByName(font_rec.owner or "", font_name)
+                    or Cache2.getRepoByName("", font_name)
+            end
+
             local match_search = true
             if search_text ~= "" then
-                if not font_name:lower():find(search_text, 1, true) then
+                local f_name = font_name:lower()
+                local f_owner = (font_rec.owner or (catalog_repo and catalog_repo.owner) or ""):lower()
+                local f_family = (catalog_repo and catalog_repo.font_family or ""):lower()
+                local f_desc = (catalog_repo and catalog_repo.description or ""):lower()
+                local f_full = (font_rec.full_name or (catalog_repo and catalog_repo.full_name) or ""):lower()
+                if not (f_name:find(search_text, 1, true) or f_owner:find(search_text, 1, true) or f_family:find(search_text, 1, true) or f_desc:find(search_text, 1, true) or f_full:find(search_text, 1, true)) then
+                    match_search = false
+                end
+            end
+
+            if filter_owner ~= "" then
+                local f_owner = (font_rec.owner or (catalog_repo and catalog_repo.owner) or ""):lower()
+                if not f_owner:find(filter_owner, 1, true) then
+                    match_search = false
+                end
+            end
+
+            if filter_min_stars > 0 then
+                local stars = (catalog_repo and tonumber(catalog_repo.stars)) or 0
+                if stars < filter_min_stars then
                     match_search = false
                 end
             end
 
             if match_search then
-                local catalog_repo = nil
-                local ok_cache, Cache2 = pcall(require, "storefront_cache")
-                if ok_cache and Cache2 then
-                    catalog_repo = Cache2.getRepoByName(font_rec.owner or "", font_name)
-                        or Cache2.getRepoByName("", font_name)
-                end
 
                 table.insert(items, {
                     name = font_name,
@@ -7092,15 +7141,52 @@ function Storefront:buildInstalledEntries(available_list_height)
     return self:paginateEntries(items, "Installed", available_list_height)
 end
 
+function Storefront:hasActiveFilters(tab)
+    self:ensureBrowserState()
+    self:ensureInstalledState()
+    tab = tab or self.browser_state.tab or "Plugins"
+
+    if tab == "Installed" then
+        local raw_st = (self.installed_state and self.installed_state.search_text ~= "" and self.installed_state.search_text) or (self.browser_state and self.browser_state.search_text) or ""
+        local st = util.trim(raw_st)
+        local ft = self.installed_state.filter_type or "all"
+        local fd = self.installed_state.filter_default or "all"
+        local fs = self.installed_state.filter_status or "all"
+        local sm = self.installed_state.sort_mode or "name_asc"
+        return st ~= "" or ft ~= "all" or fd ~= "all" or fs ~= "all" or sm ~= "name_asc"
+    elseif tab == "Updates" then
+        return false
+    else
+        local st = util.trim(self.browser_state.search_text or "")
+        local ow = util.trim(self.browser_state.owner or "")
+        local ms = tonumber(self.browser_state.min_stars) or 0
+        local fc = self.browser_state.font_category or "all"
+        local sm = self.browser_state.sort_mode or "stars_desc"
+        return st ~= "" or ow ~= "" or ms > 0 or (tab == "Fonts" and fc ~= "all") or sm ~= "stars_desc"
+    end
+end
+
+function Storefront:clearSearchText()
+    self:ensureBrowserState()
+    self:ensureInstalledState()
+    self.browser_state.search_text = ""
+    self.installed_state.search_text = ""
+    self.browser_state.page = 1
+    self.browser_state.scroll_offset = nil
+    self:saveBrowserState()
+    self:saveInstalledState()
+    self:reopenBrowser()
+end
+
 function Storefront:clearSearchAndFilters()
     self:ensureBrowserState()
     self:ensureInstalledState()
-    self:ensureUpdatesState()
-    self:ensurePatchUpdatesState()
 
     self.browser_state.search_text = ""
     self.browser_state.owner = ""
     self.browser_state.min_stars = 0
+    self.browser_state.font_category = "all"
+    self.browser_state.sort_mode = "stars_desc"
     self.browser_state.page = 1
     self.browser_state.scroll_offset = nil
 
@@ -7108,6 +7194,7 @@ function Storefront:clearSearchAndFilters()
     self.installed_state.filter_type = "all"
     self.installed_state.filter_default = "all"
     self.installed_state.filter_status = "all"
+    self.installed_state.sort_mode = "name_asc"
 
     if self.updates_state then
         self.updates_state.filter_only_outdated = false
@@ -7203,13 +7290,32 @@ function Storefront:buildBrowserEntries(available_list_height)
 
     if display_total == 0 then
         local empty_text = kind == "patch" and _("No patches found in matching repositories.") or _("No entries match current filters.")
+        local active_summary_parts = {}
+        if util.trim(self.browser_state.search_text or "") ~= "" then
+            table.insert(active_summary_parts, "search: \"" .. self.browser_state.search_text .. "\"")
+        end
+        if util.trim(self.browser_state.owner or "") ~= "" then
+            table.insert(active_summary_parts, "owner: " .. self.browser_state.owner)
+        end
+        if (self.browser_state.min_stars or 0) > 0 then
+            table.insert(active_summary_parts, "min stars: " .. tostring(self.browser_state.min_stars))
+        end
+        if kind == "font" and self.browser_state.font_category and self.browser_state.font_category ~= "all" then
+            table.insert(active_summary_parts, "style: " .. self.browser_state.font_category)
+        end
+        if #active_summary_parts > 0 then
+            empty_text = empty_text .. "\n(" .. table.concat(active_summary_parts, ", ") .. ")"
+        end
+
         table.insert(items, {
             text = empty_text,
             select_enabled = false,
         })
         table.insert(items, {
-            text = _("Clear search/filters"),
+            text = _("Clear search & filters"),
             is_clear_button = true,
+            is_entry = true,
+            keep_menu_open = true,
             callback = function()
                 self:clearSearchAndFilters()
             end,
@@ -7528,189 +7634,211 @@ function Storefront:showBrowser(kind)
             local initial_focus = self.browser_focus_hint
             self.browser_focus_hint = nil
 
+            local is_catalog_search_active = util.trim(self.browser_state and self.browser_state.search_text or "") ~= ""
+            local raw_installed_st = (self.installed_state and self.installed_state.search_text ~= "" and self.installed_state.search_text) or (self.browser_state and self.browser_state.search_text) or ""
+            local is_installed_search_active = util.trim(raw_installed_st) ~= ""
+
             local toolbar_buttons
-    local show_plugins_bar = (current_tab == "Plugins" and self.browser_state and self.browser_state.show_filter_bar_plugins == true)
-    local show_patches_bar = (current_tab == "Patches" and self.browser_state and self.browser_state.show_filter_bar_patches == true)
-    local show_fonts_bar = (current_tab == "Fonts" and self.browser_state and self.browser_state.show_filter_bar_fonts == true)
-    if show_plugins_bar or show_patches_bar or show_fonts_bar then
-        toolbar_buttons = {}
-        if (self.browser_state.search_text or "") ~= "" then
-            table.insert(toolbar_buttons, {
-                id = "search",
-                text = _("Search: ") .. self.browser_state.search_text,
-                callback = function() self:showCatalogFilter() end
-            })
-        end
-        if (self.browser_state.owner or "") ~= "" and current_tab ~= "Fonts" then
-            table.insert(toolbar_buttons, {
-                id = "owner",
-                text = _("Owner: ") .. self.browser_state.owner,
-                callback = function() self:showCatalogFilter() end
-            })
-        end
-        if current_tab == "Fonts" and self.browser_state.font_category and self.browser_state.font_category ~= "all" then
-            table.insert(toolbar_buttons, {
-                id = "font_style",
-                text = _("Style: ") .. self.browser_state.font_category:lower(),
-                callback = function() self:showCatalogFilter() end
-            })
-        end
-        if (self.browser_state.min_stars or 0) > 0 then
-            table.insert(toolbar_buttons, {
-                id = "stars",
-                text = "★ " .. tostring(self.browser_state.min_stars) .. "+",
-                callback = function() self:showCatalogFilter() end
-            })
-        end
-        local sort_opt = self:getSortOption(self.browser_state.sort_mode)
-        table.insert(toolbar_buttons, {
-            id = "sort",
-            text = sort_opt and sort_opt.summary or _("Sort"),
-            callback = function() self:browserAdvanceSort() end
-        })
-        table.insert(toolbar_buttons, {
-            id = "filter_dialog",
-            text = _("Filter..."),
-            callback = function() self:showCatalogFilter() end
-        })
-    elseif current_tab == "Updates" then
-        toolbar_buttons = {}
-        table.insert(toolbar_buttons, {
-            id = "check_updates",
-            text = _("Check Updates"),
-            text_font_bold = true,
-            callback = function()
-                local installed_plugins = listInstalledPlugins()
-                local records = getInstallRecordsMap()
-                local plugin_repos = {}
-                for _, plugin in ipairs(installed_plugins) do
-                    local record = records[plugin.dirname]
-                    if record and record.owner and record.repo then
-                        record.dirname = plugin.dirname
-                        table.insert(plugin_repos, record)
-                    end
+            local show_plugins_bar = (current_tab == "Plugins" and ((self.browser_state and self.browser_state.show_filter_bar_plugins == true) or is_catalog_search_active))
+            local show_patches_bar = (current_tab == "Patches" and ((self.browser_state and self.browser_state.show_filter_bar_patches == true) or is_catalog_search_active))
+            local show_fonts_bar = (current_tab == "Fonts" and ((self.browser_state and self.browser_state.show_filter_bar_fonts == true) or is_catalog_search_active))
+            if show_plugins_bar or show_patches_bar or show_fonts_bar then
+                toolbar_buttons = {}
+                if (self.browser_state.search_text or "") ~= "" then
+                    table.insert(toolbar_buttons, {
+                        id = "search",
+                        text = _("Search: ") .. self.browser_state.search_text,
+                        callback = function() self:showCatalogFilter() end
+                    })
                 end
-                if #plugin_repos > 0 then
-                    self:_checkAllUpdatesInternal(plugin_repos)
-                else
-                    UIManager:show(InfoMessage:new{ text = _("No tracked plugins to check."), timeout = 4 })
+                if (self.browser_state.owner or "") ~= "" then
+                    table.insert(toolbar_buttons, {
+                        id = "owner",
+                        text = _("Owner: ") .. self.browser_state.owner,
+                        callback = function() self:showFilterDialog() end
+                    })
                 end
-            end,
-        })
-        table.insert(toolbar_buttons, {
-            id = "update_all",
-            text = _("Update All"),
-            right_align = true,
-            is_primary = true,
-            callback = function() self:updateAllAvailable() end,
-        })
-    elseif current_tab == "Installed" then
-        self:ensureInstalledState()
-        if self.browser_state.show_filter_bar_installed ~= false then
-        toolbar_buttons = {}
-        if (self.installed_state.search_text or "") ~= "" then
-            table.insert(toolbar_buttons, {
-                id = "search",
-                text = _("Search: ") .. self.installed_state.search_text,
-                callback = function() self:showFilterDialog() end
-            })
-        end
-        local type_label = _("All Types")
-        if self.installed_state.filter_type == "plugin" then type_label = _("Plugins")
-        elseif self.installed_state.filter_type == "patch" then type_label = _("Patches")
-        elseif self.installed_state.filter_type == "font" then type_label = _("Fonts") end
-        table.insert(toolbar_buttons, {
-            id = "type",
-            text = type_label,
-            callback = function() self:showInstalledFilter() end
-        })
-        if self.installed_state.filter_default and self.installed_state.filter_default ~= "all" then
-            local def_label = (self.installed_state.filter_default == "default_only") and _("Default") or _("User Installed")
-            table.insert(toolbar_buttons, {
-                id = "origin",
-                text = def_label,
-                callback = function() self:showInstalledFilter() end
-            })
-        end
-        if self.installed_state.filter_status and self.installed_state.filter_status ~= "all" then
-            local stat_label = (self.installed_state.filter_status == "enabled") and _("Enabled") or _("Disabled")
-            table.insert(toolbar_buttons, {
-                id = "status",
-                text = stat_label,
-                callback = function() self:showInstalledFilter() end
-            })
-        end
-        local sort_map = {
-            name_asc = _("Sort: A-Z"),
-            name_desc = _("Sort: Z-A"),
-            date_desc = _("Sort: Updated"),
-            date_asc = _("Sort: Oldest"),
-            date = _("Sort: Updated"),
-            type = _("Sort: Type"),
-            status = _("Sort: Status"),
-        }
-        table.insert(toolbar_buttons, {
-            id = "sort",
-            text = sort_map[self.installed_state.sort_mode] or _("Sort"),
-            callback = function() self:browserAdvanceSort() end
-        })
-        table.insert(toolbar_buttons, {
-            id = "filter_dialog",
-            text = _("Filter..."),
-            callback = function() self:showInstalledFilter() end
-        })
-        end -- show_filter_bar_installed
-    end
+                if current_tab == "Fonts" and self.browser_state.font_category and self.browser_state.font_category ~= "all" then
+                    table.insert(toolbar_buttons, {
+                        id = "font_style",
+                        text = _("Style: ") .. self.browser_state.font_category:lower(),
+                        callback = function() self:showCatalogFilter() end
+                    })
+                end
+                if (self.browser_state.min_stars or 0) > 0 then
+                    table.insert(toolbar_buttons, {
+                        id = "stars",
+                        text = "★ " .. tostring(self.browser_state.min_stars) .. "+",
+                        callback = function() self:showCatalogFilter() end
+                    })
+                end
+                local sort_opt = self:getSortOption(self.browser_state.sort_mode)
+                table.insert(toolbar_buttons, {
+                    id = "sort",
+                    text = sort_opt and sort_opt.summary or _("Sort"),
+                    callback = function() self:browserAdvanceSort() end
+                })
+                table.insert(toolbar_buttons, {
+                    id = "filter_dialog",
+                    text = _("Filter..."),
+                    callback = function() self:showCatalogFilter() end
+                })
+            elseif current_tab == "Updates" then
+                toolbar_buttons = {}
+                table.insert(toolbar_buttons, {
+                    id = "check_updates",
+                    text = _("Check Updates"),
+                    text_font_bold = true,
+                    callback = function()
+                        local installed_plugins = listInstalledPlugins()
+                        local records = getInstallRecordsMap()
+                        local plugin_repos = {}
+                        for _, plugin in ipairs(installed_plugins) do
+                            local record = records[plugin.dirname]
+                            if record and record.owner and record.repo then
+                                record.dirname = plugin.dirname
+                                table.insert(plugin_repos, record)
+                            end
+                        end
+                        if #plugin_repos > 0 then
+                            self:_checkAllUpdatesInternal(plugin_repos)
+                        else
+                            UIManager:show(InfoMessage:new{ text = _("No tracked plugins to check."), timeout = 4 })
+                        end
+                    end,
+                })
+                table.insert(toolbar_buttons, {
+                    id = "update_all",
+                    text = _("Update All"),
+                    right_align = true,
+                    is_primary = true,
+                    callback = function() self:updateAllAvailable() end,
+                })
+            elseif current_tab == "Installed" then
+                self:ensureInstalledState()
+                if (self.browser_state and self.browser_state.show_filter_bar_installed ~= false) or is_installed_search_active then
+                toolbar_buttons = {}
+                local effective_installed_search = util.trim((self.installed_state.search_text and self.installed_state.search_text ~= "") and self.installed_state.search_text or (self.browser_state and self.browser_state.search_text or ""))
+                if effective_installed_search ~= "" then
+                    table.insert(toolbar_buttons, {
+                        id = "search",
+                        text = _("Search: ") .. effective_installed_search,
+                        callback = function() self:showFilterDialog() end
+                    })
+                end
+                if (self.browser_state and (self.browser_state.owner or "") ~= "") then
+                    table.insert(toolbar_buttons, {
+                        id = "owner",
+                        text = _("Owner: ") .. self.browser_state.owner,
+                        callback = function() self:showFilterDialog() end
+                    })
+                end
+                local type_label = _("All Types")
+                if self.installed_state.filter_type == "plugin" then type_label = _("Plugins")
+                elseif self.installed_state.filter_type == "patch" then type_label = _("Patches")
+                elseif self.installed_state.filter_type == "font" then type_label = _("Fonts") end
+                table.insert(toolbar_buttons, {
+                    id = "type",
+                    text = type_label,
+                    callback = function() self:showInstalledFilter() end
+                })
+                if self.installed_state.filter_default and self.installed_state.filter_default ~= "all" then
+                    local def_label = (self.installed_state.filter_default == "default_only") and _("Default") or _("User Installed")
+                    table.insert(toolbar_buttons, {
+                        id = "origin",
+                        text = def_label,
+                        callback = function() self:showInstalledFilter() end
+                    })
+                end
+                if self.installed_state.filter_status and self.installed_state.filter_status ~= "all" then
+                    local stat_label = (self.installed_state.filter_status == "enabled") and _("Enabled") or _("Disabled")
+                    table.insert(toolbar_buttons, {
+                        id = "status",
+                        text = stat_label,
+                        callback = function() self:showInstalledFilter() end
+                    })
+                end
+                local sort_map = {
+                    name_asc = _("Sort: A-Z"),
+                    name_desc = _("Sort: Z-A"),
+                    date_desc = _("Sort: Updated"),
+                    date_asc = _("Sort: Oldest"),
+                    date = _("Sort: Updated"),
+                    type = _("Sort: Type"),
+                    status = _("Sort: Status"),
+                }
+                table.insert(toolbar_buttons, {
+                    id = "sort",
+                    text = sort_map[self.installed_state.sort_mode] or _("Sort"),
+                    callback = function() self:browserAdvanceSort() end
+                })
+                table.insert(toolbar_buttons, {
+                    id = "filter_dialog",
+                    text = _("Filter..."),
+                    callback = function() self:showInstalledFilter() end
+                })
+                end -- show_filter_bar_installed
+            end
 
-    local current_generation = InstallStore.getGeneration and InstallStore.getGeneration() or 0
-    local remote_info_key = self.updates_state and self.updates_state.remote_info
-    local patch_remote_info_key = self.patch_updates_state and self.patch_updates_state.remote_info
-    
-    if not self._cached_updates_count 
-       or self._cached_updates_gen ~= current_generation
-       or self._cached_remote_info ~= remote_info_key
-       or self._cached_patch_remote_info ~= patch_remote_info_key then
-       
-        pcall(function()
-            local p_sum = self:collectUpdateSummary()
-            local pt_sum = self:collectPatchUpdateSummary()
-            self._cached_updates_count = (p_sum.updates or 0) + (pt_sum.updates or 0)
-        end)
-        self._cached_updates_gen = current_generation
-        self._cached_remote_info = remote_info_key
-        self._cached_patch_remote_info = patch_remote_info_key
-    end
-    local updates_count = self._cached_updates_count or 0
+            local current_generation = InstallStore.getGeneration and InstallStore.getGeneration() or 0
+            local remote_info_key = self.updates_state and self.updates_state.remote_info
+            local patch_remote_info_key = self.patch_updates_state and self.patch_updates_state.remote_info
+            
+            if not self._cached_updates_count 
+               or self._cached_updates_gen ~= current_generation
+               or self._cached_remote_info ~= remote_info_key
+               or self._cached_patch_remote_info ~= patch_remote_info_key then
+               
+                pcall(function()
+                    local p_sum = self:collectUpdateSummary()
+                    local pt_sum = self:collectPatchUpdateSummary()
+                    self._cached_updates_count = (p_sum.updates or 0) + (pt_sum.updates or 0)
+                end)
+                self._cached_updates_gen = current_generation
+                self._cached_remote_info = remote_info_key
+                self._cached_patch_remote_info = patch_remote_info_key
+            end
+            local updates_count = self._cached_updates_count or 0
 
-    local available_list_height = StorefrontBrowserDialog:measureListViewport{
-        title = title,
-        toolbar_buttons = toolbar_buttons,
-        current_tab = current_tab,
-        updates_count = updates_count,
-        show_filter_bar_plugins = self.browser_state and self.browser_state.show_filter_bar_plugins == true,
-        show_filter_bar_patches = self.browser_state and self.browser_state.show_filter_bar_patches == true,
-        show_filter_bar_fonts = self.browser_state and self.browser_state.show_filter_bar_fonts == true,
-        show_filter_bar_installed = self.browser_state and self.browser_state.show_filter_bar_installed ~= false,
-    }
-    local items, total_pages = self:buildBrowserEntries(available_list_height)
+            local active_search_text = ""
+            if current_tab == "Installed" then
+                local raw_active_st = (self.installed_state and self.installed_state.search_text ~= "" and self.installed_state.search_text) or (self.browser_state and self.browser_state.search_text) or ""
+                active_search_text = util.trim(raw_active_st)
+            elseif current_tab ~= "Updates" then
+                active_search_text = util.trim(self.browser_state.search_text or "")
+            end
 
-    local dialog = StorefrontBrowserDialog:new{
-        title = title,
-        items = items,
-        page = self.browser_state.page,
-        total_pages = total_pages,
-        scroll_offset = self.browser_state.scroll_offset,
-        initial_focus = initial_focus,
-        toolbar_buttons = toolbar_buttons,
-        current_tab = current_tab,
-        updates_count = updates_count,
-        show_filter_bar_plugins = self.browser_state and self.browser_state.show_filter_bar_plugins == true,
-        show_filter_bar_patches = self.browser_state and self.browser_state.show_filter_bar_patches == true,
-        show_filter_bar_fonts = self.browser_state and self.browser_state.show_filter_bar_fonts == true,
-        show_filter_bar_installed = self.browser_state and self.browser_state.show_filter_bar_installed ~= false,
-        on_toggle_filter_bar = function(tab_name)
-            self:toggleFilterBar(tab_name)
-        end,
+            local available_list_height = StorefrontBrowserDialog:measureListViewport{
+                title = title,
+                toolbar_buttons = toolbar_buttons,
+                current_tab = current_tab,
+                updates_count = updates_count,
+                show_filter_bar_plugins = (self.browser_state and self.browser_state.show_filter_bar_plugins == true) or is_catalog_search_active,
+                show_filter_bar_patches = (self.browser_state and self.browser_state.show_filter_bar_patches == true) or is_catalog_search_active,
+                show_filter_bar_fonts = (self.browser_state and self.browser_state.show_filter_bar_fonts == true) or is_catalog_search_active,
+                show_filter_bar_installed = (self.browser_state and self.browser_state.show_filter_bar_installed ~= false) or is_installed_search_active,
+            }
+            local items, total_pages = self:buildBrowserEntries(available_list_height)
+
+            local dialog = StorefrontBrowserDialog:new{
+                title = title,
+                items = items,
+                page = self.browser_state.page,
+                total_pages = total_pages,
+                scroll_offset = self.browser_state.scroll_offset,
+                initial_focus = initial_focus,
+                toolbar_buttons = toolbar_buttons,
+                current_tab = current_tab,
+                updates_count = updates_count,
+                active_search_text = active_search_text,
+                on_clear_search = function() self:clearSearchText() end,
+                show_filter_bar_plugins = (self.browser_state and self.browser_state.show_filter_bar_plugins == true) or is_catalog_search_active,
+                show_filter_bar_patches = (self.browser_state and self.browser_state.show_filter_bar_patches == true) or is_catalog_search_active,
+                show_filter_bar_fonts = (self.browser_state and self.browser_state.show_filter_bar_fonts == true) or is_catalog_search_active,
+                show_filter_bar_installed = (self.browser_state and self.browser_state.show_filter_bar_installed ~= false) or is_installed_search_active,
+                on_toggle_filter_bar = function(tab_name)
+                    self:toggleFilterBar(tab_name)
+                end,
         updates_filter_only_outdated = self.updates_state.filter_only_outdated,
         on_updates_filter = function(outdated_only)
             self.updates_state.filter_only_outdated = outdated_only
@@ -7725,6 +7853,15 @@ function Storefront:showBrowser(kind)
             self.browser_state.kind = (tab_name == "Patches" and "patch") or (tab_name == "Fonts" and "font") or "plugin"
             self.browser_state.page = 1
             self.browser_state.scroll_offset = nil
+
+            if self:hasActiveFilters(tab_name) then
+                if tab_name == "Plugins" then self.browser_state.show_filter_bar_plugins = true
+                elseif tab_name == "Patches" then self.browser_state.show_filter_bar_patches = true
+                elseif tab_name == "Fonts" then self.browser_state.show_filter_bar_fonts = true
+                elseif tab_name == "Installed" then self.browser_state.show_filter_bar_installed = true
+                end
+            end
+
             self:saveBrowserState()
             self:reopenBrowser()
         end,

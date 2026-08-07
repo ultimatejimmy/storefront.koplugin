@@ -610,7 +610,8 @@ function StorefrontFilterDialog.show(arg1, arg2)
     local dialog
     local check_readme
 
-    local cur_search = (active_tab == "Installed") and (Storefront.installed_state.search_text or "") or (filters.search_text or "")
+    local inst_st = Storefront.installed_state and Storefront.installed_state.search_text
+    local cur_search = (active_tab == "Installed" and inst_st and inst_st ~= "") and inst_st or (filters.search_text or "")
 
     dialog = MultiInputDialog:new{
         title = _("Search"),

@@ -59,6 +59,8 @@ local StorefrontBrowserDialog = FocusManager:extend{
     on_settings_tap = nil,
     current_tab = "Plugins",
     updates_count = 0,
+    active_search_text = "",
+    on_clear_search = nil,
     show_filter_bar_plugins = false,
     show_filter_bar_patches = false,
     show_filter_bar_fonts = false,
@@ -66,6 +68,13 @@ local StorefrontBrowserDialog = FocusManager:extend{
     on_tab_switch = nil,
     on_toggle_filter_bar = nil,
 }
+
+function StorefrontBrowserDialog:hasActiveFilters(tab)
+    if not self.Storefront then
+        return (self.active_search_text or "") ~= ""
+    end
+    return self.Storefront:hasActiveFilters(tab)
+end
 
 function StorefrontBrowserDialog:buildTabBar()
     local tabs = { "Plugins", "Patches", "Fonts", "Installed", "Updates" }
@@ -169,16 +178,11 @@ function StorefrontBrowserDialog:buildTabBar()
     local frame_content = tab_bar_group
 
     if self.current_tab == "Plugins" or self.current_tab == "Patches" or self.current_tab == "Fonts" or self.current_tab == "Installed" then
-        local is_bar_visible
-        if self.current_tab == "Plugins" then
-            is_bar_visible = self.show_filter_bar_plugins == true
-        elseif self.current_tab == "Patches" then
-            is_bar_visible = self.show_filter_bar_patches == true
-        elseif self.current_tab == "Fonts" then
-            is_bar_visible = self.show_filter_bar_fonts == true
-        else -- Installed
-            is_bar_visible = self.show_filter_bar_installed ~= false
+        local has_active_filters = false
+        if type(self.hasActiveFilters) == "function" then
+            has_active_filters = self:hasActiveFilters(self.current_tab)
         end
+
         local filter_icon = ImageWidget:new{
             file = getAssetPath("filter.svg"),
             width = sc(20),
@@ -189,7 +193,7 @@ function StorefrontBrowserDialog:buildTabBar()
         }
 
         local icon_elements = { filter_icon }
-        if is_bar_visible then
+        if has_active_filters then
             local badge_dot = FrameContainer:new{
                 padding = sc(3),
                 bordersize = 0,
