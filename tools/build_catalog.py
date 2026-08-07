@@ -81,10 +81,9 @@ def make_request(url):
 
 def search_repositories(base_query):
     all_items = []
-    # Search non-forks (up to 3 pages / 300 repos) and forks (up to 2 pages / 200 repos)
     sub_queries = [
-        (base_query, 5),
-        (base_query + " fork:only", 5),
+        (base_query, 10),
+        (base_query + " fork:true", 10),
     ]
     
     for q, max_pages in sub_queries:
@@ -111,26 +110,31 @@ def get_latest_release(owner, repo):
     url = f"{BASE_URL}/repos/{owner}/{repo}/releases/latest"
     return make_request(url)
 
-def fetch_patch_files(owner, repo, default_branch="HEAD"):
-    url = f"{BASE_URL}/repos/{owner}/{repo}/git/trees/{default_branch}?recursive=1"
-    res = make_request(url)
-    if not res or "tree" not in res:
-        return []
-    
-    patch_files = []
-    for item in res["tree"]:
-        path = item.get("path", "")
-        if item.get("type") == "blob" and (path.endswith(".lua") or path.endswith(".lua.disabled")):
-            filename = os.path.basename(path)
-            patch_files.append({
-                "path": path,
-                "filename": filename,
-                "sha": item.get("sha", ""),
-                "size": item.get("size", 0),
-                "download_url": f"https://raw.githubusercontent.com/{owner}/{repo}/{default_branch}/{path}",
-                "branch": default_branch,
-            })
-    return patch_files
+def fetch_patch_files(owner, repo, default_branch="main"):
+    branches_to_try = [default_branch]
+    for b in ["main", "master", "HEAD"]:
+        if b not in branches_to_try:
+            branches_to_try.append(b)
+
+    for branch in branches_to_try:
+        url = f"{BASE_URL}/repos/{owner}/{repo}/git/trees/{branch}?recursive=1"
+        res = make_request(url)
+        if res and "tree" in res and isinstance(res["tree"], list):
+            patch_files = []
+            for item in res["tree"]:
+                path = item.get("path", "")
+                if item.get("type") == "blob" and (path.endswith(".lua") or path.endswith(".lua.disabled")):
+                    filename = os.path.basename(path)
+                    patch_files.append({
+                        "path": path,
+                        "filename": filename,
+                        "sha": item.get("sha", ""),
+                        "size": item.get("size", 0),
+                        "download_url": f"https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}",
+                        "branch": branch,
+                    })
+            return patch_files
+    return []
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -224,9 +228,7 @@ def process_single_repo(repo_item, is_patch):
     
     if is_patch:
         patch_files = fetch_patch_files(owner, repo_name, default_branch)
-        if not patch_files:
-            return None
-        record["patch_files"] = patch_files
+        record["patch_files"] = patch_files or []
         
     return record
 
