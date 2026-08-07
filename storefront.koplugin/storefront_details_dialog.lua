@@ -1199,7 +1199,6 @@ function StorefrontDetailsDialog:init()
             local reader_default = getReaderFontSize()
             self.preview_font_size = tonumber(self.preview_font_size) or reader_default
             local cur_font_size = self.preview_font_size
-            local is_default_sz = (cur_font_size == reader_default)
 
             local dec_btn = Button:new{
                 text = " – ",
@@ -1225,7 +1224,7 @@ function StorefrontDetailsDialog:init()
             }
 
             local reset_btn = Button:new{
-                text = string.format("%d pt%s", cur_font_size, is_default_sz and "" or " *"),
+                text = string.format("%d pt", cur_font_size),
                 text_font_bold = true,
                 text_font_size = 15,
                 padding = sc(4),
