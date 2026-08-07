@@ -6233,13 +6233,16 @@ function Storefront:getCacheStatusLine(kind, total_count)
 end
 
 function Storefront:getCacheWarning(kind)
-    local ts = Cache.getLastFetched(kind)
-    if not ts or ts <= 0 then
+    local total = Cache.countRepos and Cache.countRepos(kind) or 0
+    if total == 0 then
         return _("Cache empty. Refresh to retrieve repositories."), true
     end
-    local age = os.time() - ts
-    if age > STALE_WARNING_SECONDS then
-        return _("Cache is older than a week, consider refreshing."), false
+    local ts = Cache.getLastFetched(kind)
+    if ts and ts > 0 then
+        local age = os.time() - ts
+        if age > STALE_WARNING_SECONDS then
+            return _("Cache is older than a week, consider refreshing."), false
+        end
     end
     return nil, false
 end

@@ -93,11 +93,12 @@ function Cache.init()
     end
     
     local has_plugins = _data.plugin and _data.plugin.repos and #_data.plugin.repos > 0
+    local has_patches = _data.patch and _data.patch.repos and #_data.patch.repos > 0
     local has_fonts   = _data.font and _data.font.repos and #_data.font.repos > 0
     
-    if not has_plugins or not has_fonts then
+    if not has_plugins or not has_patches or not has_fonts then
         _seeding_in_progress = true
-        logger.info("Storefront cache incomplete (plugins:", tostring(has_plugins), "fonts:", tostring(has_fonts), "), seeding from bundled catalog...")
+        logger.info("Storefront cache incomplete (plugins:", tostring(has_plugins), "patches:", tostring(has_patches), "fonts:", tostring(has_fonts), "), seeding from bundled catalog...")
         local ok_cat, CatalogClient = pcall(require, "storefront_net_catalog")
         if ok_cat and CatalogClient and CatalogClient.loadBundledCatalog then
             CatalogClient.loadBundledCatalog()

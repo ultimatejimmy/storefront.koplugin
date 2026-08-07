@@ -137,8 +137,16 @@ function CatalogClient.updateCacheFromCatalog(catalog_data, is_bundled)
     local patches = catalog_data.patches or {}
     local fonts   = catalog_data.fonts or {}
     
+    if #patches == 0 then
+        local existing_patches = Cache.listRepos("patch")
+        if existing_patches and #existing_patches > 0 then
+            patches = existing_patches
+        end
+    end
+
     local custom_fetched_at = is_bundled and 0 or nil
     logger.info("Storefront: updating cache from static catalog", "plugins:", #plugins, "patches:", #patches, "fonts:", #fonts, "is_bundled:", tostring(is_bundled))
+
     
     -- Store plugin repositories
     Cache.storeRepos("plugin", plugins, custom_fetched_at)
@@ -252,6 +260,35 @@ function CatalogClient.processCatalogDataToStaging(catalog_data, staging_plugins
     local patches = catalog_data.patches or {}
     local fetched_at = os.time()
 
+    -- Patches: if remote catalog feed has 0 patches, preserve existing cached patches or bundled patches!
+    if #patches == 0 then
+        local bundled_path = CatalogClient.getBundledCatalogPath()
+        if bundled_path then
+            local bf = io.open(bundled_path, "rb")
+            if bf then
+                local bc = bf:read("*all")
+                bf:close()
+                local ok_b, bundled = pcall(json.decode, bc)
+                if ok_b and type(bundled) == "table" and type(bundled.patches) == "table" and #bundled.patches > 0 then
+                    patches = bundled.patches
+                end
+            end
+        end
+        if #patches == 0 then
+            local cache_dir = DataStorage:getDataDir() .. "/cache/Storefront"
+            local existing_patches_file = cache_dir .. "/storefront_patches.json"
+            local ef = io.open(existing_patches_file, "rb")
+            if ef then
+                local ec = ef:read("*all")
+                ef:close()
+                local ok_e, existing = pcall(json.decode, ec)
+                if ok_e and type(existing) == "table" and type(existing.repos) == "table" and #existing.repos > 0 then
+                    patches = existing.repos
+                end
+            end
+        end
+    end
+
     -- Fonts are always sourced from the local bundled catalog.json, not the remote feed.
     -- The remote catalog (ultimatejimmy.github.io) only contains plugins and patches.
     local fonts = {}
@@ -301,7 +338,7 @@ function CatalogClient.processCatalogDataToStaging(catalog_data, staging_plugins
 
     local patch_list = {}
     for _, repo in ipairs(patches) do
-        local repo_id = tonumber(repo.id) or 0
+        local repo_id = tonumber(repo.id or repo.repo_id) or 0
         local record = {
             repo_id = repo_id,
             kind = "patch",

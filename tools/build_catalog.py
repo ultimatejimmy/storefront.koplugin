@@ -26,9 +26,14 @@ PLUGIN_QUERIES = [
 
 PATCH_QUERIES = [
     "topic:koreader-user-patch",
-    'in:name "KOReader.patches"',
-    'in:name "koreader-patches"',
-    'in:name "koreader-user-patches"',
+    "topic:koreader-user-patches",
+    "topic:koreader-patch",
+    "topic:koreader-patches",
+    "koreader-user-patch",
+    "koreader-user-patches",
+    "koreader-patch",
+    "koreader-patches",
+    "koreader.patches",
 ]
 
 rate_limit_errors = 0
@@ -217,8 +222,10 @@ def process_single_repo(repo_item, is_patch):
                 "assets": parsed_assets,
             }
     
-    if is_patch and (not is_fork or stars > 0):
+    if is_patch:
         patch_files = fetch_patch_files(owner, repo_name, default_branch)
+        if not patch_files:
+            return None
         record["patch_files"] = patch_files
         
     return record
@@ -270,21 +277,6 @@ def main():
         except Exception as e:
             print(f"Warning: could not read existing catalog to preserve fonts: {e}")
             
-    # Fetch and attach user ratings from GitHub Discussions
-    try:
-        from ratings_tally import fetch_all_ratings
-        ratings_map = fetch_all_ratings()
-        print(f"Fetched ratings for {len(ratings_map)} catalog items.")
-    except Exception as e:
-        print(f"Warning: ratings tally failed ({e}), defaulting to 0.", file=sys.stderr)
-        ratings_map = {}
-
-    for item in plugins + patches + existing_fonts:
-        repo_id = item.get("id") or item.get("repo_id")
-        r_info = ratings_map.get(repo_id, {})
-        item["user_thumbs_up"] = r_info.get("up", 0)
-        item["user_thumbs_down"] = r_info.get("down", 0)
-
     catalog = {
         "version": 1,
         "generated_at": now_iso,

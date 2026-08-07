@@ -2,7 +2,9 @@ local Cache = require("storefront_cache")
 local GitHub = require("storefront_net_github")
 local DataStorage = require("datastorage")
 local LuaSettings = require("luasettings")
-local _ = require("gettext")
+local Localization = require("localization_storefront")
+local _ = function(key, ...) return Localization:t(key, ...) end
+
 local logger = require("logger")
 local ok_log, StorefrontLogger = pcall(require, "storefront_logger")
 if not ok_log then StorefrontLogger = { info = function() end, err = function() end, warn = function() end } end
