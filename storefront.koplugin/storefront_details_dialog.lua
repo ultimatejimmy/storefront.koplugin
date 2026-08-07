@@ -499,7 +499,59 @@ function StorefrontDetailsDialog:init()
         end
     end
 
+    local item_key
+    if self.patch then
+        item_key = self.patch.filename
+    elseif self.update_item and self.update_item.plugin and self.update_item.plugin.dirname then
+        item_key = self.update_item.plugin.dirname
+    elseif owner ~= "" and repo_name ~= "" then
+        item_key = string.format("%s/%s", owner, repo_name)
+    elseif self.repo and self.repo.name then
+        item_key = self.repo.name
+    end
+
+    local function isItemIgnored()
+        if not item_key then return false end
+        if InstallStore.isAllUpdatesIgnored(item_key) then return true end
+        if owner ~= "" and repo_name ~= "" then
+            if InstallStore.isAllUpdatesIgnored(string.format("%s/%s", owner, repo_name)) then return true end
+        end
+        if repo_name ~= "" and InstallStore.isAllUpdatesIgnored(repo_name) then return true end
+        return false
+    end
+
+    local function toggleItemIgnored()
+        local target_key = item_key or (owner ~= "" and repo_name ~= "" and string.format("%s/%s", owner, repo_name)) or repo_name
+        if target_key then
+            InstallStore.toggleAllUpdatesIgnored(target_key)
+            if owner ~= "" and repo_name ~= "" then
+                InstallStore.toggleAllUpdatesIgnored(string.format("%s/%s", owner, repo_name))
+            end
+            if self.Storefront and self.Storefront.clearUpdatesCache then
+                self.Storefront:clearUpdatesCache()
+            end
+        end
+    end
+
     if has_update then
+        local is_item_disabled = false
+        if self.patch and self.patch.filename then
+            is_item_disabled = (self.patch.filename:match("%.disabled$") ~= nil)
+        elseif (self.repo and self.repo.name) or (self.update_item and self.update_item.plugin and self.update_item.plugin.dirname) then
+            local plugins_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
+            local dirname = (self.update_item and self.update_item.plugin and self.update_item.plugin.dirname) or (self.repo and self.repo.name)
+            local p_name = dirname and dirname:gsub("%.koplugin$", "")
+            if p_name then
+                is_item_disabled = plugins_disabled[p_name] == true
+            end
+        end
+
+        local is_updates_ignored = isItemIgnored()
+        local update_btn_w = math.floor(action_btn_width * 0.25)
+        local toggle_btn_w = math.floor(action_btn_width * 0.21)
+        local ignore_btn_w = math.floor(action_btn_width * 0.33)
+        local remove_btn_w = action_btn_width - update_btn_w - toggle_btn_w - ignore_btn_w - sc(24)
+
         local primary_btn = Button:new{
             text = _("Update"),
             text_font_size = 18,
@@ -508,7 +560,7 @@ function StorefrontDetailsDialog:init()
             bordersize = 0,
             padding = sc(11),
             radius = sc(4),
-            width = primary_btn_w,
+            width = update_btn_w,
             show_parent = self,
             callback = function()
                 self:onClose()
@@ -527,20 +579,82 @@ function StorefrontDetailsDialog:init()
         if primary_btn.label_widget then
             primary_btn.label_widget.fgcolor = Blitbuffer.COLOR_WHITE
         end
-        main_action_btn = HorizontalGroup:new{
-            primary_btn,
-            HorizontalSpan:new{ width = sc(12) },
-            Button:new{
-                text = _("Remove"),
-                text_font_size = 18,
-                bordersize = sc(1),
-                padding = sc(11),
-                radius = sc(4),
-                width = remove_btn_w,
-                show_parent = self,
-                callback = doRemove,
-            }
+
+        local toggle_btn = Button:new{
+            text = is_item_disabled and _("Enable") or _("Disable"),
+            text_font_size = 18,
+            bordersize = sc(1),
+            padding = sc(11),
+            radius = sc(4),
+            width = toggle_btn_w,
+            show_parent = self,
+            callback = function()
+                self:onClose()
+                if self.patch then
+                    local filename = self.patch.filename
+                    if filename and self.Storefront then
+                        self.Storefront:togglePatchDisabled(filename)
+                    end
+                else
+                    local dirname = (self.update_item and self.update_item.plugin and self.update_item.plugin.dirname) or (self.repo and self.repo.name)
+                    if dirname and self.Storefront then
+                        self.Storefront:togglePluginDisabled(dirname)
+                    end
+                end
+            end,
         }
+
+        local ignore_btn = Button:new{
+            text = is_updates_ignored and _("Updates Ignored") or _("Ignore Updates"),
+            text_font_size = 16,
+            bordersize = sc(1),
+            padding = sc(11),
+            radius = sc(4),
+            width = ignore_btn_w,
+            show_parent = self,
+            callback = function()
+                toggleItemIgnored()
+                self:onClose()
+                local new_dialog = StorefrontDetailsDialog:new{
+                    Storefront = self.Storefront,
+                    repo = self.repo,
+                    patch = self.patch,
+                    kind = self.kind,
+                    update_item = self.update_item,
+                    default_tab = self.active_tab,
+                }
+                new_dialog:show()
+            end,
+        }
+
+        if is_default then
+            main_action_btn = HorizontalGroup:new{
+                primary_btn,
+                HorizontalSpan:new{ width = sc(8) },
+                toggle_btn,
+                HorizontalSpan:new{ width = sc(8) },
+                ignore_btn,
+            }
+        else
+            main_action_btn = HorizontalGroup:new{
+                primary_btn,
+                HorizontalSpan:new{ width = sc(8) },
+                toggle_btn,
+                HorizontalSpan:new{ width = sc(8) },
+                ignore_btn,
+                HorizontalSpan:new{ width = sc(8) },
+                Button:new{
+                    text = _("Remove"),
+                    text_font_size = 18,
+                    bordersize = sc(1),
+                    padding = sc(11),
+                    radius = sc(4),
+                    width = remove_btn_w,
+                    show_parent = self,
+                    callback = doRemove,
+                }
+            }
+        end
     elseif is_installed then
         local is_item_disabled = false
         if self.patch and self.patch.filename then
@@ -613,9 +727,11 @@ function StorefrontDetailsDialog:init()
                 }
             }
         else
-            local toggle_btn_w = math.floor(action_btn_width * 0.28)
-            local remove_btn_w = math.floor(action_btn_width * 0.23)
-            local primary_btn_w = action_btn_width - toggle_btn_w - remove_btn_w - sc(16)
+            local is_updates_ignored = isItemIgnored()
+            local reinstall_btn_w = math.floor(action_btn_width * 0.25)
+            local toggle_btn_w = math.floor(action_btn_width * 0.21)
+            local ignore_btn_w = math.floor(action_btn_width * 0.33)
+            local remove_btn_w = action_btn_width - reinstall_btn_w - toggle_btn_w - ignore_btn_w - sc(24)
 
             local primary_btn = Button:new{
                 text = _("Reinstall"),
@@ -625,7 +741,7 @@ function StorefrontDetailsDialog:init()
                 bordersize = 0,
                 padding = sc(11),
                 radius = sc(4),
-                width = primary_btn_w,
+                width = reinstall_btn_w,
                 show_parent = self,
                 callback = function()
                     self:onClose()
@@ -664,10 +780,35 @@ function StorefrontDetailsDialog:init()
                 end,
             }
 
+            local ignore_btn = Button:new{
+                text = is_updates_ignored and _("Updates Ignored") or _("Ignore Updates"),
+                text_font_size = 16,
+                bordersize = sc(1),
+                padding = sc(11),
+                radius = sc(4),
+                width = ignore_btn_w,
+                show_parent = self,
+                callback = function()
+                    toggleItemIgnored()
+                    self:onClose()
+                    local new_dialog = StorefrontDetailsDialog:new{
+                        Storefront = self.Storefront,
+                        repo = self.repo,
+                        patch = self.patch,
+                        kind = self.kind,
+                        update_item = self.update_item,
+                        default_tab = self.active_tab,
+                    }
+                    new_dialog:show()
+                end,
+            }
+
             main_action_btn = HorizontalGroup:new{
                 primary_btn,
                 HorizontalSpan:new{ width = sc(8) },
                 toggle_btn,
+                HorizontalSpan:new{ width = sc(8) },
+                ignore_btn,
                 HorizontalSpan:new{ width = sc(8) },
                 Button:new{
                     text = _("Remove"),

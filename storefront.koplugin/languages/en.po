@@ -176,6 +176,9 @@ msgstr "Catalog updated: %d plugins, %d patches, %d fonts."
 msgid "Category: %s"
 msgstr "Category: %s"
 
+msgid "Changelog for %s\n%s \\xE2\\x86\\x92 %s"
+msgstr "Changelog for %s\n%s \\xE2\\x86\\x92 %s"
+
 msgid "Changelog for %s\n%s → %s"
 msgstr "Changelog for %s\n%s → %s"
 
@@ -203,17 +206,26 @@ msgstr "Check this plugin"
 msgid "Checked %d patches: %d need updates, %d up to date."
 msgstr "Checked %d patches: %d need updates, %d up to date."
 
+msgid "Checked %d plugin updates"
+msgstr "Checked %d plugin updates"
+
 msgid "Checked %d plugin(s) for updates."
 msgstr "Checked %d plugin(s) for updates."
 
 msgid "Checking %s…"
 msgstr "Checking %s…"
 
+msgid "Checking for Storefront updates..."
+msgstr "Checking for Storefront updates..."
+
 msgid "Checking for Storefront updates…"
 msgstr "Checking for Storefront updates…"
 
 msgid "Checking patch updates…"
 msgstr "Checking patch updates…"
+
+msgid "Checking plugin updates"
+msgstr "Checking plugin updates"
 
 msgid "Checking plugin updates…"
 msgstr "Checking plugin updates…"
@@ -226,6 +238,9 @@ msgstr "Clear"
 
 msgid "Clear README cache"
 msgstr "Clear README cache"
+
+msgid "Clear search & filters"
+msgstr "Clear search & filters"
 
 msgid "Clear search/filters"
 msgstr "Clear search/filters"
@@ -596,6 +611,12 @@ msgstr "HTTP request failed"
 msgid "Ignore"
 msgstr "Ignore"
 
+msgid "Ignore All Updates"
+msgstr "Ignore All Updates"
+
+msgid "Ignore Updates"
+msgstr "Ignore Updates"
+
 msgid "Ignored"
 msgstr "Ignored"
 
@@ -673,6 +694,9 @@ msgstr "Installed plugin \"%s\" (version %s)."
 
 msgid "Installed plugin \"%s\"."
 msgstr "Installed plugin \"%s\"."
+
+msgid "Installed plugin Storefront version %s"
+msgstr "Installed plugin Storefront version %s"
 
 msgid "Installing %s…"
 msgstr "Installing %s…"
@@ -1259,6 +1283,12 @@ msgstr "Search \"%s\""
 msgid "Search & API"
 msgstr "Search & API"
 
+msgid "Search filter (\"%s\") is not applied to Updates."
+msgstr "Search filter (\"%s\") is not applied to Updates."
+
+msgid "Search filter (\\\"%s\\\") is not applied to Updates."
+msgstr "Search filter (\\\"%s\\\") is not applied to Updates."
+
 msgid "Search text"
 msgstr "Search text"
 
@@ -1373,6 +1403,9 @@ msgstr "Style: "
 msgid "Successfully updated %d item(s)."
 msgstr "Successfully updated %d item(s)."
 
+msgid "Successfully updated %d items."
+msgstr "Successfully updated %d items."
+
 msgid "Switch to installed patches"
 msgstr "Switch to installed patches"
 
@@ -1460,11 +1493,17 @@ msgstr "Unnamed release"
 msgid "Update"
 msgstr "Update"
 
+msgid "Update %d outdated item(s)?"
+msgstr "Update %d outdated item(s)?"
+
 msgid "Update %s?"
 msgstr "Update %s?"
 
 msgid "Update All"
 msgstr "Update All"
+
+msgid "Update all outdated items?"
+msgstr "Update all outdated items?"
 
 msgid "Update available for %s: remote %s, installed %s."
 msgstr "Update available for %s: remote %s, installed %s."
@@ -1510,6 +1549,9 @@ msgstr "Updated: %s"
 
 msgid "Updates"
 msgstr "Updates"
+
+msgid "Updates Ignored"
+msgstr "Updates Ignored"
 
 msgid "Updating [%d/%d]: %s…"
 msgstr "Updating [%d/%d]: %s…"

@@ -310,7 +310,41 @@ function InstallStore.setPreReleaseAllowed(item_key, allowed)
     return true
 end
 
+function InstallStore.isAllUpdatesIgnored(item_key)
+    if not item_key or item_key == "" then return false end
+    local opts = InstallStore.getItemOptions(item_key)
+    if opts.ignore_all_updates == true then return true end
+    local clean_key = item_key:gsub("%.koplugin$", "")
+    if clean_key ~= item_key then
+        opts = InstallStore.getItemOptions(clean_key)
+        if opts.ignore_all_updates == true then return true end
+    end
+    return false
+end
+
+function InstallStore.setAllUpdatesIgnored(item_key, ignored)
+    if not item_key or item_key == "" then return false end
+    local opts = InstallStore.getItemOptions(item_key)
+    opts.ignore_all_updates = (ignored == true)
+    InstallStore.setItemOptions(item_key, opts)
+    local clean_key = item_key:gsub("%.koplugin$", "")
+    if clean_key ~= item_key then
+        local clean_opts = InstallStore.getItemOptions(clean_key)
+        clean_opts.ignore_all_updates = (ignored == true)
+        InstallStore.setItemOptions(clean_key, clean_opts)
+    end
+    return true
+end
+
+function InstallStore.toggleAllUpdatesIgnored(item_key)
+    if not item_key or item_key == "" then return false end
+    local current = InstallStore.isAllUpdatesIgnored(item_key)
+    return InstallStore.setAllUpdatesIgnored(item_key, not current)
+end
+
 function InstallStore.isReleaseIgnored(item_key, tag_name)
+    if not item_key or item_key == "" then return false end
+    if InstallStore.isAllUpdatesIgnored(item_key) then return true end
     if not tag_name or tag_name == "" then return false end
     local opts = InstallStore.getItemOptions(item_key)
     return opts.ignored_releases[tag_name] == true
@@ -324,8 +358,12 @@ function InstallStore.toggleReleaseIgnored(item_key, tag_name)
 end
 
 function InstallStore.isReleaseIgnoredByRepo(owner, repo_name, tag_name)
-    if not owner or not repo_name or not tag_name then return false end
+    if not owner or not repo_name then return false end
     local item_key = string.format("%s/%s", owner, repo_name)
+    if InstallStore.isAllUpdatesIgnored(item_key) or InstallStore.isAllUpdatesIgnored(repo_name) then
+        return true
+    end
+    if not tag_name or tag_name == "" then return false end
     return InstallStore.isReleaseIgnored(item_key, tag_name)
         or InstallStore.isReleaseIgnored(repo_name, tag_name)
 end

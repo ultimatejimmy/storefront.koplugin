@@ -30,10 +30,16 @@ local function runTests()
     -- ----------------------------------------------------
     print("\n--- TEST 1: PO Parser & Language Discovery ---")
     
-    local path = script_dir .. "../storefront.koplugin"
+    local path = script_dir .. "../storefront.koplugin/storefront.koplugin"
+    local f_check = io.open(path .. "/languages/en.po", "r")
+    if f_check then
+        f_check:close()
+    else
+        path = script_dir .. "../storefront.koplugin"
+    end
     Localization:init(path)
 
-    assertTest(#Localization.available_languages == 17, "Discovered 17 Languages", "Found " .. tostring(#Localization.available_languages))
+    assertTest(#Localization.available_languages == 18, "Discovered 18 Languages", "Found " .. tostring(#Localization.available_languages))
     assertTest(Localization:languageExists("en"), "Language 'en' Exists")
     assertTest(Localization:languageExists("de"), "Language 'de' Exists")
     assertTest(Localization:languageExists("es"), "Language 'es' Exists")
