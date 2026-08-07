@@ -40,6 +40,9 @@ function Localization:parsePO(filepath)
     local in_msgstr = false
     
     for line in file:lines() do
+        -- Strip trailing carriage returns and whitespace (e.g. CRLF from Windows)
+        line = line:gsub("[\r\t ]+$", "")
+
         -- Skip comments and empty lines
         if not (line:match("^#") or line:match("^%s*$")) then
             -- Start of msgid

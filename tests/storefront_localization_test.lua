@@ -147,6 +147,46 @@ local function runTests()
     local fallback_val = Localization:t("non_existent_key_test")
     assertTest(fallback_val == "non_existent_key_test", "Returns key name for completely missing key", "Got: " .. tostring(fallback_val))
 
+    -- ----------------------------------------------------
+    -- TEST 5: Windows CRLF Line Endings & Trailing Whitespace
+    -- ----------------------------------------------------
+    print("\n--- TEST 5: CRLF & Trailing Whitespace Regression ---")
+
+    local tmp_po_path = script_dir .. "test_crlf_sample.po"
+    local f_tmp = io.open(tmp_po_path, "w")
+    if f_tmp then
+        f_tmp:write("msgid \"crlf_key\"\r\nmsgstr \"crlf_val\"\r\n\r\nmsgid \"space_key\"   \r\nmsgstr \"space_val\"   \r\n")
+        f_tmp:close()
+
+        local parsed = Localization:parsePO(tmp_po_path)
+        os.remove(tmp_po_path)
+
+        assertTest(parsed ~= nil, "CRLF PO File Parsed Successfully")
+        assertTest(parsed and parsed["crlf_key"] == "crlf_val", "Parses msgid/msgstr with Windows CRLF \\r\\n", "Got: " .. tostring(parsed and parsed["crlf_key"]))
+        assertTest(parsed and parsed["space_key"] == "space_val", "Parses msgid/msgstr with trailing spaces", "Got: " .. tostring(parsed and parsed["space_key"]))
+    else
+        print(" [WARN] Could not create temp CRLF test file")
+    end
+
+    -- ----------------------------------------------------
+    -- TEST 6: All Discovered Languages Translation Load Check
+    -- ----------------------------------------------------
+    print("\n--- TEST 6: General Translation Load Check Across All Languages ---")
+
+    Localization:init(path)
+    assertTest(Localization:languageExists("ko"), "Korean 'ko' language exists in discovered languages")
+
+    for _, lang in ipairs(Localization.available_languages) do
+        Localization.current_language = lang
+        Localization:loadTranslations()
+
+        local count = Localization:tableSize(Localization.translations)
+        assertTest(count > 0, string.format("Language '%s' loaded translations (%d keys)", lang, count), "Loaded 0 keys")
+        
+        local title = Localization:t("storefront_title")
+        assertTest(type(title) == "string" and #title > 0, string.format("Language '%s' translates 'storefront_title'", lang))
+    end
+
     print("\n==================================================")
     print("  STOREFRONT LOCALIZATION TEST SUITE COMPLETE     ")
     print(string.format("  Passed: %d, Failed: %d", passed, failed))

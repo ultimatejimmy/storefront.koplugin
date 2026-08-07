@@ -86,9 +86,6 @@ msgstr "알파벳 및 숫자"
 msgid "Also delete plugin settings"
 msgstr "플러그인 설정도 함께 삭제"
 
-msgid "Always install here (don"
-msgstr "항상 여기에 설치 (다시"
-
 msgid "Always install here (don't ask again)"
 msgstr "항상 여기에 설치 (다시 묻지 않음)"
 
