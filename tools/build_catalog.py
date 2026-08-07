@@ -21,7 +21,10 @@ USER_AGENT = "KOReader-Storefront-CatalogBuilder/1.0"
 
 PLUGIN_QUERIES = [
     "topic:koreader-plugin",
+    "topic:koreader-plugins",
     'in:name ".koplugin"',
+    "koreader-plugin",
+    "koreader-plugins",
 ]
 
 PATCH_QUERIES = [
@@ -83,7 +86,7 @@ def search_repositories(base_query):
     all_items = []
     sub_queries = [
         (base_query, 10),
-        (base_query + " fork:true", 10),
+        (base_query + " fork:only", 10),
     ]
     
     for q, max_pages in sub_queries:
