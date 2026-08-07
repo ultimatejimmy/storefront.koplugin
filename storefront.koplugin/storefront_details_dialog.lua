@@ -45,19 +45,88 @@ local function getAssetPath(filename)
     return dir .. "assets/" .. filename
 end
 
-local function getBtnFontSize(str, default_size)
-    default_size = default_size or 18
-    if not str or type(str) ~= "string" then return default_size end
-    local len = #str
-    if len > 18 then
-        return 13
-    elseif len > 14 then
-        return 14
-    elseif len > 10 then
-        return 15
+local function utf8Len(str)
+    if not str or type(str) ~= "string" then return 0 end
+    local len = 0
+    local i = 1
+    local byte_len = #str
+    while i <= byte_len do
+        local b = str:byte(i)
+        if b < 128 then
+            i = i + 1
+        elseif b < 224 then
+            i = i + 2
+        elseif b < 240 then
+            i = i + 3
+        else
+            i = i + 4
+        end
+        len = len + 1
     end
-    return default_size
+    return len
 end
+
+-- Compute the largest font size where all button/tab labels in a group fit
+-- within total_avail_width (including per-button padding and inter-button gaps).
+-- face_name: the font face to measure with (default "cfont" for action buttons).
+-- padding_per_item: horizontal padding added to each label's natural width.
+local function calcGroupFontSize(texts, total_avail_width, gap, face_name, padding_per_item)
+    face_name = face_name or "cfont"
+    padding_per_item = padding_per_item or Device.screen:scaleBySize(22)
+    local num = #texts
+    if num == 0 then return 18 end
+    local gaps_total = gap * math.max(0, num - 1)
+    for _, sz in ipairs({ 18, 17, 16, 15, 14 }) do
+        local face = Font:getFace(face_name, sz)
+        local total_w = gaps_total
+        for _, text in ipairs(texts) do
+            local tw = TextWidget:new{ text = text, face = face, bold = true }
+            total_w = total_w + tw:getSize().w + padding_per_item
+        end
+        if total_w <= total_avail_width then
+            return sz
+        end
+    end
+    return 14
+end
+
+-- Distribute total_avail_width proportionally across buttons, using a uniform
+-- font_size (pre-computed via calcGroupFontSize) for measuring natural widths.
+local function calcProportionalBtnWidths(button_texts, total_avail_width, gap, font_size)
+    local num_btns = #button_texts
+    if num_btns == 0 then return {} end
+    if num_btns == 1 then return { total_avail_width } end
+
+    font_size = font_size or 18
+    local usable_width = total_avail_width - gap * (num_btns - 1)
+
+    local ideal_widths = {}
+    local total_ideal = 0
+    local padding_per_btn = Device.screen:scaleBySize(22)
+    local face = Font:getFace("cfont", font_size)
+
+    for i, text in ipairs(button_texts) do
+        local tw = TextWidget:new{ text = text, face = face, bold = true }
+        local ideal = tw:getSize().w + padding_per_btn
+        ideal_widths[i] = ideal
+        total_ideal = total_ideal + ideal
+    end
+
+    local widths = {}
+    local sum = 0
+    for i = 1, num_btns do
+        if i == num_btns then
+            widths[i] = usable_width - sum
+        else
+            local w = math.floor(usable_width * (ideal_widths[i] / total_ideal))
+            widths[i] = w
+            sum = sum + w
+        end
+    end
+
+    return widths
+end
+
 
 
 local Input = Device.input
@@ -737,20 +806,29 @@ function StorefrontDetailsDialog:init()
         end
 
         local is_updates_ignored = isItemIgnored()
-        local num_btns = is_default and 3 or 4
-        local gap = sc(8)
-        local btn_w = math.floor((action_btn_width - gap * (num_btns - 1)) / num_btns)
-
         local primary_text = _("Update")
+        local toggle_text = is_item_disabled and _("Enable") or _("Disable")
+        local ignore_text = is_updates_ignored and _("Updates Ignored") or _("Ignore Updates")
+        local remove_text = _("Remove")
+
+        local btn_texts = is_default and { primary_text, toggle_text, ignore_text }
+                                      or { primary_text, toggle_text, ignore_text, remove_text }
+        local gap = sc(8)
+        local btn_font_size = calcGroupFontSize(btn_texts, action_btn_width, gap)
+        local widths = calcProportionalBtnWidths(btn_texts, action_btn_width, gap, btn_font_size)
+        local action_btn_h = sc(44)
+
         local primary_btn = Button:new{
             text = primary_text,
-            text_font_size = getBtnFontSize(primary_text, 18),
+            text_font_size = btn_font_size,
             text_font_color = Blitbuffer.COLOR_WHITE,
             background = Blitbuffer.COLOR_BLACK,
-            bordersize = 0,
-            padding = sc(11),
+            bordersize = sc(1),
+            border_color = Blitbuffer.COLOR_BLACK,
+            padding = 0,
             radius = sc(4),
-            width = btn_w,
+            width = widths[1],
+            height = action_btn_h,
             show_parent = self,
             callback = function()
                 self:onClose()
@@ -770,14 +848,14 @@ function StorefrontDetailsDialog:init()
             primary_btn.label_widget.fgcolor = Blitbuffer.COLOR_WHITE
         end
 
-        local toggle_text = is_item_disabled and _("Enable") or _("Disable")
         local toggle_btn = Button:new{
             text = toggle_text,
-            text_font_size = getBtnFontSize(toggle_text, 18),
+            text_font_size = btn_font_size,
             bordersize = sc(1),
-            padding = sc(11),
+            padding = 0,
             radius = sc(4),
-            width = btn_w,
+            width = widths[2],
+            height = action_btn_h,
             show_parent = self,
             callback = function()
                 self:onClose()
@@ -795,14 +873,14 @@ function StorefrontDetailsDialog:init()
             end,
         }
 
-        local ignore_text = is_updates_ignored and _("Updates Ignored") or _("Ignore Updates")
         local ignore_btn = Button:new{
             text = ignore_text,
-            text_font_size = getBtnFontSize(ignore_text, 16),
+            text_font_size = btn_font_size,
             bordersize = sc(1),
-            padding = sc(11),
+            padding = 0,
             radius = sc(4),
-            width = btn_w,
+            width = widths[3],
+            height = action_btn_h,
             show_parent = self,
             callback = function()
                 toggleItemIgnored()
@@ -828,7 +906,6 @@ function StorefrontDetailsDialog:init()
                 ignore_btn,
             }
         else
-            local remove_text = _("Remove")
             main_action_btn = HorizontalGroup:new{
                 primary_btn,
                 HorizontalSpan:new{ width = gap },
@@ -838,11 +915,12 @@ function StorefrontDetailsDialog:init()
                 HorizontalSpan:new{ width = gap },
                 Button:new{
                     text = remove_text,
-                    text_font_size = getBtnFontSize(remove_text, 18),
+                    text_font_size = btn_font_size,
                     bordersize = sc(1),
-                    padding = sc(11),
+                    padding = 0,
                     radius = sc(4),
-                    width = btn_w,
+                    width = widths[4],
+                    height = action_btn_h,
                     show_parent = self,
                     callback = doRemove,
                 }
@@ -883,19 +961,25 @@ function StorefrontDetailsDialog:init()
             end
             main_action_btn = toggle_btn
         elseif is_font then
-            local gap = sc(12)
-            local btn_w = math.floor((action_btn_width - gap) / 2)
-
             local primary_text = _("Reinstall")
+            local remove_text = _("Remove")
+            local btn_texts = { primary_text, remove_text }
+            local gap = sc(12)
+            local btn_font_size = calcGroupFontSize(btn_texts, action_btn_width, gap)
+            local widths = calcProportionalBtnWidths(btn_texts, action_btn_width, gap, btn_font_size)
+            local action_btn_h = sc(44)
+
             local primary_btn = Button:new{
                 text = primary_text,
-                text_font_size = getBtnFontSize(primary_text, 18),
+                text_font_size = btn_font_size,
                 text_font_color = Blitbuffer.COLOR_WHITE,
                 background = Blitbuffer.COLOR_BLACK,
-                bordersize = 0,
-                padding = sc(11),
+                bordersize = sc(1),
+                border_color = Blitbuffer.COLOR_BLACK,
+                padding = 0,
                 radius = sc(4),
-                width = btn_w,
+                width = widths[1],
+                height = action_btn_h,
                 show_parent = self,
                 callback = function()
                     self:onClose()
@@ -906,37 +990,46 @@ function StorefrontDetailsDialog:init()
                 primary_btn.label_widget.fgcolor = Blitbuffer.COLOR_WHITE
             end
 
-            local remove_text = _("Remove")
             main_action_btn = HorizontalGroup:new{
                 primary_btn,
                 HorizontalSpan:new{ width = gap },
                 Button:new{
                     text = remove_text,
-                    text_font_size = getBtnFontSize(remove_text, 18),
+                    text_font_size = btn_font_size,
                     bordersize = sc(1),
-                    padding = sc(11),
+                    padding = 0,
                     radius = sc(4),
-                    width = btn_w,
+                    width = widths[2],
+                    height = action_btn_h,
                     show_parent = self,
                     callback = doRemove,
                 }
             }
         else
             local is_updates_ignored = isItemIgnored()
-            local num_btns = is_default and 3 or 4
-            local gap = sc(8)
-            local btn_w = math.floor((action_btn_width - gap * (num_btns - 1)) / num_btns)
-
             local primary_text = _("Reinstall")
+            local toggle_text = is_item_disabled and _("Enable") or _("Disable")
+            local ignore_text = is_updates_ignored and _("Updates Ignored") or _("Ignore Updates")
+            local remove_text = _("Remove")
+
+            local btn_texts = is_default and { primary_text, toggle_text, ignore_text }
+                                          or { primary_text, toggle_text, ignore_text, remove_text }
+            local gap = sc(8)
+            local btn_font_size = calcGroupFontSize(btn_texts, action_btn_width, gap)
+            local widths = calcProportionalBtnWidths(btn_texts, action_btn_width, gap, btn_font_size)
+            local action_btn_h = sc(44)
+
             local primary_btn = Button:new{
                 text = primary_text,
-                text_font_size = getBtnFontSize(primary_text, 18),
+                text_font_size = btn_font_size,
                 text_font_color = Blitbuffer.COLOR_WHITE,
                 background = Blitbuffer.COLOR_BLACK,
-                bordersize = 0,
-                padding = sc(11),
+                bordersize = sc(1),
+                border_color = Blitbuffer.COLOR_BLACK,
+                padding = 0,
                 radius = sc(4),
-                width = btn_w,
+                width = widths[1],
+                height = action_btn_h,
                 show_parent = self,
                 callback = function()
                     self:onClose()
@@ -951,14 +1044,14 @@ function StorefrontDetailsDialog:init()
                 primary_btn.label_widget.fgcolor = Blitbuffer.COLOR_WHITE
             end
 
-            local toggle_text = is_item_disabled and _("Enable") or _("Disable")
             local toggle_btn = Button:new{
                 text = toggle_text,
-                text_font_size = getBtnFontSize(toggle_text, 18),
+                text_font_size = btn_font_size,
                 bordersize = sc(1),
-                padding = sc(11),
+                padding = 0,
                 radius = sc(4),
-                width = btn_w,
+                width = widths[2],
+                height = action_btn_h,
                 show_parent = self,
                 callback = function()
                     self:onClose()
@@ -976,14 +1069,14 @@ function StorefrontDetailsDialog:init()
                 end,
             }
 
-            local ignore_text = is_updates_ignored and _("Updates Ignored") or _("Ignore Updates")
             local ignore_btn = Button:new{
                 text = ignore_text,
-                text_font_size = getBtnFontSize(ignore_text, 16),
+                text_font_size = btn_font_size,
                 bordersize = sc(1),
-                padding = sc(11),
+                padding = 0,
                 radius = sc(4),
-                width = btn_w,
+                width = widths[3],
+                height = action_btn_h,
                 show_parent = self,
                 callback = function()
                     toggleItemIgnored()
@@ -1000,25 +1093,35 @@ function StorefrontDetailsDialog:init()
                 end,
             }
 
-            local remove_text = _("Remove")
-            main_action_btn = HorizontalGroup:new{
-                primary_btn,
-                HorizontalSpan:new{ width = gap },
-                toggle_btn,
-                HorizontalSpan:new{ width = gap },
-                ignore_btn,
-                HorizontalSpan:new{ width = gap },
-                Button:new{
-                    text = remove_text,
-                    text_font_size = getBtnFontSize(remove_text, 18),
-                    bordersize = sc(1),
-                    padding = sc(11),
-                    radius = sc(4),
-                    width = btn_w,
-                    show_parent = self,
-                    callback = doRemove,
+            if is_default then
+                main_action_btn = HorizontalGroup:new{
+                    primary_btn,
+                    HorizontalSpan:new{ width = gap },
+                    toggle_btn,
+                    HorizontalSpan:new{ width = gap },
+                    ignore_btn,
                 }
-            }
+            else
+                main_action_btn = HorizontalGroup:new{
+                    primary_btn,
+                    HorizontalSpan:new{ width = gap },
+                    toggle_btn,
+                    HorizontalSpan:new{ width = gap },
+                    ignore_btn,
+                    HorizontalSpan:new{ width = gap },
+                    Button:new{
+                        text = remove_text,
+                        text_font_size = btn_font_size,
+                        bordersize = sc(1),
+                        padding = 0,
+                        radius = sc(4),
+                        width = widths[4],
+                        height = action_btn_h,
+                        show_parent = self,
+                        callback = doRemove,
+                    }
+                }
+            end
         end
     else
         main_action_btn = Button:new{
@@ -1060,16 +1163,29 @@ function StorefrontDetailsDialog:init()
     local readme_w = self.screen_w - sc(24)
 
     local loadContent
+
+    -- Shared font size for the content tab bar: the largest size where all
+    -- tab labels fit within the available content width.
+    local content_tab_labels = { _("README"), _("Release Notes"), _("Versions") }
+    if self.has_wiki ~= false then
+        table.insert(content_tab_labels, _("Wiki"))
+    end
+    local content_tab_gap = sc(12)
+    -- Tab padding inside Button: sc(4) each side = sc(8) total + sc(8) underline gutter
+    local content_tab_font_size = calcGroupFontSize(
+        content_tab_labels, readme_w, content_tab_gap, "cfont", sc(16)
+    )
+
     local function makeTab(label, is_active, callback_fn)
         local txt_w = TextWidget:new{
             text = label,
-            face = Font:getFace("cfont", 18),
+            face = Font:getFace("cfont", content_tab_font_size),
             bold = is_active,
             fgcolor = is_active and Blitbuffer.COLOR_BLACK or Blitbuffer.Color8(120),
         }
         local btn = Button:new{
             text = label,
-            text_font_size = 18,
+            text_font_size = content_tab_font_size,
             text_font_bold = is_active,
             text_font_color = is_active and Blitbuffer.COLOR_BLACK or Blitbuffer.Color8(120),
             bordersize = 0,
@@ -1157,14 +1273,14 @@ function StorefrontDetailsDialog:init()
 
         local tab_group_items = {
             readme_col,
-            HorizontalSpan:new{ width = sc(12) },
+            HorizontalSpan:new{ width = content_tab_gap },
             rel_col,
-            HorizontalSpan:new{ width = sc(12) },
+            HorizontalSpan:new{ width = content_tab_gap },
             ver_col,
         }
 
         if self.has_wiki ~= false then
-            table.insert(tab_group_items, HorizontalSpan:new{ width = sc(12) })
+            table.insert(tab_group_items, HorizontalSpan:new{ width = content_tab_gap })
             table.insert(tab_group_items, wiki_col)
         end
 

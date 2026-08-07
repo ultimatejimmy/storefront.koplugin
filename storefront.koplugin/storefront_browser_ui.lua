@@ -117,13 +117,41 @@ function StorefrontBrowserDialog:buildTabBar()
         Updates = _("Updates"),
     }
 
+    -- Reserve space for the filter icon button on the right side.
+    -- icon=sc(20), btn padding lr=sc(12), frame padding lr=sc(24)
+    local filter_icon_reserve = sc(20) + sc(12) + sc(16)
+    local tab_bar_available = (self.width or Device.screen:getWidth()) - sc(24) - filter_icon_reserve
+    local num_tabs = #tabs
+    local tab_gap = sc(8)
+    local gaps_total = tab_gap * (num_tabs - 1)
+
+    -- Collect all labels and pick the largest font size where they all fit.
+    local all_labels = {}
+    for _, tab_name in ipairs(tabs) do
+        table.insert(all_labels, tab_label_map[tab_name] or tab_name)
+    end
+
+    local font_size = 18
+    for _, sz in ipairs({ 18, 17, 16, 15, 14 }) do
+        local total_w = gaps_total
+        local probe_face = Font:getFace("smallinfofont", sz)
+        for _, lbl in ipairs(all_labels) do
+            local tw = TextWidget:new{ text = lbl, face = probe_face, bold = true }
+            total_w = total_w + tw:getSize().w
+        end
+        if total_w <= tab_bar_available then
+            font_size = sz
+            break
+        end
+    end
+
     for i, tab_name in ipairs(tabs) do
         if i > 1 then
-            table.insert(tab_widgets, HorizontalSpan:new{ width = sc(8) })
+            table.insert(tab_widgets, HorizontalSpan:new{ width = tab_gap })
         end
 
         local is_active = (self.current_tab == tab_name)
-        local font_face = Font:getFace("smallinfofont", 18)
+        local font_face = Font:getFace("smallinfofont", font_size)
         
         local label = TextWidget:new{
             text = tab_label_map[tab_name] or tab_name,
