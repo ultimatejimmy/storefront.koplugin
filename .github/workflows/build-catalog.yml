@@ -24,14 +24,13 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Fetch, Package Fonts, Build Catalog & Sync Discussions
+      - name: Fetch, Package Fonts & Build Catalog
         env:
           GITHUB_TOKEN: ${{ secrets.RATINGS_BOT_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           python tools/fetch_new_fonts.py
           python tools/package_fonts.py
           python tools/build_catalog.py
-          python tools/sync_discussions.py
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

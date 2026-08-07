@@ -358,8 +358,11 @@ function StorefrontListItem:init()
         else
             if owner_text ~= "" then table.insert(meta_parts, owner_text) end
             if stars_text ~= "" and stars_text ~= "0" then table.insert(meta_parts, "★ " .. stars_text) end
-            local user_up = tonumber(entry.user_thumbs_up) or 0
-            local user_down = tonumber(entry.user_thumbs_down) or 0
+            local ok_ratings, StorefrontRatings = pcall(require, "storefront_ratings")
+            local repo_id = entry.id or (entry.repo and entry.repo.id)
+            local live_r = (ok_ratings and StorefrontRatings and repo_id) and StorefrontRatings.getRating(repo_id) or nil
+            local user_up = (live_r and (live_r.up > 0 or live_r.down > 0)) and live_r.up or (tonumber(entry.user_thumbs_up) or 0)
+            local user_down = (live_r and (live_r.up > 0 or live_r.down > 0)) and live_r.down or (tonumber(entry.user_thumbs_down) or 0)
             local net_score = user_up - user_down
             if net_score ~= 0 or user_up > 0 or user_down > 0 then
                 local score_fmt = math.abs(net_score) >= 1000 and string.format("%.1fk", net_score / 1000):gsub("%.0k", "k") or tostring(net_score)

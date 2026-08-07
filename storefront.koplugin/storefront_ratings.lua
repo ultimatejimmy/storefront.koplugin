@@ -24,7 +24,80 @@ local StorefrontSettings = LuaSettings:open(SETTINGS_PATH)
 local UUID_KEY = "device_uuid"
 local VOTES_KEY = "user_votes"
 
-local StorefrontRatings = {}
+local StorefrontRatings = {
+    liveRatings = {}, -- Cached ratings table: { [repo_id] = { up = 0, down = 0, wilson = 0 } }
+    BASE_URL = "https://storefront-vote.ultimatejimmy.workers.dev",
+}
+
+--- Fetches all live ratings from the Cloudflare D1 backend asynchronously.
+--- @param callback function|nil Called with (success, ratings_table)
+function StorefrontRatings.fetchRatings(callback)
+    local UIManager = require("ui/uimanager")
+    local fetch_task = function()
+        local http_req = getHttpModule(StorefrontRatings.BASE_URL)
+        local response_body = {}
+
+        socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+        local ok_req, res_code = pcall(function()
+            local params = {
+                url = StorefrontRatings.BASE_URL .. "/ratings",
+                method = "GET",
+                headers = {
+                    ["User-Agent"] = "KOReader-Storefront-Plugin/1.0",
+                    ["Accept"] = "application/json",
+                },
+                sink = function(chunk)
+                    if chunk then table.insert(response_body, chunk) end
+                    return 1
+                end,
+            }
+            local _, c = http_req.request(params)
+            return c
+        end)
+        socketutil:reset_timeout()
+
+        local code = tonumber(res_code) or 0
+        if ok_req and code == 200 then
+            local body_str = table.concat(response_body)
+            local ok_json, parsed = pcall(json.decode, body_str)
+            if ok_json and type(parsed) == "table" then
+                StorefrontRatings.liveRatings = parsed
+                logger.info("StorefrontRatings: successfully fetched live ratings")
+                if callback then UIManager:scheduleIn(0, function() callback(true, parsed) end) end
+                return
+            end
+        end
+        logger.warn("StorefrontRatings: failed to fetch ratings", res_code)
+        if callback then UIManager:scheduleIn(0, function() callback(false, nil) end) end
+    end
+
+    local ok_ffi, ffiutil = pcall(require, "ffi/util")
+    if not ok_ffi then ok_ffi, ffiutil = pcall(require, "ffiutil") end
+
+    if ok_ffi and ffiutil and ffiutil.runInSubProcess then
+        ffiutil.runInSubProcess(function()
+            pcall(fetch_task)
+        end, false)
+    else
+        UIManager:scheduleIn(0.1, fetch_task)
+    end
+end
+
+--- Gets the live rating summary for a repo ID.
+--- @param repo_id number|string
+--- @return table { up = number, down = number, wilson = number }
+function StorefrontRatings.getRating(repo_id)
+    if not repo_id then return { up = 0, down = 0, wilson = 0 } end
+    local r = StorefrontRatings.liveRatings[tostring(repo_id)]
+    if type(r) == "table" then
+        return {
+            up = tonumber(r.up) or 0,
+            down = tonumber(r.down) or 0,
+            wilson = tonumber(r.wilson) or 0,
+        }
+    end
+    return { up = 0, down = 0, wilson = 0 }
+end
 
 --- Returns (or generates and saves) a persistent anonymous UUID for this device.
 --- @return string
@@ -95,7 +168,7 @@ function StorefrontRatings.computeWilsonScore(up, down)
     return math.max(0, score)
 end
 
---- Dispatches a user vote to the GitHub repository dispatch endpoint in the background.
+--- Dispatches a user vote to the Cloudflare D1 backend in the background.
 --- @param repo_id number|string
 --- @param direction string "up", "down", or "none"
 --- @param item_kind string|nil "plugin", "patch", or "font"
@@ -117,9 +190,6 @@ function StorefrontRatings.submitVote(repo_id, direction, item_kind, callback)
     local ok_ffi, ffiutil = pcall(require, "ffi/util")
     if not ok_ffi then ok_ffi, ffiutil = pcall(require, "ffiutil") end
 
-    -- Route through Cloudflare proxy worker so no token is needed in the plugin.
-    -- Update this URL after deploying tools/vote-proxy-worker.js to Cloudflare Workers.
-    local dispatch_url = "https://storefront-vote.ultimatejimmy.workers.dev"
     local payload = json.encode({
         repo_id = tonumber(repo_id) or repo_id,
         direction = direction,
@@ -129,18 +199,19 @@ function StorefrontRatings.submitVote(repo_id, direction, item_kind, callback)
 
     local dispatch_task = function()
         logger.info("StorefrontRatings: submitting vote", repo_id, direction)
-        local http_req = getHttpModule(dispatch_url)
+        local http_req = getHttpModule(StorefrontRatings.BASE_URL)
         local response_body = {}
         local headers = {
             ["User-Agent"] = "KOReader-Storefront-Plugin/1.0",
             ["Content-Type"] = "application/json",
+            ["Accept"] = "application/json",
         }
 
         socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
         local ok_req, res_code = pcall(function()
             local payload_sent = false
             local params = {
-                url = dispatch_url,
+                url = StorefrontRatings.BASE_URL,
                 method = "POST",
                 headers = headers,
                 source = function()
@@ -158,8 +229,17 @@ function StorefrontRatings.submitVote(repo_id, direction, item_kind, callback)
         socketutil:reset_timeout()
 
         local code = tonumber(res_code) or 0
-        -- HTTP 204 No Content is expected for repository_dispatch success
-        if ok_req and (code == 204 or code == 200 or code == 202) then
+        if ok_req and code == 200 then
+            local body_str = table.concat(response_body)
+            local ok_json, parsed = pcall(json.decode, body_str)
+            if ok_json and parsed and parsed.success then
+                -- Update memory rating cache immediately
+                StorefrontRatings.liveRatings[tostring(repo_id)] = {
+                    up = tonumber(parsed.up) or 0,
+                    down = tonumber(parsed.down) or 0,
+                    wilson = tonumber(parsed.wilson) or 0,
+                }
+            end
             logger.info("StorefrontRatings: vote submitted successfully", repo_id)
             if callback then UIManager:scheduleIn(0, function() callback(true, nil) end) end
         else

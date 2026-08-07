@@ -382,15 +382,9 @@ function StorefrontDetailsDialog:init()
             local is_up_active = (current_vote == "up")
             local is_down_active = (current_vote == "down")
 
-            local base_up = tonumber(self.repo and (self.repo.user_thumbs_up_base or self.repo.user_thumbs_up)) or 0
-            local base_down = tonumber(self.repo and (self.repo.user_thumbs_down_base or self.repo.user_thumbs_down)) or 0
-            if self.repo and not self.repo.user_thumbs_up_base then
-                self.repo.user_thumbs_up_base = base_up
-                self.repo.user_thumbs_down_base = base_down
-            end
-
-            local cur_up = base_up + (is_up_active and 1 or 0)
-            local cur_down = base_down + (is_down_active and 1 or 0)
+            local live_rating = StorefrontRatings.getRating(repo_id)
+            local cur_up = (live_rating.up > 0 or live_rating.down > 0) and live_rating.up or tonumber(self.repo and (self.repo.user_thumbs_up_base or self.repo.user_thumbs_up)) or 0
+            local cur_down = (live_rating.up > 0 or live_rating.down > 0) and live_rating.down or tonumber(self.repo and (self.repo.user_thumbs_down_base or self.repo.user_thumbs_down)) or 0
 
             if #meta_group_items > 0 then
                 table.insert(meta_group_items, TextWidget:new{
