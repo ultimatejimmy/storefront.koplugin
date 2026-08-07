@@ -120,8 +120,10 @@ def find_or_create_discussion(cat_id, retries=0):
     }
     """
     res_c = graphql_query(mutation, {"repoId": GITHUB_REPO_ID, "catId": cat_id, "title": title, "body": body})
-    if res_c and "data" in res_c and res_c["data"].get("createDiscussion"):
-        return res_c["data"]["createDiscussion"]["discussion"]["id"]
+    if res_c and "data" in res_c:
+        create_disc = res_c["data"].get("createDiscussion")
+        if create_disc and create_disc.get("discussion"):
+            return create_disc["discussion"]["id"]
     
     # If we failed to create it (likely due to "submitted too quickly" race condition),
     # it means another job probably JUST created it. Sleep and try to find it again.
