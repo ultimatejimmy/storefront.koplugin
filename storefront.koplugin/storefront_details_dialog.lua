@@ -512,20 +512,11 @@ function StorefrontDetailsDialog:init()
             local dialog_self = self
             local item_kind = self.kind or (self.patch and "patch" or "plugin")
 
-            local function refresh_dialog()
-                dialog_self._vote_toggled = true
-                if dialog_self.refreshDetailsDialog then
-                    dialog_self:refreshDetailsDialog()
-                end
-            end
-
-            -- Icon-only frames (borderless, filled icon when active)
-            local up_file = is_up_active and getAssetPath("thumbs-up-filled.svg") or getAssetPath("thumbs-up.svg")
             local up_frame = FrameContainer:new{
                 bordersize = 0,
                 padding = 0,
                 ImageWidget:new{
-                    file = up_file,
+                    file = is_up_active and getAssetPath("thumbs-up-filled.svg") or getAssetPath("thumbs-up.svg"),
                     width = sc(16),
                     height = sc(16),
                     scale_factor = 0,
@@ -533,6 +524,73 @@ function StorefrontDetailsDialog:init()
                     alpha = true,
                 },
             }
+            local down_frame = FrameContainer:new{
+                bordersize = 0,
+                padding = 0,
+                ImageWidget:new{
+                    file = is_down_active and getAssetPath("thumbs-down-filled.svg") or getAssetPath("thumbs-down.svg"),
+                    width = sc(16),
+                    height = sc(16),
+                    scale_factor = 0,
+                    is_icon = true,
+                    alpha = true,
+                },
+            }
+            local net_score = cur_up - cur_down
+            local is_voted = is_up_active or is_down_active
+            local score_frame = FrameContainer:new{
+                bordersize = 0,
+                padding = 0,
+                TextWidget:new{
+                    text = tostring(net_score),
+                    face = Font:getFace("cfont", 14),
+                    bold = is_voted,
+                    fgcolor = Blitbuffer.COLOR_BLACK,
+                }
+            }
+
+            local function refresh_dialog()
+                dialog_self._vote_toggled = true
+                current_vote = StorefrontRatings.getUserVote(repo_id)
+                local new_up_active = (current_vote == "up")
+                local new_down_active = (current_vote == "down")
+                local new_rating = StorefrontRatings.getRating(repo_id)
+                local new_up = (new_rating.up > 0 or new_rating.down > 0) and new_rating.up or tonumber(self.repo and (self.repo.user_thumbs_up_base or self.repo.user_thumbs_up)) or 0
+                local new_down = (new_rating.up > 0 or new_rating.down > 0) and new_rating.down or tonumber(self.repo and (self.repo.user_thumbs_down_base or self.repo.user_thumbs_down)) or 0
+                local new_score = new_up - new_down
+                local new_voted = new_up_active or new_down_active
+
+                if up_frame[1] and up_frame[1].free then up_frame[1]:free() end
+                up_frame[1] = ImageWidget:new{
+                    file = new_up_active and getAssetPath("thumbs-up-filled.svg") or getAssetPath("thumbs-up.svg"),
+                    width = sc(16),
+                    height = sc(16),
+                    scale_factor = 0,
+                    is_icon = true,
+                    alpha = true,
+                }
+
+                if down_frame[1] and down_frame[1].free then down_frame[1]:free() end
+                down_frame[1] = ImageWidget:new{
+                    file = new_down_active and getAssetPath("thumbs-down-filled.svg") or getAssetPath("thumbs-down.svg"),
+                    width = sc(16),
+                    height = sc(16),
+                    scale_factor = 0,
+                    is_icon = true,
+                    alpha = true,
+                }
+
+                if score_frame[1] and score_frame[1].free then score_frame[1]:free() end
+                score_frame[1] = TextWidget:new{
+                    text = tostring(new_score),
+                    face = Font:getFace("cfont", 14),
+                    bold = new_voted,
+                    fgcolor = Blitbuffer.COLOR_BLACK,
+                }
+
+                UIManager:setDirty(dialog_self, "ui")
+            end
+
             local up_btn = InputContainer:new{ up_frame }
             up_btn.ges_events = {
                 StorefrontUpVoteTap = {
@@ -552,19 +610,6 @@ function StorefrontDetailsDialog:init()
                 return true
             end
 
-            local down_file = is_down_active and getAssetPath("thumbs-down-filled.svg") or getAssetPath("thumbs-down.svg")
-            local down_frame = FrameContainer:new{
-                bordersize = 0,
-                padding = 0,
-                ImageWidget:new{
-                    file = down_file,
-                    width = sc(16),
-                    height = sc(16),
-                    scale_factor = 0,
-                    is_icon = true,
-                    alpha = true,
-                },
-            }
             local down_btn = InputContainer:new{ down_frame }
             down_btn.ges_events = {
                 StorefrontDownVoteTap = {
@@ -584,17 +629,9 @@ function StorefrontDetailsDialog:init()
                 return true
             end
 
-            local net_score = cur_up - cur_down
-            local is_voted = is_up_active or is_down_active
-
             table.insert(meta_group_items, up_btn)
             table.insert(meta_group_items, HorizontalSpan:new{ width = sc(3) })
-            table.insert(meta_group_items, TextWidget:new{
-                text = tostring(net_score),
-                face = Font:getFace("cfont", 14),
-                bold = is_voted,
-                fgcolor = Blitbuffer.COLOR_BLACK,
-            })
+            table.insert(meta_group_items, score_frame)
             table.insert(meta_group_items, HorizontalSpan:new{ width = sc(3) })
             table.insert(meta_group_items, down_btn)
         end

@@ -41,12 +41,15 @@ local function loadLocalRatingsFile()
     local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
     if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
     if ok_lfs and lfs and lfs.attributes and lfs.attributes(RATINGS_CACHE_FILE, "mode") == "file" then
-        local util = require("util")
-        local content = util.readFromFile(RATINGS_CACHE_FILE)
-        if content and content ~= "" then
-            local ok_j, parsed = pcall(json.decode, content)
-            if ok_j and type(parsed) == "table" then
-                return normalizeRatingsTable(parsed)
+        local f = io.open(RATINGS_CACHE_FILE, "r")
+        if f then
+            local content = f:read("*a")
+            f:close()
+            if content and content ~= "" then
+                local ok_j, parsed = pcall(json.decode, content)
+                if ok_j and type(parsed) == "table" then
+                    return normalizeRatingsTable(parsed)
+                end
             end
         end
     end
@@ -56,11 +59,14 @@ end
 local function saveLocalRatingsFile(ratings_table)
     if type(ratings_table) == "table" then
         pcall(function()
-            local util = require("util")
             local norm = normalizeRatingsTable(ratings_table)
             local ok_j, content = pcall(json.encode, norm)
             if ok_j and content and content ~= "" then
-                util.writeToFile(content, RATINGS_CACHE_FILE)
+                local f = io.open(RATINGS_CACHE_FILE, "w")
+                if f then
+                    f:write(content)
+                    f:close()
+                end
             end
         end)
     end
