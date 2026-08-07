@@ -45,6 +45,23 @@ local function getAssetPath(filename)
     return dir .. "assets/" .. filename
 end
 
+local function getReaderFontSize()
+    local font_size = nil
+    if G_reader_settings and type(G_reader_settings.readSetting) == "function" then
+        font_size = G_reader_settings:readSetting("font_size")
+    end
+    if not font_size then
+        local ok_ui, UIManager = pcall(require, "ui/uimanager")
+        if ok_ui and UIManager and type(UIManager.getActiveWidget) == "function" then
+            local active = UIManager:getActiveWidget()
+            if active and active.document and active.document.font_size then
+                font_size = active.document.font_size
+            end
+        end
+    end
+    return tonumber(font_size) or 22
+end
+
 local function utf8Len(str)
     if not str or type(str) ~= "string" then return 0 end
     local len = 0
@@ -1178,9 +1195,100 @@ function StorefrontDetailsDialog:init()
     local function buildTabBar()
         if is_font then
             local sample_col = makeTab(_("Sample Text"), true, function() end)
+
+            local reader_default = getReaderFontSize()
+            self.preview_font_size = tonumber(self.preview_font_size) or reader_default
+            local cur_font_size = self.preview_font_size
+            local is_default_sz = (cur_font_size == reader_default)
+
+            local dec_btn = Button:new{
+                text = " – ",
+                text_font_bold = true,
+                text_font_size = 16,
+                padding = sc(4),
+                bordersize = 0,
+                show_parent = self,
+                callback = function()
+                    if self.preview_font_size > 12 then
+                        self.preview_font_size = self.preview_font_size - 1
+                        if self.tab_bar_box then
+                            if rawget(self.tab_bar_box, "_bb") then self.tab_bar_box._bb = nil end
+                            if rawget(self.tab_bar_box, "bb") then self.tab_bar_box.bb = nil end
+                            self.tab_bar_box[1] = self.buildTabBar()
+                        end
+                        if self.loadContent then
+                            self.loadContent("sample_text", false, true)
+                        end
+                        UIManager:setDirty(self, "ui")
+                    end
+                end,
+            }
+
+            local reset_btn = Button:new{
+                text = string.format("%d pt%s", cur_font_size, is_default_sz and "" or " *"),
+                text_font_bold = true,
+                text_font_size = 15,
+                padding = sc(4),
+                bordersize = 0,
+                show_parent = self,
+                callback = function()
+                    if self.preview_font_size ~= reader_default then
+                        self.preview_font_size = reader_default
+                        if self.tab_bar_box then
+                            if rawget(self.tab_bar_box, "_bb") then self.tab_bar_box._bb = nil end
+                            if rawget(self.tab_bar_box, "bb") then self.tab_bar_box.bb = nil end
+                            self.tab_bar_box[1] = self.buildTabBar()
+                        end
+                        if self.loadContent then
+                            self.loadContent("sample_text", false, true)
+                        end
+                        UIManager:setDirty(self, "ui")
+                    end
+                end,
+            }
+
+            local inc_btn = Button:new{
+                text = " + ",
+                text_font_bold = true,
+                text_font_size = 16,
+                padding = sc(4),
+                bordersize = 0,
+                show_parent = self,
+                callback = function()
+                    if self.preview_font_size < 48 then
+                        self.preview_font_size = self.preview_font_size + 1
+                        if self.tab_bar_box then
+                            if rawget(self.tab_bar_box, "_bb") then self.tab_bar_box._bb = nil end
+                            if rawget(self.tab_bar_box, "bb") then self.tab_bar_box.bb = nil end
+                            self.tab_bar_box[1] = self.buildTabBar()
+                        end
+                        if self.loadContent then
+                            self.loadContent("sample_text", false, true)
+                        end
+                        UIManager:setDirty(self, "ui")
+                    end
+                end,
+            }
+
+            local controls_group = HorizontalGroup:new{
+                align = "center",
+                dec_btn,
+                HorizontalSpan:new{ width = sc(2) },
+                reset_btn,
+                HorizontalSpan:new{ width = sc(2) },
+                inc_btn,
+            }
+
+            local sample_w = sample_col:getSize().w
+            local controls_w = controls_group:getSize().w
+            local gap = readme_w - sample_w - controls_w
+            if gap < sc(8) then gap = sc(8) end
+
             return HorizontalGroup:new{
                 align = "center",
                 sample_col,
+                HorizontalSpan:new{ width = gap },
+                controls_group,
             }
         end
 
@@ -1366,19 +1474,25 @@ tr:nth-child(even) td { background-color: #f5f5f5 !important; }
     local next_btn
 
     local function updatePagination()
-        local total   = html_box.page_count  or 1
-        html_box.page_number = math.max(1, math.min(html_box.page_number or 1, total))
-        local current = html_box.page_number
-        if page_indicator.setText then
-            page_indicator:setText(string.format("%d / %d", current, total), readme_w / 3)
+        local is_versions = (self.active_tab == "versions")
+        local total = is_versions and (self.versions_total_pages or 1) or (html_box.page_count or 1)
+        if total < 1 then total = 1 end
+        local cur = is_versions and (self.versions_page or 1) or (html_box.page_number or 1)
+        cur = math.max(1, math.min(cur, total))
+        if not is_versions then
+            html_box.page_number = cur
+        end
+
+        if page_indicator and page_indicator.setText then
+            page_indicator:setText(string.format("%d / %d", cur, total), readme_w / 3)
         end
         if rawget(html_box, "_bb") then html_box._bb = nil end
         if rawget(html_box, "bb") then html_box.bb = nil end
-        if prev_btn.enableDisable then
-            prev_btn:enableDisable(current > 1)
+        if prev_btn and prev_btn.enableDisable then
+            prev_btn:enableDisable(cur > 1)
         end
-        if next_btn.enableDisable then
-            next_btn:enableDisable(current < total)
+        if next_btn and next_btn.enableDisable then
+            next_btn:enableDisable(cur < total)
         end
         UIManager:setDirty(self, "ui")
     end
@@ -1391,45 +1505,19 @@ tr:nth-child(even) td { background-color: #f5f5f5 !important; }
         background = nil,
         show_parent = self,
         callback = function()
-            if self.active_tab == "versions" then
-                if self.versions_page and self.versions_page > 1 then
-                    self.versions_page = self.versions_page - 1
-                    if self.loadContent then self.loadContent("versions") end
-                end
-            else
-                if html_box.page_number and html_box.page_number > 1 then
-                    html_box.page_number = html_box.page_number - 1
-                    if rawget(html_box, "_bb") then html_box._bb = nil end
-                    if rawget(html_box, "bb") then html_box.bb = nil end
-                    updatePagination()
-                end
-            end
+            self:onPrevPage()
         end,
     }
 
     next_btn = Button:new{
-            text = _("Next >"),
+        text = _("Next >"),
         text_font_size = 16,
         padding = sc(8),
         bordersize = 0,
         background = nil,
         show_parent = self,
         callback = function()
-            if self.active_tab == "versions" then
-                local total_pages = self.versions_total_pages or 1
-                if self.versions_page and self.versions_page < total_pages then
-                    self.versions_page = self.versions_page + 1
-                    if self.loadContent then self.loadContent("versions") end
-                end
-            else
-                local total = html_box.page_count or 1
-                if html_box.page_number and html_box.page_number < total then
-                    html_box.page_number = html_box.page_number + 1
-                    if rawget(html_box, "_bb") then html_box._bb = nil end
-                    if rawget(html_box, "bb") then html_box.bb = nil end
-                    updatePagination()
-                end
-            end
+            self:onNextPage()
         end,
     }
 
@@ -1470,96 +1558,16 @@ tr:nth-child(even) td { background-color: #f5f5f5 !important; }
             repo_name = self.update_item.record.repo
         end
     end
-    local function buildPaginationControls()
-        local is_versions = (self.active_tab == "versions")
-        local cur = is_versions and (self.versions_page or 1) or (html_box.page_number or 1)
-        local total = is_versions and (self.versions_total_pages or 1) or (html_box.page_count or 1)
-        if total < 1 then total = 1 end
 
-        local prev_btn = Button:new{
-            text = _("< Prev"),
-            bordersize = 0,
-            padding = sc(6),
-            text_font_size = 16,
-            text_font_bold = (cur > 1),
-            text_font_color = (cur > 1) and Blitbuffer.COLOR_BLACK or Blitbuffer.Color8(150),
-            show_parent = self,
-            callback = function()
-                if is_versions then
-                    if self.versions_page and self.versions_page > 1 then
-                        self.versions_page = self.versions_page - 1
-                        if self.loadContent then self.loadContent("versions") end
-                    end
-                else
-                    if cur > 1 then
-                        html_box.page_number = cur - 1
-                        if rawget(html_box, "_bb") then html_box._bb = nil end
-                        if rawget(html_box, "bb") then html_box.bb = nil end
-                        updatePagination()
-                        UIManager:setDirty(self, "ui")
-                    end
-                end
-            end,
-        }
-
-        local page_str = string.format("%d / %d", cur, total)
-        local page_label = TextWidget:new{
-            text = page_str,
-            face = Font:getFace("cfont", 18),
-        }
-
-        local next_btn = Button:new{
-            text = _("Next >"),
-            bordersize = 0,
-            padding = sc(6),
-            text_font_size = 16,
-            text_font_bold = (cur < total),
-            text_font_color = (cur < total) and Blitbuffer.COLOR_BLACK or Blitbuffer.Color8(150),
-            show_parent = self,
-            callback = function()
-                if is_versions then
-                    if self.versions_page and self.versions_page < (self.versions_total_pages or 1) then
-                        self.versions_page = self.versions_page + 1
-                        if self.loadContent then self.loadContent("versions") end
-                    end
-                else
-                    if cur < total then
-                        html_box.page_number = cur + 1
-                        if rawget(html_box, "_bb") then html_box._bb = nil end
-                        if rawget(html_box, "bb") then html_box.bb = nil end
-                        updatePagination()
-                        UIManager:setDirty(self, "ui")
-                    end
-                end
-            end,
-        }
-
-        return HorizontalGroup:new{
-            align = "center",
-            prev_btn,
-            HorizontalSpan:new{ width = sc(16) },
-            page_label,
-            HorizontalSpan:new{ width = sc(16) },
-            next_btn,
-        }
-    end
-
-    local pagination_box = FrameContainer:new{
-        bordersize = 0,
-        padding = 0,
-        buildPaginationControls(),
-    }
-    local pagination_bar = pagination_box
-    updatePagination = function()
-        pagination_box[1] = buildPaginationControls()
-    end
     self._html_box = html_box
     self._updatePagination = updatePagination
-    loadContent = function(tab_name, force_refresh)
+    loadContent = function(tab_name, force_refresh, keep_page_number)
+        self.loadContent = loadContent
         self.load_req_id = (self.load_req_id or 0) + 1
         local current_req_id = self.load_req_id
 
-        html_box.page_number = 1
+        local saved_page_number = keep_page_number and (html_box.page_number or 1) or 1
+        html_box.page_number = saved_page_number
         if rawget(html_box, "_bb") then html_box._bb = nil end
         if rawget(html_box, "bb") then html_box.bb = nil end
 
@@ -1569,6 +1577,11 @@ tr:nth-child(even) td { background-color: #f5f5f5 !important; }
             local font_cat = self.repo.category or self.repo.kind_label or "E-Reader Font"
             local font_lic = self.repo.license or "SIL Open Font License"
             local font_author = (owner and owner ~= "") and owner or (self.repo.author or "Open Source Community")
+
+            local reader_default = getReaderFontSize()
+            self.preview_font_size = tonumber(self.preview_font_size) or reader_default
+            local cur_font_size = self.preview_font_size
+            local is_default_sz = (cur_font_size == reader_default)
 
             local search_dirs = {
                 DataStorage:getDataDir() .. "/fonts/" .. (self.repo.name or ""),
@@ -1627,28 +1640,28 @@ tr:nth-child(even) td { background-color: #f5f5f5 !important; }
 
             local specimen_html = string.format([[
 <div class="specimen-text">
-  <h2 style="margin-bottom: 4px; font-size: 2em;">%s</h2>
-  <p style="color: #555555; font-size: 1em; margin-top: 0; margin-bottom: 12px;">%s &nbsp;&middot;&nbsp; %s &nbsp;&middot;&nbsp; %s</p>
+  <h2 style="margin-bottom: 4px; font-size: 1.8em;">%s</h2>
+  <p style="color: #555555; font-size: 0.85em; margin-top: 0; margin-bottom: 12px;">%s &nbsp;&middot;&nbsp; %s &nbsp;&middot;&nbsp; %s</p>
   <hr style="border: 0; border-top: 1px solid #cccccc; margin: 8px 0;" />
   
-  <h3 style="margin-top: 12px; margin-bottom: 6px; font-size: 1.5em;">%s</h3>
-  <p style="font-size: 1.2em; letter-spacing: 1px; line-height: 1.4; margin-bottom: 12px;">
+  <h3 style="margin-top: 12px; margin-bottom: 6px; font-size: 1.2em;">%s</h3>
+  <p style="font-size: 1.1em; letter-spacing: 1px; line-height: 1.4; margin-bottom: 12px;">
     ABCDEFGHIJKLMNOPQRSTUVWXYZ<br/>
     abcdefghijklmnopqrstuvwxyz<br/>
     0123456789 (!@#$%%^&amp;*.,?:;)
   </p>
 
   <hr style="border: 0; border-top: 1px solid #cccccc; margin: 8px 0;" />
-  <h3 style="margin-top: 12px; margin-bottom: 6px; font-size: 1.5em;">%s</h3>
-  <p style="font-size: 1.3em; line-height: 1.35; margin-bottom: 8px;">%s</p>
-  <p style="font-size: 1.1em; line-height: 1.35; margin-bottom: 12px;">%s</p>
+  <h3 style="margin-top: 12px; margin-bottom: 6px; font-size: 1.2em;">%s</h3>
+  <p style="font-size: 1.1em; line-height: 1.35; margin-bottom: 8px;">%s</p>
+  <p style="font-size: 1.0em; line-height: 1.35; margin-bottom: 12px;">%s</p>
 
   <hr style="border: 0; border-top: 1px solid #cccccc; margin: 8px 0;" />
-  <h3 style="margin-top: 12px; margin-bottom: 6px; font-size: 1.3em;">%s</h3>
-  <p style="font-size: 1.1em; line-height: 1.45; text-align: justify; margin-bottom: 10px;">
+  <h3 style="margin-top: 12px; margin-bottom: 6px; font-size: 1.2em;">%s</h3>
+  <p style="font-size: 1.0em; line-height: 1.45; text-align: justify; margin-bottom: 10px;">
     %s
   </p>
-  <p style="font-size: 1.1em; line-height: 1.45; text-align: justify; margin-bottom: 10px;">
+  <p style="font-size: 1.0em; line-height: 1.45; text-align: justify; margin-bottom: 10px;">
     %s
   </p>
 </div>
@@ -1666,14 +1679,18 @@ tr:nth-child(even) td { background-color: #f5f5f5 !important; }
 )
 
             local ok_set, set_err = pcall(function()
-                html_box:setContent(specimen_html, specimen_css, sc(16))
+                html_box:setContent(specimen_html, specimen_css, sc(cur_font_size))
             end)
             if not ok_set then
                 logger.warn("Storefront Details: font specimen setContent failed", set_err)
                 local fallback_css = readme_css .. string.format("\n.specimen-text { font-family: '%s', serif, sans-serif !important; }", font_family)
                 pcall(function()
-                    html_box:setContent(specimen_html, fallback_css, sc(16))
+                    html_box:setContent(specimen_html, fallback_css, sc(cur_font_size))
                 end)
+            end
+            if keep_page_number then
+                local total_pages = html_box.page_count or 1
+                html_box.page_number = math.max(1, math.min(saved_page_number, total_pages))
             end
             updatePagination()
             return
@@ -2321,7 +2338,42 @@ end
 
 function StorefrontDetailsDialog:onLinkTap(href)
     if href and type(href) == "string" then
-        if href:find("^storefront%-img:") then
+        if href == "storefront-font-size:dec" then
+            local reader_default = getReaderFontSize()
+            self.preview_font_size = tonumber(self.preview_font_size) or reader_default
+            if self.preview_font_size > 12 then
+                self.preview_font_size = self.preview_font_size - 1
+                UIManager:nextTick(function()
+                    if not self.is_closed and self.loadContent then
+                        self.loadContent("sample_text", false, true)
+                    end
+                end)
+            end
+            return true
+        elseif href == "storefront-font-size:inc" then
+            local reader_default = getReaderFontSize()
+            self.preview_font_size = tonumber(self.preview_font_size) or reader_default
+            if self.preview_font_size < 48 then
+                self.preview_font_size = self.preview_font_size + 1
+                UIManager:nextTick(function()
+                    if not self.is_closed and self.loadContent then
+                        self.loadContent("sample_text", false, true)
+                    end
+                end)
+            end
+            return true
+        elseif href == "storefront-font-size:reset" then
+            local reader_default = getReaderFontSize()
+            if self.preview_font_size ~= reader_default then
+                self.preview_font_size = reader_default
+                UIManager:nextTick(function()
+                    if not self.is_closed and self.loadContent then
+                        self.loadContent("sample_text", false, true)
+                    end
+                end)
+            end
+            return true
+        elseif href:find("^storefront%-img:") then
             local img_path = href:gsub("^storefront%-img:", "")
             local title_str = self.repo and (self.repo.name or self.repo.full_name) or _("Image View")
             local img_modal = StorefrontImageModal:new{
