@@ -405,7 +405,11 @@ function StorefrontListItem:init()
             end
 
             local ok_ratings, StorefrontRatings = pcall(require, "storefront_ratings")
-            local repo_id = entry.id or (entry.repo and entry.repo.id)
+            local repo_id = entry.id or entry.repo_id
+                or (entry.repo and (entry.repo.id or entry.repo.repo_id or (entry.repo.data and (entry.repo.data.id or entry.repo.data.repo_id))))
+                or (entry.record and (entry.record.id or entry.record.repo_id))
+                or (entry.plugin and (entry.plugin.id or entry.plugin.repo_id))
+                or (entry.patch and (entry.patch.id or entry.patch.repo_id))
             local current_vote = (ok_ratings and StorefrontRatings and repo_id) and StorefrontRatings.getUserVote(repo_id) or nil
             local is_up_active = (current_vote == "up")
             local is_down_active = (current_vote == "down")

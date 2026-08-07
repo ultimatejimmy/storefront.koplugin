@@ -1836,9 +1836,14 @@ function Storefront:collectUpdateSummary()
                     end
                 end
 
-                if has_update and record.owner and record.repo then
-                    if InstallStore.isReleaseIgnoredByRepo(record.owner, record.repo, release_tag) then
+                if has_update then
+                    local item_k = plugin.dirname or (record and (record.owner and record.repo and (record.owner .. "/" .. record.repo) or record.repo))
+                    if item_k and InstallStore.isAllUpdatesIgnored(item_k) then
                         has_update = false
+                    elseif record and record.owner and record.repo then
+                        if InstallStore.isReleaseIgnoredByRepo(record.owner, record.repo, release_tag) then
+                            has_update = false
+                        end
                     end
                 end
             else
@@ -6540,9 +6545,10 @@ function Storefront:makeRepoMenuItem(repo, installed_lookup)
     local user_thumbs_up = tonumber(repo.user_thumbs_up) or (repo.data and tonumber(repo.data.user_thumbs_up)) or 0
     local user_thumbs_down = tonumber(repo.user_thumbs_down) or (repo.data and tonumber(repo.data.user_thumbs_down)) or 0
 
+    local extracted_id = repo.id or repo.repo_id or (repo.data and (repo.data.id or repo.data.repo_id))
     return {
-        id = repo.id or repo.repo_id,
-        repo_id = repo.id or repo.repo_id,
+        id = extracted_id,
+        repo_id = extracted_id,
         repo = repo,
         name = repo.name or repo.full_name or _("Repository"),
         kind = repo.kind or (self.browser_state and self.browser_state.kind),
@@ -6587,9 +6593,10 @@ function Storefront:makePatchMenuItem(repo, patch)
         end
         table.insert(lines, "  " .. repo_title)
     end
+    local extracted_patch_id = repo.id or repo.repo_id or (repo.data and (repo.data.id or repo.data.repo_id)) or patch.repo_id or patch.id
     return {
-        id = repo.id or repo.repo_id,
-        repo_id = repo.id or repo.repo_id,
+        id = extracted_patch_id,
+        repo_id = extracted_patch_id,
         repo = repo,
         name = patch.filename,
         owner = getRepoOwner(repo) or "",
@@ -7561,6 +7568,8 @@ function Storefront:softRefreshCurrentBrowserView()
     self._merged_updates_cache = nil
     self._repo_descriptors_cache = nil
     self._filtered_descriptors_cache = nil
+    self._cached_updates_count = nil
+    self._cached_updates_gen = nil
 
     if self.browser_menu then
         UIManager:setDirty(self.browser_menu)
@@ -7576,15 +7585,8 @@ end
 -- is rebuilt from the cache which is already invalidated.
 function Storefront:refreshCurrentBrowserTab()
     self:softRefreshCurrentBrowserView()
-    if self.browser_menu and self.browser_state then
-        local tab = self.browser_state.tab or "Plugins"
-        if tab == "Updates" or tab == "Installed" then
-            self:closeBrowserMenu()
-            UIManager:nextTick(function()
-                self:showBrowser()
-            end)
-        end
-    end
+    self._browser_refresh_mode_hint = "partial"
+    self:reopenBrowser()
 end
 
 function Storefront:maybeCheckCatalogBackground()

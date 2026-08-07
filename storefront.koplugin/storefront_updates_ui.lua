@@ -131,6 +131,7 @@ function StorefrontUpdatesUi:init(StorefrontClass)
                             kind = "update",
                             update_item = { plugin = plugin, record = record, remote = remote, needs_update = has_update },
                             default_tab = "release_notes",
+                            from_updates_tab = true,
                         }
                         details_dialog:show()
                     end,
@@ -228,6 +229,7 @@ function StorefrontUpdatesUi:init(StorefrontClass)
                             kind = "update",
                             update_item = item,
                             default_tab = "release_notes",
+                            from_updates_tab = true,
                         }
                         details_dialog:show()
                     end,

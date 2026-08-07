@@ -660,7 +660,8 @@ function StorefrontBrowserDialog:init()
                     text           = spec.text,
                     text_font_size = 14,
                     text_font_bold = spec.text_font_bold or use_primary or false,
-                    padding        = sc(8),
+                    padding        = sc(3),
+                    padding_h      = sc(6),
                     radius         = use_primary and sc(10) or sc(16),
                     bordersize     = use_primary and 0 or sc(1),
                     background     = use_primary and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_WHITE,
@@ -713,8 +714,8 @@ function StorefrontBrowserDialog:init()
         self.toolbar = FrameContainer:new{
             padding_left   = sc(12),
             padding_right  = sc(12),
-            padding_top    = sc(4),
-            padding_bottom = sc(4),
+            padding_top    = sc(2),
+            padding_bottom = sc(2),
             bordersize     = 0,
             has_split and tb or CenterContainer:new{
                 dimen = Geom:new{ w = self.width - sc(24), h = tb:getSize().h },

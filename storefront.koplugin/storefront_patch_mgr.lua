@@ -183,6 +183,15 @@ local function buildPatchSummary(remote_info)
             end
         end
         if needs_update then
+            local p_key = installed_patch.filename
+            local r_key = record and record.owner and record.repo and (record.owner .. "/" .. record.repo)
+            if (p_key and InstallStore.isAllUpdatesIgnored(p_key))
+               or (r_key and InstallStore.isAllUpdatesIgnored(r_key))
+               or (record and record.repo and InstallStore.isAllUpdatesIgnored(record.repo)) then
+                needs_update = false
+            end
+        end
+        if needs_update then
             summary.updates = summary.updates + 1
         end
         summary.data[#summary.data + 1] = {

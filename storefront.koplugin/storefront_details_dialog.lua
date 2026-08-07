@@ -140,6 +140,8 @@ local StorefrontDetailsDialog = InputContainer:extend{
     patch = nil,
     kind = "plugin", -- "plugin", "patch", "update"
     update_item = nil, -- passed if updates tab
+    from_updates_tab = false,
+    _ignore_toggled = false,
 }
 
 function StorefrontDetailsDialog:init()
@@ -224,6 +226,17 @@ function StorefrontDetailsDialog:init()
         or (type(self.repo.full_name) == "string" and self.repo.full_name:match("^[^/]+/(.+)$"))
         or (self.update_item and self.update_item.record and self.update_item.record.repo)
         or ""
+
+    local item_key
+    if self.patch then
+        item_key = self.patch.filename
+    elseif self.update_item and self.update_item.plugin and self.update_item.plugin.dirname then
+        item_key = self.update_item.plugin.dirname
+    elseif owner ~= "" and repo_name ~= "" then
+        item_key = string.format("%s/%s", owner, repo_name)
+    elseif self.repo and self.repo.name then
+        item_key = self.repo.name
+    end
 
     if self.has_wiki == nil then
         if self.repo then
@@ -422,8 +435,9 @@ function StorefrontDetailsDialog:init()
         fgcolor = Blitbuffer.COLOR_BLACK,
     }
 
-    local repo_id = (self.repo and (self.repo.id or self.repo.repo_id))
-        or (self.update_item and self.update_item.repo_id)
+    local repo_id = (self.repo and (self.repo.id or self.repo.repo_id or (self.repo.data and (self.repo.data.id or self.repo.data.repo_id))))
+        or (self.update_item and (self.update_item.repo_id or self.update_item.id or (self.update_item.record and (self.update_item.record.id or self.update_item.record.repo_id)) or (self.update_item.plugin and (self.update_item.plugin.repo_id or self.update_item.plugin.id))))
+        or (self.patch and (self.patch.repo_id or self.patch.id))
 
     local meta_group_items = {}
 
@@ -699,76 +713,6 @@ function StorefrontDetailsDialog:init()
         end
     end
 
-    if self.update_item and self.update_item.needs_update ~= nil then
-        has_update = (self.update_item.needs_update == true)
-    elseif self.kind == "update" then
-        has_update = true
-    end
-
-    local main_action_btn
-    local remove_btn_w = math.floor(action_btn_width * 0.23)
-    local primary_btn_w = action_btn_width - remove_btn_w - sc(12)
-
-    local function getInstallRecord()
-        if is_font then
-            local font_map = InstallStore.listFonts and InstallStore.listFonts() or {}
-            local font_name = self.repo and (self.repo.name or self.repo.font_family)
-            return font_name and (font_map[font_name:lower()] or font_map[font_name])
-        elseif self.patch then
-            local patch_map = InstallStore.listPatches() or {}
-            return patch_map[self.patch.filename]
-        elseif self.update_item and self.update_item.record then
-            return self.update_item.record
-        else
-            local records = InstallStore.list() or {}
-            local repo_name_lower = (self.repo.name or ""):lower()
-            if records[repo_name_lower] then
-                return records[repo_name_lower]
-            end
-            local owner = self.repo.owner or (self.repo.data and self.repo.data.owner and (type(self.repo.data.owner) == "string" and self.repo.data.owner or self.repo.data.owner.login))
-            for dirname, rec in pairs(records) do
-                if rec and rec.repo and rec.repo:lower() == repo_name_lower and (not owner or (rec.owner and rec.owner:lower() == owner:lower())) then
-                    rec.dirname = dirname
-                    return rec
-                end
-            end
-            return nil
-        end
-    end
-
-    local function doRemove()
-        self:onClose()
-        if is_font then
-            local record = (self.update_item and self.update_item.record) or getInstallRecord()
-            local font_name = (self.repo and (self.repo.name or self.repo.font_family)) or (self.update_item and self.update_item.name)
-            self.Storefront:deleteFont(font_name, record)
-        elseif self.patch then
-            local record = (self.update_item and self.update_item.record) or getInstallRecord()
-            local filename = self.patch.filename
-            self.Storefront:deletePatch(filename, record)
-        else
-            local record = (self.update_item and self.update_item.record) or getInstallRecord()
-            local dirname
-            if self.update_item and self.update_item.plugin and self.update_item.plugin.dirname then
-                dirname = self.update_item.plugin.dirname
-            else
-                dirname = (record and record.dirname) or self.repo.name
-            end
-            self.Storefront:deletePlugin(dirname, record)
-        end
-    end
-
-    local item_key
-    if self.patch then
-        item_key = self.patch.filename
-    elseif self.update_item and self.update_item.plugin and self.update_item.plugin.dirname then
-        item_key = self.update_item.plugin.dirname
-    elseif owner ~= "" and repo_name ~= "" then
-        item_key = string.format("%s/%s", owner, repo_name)
-    elseif self.repo and self.repo.name then
-        item_key = self.repo.name
-    end
-
     local function isItemIgnored()
         if not item_key then return false end
         if InstallStore.isAllUpdatesIgnored(item_key) then return true end
@@ -779,16 +723,30 @@ function StorefrontDetailsDialog:init()
         return false
     end
 
+    if self.kind == "update" or self.from_updates_tab or isItemIgnored() then
+        has_update = true
+    elseif self.update_item and self.update_item.needs_update ~= nil then
+        has_update = (self.update_item.needs_update == true)
+    end
+
     local function toggleItemIgnored()
-        local target_key = item_key or (owner ~= "" and repo_name ~= "" and string.format("%s/%s", owner, repo_name)) or repo_name
-        if target_key then
-            InstallStore.toggleAllUpdatesIgnored(target_key)
-            if owner ~= "" and repo_name ~= "" then
-                InstallStore.toggleAllUpdatesIgnored(string.format("%s/%s", owner, repo_name))
+        local new_state = not isItemIgnored()
+        local keys_to_set = {}
+        if item_key then table.insert(keys_to_set, item_key) end
+        if owner ~= "" and repo_name ~= "" then table.insert(keys_to_set, string.format("%s/%s", owner, repo_name)) end
+        if repo_name ~= "" then table.insert(keys_to_set, repo_name) end
+        if self.patch and self.patch.filename then table.insert(keys_to_set, self.patch.filename) end
+        if self.update_item and self.update_item.plugin and self.update_item.plugin.dirname then
+            table.insert(keys_to_set, self.update_item.plugin.dirname)
+        end
+        for _, k in ipairs(keys_to_set) do
+            InstallStore.setAllUpdatesIgnored(k, new_state)
+        end
+        if self.Storefront then
+            if self.Storefront.softRefreshCurrentBrowserView then
+                self.Storefront:softRefreshCurrentBrowserView()
             end
-            if self.Storefront and self.Storefront.clearUpdatesCache then
-                self.Storefront:clearUpdatesCache()
-            end
+            self.Storefront._ignore_toggled_in_details = true
         end
     end
 
@@ -884,6 +842,8 @@ function StorefrontDetailsDialog:init()
             show_parent = self,
             callback = function()
                 toggleItemIgnored()
+                self._ignore_toggled = true
+                self._is_replacing = true
                 self:onClose()
                 local new_dialog = StorefrontDetailsDialog:new{
                     Storefront = self.Storefront,
@@ -892,6 +852,8 @@ function StorefrontDetailsDialog:init()
                     kind = self.kind,
                     update_item = self.update_item,
                     default_tab = self.active_tab,
+                    from_updates_tab = self.from_updates_tab,
+                    _ignore_toggled = true,
                 }
                 new_dialog:show()
             end,
@@ -2501,6 +2463,19 @@ end
 function StorefrontDetailsDialog:onClose()
     self.is_closed = true
     UIManager:close(self, "ui")
+    local sf = self.Storefront
+    local needs_refresh = self._ignore_toggled
+        or (sf and sf._ignore_toggled_in_details)
+    if needs_refresh and not self._is_replacing
+            and sf
+            and type(sf.refreshCurrentBrowserTab) == "function" then
+        if sf._ignore_toggled_in_details then
+            sf._ignore_toggled_in_details = nil
+        end
+        UIManager:nextTick(function()
+            sf:refreshCurrentBrowserTab()
+        end)
+    end
     return true
 end
 
@@ -2669,6 +2644,9 @@ function StorefrontVersionDetailsDialog:init()
     function ignore_btn:onStorefrontVersionIgnoreTap()
         if item_key and tag then
             InstallStore.toggleReleaseIgnored(item_key, tag)
+            if vdialog_self.parent_details then
+                vdialog_self.parent_details._ignore_toggled = true
+            end
             if vdialog_self.parent_details and vdialog_self.parent_details.loadContent then
                 vdialog_self.parent_details.loadContent("versions")
             end
@@ -2754,6 +2732,9 @@ a.plain-link { color: #000000 !important; text-decoration: none !important; }
                 local ig_tag = href:match("^storefront%-toggle%-ignore:(.+)$")
                 if item_key and ig_tag then
                     InstallStore.toggleReleaseIgnored(item_key, ig_tag)
+                    if self.parent_details then
+                        self.parent_details._ignore_toggled = true
+                    end
                     UIManager:setDirty(self, "ui")
                 end
                 return true
