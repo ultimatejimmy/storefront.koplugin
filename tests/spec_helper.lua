@@ -14,6 +14,10 @@ package.loaded["device"] = {
     isPocketBook = function() return false end,
     isKobo = function() return false end,
     isKoboV2 = function() return false end,
+    hasDPad = function() return false end,
+    hasKeys = function() return false end,
+    hasKeyboard = function() return false end,
+    input = { group = {} },
     screen = {
         getWidth = function() return 600 end,
         getHeight = function() return 800 end,
@@ -46,7 +50,10 @@ package.loaded["logger"] = {
     info = function(...) end,
     warn = function(...) end,
     err = function(...) end,
-    debug = function(...) end
+    debug = function(...) end,
+    dbg = function(...) end,
+    setLevel = function(...) end,
+    levels = { DBG = 1, INFO = 2, WARN = 3, ERR = 4 },
 }
 
 package.loaded["datastorage"] = {

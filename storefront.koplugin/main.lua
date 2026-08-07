@@ -5794,8 +5794,13 @@ end
 
 local function compareRepoWilsonScoreDesc(a, b)
     local StorefrontRatings = require("storefront_ratings")
-    local sa = StorefrontRatings.computeWilsonScore(a and a.user_thumbs_up or 0, a and a.user_thumbs_down or 0)
-    local sb = StorefrontRatings.computeWilsonScore(b and b.user_thumbs_up or 0, b and b.user_thumbs_down or 0)
+    local id_a = a and (a.id or a.repo_id)
+    local id_b = b and (b.id or b.repo_id)
+    local r_a = id_a and StorefrontRatings.getRating(id_a)
+    local r_b = id_b and StorefrontRatings.getRating(id_b)
+
+    local sa = r_a and r_a.wilson or 0
+    local sb = r_b and r_b.wilson or 0
     if sa ~= sb then
         return sa > sb
     end
@@ -5804,10 +5809,16 @@ end
 
 local function comparePatchWilsonScoreDesc(a, b)
     local StorefrontRatings = require("storefront_ratings")
-    local r_a = a and (a.repo or a)
-    local r_b = b and (b.repo or b)
-    local sa = StorefrontRatings.computeWilsonScore(r_a and r_a.user_thumbs_up or 0, r_a and r_a.user_thumbs_down or 0)
-    local sb = StorefrontRatings.computeWilsonScore(r_b and r_b.user_thumbs_up or 0, r_b and r_b.user_thumbs_down or 0)
+    local r_item_a = a and (a.repo or a)
+    local r_item_b = b and (b.repo or b)
+    local id_a = r_item_a and (r_item_a.id or r_item_a.repo_id)
+    local id_b = r_item_b and (r_item_b.id or r_item_b.repo_id)
+
+    local r_a = id_a and StorefrontRatings.getRating(id_a)
+    local r_b = id_b and StorefrontRatings.getRating(id_b)
+
+    local sa = r_a and r_a.wilson or 0
+    local sb = r_b and r_b.wilson or 0
     if sa ~= sb then
         return sa > sb
     end
@@ -6527,6 +6538,9 @@ function Storefront:makeRepoMenuItem(repo, installed_lookup)
     local user_thumbs_down = tonumber(repo.user_thumbs_down) or (repo.data and tonumber(repo.data.user_thumbs_down)) or 0
 
     return {
+        id = repo.id or repo.repo_id,
+        repo_id = repo.id or repo.repo_id,
+        repo = repo,
         name = repo.name or repo.full_name or _("Repository"),
         kind = repo.kind or (self.browser_state and self.browser_state.kind),
         font_family = repo.font_family,
@@ -6571,6 +6585,9 @@ function Storefront:makePatchMenuItem(repo, patch)
         table.insert(lines, "  " .. repo_title)
     end
     return {
+        id = repo.id or repo.repo_id,
+        repo_id = repo.id or repo.repo_id,
+        repo = repo,
         name = patch.filename,
         owner = getRepoOwner(repo) or "",
         stars_fmt = stars_fmt,
@@ -7681,7 +7698,7 @@ function Storefront:showBrowser(kind)
                     table.insert(toolbar_buttons, {
                         id = "search",
                         text = _("Search: ") .. self.browser_state.search_text,
-                        callback = function() self:showCatalogFilter() end
+                        callback = function() self:showFilterDialog() end
                     })
                 end
                 if (self.browser_state.owner or "") ~= "" then

@@ -11,10 +11,6 @@ local LuaSettings = require("luasettings")
 local socketutil = require("socketutil")
 
 local function getHttpModule(url)
-    if url and url:match("^https://") then
-        local ok, https = pcall(require, "ssl.https")
-        if ok and https then return https end
-    end
     return require("socket.http")
 end
 
@@ -71,16 +67,7 @@ function StorefrontRatings.fetchRatings(callback)
         if callback then UIManager:scheduleIn(0, function() callback(false, nil) end) end
     end
 
-    local ok_ffi, ffiutil = pcall(require, "ffi/util")
-    if not ok_ffi then ok_ffi, ffiutil = pcall(require, "ffiutil") end
-
-    if ok_ffi and ffiutil and ffiutil.runInSubProcess then
-        ffiutil.runInSubProcess(function()
-            pcall(fetch_task)
-        end, false)
-    else
-        UIManager:scheduleIn(0.1, fetch_task)
-    end
+    UIManager:scheduleIn(0.05, fetch_task)
 end
 
 --- Gets the live rating summary for a repo ID.
@@ -183,12 +170,29 @@ function StorefrontRatings.submitVote(repo_id, direction, item_kind, callback)
     item_kind = item_kind or "plugin"
     direction = direction or "none"
 
+    local prev_vote = StorefrontRatings.getUserVote(repo_id)
     -- Update local state immediately
     StorefrontRatings.saveUserVote(repo_id, direction)
 
+    -- Optimistically update in-memory liveRatings immediately
+    local key = tostring(repo_id)
+    local cur = StorefrontRatings.liveRatings[key] or { up = 0, down = 0, wilson = 0 }
+    local up = tonumber(cur.up) or 0
+    local down = tonumber(cur.down) or 0
+
+    if prev_vote == "up" then up = math.max(0, up - 1)
+    elseif prev_vote == "down" then down = math.max(0, down - 1) end
+
+    if direction == "up" then up = up + 1
+    elseif direction == "down" then down = down + 1 end
+
+    StorefrontRatings.liveRatings[key] = {
+        up = up,
+        down = down,
+        wilson = StorefrontRatings.computeWilsonScore(up, down),
+    }
+
     local UIManager = require("ui/uimanager")
-    local ok_ffi, ffiutil = pcall(require, "ffi/util")
-    if not ok_ffi then ok_ffi, ffiutil = pcall(require, "ffiutil") end
 
     local payload = json.encode({
         repo_id = tonumber(repo_id) or repo_id,
@@ -205,6 +209,7 @@ function StorefrontRatings.submitVote(repo_id, direction, item_kind, callback)
             ["User-Agent"] = "KOReader-Storefront-Plugin/1.0",
             ["Content-Type"] = "application/json",
             ["Accept"] = "application/json",
+            ["Content-Length"] = tostring(#payload),
         }
 
         socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
@@ -233,8 +238,8 @@ function StorefrontRatings.submitVote(repo_id, direction, item_kind, callback)
             local body_str = table.concat(response_body)
             local ok_json, parsed = pcall(json.decode, body_str)
             if ok_json and parsed and parsed.success then
-                -- Update memory rating cache immediately
-                StorefrontRatings.liveRatings[tostring(repo_id)] = {
+                -- Confirm with exact database values from Cloudflare
+                StorefrontRatings.liveRatings[key] = {
                     up = tonumber(parsed.up) or 0,
                     down = tonumber(parsed.down) or 0,
                     wilson = tonumber(parsed.wilson) or 0,
@@ -249,14 +254,7 @@ function StorefrontRatings.submitVote(repo_id, direction, item_kind, callback)
         end
     end
 
-    if ok_ffi and ffiutil and ffiutil.runInSubProcess then
-        ffiutil.runInSubProcess(function()
-            pcall(dispatch_task)
-        end, false)
-        if callback then callback(true, nil) end
-    else
-        UIManager:scheduleIn(0.1, dispatch_task)
-    end
+    UIManager:scheduleIn(0.05, dispatch_task)
 end
 
 return StorefrontRatings

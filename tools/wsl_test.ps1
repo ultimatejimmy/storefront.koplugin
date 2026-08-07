@@ -86,6 +86,13 @@ function Run-Workflow {
         Write-Host "Release Notes Tests FAILED." -ForegroundColor Red
         return $false
     }
+    Write-Host "Running Plugin Launch & Module Integrity tests..."
+    $LaunchTestCmd = "cd $AppDir && LUA_PATH='{0}/?.lua;./?.lua;./?/init.lua;frontend/?.lua;frontend/?/init.lua;libs/?.lua;common/?.lua;common/?/init.lua;;' ./luajit {0}/tests/storefront_launch_test.lua" -f $WSLDest
+    wsl bash -c `"$LaunchTestCmd`"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Plugin Launch Tests FAILED." -ForegroundColor Red
+        return $false
+    }
     Write-Host "Running UI loading crash tests..."
     $UiTestCmd = "cd $AppDir && LUA_PATH='{0}/?.lua;./?.lua;./?/init.lua;frontend/?.lua;frontend/?/init.lua;libs/?.lua;common/?.lua;common/?/init.lua;;' ./luajit {0}/tests/storefront_ui_test.lua" -f $WSLDest
     wsl bash -c `"$UiTestCmd`"

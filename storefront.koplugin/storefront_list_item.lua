@@ -21,6 +21,27 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local Localization = require("localization_storefront")
 local _ = function(key, ...) return Localization:t(key, ...) end
+local DataStorage = require("datastorage")
+
+local function getAssetPath(filename)
+    local info = debug.getinfo(1, "S")
+    local dir = info.source:match("^@(.*[/\\])") or ""
+    local rel_path = dir .. "assets/" .. filename
+    local data_dir = (DataStorage and DataStorage.getDataDir) and DataStorage:getDataDir() or ""
+    local paths_to_try = {
+        rel_path,
+        data_dir .. "/" .. rel_path,
+        data_dir .. "/plugins/" .. rel_path,
+    }
+    local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
+    if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
+    for _, p in ipairs(paths_to_try) do
+        if ok_lfs and lfs and lfs.attributes and lfs.attributes(p, "mode") == "file" then
+            return p
+        end
+    end
+    return rel_path
+end
 
 local G_bundled_fonts_registered = false
 local function ensureBundledFontsRegistered()
@@ -348,38 +369,86 @@ function StorefrontListItem:init()
             max_width = text_w,
         }
 
-        -- Line 2: Meta Line (owner · ★ stars · updated)
-        local meta_parts = {}
-        local meta_text = ""
+        -- Line 2: Meta Line (owner · ★ stars · 👍 score · updated)
+        local meta_face = Font:getFace("cfont", 16)
+        local meta_w
         if entry.is_update_item then
+            local meta_parts = {}
             if entry.kind_label then table.insert(meta_parts, entry.kind_label) end
             if entry.version_transition then table.insert(meta_parts, entry.version_transition) end
-            meta_text = table.concat(meta_parts, "  ·  ")
+            meta_w = TextWidget:new{
+                text = table.concat(meta_parts, "  ·  "),
+                face = meta_face,
+                fgcolor = Blitbuffer.COLOR_BLACK,
+                max_width = text_w,
+            }
         else
-            if owner_text ~= "" then table.insert(meta_parts, owner_text) end
-            if stars_text ~= "" and stars_text ~= "0" then table.insert(meta_parts, "★ " .. stars_text) end
+            local meta_items = {}
+            local function add_sep()
+                if #meta_items > 0 then
+                    table.insert(meta_items, TextWidget:new{
+                        text = "  ·  ",
+                        face = meta_face,
+                        fgcolor = Blitbuffer.COLOR_BLACK,
+                    })
+                end
+            end
+
+            if owner_text ~= "" then
+                add_sep()
+                table.insert(meta_items, TextWidget:new{ text = owner_text, face = meta_face, fgcolor = Blitbuffer.COLOR_BLACK })
+            end
+
+            if stars_text ~= "" and stars_text ~= "0" then
+                add_sep()
+                table.insert(meta_items, TextWidget:new{ text = "★ " .. stars_text, face = meta_face, fgcolor = Blitbuffer.COLOR_BLACK })
+            end
+
             local ok_ratings, StorefrontRatings = pcall(require, "storefront_ratings")
             local repo_id = entry.id or (entry.repo and entry.repo.id)
+            local current_vote = (ok_ratings and StorefrontRatings and repo_id) and StorefrontRatings.getUserVote(repo_id) or nil
+            local is_up_active = (current_vote == "up")
+            local is_down_active = (current_vote == "down")
+
             local live_r = (ok_ratings and StorefrontRatings and repo_id) and StorefrontRatings.getRating(repo_id) or nil
             local user_up = (live_r and (live_r.up > 0 or live_r.down > 0)) and live_r.up or (tonumber(entry.user_thumbs_up) or 0)
             local user_down = (live_r and (live_r.up > 0 or live_r.down > 0)) and live_r.down or (tonumber(entry.user_thumbs_down) or 0)
             local net_score = user_up - user_down
             if net_score ~= 0 or user_up > 0 or user_down > 0 then
+                add_sep()
+                local sc = function(val) return Device.screen:scaleBySize(val) end
+                local icon_file = is_up_active and getAssetPath("thumbs-up-filled.svg") or getAssetPath("thumbs-up.svg")
+                table.insert(meta_items, ImageWidget:new{
+                    file = icon_file,
+                    width = sc(14),
+                    height = sc(14),
+                    scale_factor = 0,
+                    is_icon = true,
+                    alpha = true,
+                })
+                table.insert(meta_items, HorizontalSpan:new{ width = sc(3) })
                 local score_fmt = math.abs(net_score) >= 1000 and string.format("%.1fk", net_score / 1000):gsub("%.0k", "k") or tostring(net_score)
-                table.insert(meta_parts, "▲ " .. score_fmt)
+                table.insert(meta_items, TextWidget:new{
+                    text = score_fmt,
+                    face = meta_face,
+                    bold = is_up_active or is_down_active,
+                    fgcolor = (is_up_active or is_down_active) and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
+                })
             end
-            if updated_text ~= "" then table.insert(meta_parts, updated_text) end
-            if entry.kind_label then table.insert(meta_parts, (entry.kind == "font" or entry.is_font) and entry.kind_label:lower() or entry.kind_label) end
-            meta_text = table.concat(meta_parts, "  ·  ")
-        end
 
-        local meta_face = Font:getFace("cfont", 16)
-        local meta_w = TextWidget:new{
-            text = meta_text,
-            face = meta_face,
-            fgcolor = Blitbuffer.COLOR_BLACK,
-            max_width = text_w,
-        }
+            if updated_text ~= "" then
+                add_sep()
+                table.insert(meta_items, TextWidget:new{ text = updated_text, face = meta_face, fgcolor = Blitbuffer.COLOR_BLACK })
+            end
+
+            if entry.kind_label then
+                add_sep()
+                local label_txt = (entry.kind == "font" or entry.is_font) and entry.kind_label:lower() or entry.kind_label
+                table.insert(meta_items, TextWidget:new{ text = label_txt, face = meta_face, fgcolor = Blitbuffer.COLOR_BLACK })
+            end
+
+            meta_w = HorizontalGroup:new(meta_items)
+        end
 
         local group
         if entry.is_update_item then

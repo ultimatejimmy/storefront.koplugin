@@ -3,11 +3,23 @@ import sys
 import json
 import urllib.request
 
-GITHUB_TOKEN = os.environ.get("RATINGS_BOT_TOKEN") or os.environ.get("GITHUB_TOKEN")
+import argparse
+
+parser = argparse.ArgumentParser(description="Bulk delete storefront rating discussions from GitHub.")
+parser.add_argument("--token", help="GitHub Personal Access Token (or RATINGS_BOT_TOKEN)")
+args, _ = parser.parse_known_args()
+
+GITHUB_TOKEN = args.token or os.environ.get("RATINGS_BOT_TOKEN") or os.environ.get("GITHUB_TOKEN")
 GITHUB_REPOSITORY = os.environ.get("GITHUB_REPOSITORY", "ultimatejimmy/storefront.koplugin")
 
 if not GITHUB_TOKEN:
-    print("Error: GITHUB_TOKEN or RATINGS_BOT_TOKEN environment variable required.", file=sys.stderr)
+    try:
+        GITHUB_TOKEN = input("Enter your GitHub Token (or PAT): ").strip()
+    except Exception:
+        pass
+
+if not GITHUB_TOKEN:
+    print("Error: GITHUB_TOKEN, RATINGS_BOT_TOKEN, or --token argument required.", file=sys.stderr)
     sys.exit(1)
 
 OWNER, REPO = GITHUB_REPOSITORY.split("/", 1) if "/" in GITHUB_REPOSITORY else ("ultimatejimmy", "storefront.koplugin")
