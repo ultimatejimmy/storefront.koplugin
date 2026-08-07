@@ -21,22 +21,14 @@ USER_AGENT = "KOReader-Storefront-CatalogBuilder/1.0"
 
 PLUGIN_QUERIES = [
     "topic:koreader-plugin",
-    "topic:koreader-plugins",
     'in:name ".koplugin"',
-    "koreader-plugin",
-    "koreader-plugins",
 ]
 
 PATCH_QUERIES = [
     "topic:koreader-user-patch",
-    "topic:koreader-user-patches",
-    "topic:koreader-patch",
-    "topic:koreader-patches",
-    "koreader-user-patch",
-    "koreader-user-patches",
-    "koreader-patch",
-    "koreader-patches",
-    "koreader.patches",
+    'in:name "KOReader.patches"',
+    'in:name "koreader-patches"',
+    'in:name "koreader-user-patches"',
 ]
 
 rate_limit_errors = 0
@@ -84,9 +76,11 @@ def make_request(url):
 
 def search_repositories(base_query):
     all_items = []
+    # Run each query twice: once for all repos (includes non-forks by default),
+    # and once with fork:true to also capture fork-only repos (including 0-star forks).
     sub_queries = [
         (base_query, 10),
-        (base_query + " fork:only", 10),
+        (base_query + " fork:true", 10),
     ]
     
     for q, max_pages in sub_queries:
