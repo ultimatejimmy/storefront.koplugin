@@ -1,7 +1,10 @@
 name: Build and Deploy Catalog
 
 on:
-  workflow_dispatch: # Allows manual triggering from Actions tab or external API
+  push:
+    branches:
+      - main
+  workflow_dispatch: # Allows manual triggering from Actions tab
 
 permissions:
   contents: read
@@ -26,7 +29,7 @@ jobs:
 
       - name: Fetch, Package Fonts & Build Catalog
         env:
-          GITHUB_TOKEN: ${{ secrets.RATINGS_BOT_TOKEN || secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           python tools/fetch_new_fonts.py
           python tools/package_fonts.py
