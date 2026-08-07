@@ -117,15 +117,14 @@ function StorefrontRatings.submitVote(repo_id, direction, item_kind, callback)
     local ok_ffi, ffiutil = pcall(require, "ffi/util")
     if not ok_ffi then ok_ffi, ffiutil = pcall(require, "ffiutil") end
 
-    local dispatch_url = "https://api.github.com/repos/ultimatejimmy/storefront.koplugin/dispatches"
+    -- Route through Cloudflare proxy worker so no token is needed in the plugin.
+    -- Update this URL after deploying tools/vote-proxy-worker.js to Cloudflare Workers.
+    local dispatch_url = "https://storefront-vote.ultimatejimmy.workers.dev"
     local payload = json.encode({
-        event_type = "user_vote",
-        client_payload = {
-            repo_id = tonumber(repo_id) or repo_id,
-            direction = direction,
-            device_uuid = dev_uuid,
-            item_kind = item_kind,
-        }
+        repo_id = tonumber(repo_id) or repo_id,
+        direction = direction,
+        device_uuid = dev_uuid,
+        item_kind = item_kind,
     })
 
     local dispatch_task = function()
@@ -133,23 +132,20 @@ function StorefrontRatings.submitVote(repo_id, direction, item_kind, callback)
         local http_req = getHttpModule(dispatch_url)
         local response_body = {}
         local headers = {
-            ["Accept"] = "application/vnd.github+json",
             ["User-Agent"] = "KOReader-Storefront-Plugin/1.0",
             ["Content-Type"] = "application/json",
         }
 
         socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
         local ok_req, res_code = pcall(function()
+            local payload_sent = false
             local params = {
                 url = dispatch_url,
                 method = "POST",
                 headers = headers,
                 source = function()
-                    local sent = false
-                    return function()
-                        if not sent then sent = true; return payload end
-                        return nil
-                    end
+                    if not payload_sent then payload_sent = true; return payload end
+                    return nil
                 end,
                 sink = function(chunk)
                     if chunk then table.insert(response_body, chunk) end
