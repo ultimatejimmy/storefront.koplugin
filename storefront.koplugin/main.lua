@@ -231,12 +231,12 @@ local function showRestartConfirmation(message)
 
     local sw = Device.screen:getWidth()
     local sh = Device.screen:getHeight()
-    local dialog_w = math.min(sw - sc(20), sc(380))
+    local card_padding = sc(12)
+    local card_border = storefront_theme.border_window or sc(2)
+    local dialog_w = math.min(sw - sc(20), sc(360))
+    local inner_w = dialog_w - (card_padding * 2) - (card_border * 2)
 
     local ui_font_size  = storefront_theme.face_label_size or 18
-    local card_padding  = sc(6)
-    local card_border   = storefront_theme.border_window or sc(2)
-    local inner_w       = dialog_w - (card_padding * 2) - (card_border * 2)
 
     local body_text = string.format("%s\n\n%s", message or "", _("This will take effect on next restart."))
 
@@ -244,11 +244,14 @@ local function showRestartConfirmation(message)
         text = body_text,
         face = Font:getFace("cfont", ui_font_size),
         fgcolor = Blitbuffer.COLOR_BLACK,
-        width = inner_w - sc(24),
+        width = inner_w,
         alignment = "center",
     }
 
     local overlay
+
+    local btn_gap = sc(12)
+    local btn_w = math.floor((inner_w - btn_gap) / 2)
 
     local cancel_btn = Button:new{
         text = _("Restart later"),
@@ -256,7 +259,7 @@ local function showRestartConfirmation(message)
         radius = storefront_theme.radius_btn or sc(4),
         padding = sc(10),
         height = sc(58),
-        width = math.floor((inner_w - sc(12)) / 2),
+        width = btn_w,
         callback = function()
             if overlay then UIManager:close(overlay, "ui") end
         end,
@@ -264,16 +267,13 @@ local function showRestartConfirmation(message)
 
     local ok_btn = Button:new{
         text = _("Restart now"),
-        -- This button has a fixed black background in every theme, so its label
-        -- must remain white. Using the device theme state here can make it black
-        -- on black when the state does not match the rendered dialog.
         text_font_color = Blitbuffer.COLOR_WHITE,
         background = Blitbuffer.COLOR_BLACK,
         bordersize = 0,
         radius = storefront_theme.radius_btn or sc(4),
         padding = sc(10),
         height = sc(58),
-        width = math.floor((inner_w - sc(12)) / 2),
+        width = inner_w - btn_gap - btn_w,
         callback = function()
             if overlay then UIManager:close(overlay, "ui") end
             UIManager:restartKOReader()
@@ -286,21 +286,21 @@ local function showRestartConfirmation(message)
     local btn_row = HorizontalGroup:new{
         align = "center",
         cancel_btn,
-        HorizontalSpan:new{ width = sc(8) },
+        HorizontalSpan:new{ width = btn_gap },
         ok_btn,
     }
 
     local content_vg = VerticalGroup:new{
         align = "center",
         VerticalSpan:new{ width = sc(14) },
-        FrameContainer:new{ padding = sc(4), bordersize = 0, body_widget },
+        FrameContainer:new{ padding = 0, bordersize = 0, body_widget },
         VerticalSpan:new{ width = sc(14) },
         LineWidget:new{
             dimen = Geom:new{ w = inner_w, h = sc(1) },
             background = Blitbuffer.COLOR_LIGHT_GRAY,
         },
-        VerticalSpan:new{ width = sc(10) },
-        FrameContainer:new{ padding = sc(4), bordersize = 0, btn_row },
+        VerticalSpan:new{ width = sc(14) },
+        FrameContainer:new{ padding = 0, bordersize = 0, btn_row },
         VerticalSpan:new{ width = sc(8) },
     }
 
@@ -342,7 +342,10 @@ function Storefront:showConfirmDialog(opts)
 
     local sw = Device.screen:getWidth()
     local sh = Device.screen:getHeight()
-    local dialog_w = math.min(sw - sc(20), sc(380))
+    local card_padding = sc(12)
+    local card_border = storefront_theme.border_window or sc(2)
+    local dialog_w = math.min(sw - sc(20), sc(360))
+    local inner_w = dialog_w - (card_padding * 2) - (card_border * 2)
 
     local ui_font_size = storefront_theme.face_label_size or 18
     local title_font_size = storefront_theme.title_font_size or 22
@@ -358,7 +361,7 @@ function Storefront:showConfirmDialog(opts)
     }
 
     local title_container = FrameContainer:new{
-        padding = sc(12),
+        padding = 0,
         bordersize = 0,
         title_label,
     }
@@ -367,26 +370,25 @@ function Storefront:showConfirmDialog(opts)
         text = opts.text or "",
         face = Font:getFace("cfont", ui_font_size),
         fgcolor = Blitbuffer.COLOR_BLACK,
-        width = dialog_w - sc(40),
+        width = inner_w,
         alignment = "center",
     }
 
     local body_container = FrameContainer:new{
-        padding = sc(12),
+        padding = 0,
         bordersize = 0,
         body_widget,
     }
 
-    local card_padding = sc(6)
-    local card_border = storefront_theme.border_window or sc(2)
-    local inner_w = dialog_w - (card_padding * 2) - (card_border * 2)
+    local btn_gap = sc(12)
+    local btn_w = math.floor((inner_w - btn_gap) / 2)
 
     local cancel_btn = Button:new{
         text = opts.cancel_text or _("Cancel"),
         bordersize = sc(1),
         radius = storefront_theme.radius_btn or sc(18),
         padding = sc(10),
-        width = math.floor((inner_w - sc(12)) / 2),
+        width = btn_w,
         callback = function()
             if overlay then UIManager:close(overlay, "ui") end
             if opts.cancel_callback then opts.cancel_callback() end
@@ -398,7 +400,7 @@ function Storefront:showConfirmDialog(opts)
         bordersize = sc(1),
         radius = storefront_theme.radius_btn or sc(18),
         padding = sc(10),
-        width = math.floor((inner_w - sc(12)) / 2),
+        width = inner_w - btn_gap - btn_w,
         callback = function()
             if overlay then UIManager:close(overlay, "ui") end
             if opts.ok_callback then opts.ok_callback() end
@@ -408,22 +410,23 @@ function Storefront:showConfirmDialog(opts)
     local btn_row = HorizontalGroup:new{
         align = "center",
         cancel_btn,
-        HorizontalSpan:new{ width = sc(8) },
+        HorizontalSpan:new{ width = btn_gap },
         ok_btn,
     }
 
     local content_vg = VerticalGroup:new{
         align = "center",
         title_container,
+        VerticalSpan:new{ width = sc(10) },
         LineWidget:new{
             dimen = Geom:new{ w = inner_w, h = sc(1) },
             background = Blitbuffer.COLOR_BLACK,
         },
-        VerticalSpan:new{ width = sc(8) },
+        VerticalSpan:new{ width = sc(14) },
         body_container,
-        VerticalSpan:new{ width = sc(12) },
-        FrameContainer:new{ padding = sc(4), bordersize = 0, btn_row },
-        VerticalSpan:new{ width = sc(6) },
+        VerticalSpan:new{ width = sc(16) },
+        FrameContainer:new{ padding = 0, bordersize = 0, btn_row },
+        VerticalSpan:new{ width = sc(8) },
     }
 
     local card = FrameContainer:new{

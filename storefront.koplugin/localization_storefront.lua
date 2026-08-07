@@ -86,17 +86,28 @@ function Localization:parsePO(filepath)
     file:close()
     
     -- Process escape sequences
+    local function unescapePOString(str)
+        if not str or type(str) ~= "string" then return str end
+        local prev = str
+        for _ = 1, 3 do
+            local next_str = prev:gsub("\\(.)", function(c)
+                if c == "n" then return "\n"
+                elseif c == "t" then return "\t"
+                elseif c == '"' then return '"'
+                elseif c == "\\" then return "\\"
+                else return c
+                end
+            end)
+            if next_str == prev then break end
+            prev = next_str
+        end
+        return prev
+    end
+
     for key, value in pairs(translations) do
-        local normalized_key = key
-        normalized_key = normalized_key:gsub("\\\\n", "\n")
-        normalized_key = normalized_key:gsub("\\\\t", "\t")
-        normalized_key = normalized_key:gsub('\\\\"', '"')
-        normalized_key = normalized_key:gsub("\\\\\\\\", "\\\\")
-        value = value:gsub("\\n", "\n")
-        value = value:gsub("\\t", "\t")
-        value = value:gsub('\\"', '"')
-        value = value:gsub("\\\\", "\\")
-        translations[normalized_key] = value
+        local normalized_key = unescapePOString(key)
+        local unescaped_val = unescapePOString(value)
+        translations[normalized_key] = unescaped_val
         if normalized_key ~= key then
             translations[key] = nil
         end

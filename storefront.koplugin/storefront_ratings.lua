@@ -19,16 +19,92 @@ local StorefrontSettings = LuaSettings:open(SETTINGS_PATH)
 
 local UUID_KEY = "device_uuid"
 local VOTES_KEY = "user_votes"
+local RATINGS_CACHE_FILE = DataStorage:getSettingsDir() .. "/storefront_ratings_cache.json"
+
+local function normalizeRatingsTable(tbl)
+    if type(tbl) ~= "table" then return {} end
+    local normalized = {}
+    for k, v in pairs(tbl) do
+        if type(v) == "table" then
+            local str_key = tostring(k)
+            normalized[str_key] = {
+                up = tonumber(v.up) or 0,
+                down = tonumber(v.down) or 0,
+                wilson = tonumber(v.wilson) or 0,
+            }
+        end
+    end
+    return normalized
+end
+
+local function loadLocalRatingsFile()
+    local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
+    if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
+    if ok_lfs and lfs and lfs.attributes and lfs.attributes(RATINGS_CACHE_FILE, "mode") == "file" then
+        local util = require("util")
+        local content = util.readFromFile(RATINGS_CACHE_FILE)
+        if content and content ~= "" then
+            local ok_j, parsed = pcall(json.decode, content)
+            if ok_j and type(parsed) == "table" then
+                return normalizeRatingsTable(parsed)
+            end
+        end
+    end
+    return nil
+end
+
+local function saveLocalRatingsFile(ratings_table)
+    if type(ratings_table) == "table" then
+        pcall(function()
+            local util = require("util")
+            local norm = normalizeRatingsTable(ratings_table)
+            local ok_j, content = pcall(json.encode, norm)
+            if ok_j and content and content ~= "" then
+                util.writeToFile(content, RATINGS_CACHE_FILE)
+            end
+        end)
+    end
+end
 
 local StorefrontRatings = {
-    liveRatings = {}, -- Cached ratings table: { [repo_id] = { up = 0, down = 0, wilson = 0 } }
+    liveRatings = loadLocalRatingsFile() or {}, -- Cached ratings table: { [repo_id] = { up = 0, down = 0, wilson = 0 } }
     BASE_URL = "https://storefront-vote.ultimatejimmy.workers.dev",
 }
+
+local user_votes_cache = nil
+
+local function loadVotesCache()
+    if not user_votes_cache then
+        local votes = StorefrontSettings:readSetting(VOTES_KEY)
+        if type(votes) == "table" then
+            user_votes_cache = votes
+        else
+            user_votes_cache = {}
+        end
+    end
+    return user_votes_cache
+end
+
+local is_fetching = false
+local last_fetch_time = 0
+local FETCH_COOLDOWN = 60 -- seconds
 
 --- Fetches all live ratings from the Cloudflare D1 backend asynchronously.
 --- @param callback function|nil Called with (success, ratings_table)
 function StorefrontRatings.fetchRatings(callback)
     local UIManager = require("ui/uimanager")
+    local now = os.time()
+    if (now - last_fetch_time) < FETCH_COOLDOWN and next(StorefrontRatings.liveRatings) ~= nil then
+        if callback then UIManager:scheduleIn(0, function() callback(true, StorefrontRatings.liveRatings) end) end
+        return
+    end
+    if is_fetching then
+        if callback then UIManager:scheduleIn(0, function() callback(true, StorefrontRatings.liveRatings) end) end
+        return
+    end
+
+    is_fetching = true
+    last_fetch_time = now
     local fetch_task = function()
         local http_req = getHttpModule(StorefrontRatings.BASE_URL)
         local response_body = {}
@@ -52,14 +128,17 @@ function StorefrontRatings.fetchRatings(callback)
         end)
         socketutil:reset_timeout()
 
+        is_fetching = false
         local code = tonumber(res_code) or 0
         if ok_req and code == 200 then
             local body_str = table.concat(response_body)
             local ok_json, parsed = pcall(json.decode, body_str)
             if ok_json and type(parsed) == "table" then
-                StorefrontRatings.liveRatings = parsed
+                local norm = normalizeRatingsTable(parsed)
+                StorefrontRatings.liveRatings = norm
+                saveLocalRatingsFile(norm)
                 logger.info("StorefrontRatings: successfully fetched live ratings")
-                if callback then UIManager:scheduleIn(0, function() callback(true, parsed) end) end
+                if callback then UIManager:scheduleIn(0, function() callback(true, norm) end) end
                 return
             end
         end
@@ -75,7 +154,9 @@ end
 --- @return table { up = number, down = number, wilson = number }
 function StorefrontRatings.getRating(repo_id)
     if not repo_id then return { up = 0, down = 0, wilson = 0 } end
-    local r = StorefrontRatings.liveRatings[tostring(repo_id)]
+    local str_key = tostring(repo_id)
+    local num_key = tonumber(repo_id)
+    local r = StorefrontRatings.liveRatings[str_key] or (num_key and StorefrontRatings.liveRatings[num_key])
     if type(r) == "table" then
         return {
             up = tonumber(r.up) or 0,
@@ -112,9 +193,10 @@ end
 --- @return string|nil "up", "down", or nil
 function StorefrontRatings.getUserVote(repo_id)
     if not repo_id then return nil end
-    local votes = StorefrontSettings:readSetting(VOTES_KEY)
-    if type(votes) ~= "table" then return nil end
-    return votes[tostring(repo_id)]
+    local votes = loadVotesCache()
+    local str_key = tostring(repo_id)
+    local num_key = tonumber(repo_id)
+    return votes[str_key] or (num_key and votes[num_key])
 end
 
 --- Saves the user's local vote for a given repository ID.
@@ -122,9 +204,7 @@ end
 --- @param direction string|nil "up", "down", or "none"/nil
 function StorefrontRatings.saveUserVote(repo_id, direction)
     if not repo_id then return end
-    local votes = StorefrontSettings:readSetting(VOTES_KEY)
-    if type(votes) ~= "table" then votes = {} end
-
+    local votes = loadVotesCache()
     local key = tostring(repo_id)
     if direction == "up" or direction == "down" then
         votes[key] = direction
@@ -132,6 +212,7 @@ function StorefrontRatings.saveUserVote(repo_id, direction)
         votes[key] = nil
     end
 
+    user_votes_cache = votes
     StorefrontSettings:saveSetting(VOTES_KEY, votes)
     StorefrontSettings:flush()
 end
@@ -191,6 +272,7 @@ function StorefrontRatings.submitVote(repo_id, direction, item_kind, callback)
         down = down,
         wilson = StorefrontRatings.computeWilsonScore(up, down),
     }
+    saveLocalRatingsFile(StorefrontRatings.liveRatings)
 
     local UIManager = require("ui/uimanager")
 
@@ -244,6 +326,7 @@ function StorefrontRatings.submitVote(repo_id, direction, item_kind, callback)
                     down = tonumber(parsed.down) or 0,
                     wilson = tonumber(parsed.wilson) or 0,
                 }
+                saveLocalRatingsFile(StorefrontRatings.liveRatings)
             end
             logger.info("StorefrontRatings: vote submitted successfully", repo_id)
             if callback then UIManager:scheduleIn(0, function() callback(true, nil) end) end

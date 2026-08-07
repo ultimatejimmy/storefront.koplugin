@@ -436,7 +436,7 @@ function StorefrontListItem:init()
                     text = score_fmt,
                     face = meta_face,
                     bold = is_up_active or is_down_active,
-                    fgcolor = (is_up_active or is_down_active) and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
+                    fgcolor = Blitbuffer.COLOR_BLACK,
                 })
             end
 

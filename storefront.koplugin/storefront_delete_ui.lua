@@ -58,7 +58,10 @@ function DeleteUI.showDeleteConfirmationDialog(display_name, is_plugin, plugin_i
 
     local sw = Device.screen:getWidth()
     local sh = Device.screen:getHeight()
-    local dialog_w = math.min(sw - sc(20), sc(380))
+    local card_padding = sc(12)
+    local card_border = storefront_theme.border_window or sc(2)
+    local dialog_w = math.min(sw - sc(20), sc(360))
+    local inner_w = dialog_w - (card_padding * 2) - (card_border * 2)
 
     local ui_font_size = storefront_theme.face_label_size or 18
     local title_font_size = storefront_theme.title_font_size or 22
@@ -76,12 +79,12 @@ function DeleteUI.showDeleteConfirmationDialog(display_name, is_plugin, plugin_i
         face = Font:getFace("NotoSerif-Regular.ttf", title_font_size),
         bold = true,
         fgcolor = Blitbuffer.COLOR_BLACK,
-        width = dialog_w - sc(32),
+        width = inner_w,
         alignment = "center",
     }
 
     local title_container = FrameContainer:new{
-        padding = sc(12),
+        padding = 0,
         bordersize = 0,
         title_label,
     }
@@ -91,12 +94,12 @@ function DeleteUI.showDeleteConfirmationDialog(display_name, is_plugin, plugin_i
         text = body_text,
         face = Font:getFace("NotoSerif-Regular.ttf", ui_font_size),
         fgcolor = Blitbuffer.COLOR_BLACK,
-        width = dialog_w - sc(40),
+        width = inner_w,
         alignment = "center",
     }
 
     local body_container = FrameContainer:new{
-        padding = sc(8),
+        padding = 0,
         bordersize = 0,
         body_widget,
     }
@@ -115,12 +118,12 @@ function DeleteUI.showDeleteConfirmationDialog(display_name, is_plugin, plugin_i
             text = get_check_text(),
             face = Font:getFace("NotoSerif-Regular.ttf", ui_font_size),
             fgcolor = Blitbuffer.COLOR_BLACK,
-            width = dialog_w - sc(40),
+            width = inner_w,
             alignment = "center",
         }
 
         local check_frame = FrameContainer:new{
-            padding = sc(8),
+            padding = sc(4),
             bordersize = 0,
             background = Blitbuffer.COLOR_WHITE,
             check_text_widget,
@@ -141,7 +144,7 @@ function DeleteUI.showDeleteConfirmationDialog(display_name, is_plugin, plugin_i
                         return Geom:new{
                             x = dim.x or 0,
                             y = dim.y or 0,
-                            w = check_frame:getSize().w or (dialog_w - sc(40)),
+                            w = check_frame:getSize().w or inner_w,
                             h = check_frame:getSize().h or 0,
                         }
                     end
@@ -163,16 +166,15 @@ function DeleteUI.showDeleteConfirmationDialog(display_name, is_plugin, plugin_i
         end
     end
 
-    local card_padding = sc(6)
-    local card_border = storefront_theme.border_window or sc(2)
-    local inner_w = dialog_w - (card_padding * 2) - (card_border * 2)
+    local btn_gap = sc(12)
+    local btn_w = math.floor((inner_w - btn_gap) / 2)
 
     local cancel_btn = Button:new{
         text = _("Cancel"),
         bordersize = sc(1),
         radius = storefront_theme.radius_btn or sc(18),
         padding = sc(10),
-        width = math.floor((inner_w - sc(12)) / 2),
+        width = btn_w,
         show_parent = overlay,
         allow_flash = false,
         callback = function()
@@ -185,7 +187,7 @@ function DeleteUI.showDeleteConfirmationDialog(display_name, is_plugin, plugin_i
         bordersize = sc(1),
         radius = storefront_theme.radius_btn or sc(18),
         padding = sc(10),
-        width = math.floor((inner_w - sc(12)) / 2),
+        width = inner_w - btn_gap - btn_w,
         show_parent = overlay,
         allow_flash = false,
         callback = function()
@@ -199,27 +201,28 @@ function DeleteUI.showDeleteConfirmationDialog(display_name, is_plugin, plugin_i
     local btn_row = HorizontalGroup:new{
         align = "center",
         cancel_btn,
-        HorizontalSpan:new{ width = sc(8) },
+        HorizontalSpan:new{ width = btn_gap },
         delete_btn,
     }
 
     local content_items = {
         title_container,
+        VerticalSpan:new{ width = sc(10) },
         LineWidget:new{
             dimen = Geom:new{ w = inner_w, h = sc(1) },
             background = Blitbuffer.COLOR_BLACK,
         },
-        VerticalSpan:new{ width = sc(8) },
+        VerticalSpan:new{ width = sc(14) },
         body_container,
     }
 
     if check_item then
-        table.insert(content_items, VerticalSpan:new{ width = sc(6) })
+        table.insert(content_items, VerticalSpan:new{ width = sc(12) })
         table.insert(content_items, check_item)
     end
 
-    table.insert(content_items, VerticalSpan:new{ width = sc(12) })
-    table.insert(content_items, FrameContainer:new{ padding = sc(4), bordersize = 0, btn_row })
+    table.insert(content_items, VerticalSpan:new{ width = sc(16) })
+    table.insert(content_items, FrameContainer:new{ padding = 0, bordersize = 0, btn_row })
 
     local content_vg = VerticalGroup:new{
         align = "center",
@@ -227,9 +230,9 @@ function DeleteUI.showDeleteConfirmationDialog(display_name, is_plugin, plugin_i
     }
 
     local card = FrameContainer:new{
-        padding = sc(6),
+        padding = card_padding,
         radius = storefront_theme.radius_window or 0,
-        bordersize = storefront_theme.border_window or sc(2),
+        bordersize = card_border,
         color = Blitbuffer.COLOR_BLACK,
         background = storefront_theme.color_bg or Blitbuffer.COLOR_WHITE,
         width = dialog_w,
@@ -292,17 +295,50 @@ function DeleteUI:init(Storefront)
         StorefrontLogger.action(string.format("DELETE starting: plugin %s", tostring(dirname)))
         local plugin = sf.listInstalledPlugins and sf:listInstalledPlugins()
         local matched_plugin
+        local clean_dir = dirname:gsub("%.koplugin$", "")
+        local dir_with_ext = clean_dir .. ".koplugin"
+
         if plugin then
             for _, p in ipairs(plugin) do
-                if p.dirname == dirname then
+                if p.dirname == dirname or p.dirname == clean_dir or p.dirname == dir_with_ext
+                    or (p.dirname and p.dirname:lower() == clean_dir:lower())
+                    or (p.dirname and p.dirname:lower() == dir_with_ext:lower())
+                    or (p.name and p.name:lower() == clean_dir:lower()) then
                     matched_plugin = p
                     break
                 end
             end
         end
-        local display_name = matched_plugin and (matched_plugin.name or matched_plugin.dirname) or dirname
 
-        local plugin_path = (matched_plugin and matched_plugin.path) or (PluginPaths.getDefaultPluginsRoot() .. "/" .. dirname)
+        local display_name = matched_plugin and (matched_plugin.name or matched_plugin.dirname) or clean_dir
+        local plugin_path = matched_plugin and matched_plugin.path
+
+        if not plugin_path or lfs.attributes(plugin_path, "mode") ~= "directory" then
+            local roots = PluginPaths.getLookupPaths() or {}
+            table.insert(roots, PluginPaths.getDefaultPluginsRoot())
+            local candidates = {
+                dir_with_ext,
+                clean_dir,
+                dirname,
+            }
+            for _, root in ipairs(roots) do
+                if root and root ~= "" then
+                    for _, cand in ipairs(candidates) do
+                        local p_cand = root .. "/" .. cand
+                        if lfs.attributes(p_cand, "mode") == "directory" then
+                            plugin_path = p_cand
+                            break
+                        end
+                    end
+                end
+                if plugin_path then break end
+            end
+        end
+
+        if not plugin_path then
+            plugin_path = PluginPaths.getDefaultPluginsRoot() .. "/" .. dir_with_ext
+        end
+
         local ok, err = deleteDirectoryRecursive(plugin_path)
         if ok then
             local G_reader_settings = _G.G_reader_settings
@@ -327,6 +363,8 @@ function DeleteUI:init(Storefront)
             
             if record then
                 InstallStore.remove(dirname)
+                InstallStore.remove(clean_dir)
+                InstallStore.remove(dir_with_ext)
             end
             StorefrontLogger.action(string.format("DELETED plugin %s from disk (%s)", tostring(dirname), plugin_path))
             if sf.showRestartConfirmation then
@@ -364,6 +402,35 @@ function DeleteUI:init(Storefront)
 
         DeleteUI.showDeleteConfirmationDialog(display_name, true, plugin_instance, function(delete_settings)
             sf:performPluginDeletion(dirname, record, delete_settings and plugin_instance)
+        end)
+    end
+
+    Storefront.deletePatch = function(sf, patch_filename)
+        if not patch_filename or patch_filename == "" then
+            return
+        end
+        local display_name = patch_filename
+        DeleteUI.showDeleteConfirmationDialog(display_name, "patch", nil, function()
+            local PATCHES_ROOT = DataStorage:getDataDir() .. "/patches"
+            local patch_path = PATCHES_ROOT .. "/" .. patch_filename
+            local ok, err = os.remove(patch_path)
+            if not ok and not patch_filename:match("%.disabled$") then
+                ok, err = os.remove(patch_path .. ".disabled")
+            end
+            InstallStore.removePatch(patch_filename)
+            if sf.invalidateInstalledPatchesCache then
+                sf:invalidateInstalledPatchesCache()
+            end
+            StorefrontLogger.action(string.format("DELETED patch %s from disk", tostring(patch_filename)))
+            if sf.showRestartConfirmation then
+                sf:showRestartConfirmation(string.format(_("Patch '%s' deleted."), display_name))
+            end
+            if sf.updates_menu then
+                sf:updateUpdatesDialog()
+            end
+            if sf.softRefreshCurrentBrowserView then
+                sf:softRefreshCurrentBrowserView()
+            end
         end)
     end
 end

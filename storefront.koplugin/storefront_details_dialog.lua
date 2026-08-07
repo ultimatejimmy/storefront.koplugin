@@ -513,16 +513,10 @@ function StorefrontDetailsDialog:init()
             local item_kind = self.kind or (self.patch and "patch" or "plugin")
 
             local function refresh_dialog()
-                dialog_self:onClose()
-                local new_dialog = StorefrontDetailsDialog:new{
-                    Storefront    = dialog_self.Storefront,
-                    repo          = dialog_self.repo,
-                    patch         = dialog_self.patch,
-                    kind          = dialog_self.kind,
-                    update_item   = dialog_self.update_item,
-                    default_tab   = dialog_self.active_tab,
-                }
-                new_dialog:show()
+                dialog_self._vote_toggled = true
+                if dialog_self.refreshDetailsDialog then
+                    dialog_self:refreshDetailsDialog()
+                end
             end
 
             -- Icon-only frames (borderless, filled icon when active)
@@ -599,7 +593,7 @@ function StorefrontDetailsDialog:init()
                 text = tostring(net_score),
                 face = Font:getFace("cfont", 14),
                 bold = is_voted,
-                fgcolor = is_voted and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
+                fgcolor = Blitbuffer.COLOR_BLACK,
             })
             table.insert(meta_group_items, HorizontalSpan:new{ width = sc(3) })
             table.insert(meta_group_items, down_btn)
@@ -767,6 +761,63 @@ function StorefrontDetailsDialog:init()
         end
     end
 
+    local function doRemove()
+        if not self.Storefront then return end
+        self:onClose()
+        if is_font then
+            local font_name = (self.repo and (self.repo.name or self.repo.font_family))
+                or (self.update_item and (self.update_item.name or self.update_item.font_family))
+            if font_name then
+                local font_map = InstallStore.listFonts and InstallStore.listFonts() or {}
+                local rec = font_map[font_name:lower()] or font_map[font_name]
+                if type(self.Storefront.deleteFont) == "function" then
+                    self.Storefront:deleteFont(font_name, rec, self.repo or self.update_item)
+                end
+            end
+        elseif self.patch or self.kind == "patch" or (self.repo and self.repo.kind == "patch") then
+            local patch_filename = (self.patch and self.patch.filename)
+                or (self.update_item and (self.update_item.filename or (self.update_item.patch and self.update_item.patch.filename)))
+                or (self.repo and self.repo.filename)
+            if patch_filename and type(self.Storefront.deletePatch) == "function" then
+                self.Storefront:deletePatch(patch_filename)
+            end
+        else
+            local dirname = (self.update_item and self.update_item.plugin and self.update_item.plugin.dirname)
+                or (self.repo and self.repo.name)
+            if dirname then
+                if not dirname:find("%.koplugin$") then
+                    dirname = dirname .. ".koplugin"
+                end
+                if type(self.Storefront.deletePlugin) == "function" then
+                    self.Storefront:deletePlugin(dirname, true)
+                end
+            end
+        end
+    end
+
+    local function refreshDetailsDialog()
+        self._is_replacing = true
+        if self.Storefront then
+            self.Storefront._ignore_toggled_in_details = true
+        end
+        self:onClose()
+        UIManager:nextTick(function()
+            local new_dialog = StorefrontDetailsDialog:new{
+                Storefront = self.Storefront,
+                repo = self.repo,
+                patch = self.patch,
+                kind = self.kind,
+                update_item = self.update_item,
+                default_tab = self.active_tab,
+                from_updates_tab = self.from_updates_tab,
+                _ignore_toggled = self._ignore_toggled,
+                _vote_toggled = self._vote_toggled,
+            }
+            new_dialog:show()
+        end)
+    end
+    self.refreshDetailsDialog = refreshDetailsDialog
+
     if has_update then
         local is_item_disabled = false
         if self.patch and self.patch.filename then
@@ -860,19 +911,7 @@ function StorefrontDetailsDialog:init()
             callback = function()
                 toggleItemIgnored()
                 self._ignore_toggled = true
-                self._is_replacing = true
-                self:onClose()
-                local new_dialog = StorefrontDetailsDialog:new{
-                    Storefront = self.Storefront,
-                    repo = self.repo,
-                    patch = self.patch,
-                    kind = self.kind,
-                    update_item = self.update_item,
-                    default_tab = self.active_tab,
-                    from_updates_tab = self.from_updates_tab,
-                    _ignore_toggled = true,
-                }
-                new_dialog:show()
+                refreshDetailsDialog()
             end,
         }
 
@@ -1059,16 +1098,8 @@ function StorefrontDetailsDialog:init()
                 show_parent = self,
                 callback = function()
                     toggleItemIgnored()
-                    self:onClose()
-                    local new_dialog = StorefrontDetailsDialog:new{
-                        Storefront = self.Storefront,
-                        repo = self.repo,
-                        patch = self.patch,
-                        kind = self.kind,
-                        update_item = self.update_item,
-                        default_tab = self.active_tab,
-                    }
-                    new_dialog:show()
+                    self._ignore_toggled = true
+                    refreshDetailsDialog()
                 end,
             }
 
@@ -2516,12 +2547,16 @@ function StorefrontDetailsDialog:onClose()
     UIManager:close(self, "ui")
     local sf = self.Storefront
     local needs_refresh = self._ignore_toggled
-        or (sf and sf._ignore_toggled_in_details)
+        or self._vote_toggled
+        or (sf and (sf._ignore_toggled_in_details or sf._vote_toggled_in_details))
     if needs_refresh and not self._is_replacing
             and sf
             and type(sf.refreshCurrentBrowserTab) == "function" then
         if sf._ignore_toggled_in_details then
             sf._ignore_toggled_in_details = nil
+        end
+        if sf._vote_toggled_in_details then
+            sf._vote_toggled_in_details = nil
         end
         UIManager:nextTick(function()
             sf:refreshCurrentBrowserTab()
