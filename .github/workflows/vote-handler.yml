@@ -8,6 +8,11 @@ permissions:
   contents: write
   discussions: write
 
+concurrency:
+  # Group by the specific item being voted on so simultaneous votes queue up instead of crashing
+  group: vote-${{ github.event.client_payload.repo_id }}
+  cancel-in-progress: false
+
 jobs:
   process_vote:
     runs-on: ubuntu-latest

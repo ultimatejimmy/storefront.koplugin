@@ -85,15 +85,14 @@ def get_repository_and_categories():
         ratings_cat_id = categories[0]["id"]
     return repo_id, ratings_cat_id
 
-def find_or_create_discussion(cat_id):
+def find_or_create_discussion(cat_id, retries=0):
     search_tag = f"<!-- storefront:repo_id={REPO_ID} -->"
     query = """
     query SearchDiscussions($owner: String!, $name: String!) {
       repository(owner: $owner, name: $name) {
-        discussions(first: 100) {
+        discussions(first: 100, orderBy: {field: UPDATED_AT, direction: DESC}) {
           nodes {
             id
-            title
             body
           }
         }
@@ -103,9 +102,11 @@ def find_or_create_discussion(cat_id):
     res = graphql_query(query, {"owner": OWNER, "name": REPO})
     if res and "data" in res and res["data"].get("repository"):
         for disc in res["data"]["repository"]["discussions"]["nodes"]:
-            if search_tag in disc["body"]:
+            body_text = disc.get("body") or ""
+            if search_tag in body_text:
                 return disc["id"]
                 
+    # Create discussion if not found
     title = f"[Rating] {ITEM_KIND.capitalize()} #{REPO_ID}"
     body = f"User ratings thread for {ITEM_KIND} (ID: {REPO_ID}).\n\n{search_tag}"
     
@@ -121,6 +122,15 @@ def find_or_create_discussion(cat_id):
     res_c = graphql_query(mutation, {"repoId": GITHUB_REPO_ID, "catId": cat_id, "title": title, "body": body})
     if res_c and "data" in res_c and res_c["data"].get("createDiscussion"):
         return res_c["data"]["createDiscussion"]["discussion"]["id"]
+    
+    # If we failed to create it (likely due to "submitted too quickly" race condition),
+    # it means another job probably JUST created it. Sleep and try to find it again.
+    if retries < 2:
+        import time
+        print("Failed to create discussion. Waiting 5s and retrying search...", file=sys.stderr)
+        time.sleep(5)
+        return find_or_create_discussion(cat_id, retries + 1)
+        
     return None
 
 def process_comment_vote(discussion_id):
