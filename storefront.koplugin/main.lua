@@ -9291,17 +9291,24 @@ local function injectStorefrontIntoToolsMenu()
         "ui/elements/reader_menu_order",
         "ui/elements/filemanager_menu_order",
     }
+    local function isItemInOrder(tbl, target_id)
+        if type(tbl) ~= "table" then return false end
+        for _, val in pairs(tbl) do
+            if val == target_id then
+                return true
+            elseif type(val) == "table" then
+                if isItemInOrder(val, target_id) then
+                    return true
+                end
+            end
+        end
+        return false
+    end
+
     for _, order_path in ipairs(menu_orders) do
         local ok, order = pcall(require, order_path)
         if ok and type(order) == "table" and type(order.tools) == "table" then
-            local found = false
-            for _, id in ipairs(order.tools) do
-                if id == "Storefront" then
-                    found = true
-                    break
-                end
-            end
-            if not found then
+            if not isItemInOrder(order, "Storefront") then
                 table.insert(order.tools, 2, "Storefront")
             end
         end
