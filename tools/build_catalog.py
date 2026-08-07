@@ -270,6 +270,21 @@ def main():
         except Exception as e:
             print(f"Warning: could not read existing catalog to preserve fonts: {e}")
             
+    # Fetch and attach user ratings from GitHub Discussions
+    try:
+        from ratings_tally import fetch_all_ratings
+        ratings_map = fetch_all_ratings()
+        print(f"Fetched ratings for {len(ratings_map)} catalog items.")
+    except Exception as e:
+        print(f"Warning: ratings tally failed ({e}), defaulting to 0.", file=sys.stderr)
+        ratings_map = {}
+
+    for item in plugins + patches + existing_fonts:
+        repo_id = item.get("id") or item.get("repo_id")
+        r_info = ratings_map.get(repo_id, {})
+        item["user_thumbs_up"] = r_info.get("up", 0)
+        item["user_thumbs_down"] = r_info.get("down", 0)
+
     catalog = {
         "version": 1,
         "generated_at": now_iso,

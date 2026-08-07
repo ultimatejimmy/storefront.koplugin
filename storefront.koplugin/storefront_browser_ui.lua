@@ -38,10 +38,37 @@ local StorefrontListItem = require("storefront_list_item")
 -- resources/icons directories, so a path like
 -- "../plugins/storefront.koplugin/assets/zap" silently falls back to
 -- KOReader's "icon not found" placeholder instead of raising an error.
+local ffiutil = require("ffi/util")
+local lfs = require("libs/libkoreader-lfs")
+local DataStorage = require("datastorage")
+
 local function getAssetPath(filename)
     local info = debug.getinfo(1, "S")
     local dir = info.source:match("^@(.*[/\\])") or ""
-    return dir .. "assets/" .. filename
+    local rel_path = dir .. "assets/" .. filename
+    local data_dir = DataStorage:getDataDir()
+    local paths_to_try = {
+        rel_path,
+        data_dir .. "/" .. rel_path,
+        data_dir .. "/plugins/" .. rel_path,
+    }
+    
+    local ok_paths, StorefrontPluginPaths = pcall(require, "storefront_plugin_paths")
+    if ok_paths and StorefrontPluginPaths and StorefrontPluginPaths.getLookupPaths then
+        for _, root in ipairs(StorefrontPluginPaths.getLookupPaths()) do
+            table.insert(paths_to_try, root .. "/" .. rel_path)
+        end
+    end
+
+    for _, p in ipairs(paths_to_try) do
+        if ffiutil and ffiutil.realpath then
+            local rp = ffiutil.realpath(p)
+            if rp and lfs and lfs.attributes and lfs.attributes(rp, "mode") == "file" then
+                return rp
+            end
+        end
+    end
+    return data_dir .. "/plugins/" .. rel_path
 end
 
 local StorefrontBrowserDialog = FocusManager:extend{

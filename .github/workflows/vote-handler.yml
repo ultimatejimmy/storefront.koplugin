@@ -1,0 +1,31 @@
+name: Storefront Rating Dispatch Handler
+
+on:
+  repository_dispatch:
+    types: [user_vote]
+
+permissions:
+  contents: write
+  discussions: write
+
+jobs:
+  process_vote:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Process User Vote
+        env:
+          GITHUB_TOKEN: ${{ secrets.RATINGS_BOT_TOKEN || secrets.GITHUB_TOKEN }}
+          REPO_ID: ${{ github.event.client_payload.repo_id }}
+          DIRECTION: ${{ github.event.client_payload.direction }}
+          DEVICE_UUID: ${{ github.event.client_payload.device_uuid }}
+          ITEM_KIND: ${{ github.event.client_payload.item_kind }}
+        run: |
+          python tools/handle_vote.py

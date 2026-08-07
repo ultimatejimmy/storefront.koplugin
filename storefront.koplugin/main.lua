@@ -5792,7 +5792,35 @@ local function comparePatchRepoCreatedDesc(a, b)
     return comparePatchStarsDesc(a, b)
 end
 
+local function compareRepoWilsonScoreDesc(a, b)
+    local StorefrontRatings = require("storefront_ratings")
+    local sa = StorefrontRatings.computeWilsonScore(a and a.user_thumbs_up or 0, a and a.user_thumbs_down or 0)
+    local sb = StorefrontRatings.computeWilsonScore(b and b.user_thumbs_up or 0, b and b.user_thumbs_down or 0)
+    if sa ~= sb then
+        return sa > sb
+    end
+    return compareRepoStarsDesc(a, b)
+end
+
+local function comparePatchWilsonScoreDesc(a, b)
+    local StorefrontRatings = require("storefront_ratings")
+    local r_a = a and (a.repo or a)
+    local r_b = b and (b.repo or b)
+    local sa = StorefrontRatings.computeWilsonScore(r_a and r_a.user_thumbs_up or 0, r_a and r_a.user_thumbs_down or 0)
+    local sb = StorefrontRatings.computeWilsonScore(r_b and r_b.user_thumbs_up or 0, r_b and r_b.user_thumbs_down or 0)
+    if sa ~= sb then
+        return sa > sb
+    end
+    return comparePatchStarsDesc(a, b)
+end
+
 local SORT_OPTIONS = {
+    {
+        id = "rating_desc",
+        summary = _("Sort: Most Liked"),
+        repo_comparator = compareRepoWilsonScoreDesc,
+        patch_comparator = comparePatchWilsonScoreDesc,
+    },
     {
         id = "stars_desc",
         summary = _("Sort: Stars (high → low)"),
@@ -6495,6 +6523,9 @@ function Storefront:makeRepoMenuItem(repo, installed_lookup)
     local owner = repo.owner or (repo.data and repo.data.owner and (type(repo.data.owner) == "table" and repo.data.owner.login or tostring(repo.data.owner))) or ""
     local updated = getRepoVersionOrDate(repo, installed_lookup)
 
+    local user_thumbs_up = tonumber(repo.user_thumbs_up) or (repo.data and tonumber(repo.data.user_thumbs_up)) or 0
+    local user_thumbs_down = tonumber(repo.user_thumbs_down) or (repo.data and tonumber(repo.data.user_thumbs_down)) or 0
+
     return {
         name = repo.name or repo.full_name or _("Repository"),
         kind = repo.kind or (self.browser_state and self.browser_state.kind),
@@ -6506,6 +6537,8 @@ function Storefront:makeRepoMenuItem(repo, installed_lookup)
         download_url = repo.download_url,
         owner = owner,
         stars_fmt = stars_fmt,
+        user_thumbs_up = user_thumbs_up,
+        user_thumbs_down = user_thumbs_down,
         updated = updated,
         description = description,
         kind_label = kind_label,

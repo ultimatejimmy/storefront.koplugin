@@ -287,7 +287,6 @@ function StorefrontDetailsDialog:init()
         elseif version_str then
             table.insert(meta_parts, version_str)
         end
-        meta_text = table.concat(meta_parts, "  ·  ")
         desc_text = (self.repo and self.repo.description) or (self.update_item and self.update_item.description) or ""
     end
 
@@ -338,11 +337,193 @@ function StorefrontDetailsDialog:init()
         bold = true,
         fgcolor = Blitbuffer.COLOR_BLACK,
     }
-    local meta_label = TextWidget:new{
-        text = meta_text,
-        face = Font:getFace("cfont", 16),
-        fgcolor = Blitbuffer.COLOR_BLACK,
-    }
+
+    local repo_id = (self.repo and (self.repo.id or self.repo.repo_id))
+        or (self.update_item and self.update_item.repo_id)
+
+    local meta_group_items = {}
+
+    if owner and owner ~= "" then
+        table.insert(meta_group_items, TextWidget:new{
+            text = owner,
+            face = Font:getFace("cfont", 16),
+            fgcolor = Blitbuffer.COLOR_BLACK,
+        })
+    elseif self.patch then
+        local r_name = (self.repo and (self.repo.full_name or self.repo.name)) or ""
+        if r_name ~= "" then
+            table.insert(meta_group_items, TextWidget:new{
+                text = r_name,
+                face = Font:getFace("cfont", 16),
+                fgcolor = Blitbuffer.COLOR_BLACK,
+            })
+        end
+    end
+
+    if stars > 0 then
+        if #meta_group_items > 0 then
+            table.insert(meta_group_items, TextWidget:new{
+                text = "  ·  ",
+                face = Font:getFace("cfont", 16),
+                fgcolor = Blitbuffer.COLOR_BLACK,
+            })
+        end
+        table.insert(meta_group_items, TextWidget:new{
+            text = "★ " .. stars_fmt,
+            face = Font:getFace("cfont", 16),
+            fgcolor = Blitbuffer.COLOR_BLACK,
+        })
+    end
+
+    if repo_id then
+        local ok_ratings, StorefrontRatings = pcall(require, "storefront_ratings")
+        if ok_ratings and StorefrontRatings then
+            local current_vote = StorefrontRatings.getUserVote(repo_id)
+            local is_up_active = (current_vote == "up")
+            local is_down_active = (current_vote == "down")
+
+            local base_up = tonumber(self.repo and (self.repo.user_thumbs_up_base or self.repo.user_thumbs_up)) or 0
+            local base_down = tonumber(self.repo and (self.repo.user_thumbs_down_base or self.repo.user_thumbs_down)) or 0
+            if self.repo and not self.repo.user_thumbs_up_base then
+                self.repo.user_thumbs_up_base = base_up
+                self.repo.user_thumbs_down_base = base_down
+            end
+
+            local cur_up = base_up + (is_up_active and 1 or 0)
+            local cur_down = base_down + (is_down_active and 1 or 0)
+
+            if #meta_group_items > 0 then
+                table.insert(meta_group_items, TextWidget:new{
+                    text = "  ·  ",
+                    face = Font:getFace("cfont", 16),
+                    fgcolor = Blitbuffer.COLOR_BLACK,
+                })
+            end
+
+            local dialog_self = self
+            local item_kind = self.kind or (self.patch and "patch" or "plugin")
+
+            local function refresh_dialog()
+                dialog_self:onClose()
+                local new_dialog = StorefrontDetailsDialog:new{
+                    Storefront    = dialog_self.Storefront,
+                    repo          = dialog_self.repo,
+                    patch         = dialog_self.patch,
+                    kind          = dialog_self.kind,
+                    update_item   = dialog_self.update_item,
+                    default_tab   = dialog_self.active_tab,
+                }
+                new_dialog:show()
+            end
+
+            -- Icon-only frames (borderless, filled icon when active)
+            local up_file = is_up_active and getAssetPath("thumbs-up-filled.svg") or getAssetPath("thumbs-up.svg")
+            local up_frame = FrameContainer:new{
+                bordersize = 0,
+                padding = 0,
+                ImageWidget:new{
+                    file = up_file,
+                    width = sc(16),
+                    height = sc(16),
+                    scale_factor = 0,
+                    is_icon = true,
+                    alpha = true,
+                },
+            }
+            local up_btn = InputContainer:new{ up_frame }
+            up_btn.ges_events = {
+                StorefrontUpVoteTap = {
+                    GestureRange:new{
+                        ges = "tap",
+                        range = function()
+                            local d = up_btn.dimen or up_frame:getSize()
+                            return Geom:new{ x = d.x or 0, y = d.y or 0, w = d.w or 0, h = d.h or 0 }
+                        end,
+                    },
+                },
+            }
+            function up_btn:onStorefrontUpVoteTap()
+                local next_vote = (current_vote == "up") and "none" or "up"
+                StorefrontRatings.submitVote(repo_id, next_vote, item_kind)
+                refresh_dialog()
+                return true
+            end
+
+            local down_file = is_down_active and getAssetPath("thumbs-down-filled.svg") or getAssetPath("thumbs-down.svg")
+            local down_frame = FrameContainer:new{
+                bordersize = 0,
+                padding = 0,
+                ImageWidget:new{
+                    file = down_file,
+                    width = sc(16),
+                    height = sc(16),
+                    scale_factor = 0,
+                    is_icon = true,
+                    alpha = true,
+                },
+            }
+            local down_btn = InputContainer:new{ down_frame }
+            down_btn.ges_events = {
+                StorefrontDownVoteTap = {
+                    GestureRange:new{
+                        ges = "tap",
+                        range = function()
+                            local d = down_btn.dimen or down_frame:getSize()
+                            return Geom:new{ x = d.x or 0, y = d.y or 0, w = d.w or 0, h = d.h or 0 }
+                        end,
+                    },
+                },
+            }
+            function down_btn:onStorefrontDownVoteTap()
+                local next_vote = (current_vote == "down") and "none" or "down"
+                StorefrontRatings.submitVote(repo_id, next_vote, item_kind)
+                refresh_dialog()
+                return true
+            end
+
+            local net_score = cur_up - cur_down
+            local is_voted = is_up_active or is_down_active
+
+            table.insert(meta_group_items, up_btn)
+            table.insert(meta_group_items, HorizontalSpan:new{ width = sc(3) })
+            table.insert(meta_group_items, TextWidget:new{
+                text = tostring(net_score),
+                face = Font:getFace("cfont", 14),
+                bold = is_voted,
+                fgcolor = is_voted and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
+            })
+            table.insert(meta_group_items, HorizontalSpan:new{ width = sc(3) })
+            table.insert(meta_group_items, down_btn)
+        end
+    end
+
+    if updated ~= "" or version_str or (self.patch and self.patch.branch) then
+        if #meta_group_items > 0 then
+            table.insert(meta_group_items, TextWidget:new{
+                text = "  ·  ",
+                face = Font:getFace("cfont", 16),
+                fgcolor = Blitbuffer.COLOR_BLACK,
+            })
+        end
+        local updated_parts = {}
+        if updated ~= "" and version_str then
+            table.insert(updated_parts, string.format(_("updated %s (%s)"), updated, version_str))
+        elseif updated ~= "" then
+            table.insert(updated_parts, string.format(_("updated %s"), updated))
+        elseif version_str then
+            table.insert(updated_parts, version_str)
+        end
+        if self.patch and self.patch.branch then
+            table.insert(updated_parts, "branch " .. self.patch.branch)
+        end
+        table.insert(meta_group_items, TextWidget:new{
+            text = table.concat(updated_parts, "  ·  "),
+            face = Font:getFace("cfont", 16),
+            fgcolor = Blitbuffer.COLOR_BLACK,
+        })
+    end
+
+    local meta_label = HorizontalGroup:new(meta_group_items)
     local desc_label = TextBoxWidget:new{
         text = desc_text,
         face = Font:getFace("cfont", 16),
