@@ -117,19 +117,21 @@ local user_votes_cache = nil
 local function loadVotesCache()
     if not user_votes_cache then
         local votes = StorefrontSettings:readSetting(VOTES_KEY)
-        if type(votes) == "table" and next(votes) ~= nil then
-            user_votes_cache = votes
-        else
-            local backup_votes = loadVotesBackupFile()
-            if type(backup_votes) == "table" then
-                user_votes_cache = backup_votes
-                pcall(function()
-                    StorefrontSettings:saveSetting(VOTES_KEY, user_votes_cache)
-                    StorefrontSettings:flush()
-                end)
-            else
-                user_votes_cache = type(votes) == "table" and votes or {}
+        if type(votes) ~= "table" or next(votes) == nil then
+            votes = loadVotesBackupFile()
+        end
+        if type(votes) == "table" then
+            user_votes_cache = {}
+            for k, v in pairs(votes) do
+                local str_k = tostring(k)
+                local num_k = tonumber(k)
+                user_votes_cache[str_k] = v
+                if num_k then
+                    user_votes_cache[num_k] = v
+                end
             end
+        else
+            user_votes_cache = {}
         end
     end
     return user_votes_cache
@@ -211,57 +213,85 @@ end
 local function getCandidateKeys(item_or_id)
     local keys = {}
     local seen = {}
+
     local function add_key(k)
-        if k ~= nil and k ~= "" then
-            local str_k = tostring(k)
-            if not seen[str_k] then
-                seen[str_k] = true
-                table.insert(keys, str_k)
+        if k == nil or k == "" then return end
+        local str_k = tostring(k)
+        if str_k == "" then return end
+
+        local function add_single(s)
+            if not seen[s] then
+                seen[s] = true
+                table.insert(keys, s)
             end
+        end
+
+        add_single(str_k)
+        local low_k = str_k:lower()
+        add_single(low_k)
+
+        -- Handle .koplugin suffix variations
+        if str_k:sub(-9) == ".koplugin" then
+            local base = str_k:sub(1, -10)
+            add_single(base)
+            add_single(base:lower())
+        else
+            local with_ko = str_k .. ".koplugin"
+            add_single(with_ko)
+            add_single(with_ko:lower())
+        end
+
+        -- Handle .disabled suffix variations for patches
+        if str_k:sub(-9) == ".disabled" then
+            local base = str_k:sub(1, -10)
+            add_single(base)
+            add_single(base:lower())
         end
     end
 
-    if type(item_or_id) == "table" then
-        local item = item_or_id
+    local function process_item(item)
+        if type(item) ~= "table" then
+            add_key(item)
+            return
+        end
+
         add_key(item.id)
         add_key(item.repo_id)
-        if item.repo then
-            add_key(item.repo.id)
-            add_key(item.repo.repo_id)
-            if item.repo.data then
-                add_key(item.repo.data.id)
-                add_key(item.repo.data.repo_id)
-            end
-            add_key(item.repo.full_name)
-            add_key(item.repo.name)
+
+        local owner = item.owner
+            or (type(item.full_name) == "string" and item.full_name:match("^([^/]+)/"))
+            or (item.repo and item.repo.owner)
+            or (item.record and item.record.owner)
+        if type(owner) == "table" then owner = owner.login or owner.name end
+
+        local name = item.name
+            or item.dirname
+            or (type(item.full_name) == "string" and item.full_name:match("^[^/]+/(.+)$"))
+            or (item.repo and item.repo.name)
+            or (item.record and (item.record.repo or item.record.name))
+            or (item.plugin and (item.plugin.dirname or item.plugin.name))
+            or (item.patch and item.patch.filename)
+
+        if owner and type(owner) == "string" and owner ~= "" and name and type(name) == "string" and name ~= "" then
+            add_key(owner .. "/" .. name)
+            local clean_name = name:gsub("%.koplugin$", "")
+            add_key(owner .. "/" .. clean_name)
         end
-        if item.record then
-            add_key(item.record.id)
-            add_key(item.record.repo_id)
-            add_key(item.record.repo_full_name)
-            add_key(item.record.repo)
-        end
-        if item.plugin then
-            add_key(item.plugin.id)
-            add_key(item.plugin.repo_id)
-            add_key(item.plugin.dirname)
-            add_key(item.plugin.name)
-        end
-        if item.patch then
-            add_key(item.patch.id)
-            add_key(item.patch.repo_id)
-            add_key(item.patch.filename)
-        end
+
+        if item.repo and item.repo ~= item then process_item(item.repo) end
+        if item.record and item.record ~= item then process_item(item.record) end
+        if item.plugin and item.plugin ~= item then process_item(item.plugin) end
+        if item.patch and item.patch ~= item then process_item(item.patch) end
+
         add_key(item.full_name)
         add_key(item.name)
         add_key(item.dirname)
         add_key(item.filename)
         add_key(item.font_name)
         add_key(item.font_family)
-    else
-        add_key(item_or_id)
     end
 
+    process_item(item_or_id)
     return keys
 end
 
@@ -283,7 +313,8 @@ function StorefrontRatings.getRating(item_or_id, entry)
 
     local candidate_keys = getCandidateKeys(item_or_id)
     for _, key in ipairs(candidate_keys) do
-        local r = StorefrontRatings.liveRatings[key]
+        local num_k = tonumber(key)
+        local r = StorefrontRatings.liveRatings[key] or (num_k and StorefrontRatings.liveRatings[num_k])
         if type(r) == "table" then
             local r_up = tonumber(r.up) or 0
             local r_down = tonumber(r.down) or 0
@@ -346,7 +377,8 @@ function StorefrontRatings.getUserVoteRecord(item_or_id)
     local votes = loadVotesCache()
     local candidate_keys = getCandidateKeys(item_or_id)
     for _, key in ipairs(candidate_keys) do
-        local rec = votes[key]
+        local num_k = tonumber(key)
+        local rec = votes[key] or (num_k and votes[num_k])
         if type(rec) == "table" and rec.direction then
             return rec
         elseif type(rec) == "string" then
@@ -386,6 +418,10 @@ function StorefrontRatings.saveUserVote(item_or_id, direction, catalog_up, catal
 
     for _, key in ipairs(candidate_keys) do
         votes[key] = vote_rec
+        local num_k = tonumber(key)
+        if num_k then
+            votes[num_k] = vote_rec
+        end
     end
 
     user_votes_cache = votes

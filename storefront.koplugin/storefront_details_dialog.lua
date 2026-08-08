@@ -589,6 +589,10 @@ function StorefrontDetailsDialog:init()
                     fgcolor = Blitbuffer.COLOR_BLACK,
                 }
 
+                if rawget(up_frame, "_bb") then up_frame._bb = nil end
+                if rawget(down_frame, "_bb") then down_frame._bb = nil end
+                if rawget(score_frame, "_bb") then score_frame._bb = nil end
+
                 UIManager:setDirty(dialog_self, "ui")
             end
 
