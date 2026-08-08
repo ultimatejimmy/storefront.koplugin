@@ -490,16 +490,17 @@ function StorefrontDetailsDialog:init()
         })
     end
 
-    if repo_id then
+    local item_target = self.repo or self.patch or self.update_item or repo_id
+    if item_target then
         local ok_ratings, StorefrontRatings = pcall(require, "storefront_ratings")
         if ok_ratings and StorefrontRatings then
-            local current_vote = StorefrontRatings.getUserVote(repo_id)
+            local current_vote = StorefrontRatings.getUserVote(item_target)
             local is_up_active = (current_vote == "up")
             local is_down_active = (current_vote == "down")
 
-            local live_rating = StorefrontRatings.getRating(repo_id)
-            local cur_up = (live_rating.up > 0 or live_rating.down > 0) and live_rating.up or tonumber(self.repo and (self.repo.user_thumbs_up_base or self.repo.user_thumbs_up)) or 0
-            local cur_down = (live_rating.up > 0 or live_rating.down > 0) and live_rating.down or tonumber(self.repo and (self.repo.user_thumbs_down_base or self.repo.user_thumbs_down)) or 0
+            local live_rating = StorefrontRatings.getRating(item_target)
+            local cur_up = live_rating.up
+            local cur_down = live_rating.down
 
             if #meta_group_items > 0 then
                 table.insert(meta_group_items, TextWidget:new{
@@ -551,12 +552,12 @@ function StorefrontDetailsDialog:init()
 
             local function refresh_dialog()
                 dialog_self._vote_toggled = true
-                current_vote = StorefrontRatings.getUserVote(repo_id)
+                current_vote = StorefrontRatings.getUserVote(item_target)
                 local new_up_active = (current_vote == "up")
                 local new_down_active = (current_vote == "down")
-                local new_rating = StorefrontRatings.getRating(repo_id)
-                local new_up = (new_rating.up > 0 or new_rating.down > 0) and new_rating.up or tonumber(self.repo and (self.repo.user_thumbs_up_base or self.repo.user_thumbs_up)) or 0
-                local new_down = (new_rating.up > 0 or new_rating.down > 0) and new_rating.down or tonumber(self.repo and (self.repo.user_thumbs_down_base or self.repo.user_thumbs_down)) or 0
+                local new_rating = StorefrontRatings.getRating(item_target)
+                local new_up = new_rating.up
+                local new_down = new_rating.down
                 local new_score = new_up - new_down
                 local new_voted = new_up_active or new_down_active
 
@@ -604,8 +605,9 @@ function StorefrontDetailsDialog:init()
                 },
             }
             function up_btn:onStorefrontUpVoteTap()
+                current_vote = StorefrontRatings.getUserVote(item_target)
                 local next_vote = (current_vote == "up") and "none" or "up"
-                StorefrontRatings.submitVote(repo_id, next_vote, item_kind)
+                StorefrontRatings.submitVote(item_target, next_vote, item_kind)
                 refresh_dialog()
                 return true
             end
@@ -623,8 +625,9 @@ function StorefrontDetailsDialog:init()
                 },
             }
             function down_btn:onStorefrontDownVoteTap()
+                current_vote = StorefrontRatings.getUserVote(item_target)
                 local next_vote = (current_vote == "down") and "none" or "down"
-                StorefrontRatings.submitVote(repo_id, next_vote, item_kind)
+                StorefrontRatings.submitVote(item_target, next_vote, item_kind)
                 refresh_dialog()
                 return true
             end

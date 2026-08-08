@@ -20,6 +20,7 @@ local StorefrontSettings = LuaSettings:open(SETTINGS_PATH)
 local UUID_KEY = "device_uuid"
 local VOTES_KEY = "user_votes"
 local RATINGS_CACHE_FILE = DataStorage:getSettingsDir() .. "/storefront_ratings_cache.json"
+local VOTES_BACKUP_FILE = DataStorage:getSettingsDir() .. "/storefront_votes_backup.json"
 
 local function normalizeRatingsTable(tbl)
     if type(tbl) ~= "table" then return {} end
@@ -72,6 +73,40 @@ local function saveLocalRatingsFile(ratings_table)
     end
 end
 
+local function loadVotesBackupFile()
+    local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
+    if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
+    if ok_lfs and lfs and lfs.attributes and lfs.attributes(VOTES_BACKUP_FILE, "mode") == "file" then
+        local f = io.open(VOTES_BACKUP_FILE, "r")
+        if f then
+            local content = f:read("*a")
+            f:close()
+            if content and content ~= "" then
+                local ok_j, parsed = pcall(json.decode, content)
+                if ok_j and type(parsed) == "table" then
+                    return parsed
+                end
+            end
+        end
+    end
+    return nil
+end
+
+local function saveVotesBackupFile(votes_table)
+    if type(votes_table) == "table" then
+        pcall(function()
+            local ok_j, content = pcall(json.encode, votes_table)
+            if ok_j and content and content ~= "" then
+                local f = io.open(VOTES_BACKUP_FILE, "w")
+                if f then
+                    f:write(content)
+                    f:close()
+                end
+            end
+        end)
+    end
+end
+
 local StorefrontRatings = {
     liveRatings = loadLocalRatingsFile() or {}, -- Cached ratings table: { [repo_id] = { up = 0, down = 0, wilson = 0 } }
     BASE_URL = "https://storefront-vote.ultimatejimmy.workers.dev",
@@ -82,10 +117,19 @@ local user_votes_cache = nil
 local function loadVotesCache()
     if not user_votes_cache then
         local votes = StorefrontSettings:readSetting(VOTES_KEY)
-        if type(votes) == "table" then
+        if type(votes) == "table" and next(votes) ~= nil then
             user_votes_cache = votes
         else
-            user_votes_cache = {}
+            local backup_votes = loadVotesBackupFile()
+            if type(backup_votes) == "table" then
+                user_votes_cache = backup_votes
+                pcall(function()
+                    StorefrontSettings:saveSetting(VOTES_KEY, user_votes_cache)
+                    StorefrontSettings:flush()
+                end)
+            else
+                user_votes_cache = type(votes) == "table" and votes or {}
+            end
         end
     end
     return user_votes_cache
@@ -99,6 +143,15 @@ local FETCH_COOLDOWN = 60 -- seconds
 --- @param callback function|nil Called with (success, ratings_table)
 function StorefrontRatings.fetchRatings(callback)
     local UIManager = require("ui/uimanager")
+    local NetworkMgr = require("ui/network/manager")
+
+    if NetworkMgr and type(NetworkMgr.isConnected) == "function" and not NetworkMgr:isConnected() then
+        logger.info("StorefrontRatings: network not connected, returning local cache")
+        if callback then UIManager:scheduleIn(0, function() callback(true, StorefrontRatings.liveRatings) end) end
+        UIManager:scheduleIn(5, function() StorefrontRatings.fetchRatings(nil) end)
+        return
+    end
+
     local now = os.time()
     if (now - last_fetch_time) < FETCH_COOLDOWN and next(StorefrontRatings.liveRatings) ~= nil then
         if callback then UIManager:scheduleIn(0, function() callback(true, StorefrontRatings.liveRatings) end) end
@@ -155,22 +208,113 @@ function StorefrontRatings.fetchRatings(callback)
     UIManager:scheduleIn(0.05, fetch_task)
 end
 
---- Gets the live rating summary for a repo ID.
---- @param repo_id number|string
---- @return table { up = number, down = number, wilson = number }
-function StorefrontRatings.getRating(repo_id)
-    if not repo_id then return { up = 0, down = 0, wilson = 0 } end
-    local str_key = tostring(repo_id)
-    local num_key = tonumber(repo_id)
-    local r = StorefrontRatings.liveRatings[str_key] or (num_key and StorefrontRatings.liveRatings[num_key])
-    if type(r) == "table" then
-        return {
-            up = tonumber(r.up) or 0,
-            down = tonumber(r.down) or 0,
-            wilson = tonumber(r.wilson) or 0,
-        }
+local function getCandidateKeys(item_or_id)
+    local keys = {}
+    local seen = {}
+    local function add_key(k)
+        if k ~= nil and k ~= "" then
+            local str_k = tostring(k)
+            if not seen[str_k] then
+                seen[str_k] = true
+                table.insert(keys, str_k)
+            end
+        end
     end
-    return { up = 0, down = 0, wilson = 0 }
+
+    if type(item_or_id) == "table" then
+        local item = item_or_id
+        add_key(item.id)
+        add_key(item.repo_id)
+        if item.repo then
+            add_key(item.repo.id)
+            add_key(item.repo.repo_id)
+            if item.repo.data then
+                add_key(item.repo.data.id)
+                add_key(item.repo.data.repo_id)
+            end
+            add_key(item.repo.full_name)
+            add_key(item.repo.name)
+        end
+        if item.record then
+            add_key(item.record.id)
+            add_key(item.record.repo_id)
+            add_key(item.record.repo_full_name)
+            add_key(item.record.repo)
+        end
+        if item.plugin then
+            add_key(item.plugin.id)
+            add_key(item.plugin.repo_id)
+            add_key(item.plugin.dirname)
+            add_key(item.plugin.name)
+        end
+        if item.patch then
+            add_key(item.patch.id)
+            add_key(item.patch.repo_id)
+            add_key(item.patch.filename)
+        end
+        add_key(item.full_name)
+        add_key(item.name)
+        add_key(item.dirname)
+        add_key(item.filename)
+        add_key(item.font_name)
+        add_key(item.font_family)
+    else
+        add_key(item_or_id)
+    end
+
+    return keys
+end
+
+--- Gets the live rating summary for an item or repo ID.
+--- @param item_or_id table|number|string
+--- @param entry table|nil
+--- @return table { up = number, down = number, wilson = number }
+function StorefrontRatings.getRating(item_or_id, entry)
+    local base_up = 0
+    local base_down = 0
+    local wilson = 0
+
+    local e = type(entry) == "table" and entry or (type(item_or_id) == "table" and item_or_id or nil)
+    if e then
+        base_up = tonumber(e.user_thumbs_up or (e.repo and e.repo.user_thumbs_up) or (e.plugin and e.plugin.user_thumbs_up) or (e.record and e.record.user_thumbs_up) or e.user_thumbs_up_base) or 0
+        base_down = tonumber(e.user_thumbs_down or (e.repo and e.repo.user_thumbs_down) or (e.plugin and e.plugin.user_thumbs_down) or (e.record and e.record.user_thumbs_down) or e.user_thumbs_down_base) or 0
+        wilson = tonumber(e.wilson_score or (e.repo and e.repo.wilson_score) or e.wilson) or 0
+    end
+
+    local candidate_keys = getCandidateKeys(item_or_id)
+    for _, key in ipairs(candidate_keys) do
+        local r = StorefrontRatings.liveRatings[key]
+        if type(r) == "table" then
+            local r_up = tonumber(r.up) or 0
+            local r_down = tonumber(r.down) or 0
+            if r_up > base_up then base_up = r_up end
+            if r_down > base_down then base_down = r_down end
+            if (tonumber(r.wilson) or 0) > wilson then wilson = tonumber(r.wilson) or 0 end
+            break
+        end
+    end
+
+    local final_up = base_up
+    local final_down = base_down
+
+    local vote_rec = StorefrontRatings.getUserVoteRecord(item_or_id)
+    if vote_rec and vote_rec.direction then
+        if vote_rec.direction == "up" then
+            if base_up <= (tonumber(vote_rec.catalog_up_at_vote) or 0) then
+                final_up = base_up + 1
+            end
+        elseif vote_rec.direction == "down" then
+            if base_down <= (tonumber(vote_rec.catalog_down_at_vote) or 0) then
+                final_down = base_down + 1
+            end
+        end
+    end
+
+    return {
+        up = final_up,
+        down = final_down,
+        wilson = wilson,
+    }
 end
 
 --- Returns (or generates and saves) a persistent anonymous UUID for this device.
@@ -194,33 +338,62 @@ function StorefrontRatings.getDeviceUUID()
     return uuid
 end
 
---- Gets the user's local vote for a given repository ID.
---- @param repo_id number|string
---- @return string|nil "up", "down", or nil
-function StorefrontRatings.getUserVote(repo_id)
-    if not repo_id then return nil end
+--- Gets the full vote record for an item or repository ID.
+--- @param item_or_id table|number|string
+--- @return table|nil { direction = string, catalog_up_at_vote = number, catalog_down_at_vote = number }
+function StorefrontRatings.getUserVoteRecord(item_or_id)
+    if not item_or_id then return nil end
     local votes = loadVotesCache()
-    local str_key = tostring(repo_id)
-    local num_key = tonumber(repo_id)
-    return votes[str_key] or (num_key and votes[num_key])
+    local candidate_keys = getCandidateKeys(item_or_id)
+    for _, key in ipairs(candidate_keys) do
+        local rec = votes[key]
+        if type(rec) == "table" and rec.direction then
+            return rec
+        elseif type(rec) == "string" then
+            return { direction = rec, catalog_up_at_vote = 0, catalog_down_at_vote = 0 }
+        end
+    end
+    return nil
 end
 
---- Saves the user's local vote for a given repository ID.
---- @param repo_id number|string
+--- Gets the user's local vote direction for a given item or repository ID.
+--- @param item_or_id table|number|string
+--- @return string|nil "up", "down", or nil
+function StorefrontRatings.getUserVote(item_or_id)
+    local rec = StorefrontRatings.getUserVoteRecord(item_or_id)
+    return rec and rec.direction or nil
+end
+
+--- Saves the user's local vote for a given item or repository ID.
+--- @param item_or_id table|number|string
 --- @param direction string|nil "up", "down", or "none"/nil
-function StorefrontRatings.saveUserVote(repo_id, direction)
-    if not repo_id then return end
+--- @param catalog_up number|nil
+--- @param catalog_down number|nil
+function StorefrontRatings.saveUserVote(item_or_id, direction, catalog_up, catalog_down)
+    if not item_or_id then return end
     local votes = loadVotesCache()
-    local key = tostring(repo_id)
+    local candidate_keys = getCandidateKeys(item_or_id)
+    if #candidate_keys == 0 then return end
+
+    local vote_rec = nil
     if direction == "up" or direction == "down" then
-        votes[key] = direction
-    else
-        votes[key] = nil
+        vote_rec = {
+            direction = direction,
+            catalog_up_at_vote = tonumber(catalog_up) or 0,
+            catalog_down_at_vote = tonumber(catalog_down) or 0,
+        }
+    end
+
+    for _, key in ipairs(candidate_keys) do
+        votes[key] = vote_rec
     end
 
     user_votes_cache = votes
-    StorefrontSettings:saveSetting(VOTES_KEY, votes)
-    StorefrontSettings:flush()
+    pcall(function()
+        StorefrontSettings:saveSetting(VOTES_KEY, votes)
+        StorefrontSettings:flush()
+    end)
+    saveVotesBackupFile(votes)
 end
 
 --- Computes the lower bound of Wilson score confidence interval for a 95% confidence level.
@@ -243,27 +416,32 @@ function StorefrontRatings.computeWilsonScore(up, down)
 end
 
 --- Dispatches a user vote to the Cloudflare D1 backend in the background.
---- @param repo_id number|string
+--- @param item_or_id table|number|string
 --- @param direction string "up", "down", or "none"
 --- @param item_kind string|nil "plugin", "patch", or "font"
 --- @param callback function|nil Called with (success, error_message)
-function StorefrontRatings.submitVote(repo_id, direction, item_kind, callback)
-    if not repo_id then
-        if callback then callback(false, "Invalid repo_id") end
+function StorefrontRatings.submitVote(item_or_id, direction, item_kind, callback)
+    if not item_or_id then
+        if callback then callback(false, "Invalid item_or_id") end
         return
     end
+
+    local candidate_keys = getCandidateKeys(item_or_id)
+    local repo_id = candidate_keys[1] or tostring(item_or_id)
 
     local dev_uuid = StorefrontRatings.getDeviceUUID()
     item_kind = item_kind or "plugin"
     direction = direction or "none"
 
-    local prev_vote = StorefrontRatings.getUserVote(repo_id)
-    -- Update local state immediately
-    StorefrontRatings.saveUserVote(repo_id, direction)
+    local cur_rating = StorefrontRatings.getRating(item_or_id)
+    local prev_vote = StorefrontRatings.getUserVote(item_or_id)
+    
+    -- Save vote locally with catalog base numbers to avoid double counting
+    StorefrontRatings.saveUserVote(item_or_id, direction, cur_rating.up, cur_rating.down)
 
     -- Optimistically update in-memory liveRatings immediately
     local key = tostring(repo_id)
-    local cur = StorefrontRatings.liveRatings[key] or { up = 0, down = 0, wilson = 0 }
+    local cur = StorefrontRatings.liveRatings[key] or { up = cur_rating.up, down = cur_rating.down, wilson = 0 }
     local up = tonumber(cur.up) or 0
     local down = tonumber(cur.down) or 0
 
@@ -278,7 +456,6 @@ function StorefrontRatings.submitVote(repo_id, direction, item_kind, callback)
         down = down,
         wilson = StorefrontRatings.computeWilsonScore(up, down),
     }
-    saveLocalRatingsFile(StorefrontRatings.liveRatings)
 
     local UIManager = require("ui/uimanager")
 
@@ -327,12 +504,16 @@ function StorefrontRatings.submitVote(repo_id, direction, item_kind, callback)
             local ok_json, parsed = pcall(json.decode, body_str)
             if ok_json and parsed and parsed.success then
                 -- Confirm with exact database values from Cloudflare
-                StorefrontRatings.liveRatings[key] = {
-                    up = tonumber(parsed.up) or 0,
-                    down = tonumber(parsed.down) or 0,
-                    wilson = tonumber(parsed.wilson) or 0,
-                }
-                saveLocalRatingsFile(StorefrontRatings.liveRatings)
+                for _, k in ipairs(candidate_keys) do
+                    StorefrontRatings.liveRatings[k] = {
+                        up = tonumber(parsed.up) or 0,
+                        down = tonumber(parsed.down) or 0,
+                        wilson = tonumber(parsed.wilson) or 0,
+                    }
+                end
+                UIManager:scheduleIn(1, function()
+                    saveLocalRatingsFile(StorefrontRatings.liveRatings)
+                end)
             end
             logger.info("StorefrontRatings: vote submitted successfully", repo_id)
             if callback then UIManager:scheduleIn(0, function() callback(true, nil) end) end

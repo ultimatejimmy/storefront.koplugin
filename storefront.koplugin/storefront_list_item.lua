@@ -405,18 +405,13 @@ function StorefrontListItem:init()
             end
 
             local ok_ratings, StorefrontRatings = pcall(require, "storefront_ratings")
-            local repo_id = entry.id or entry.repo_id
-                or (entry.repo and (entry.repo.id or entry.repo.repo_id or (entry.repo.data and (entry.repo.data.id or entry.repo.data.repo_id))))
-                or (entry.record and (entry.record.id or entry.record.repo_id))
-                or (entry.plugin and (entry.plugin.id or entry.plugin.repo_id))
-                or (entry.patch and (entry.patch.id or entry.patch.repo_id))
-            local current_vote = (ok_ratings and StorefrontRatings and repo_id) and StorefrontRatings.getUserVote(repo_id) or nil
+            local current_vote = (ok_ratings and StorefrontRatings) and StorefrontRatings.getUserVote(entry) or nil
             local is_up_active = (current_vote == "up")
             local is_down_active = (current_vote == "down")
 
-            local live_r = (ok_ratings and StorefrontRatings and repo_id) and StorefrontRatings.getRating(repo_id) or nil
-            local user_up = (live_r and (live_r.up > 0 or live_r.down > 0)) and live_r.up or (tonumber(entry.user_thumbs_up) or 0)
-            local user_down = (live_r and (live_r.up > 0 or live_r.down > 0)) and live_r.down or (tonumber(entry.user_thumbs_down) or 0)
+            local live_r = (ok_ratings and StorefrontRatings) and StorefrontRatings.getRating(entry, entry) or { up = tonumber(entry.user_thumbs_up) or 0, down = tonumber(entry.user_thumbs_down) or 0 }
+            local user_up = live_r.up
+            local user_down = live_r.down
             local net_score = user_up - user_down
             if net_score ~= 0 or user_up > 0 or user_down > 0 then
                 add_sep()

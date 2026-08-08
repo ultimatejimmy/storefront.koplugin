@@ -2,8 +2,8 @@
 """
 tools/ratings_tally.py
 
-Fetches user ratings from GitHub Discussions (Ratings category) via GraphQL API
-and returns a dict mapping repo_id -> {"up": int, "down": int, "url": str}.
+Fetches user ratings from Cloudflare D1 Backend Worker, with fallback to GitHub Discussions API.
+Returns a dict mapping repo_id -> {"up": int, "down": int, "wilson": float}.
 """
 
 import os
@@ -12,11 +12,38 @@ import json
 import re
 import urllib.request
 
+WORKER_RATINGS_URL = "https://storefront-vote.ultimatejimmy.workers.dev/ratings"
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
 GITHUB_REPOSITORY = os.environ.get("GITHUB_REPOSITORY", "ultimatejimmy/storefront.koplugin")
 GRAPHQL_URL = "https://api.github.com/graphql"
 
-def fetch_all_ratings():
+def fetch_ratings_from_worker():
+    try:
+        req = urllib.request.Request(WORKER_RATINGS_URL)
+        req.add_header("User-Agent", "KOReader-Storefront-CatalogBuilder/1.0")
+        req.add_header("Accept", "application/json")
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            if resp.status == 200:
+                data = json.loads(resp.read().decode("utf-8"))
+                ratings_data = {}
+                for k, v in data.items():
+                    try:
+                        key = int(k)
+                    except ValueError:
+                        key = k
+                    if isinstance(v, dict):
+                        ratings_data[key] = {
+                            "up": int(v.get("up", 0)),
+                            "down": int(v.get("down", 0)),
+                            "wilson": float(v.get("wilson", 0.0))
+                        }
+                print(f"Fetched live ratings for {len(ratings_data)} items from D1 Worker.", file=sys.stderr)
+                return ratings_data
+    except Exception as e:
+        print(f"Warning: Could not fetch ratings from D1 worker: {e}", file=sys.stderr)
+    return None
+
+def fetch_ratings_from_github():
     if not GITHUB_TOKEN:
         print("Warning: GITHUB_TOKEN not set for ratings tally, returning empty ratings.", file=sys.stderr)
         return {}
@@ -76,6 +103,7 @@ def fetch_all_ratings():
                     body = disc.get("body", "")
                     disc_url = disc.get("url", "")
                     
+                    # Extract repo_id from comment tag <!-- storefront:repo_id=12345 -->
                     m = re.search(r"<!--\s*storefront:repo_id=(\d+)\s*-->", body)
                     if not m:
                         continue
@@ -110,7 +138,17 @@ def fetch_all_ratings():
                 has_next = page_info.get("hasNextPage", False)
                 after_cursor = page_info.get("endCursor")
         except Exception as e:
-            print(f"Error fetching ratings tally: {e}", file=sys.stderr)
+            print(f"Error fetching ratings tally from GitHub: {e}", file=sys.stderr)
             break
             
     return ratings_data
+
+def fetch_all_ratings():
+    worker_data = fetch_ratings_from_worker()
+    if worker_data is not None:
+        return worker_data
+    return fetch_ratings_from_github()
+
+if __name__ == "__main__":
+    r = fetch_all_ratings()
+    print(json.dumps(r, indent=2))

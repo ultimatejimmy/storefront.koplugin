@@ -261,6 +261,21 @@ def main():
     plugins = process_repos(PLUGIN_QUERIES, is_patch=False)
     patches = process_repos(PATCH_QUERIES, is_patch=True)
     
+    # Fetch live ratings and bake into catalog items
+    try:
+        from ratings_tally import fetch_all_ratings
+        ratings_data = fetch_all_ratings() or {}
+    except Exception as e:
+        print(f"Warning: could not import/fetch ratings_tally: {e}", file=sys.stderr)
+        ratings_data = {}
+
+    for item in plugins + patches:
+        r_id = item.get("id") or item.get("repo_id")
+        r_info = ratings_data.get(r_id) or (isinstance(r_id, str) and r_id.isdigit() and ratings_data.get(int(r_id))) or {}
+        item["user_thumbs_up"] = int(r_info.get("up", 0))
+        item["user_thumbs_down"] = int(r_info.get("down", 0))
+        item["wilson_score"] = float(r_info.get("wilson", 0.0))
+
     now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     script_dir = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() else os.getcwd()
     output_path = os.path.abspath(os.path.join(script_dir, "..", "catalog.json"))
@@ -275,6 +290,13 @@ def main():
                     existing_fonts = old_catalog["fonts"]
         except Exception as e:
             print(f"Warning: could not read existing catalog to preserve fonts: {e}")
+
+    for font_item in existing_fonts:
+        f_id = font_item.get("id") or font_item.get("repo_id")
+        r_info = ratings_data.get(f_id) or (isinstance(f_id, str) and f_id.isdigit() and ratings_data.get(int(f_id))) or {}
+        font_item["user_thumbs_up"] = int(r_info.get("up", 0))
+        font_item["user_thumbs_down"] = int(r_info.get("down", 0))
+        font_item["wilson_score"] = float(r_info.get("wilson", 0.0))
             
     catalog = {
         "version": 1,
