@@ -1519,7 +1519,7 @@ h1, h2, h3, h4, h5, h6 { font-family: %s !important; margin-top: 0.8em !importan
 a { color: #000000 !important; text-decoration: underline; }
 a.plain-link { color: #000000 !important; text-decoration: none !important; }
 a.btn-primary { display: block !important; width: 100%% !important; background-color: #000000 !important; color: #ffffff !important; padding: 14px 0 !important; text-decoration: none !important; font-weight: bold !important; border-radius: 8px !important; text-align: center !important; font-size: 18px !important; box-sizing: border-box !important; }
-img { display: block !important; max-width: 100%% !important; width: 100%% !important; height: auto !important; margin-left: auto !important; margin-right: auto !important; }
+img { display: block !important; max-width: 100%% !important; height: auto !important; margin-left: auto !important; margin-right: auto !important; }
 table { width: 100%% !important; min-width: 100%% !important; border-collapse: collapse !important; margin: 0.6em 0 !important; border: 1px solid #666666 !important; }
 th { background-color: #e0e0e0 !important; font-weight: bold !important; border: 1px solid #888888 !important; padding: 5px 8px !important; text-align: left !important; }
 td { vertical-align: top !important; border: 1px solid #cccccc !important; padding: 5px 8px !important; }
@@ -2232,19 +2232,9 @@ tr:nth-child(even) td { background-color: #f5f5f5 !important; }
                 expected_path = string.format("%s/%s_%s_README.html", cache_dir, safe_owner, safe_repo)
             end
 
-            -- Render cached content immediately or convert catalog pre-built readme (<1ms)
+            -- Render cached content immediately if available
             html_box.page_number = 1
             local cached_html = (not force_refresh and lfs.attributes(expected_path, "mode") == "file") and util.readFromFile(expected_path) or nil
-            if not cached_html and tab_name == "readme" then
-                local catalog_md = (self.repo and self.repo.readme) or (self.update_item and self.update_item.record and self.update_item.record.readme)
-                if catalog_md and type(catalog_md) == "string" and catalog_md ~= "" then
-                    local converted_html = (GitHubClient and type(GitHubClient.markdownToHtml) == "function") and GitHubClient.markdownToHtml(catalog_md, owner, repo_name) or nil
-                    if converted_html and converted_html ~= "" then
-                        cached_html = converted_html
-                        util.writeToFile(converted_html, expected_path)
-                    end
-                end
-            end
 
             if cached_html and cached_html ~= "" then
                 pcall(function()

@@ -125,69 +125,78 @@ function RepoContent.processPendingImages(on_update_cb)
     end
 
     if RepoContent.cumulative_page_bytes >= MAX_PAGE_PAYLOAD_BYTES then
-        logger.info("Storefront: 12MB cumulative image payload threshold reached for page.")
+        logger.info("Storefront: 12MB cumulative image payload threshold reached.")
         RepoContent.pending_images = {}
         return
     end
 
+    -- Strategy: download ALL pending images one-per-tick first, then rebuild the HTML
+    -- ONCE with real img tags at the end. This avoids MuPDF squishing images:
+    -- when a tiny placeholder gets swapped for a large image after layout is already
+    -- fixed, MuPDF scales the image down to fit the remaining space on that page.
+    -- By rebuilding only after all downloads are done, MuPDF gets a single fresh
+    -- layout pass with real image dimensions and can flow them correctly across pages.
+
     local task = table.remove(RepoContent.pending_images, 1)
-    local downloaded_new = false
 
     if task and task.url and task.dest then
         if lfs.attributes(task.dest, "mode") ~= "file" and type(downloadImage) == "function" then
             local pcall_ok, dl_ok, final_dest = pcall(downloadImage, task.url, task.dest)
             local actual_dest = (dl_ok and type(final_dest) == "string") and final_dest or task.dest
             local sz = lfs.attributes(actual_dest, "size") or 0
-            
-            local html_content = util.readFromFile(task.html_path)
-            if html_content then
-                local safe_dest = task.dest:gsub("([^%w])", "%%%1")
-                local pattern = '(<a href="storefront%-img:' .. safe_dest .. '">)(.-)(</a>)'
-                
-                if pcall_ok and dl_ok and sz > 0 then
-                    RepoContent.cumulative_page_bytes = RepoContent.cumulative_page_bytes + sz
-                    downloaded_new = true
-                    
-                    local is_safe, uncompressed = isImageSafeForMemory(actual_dest, sz)
-                    if uncompressed then
-                        RepoContent.cumulative_uncompressed_bytes = RepoContent.cumulative_uncompressed_bytes + uncompressed
-                    end
-                    
-                    local is_gif = actual_dest:lower():match("%.gif$") ~= nil
-                    if is_gif then
-                        -- Animated GIFs are rendered as clickable links with a custom placeholder
-                        html_content = html_content:gsub(pattern, '%1<span style="color: blue; text-decoration: underline;">[ View Animated GIF ]</span>%3')
-                    elseif sz > 3145728 or not is_safe or RepoContent.cumulative_uncompressed_bytes > MAX_UNCOMPRESSED_PAYLOAD then
-                        -- File is too large for RAM (or total page RAM exceeded), turn it into a clickable link
-                        html_content = html_content:gsub(pattern, '%1<span style="color: blue; text-decoration: underline;">[ View Large Image ]</span>%3')
-                    else
-                        -- File is safe, upgrade the placeholder to a real image tag
-                        local actual_filename = actual_dest:match("([^/]+)$") or task.filename or task.dest
-                        -- Use explicit width=100% so MuPDF stretches the image to full container width
-                        local real_img_tag = string.format('<img src="%s" width="100%%" style="display:block;" />', actual_filename)
-                        html_content = html_content:gsub(pattern, '%1' .. real_img_tag:gsub("%%", "%%%%") .. '%3')
-                    end
-                else
-                    -- Download failed
-                    html_content = html_content:gsub(pattern, '%1<span style="color: red; font-style: italic;">[ Image Failed ]</span>%3')
+            if pcall_ok and dl_ok and sz > 0 then
+                RepoContent.cumulative_page_bytes = RepoContent.cumulative_page_bytes + sz
+                local is_safe, uncompressed = isImageSafeForMemory(actual_dest, sz)
+                if uncompressed then
+                    RepoContent.cumulative_uncompressed_bytes = RepoContent.cumulative_uncompressed_bytes + uncompressed
                 end
-                util.writeToFile(html_content, task.html_path)
             end
         end
     end
 
+    -- More images to download? Schedule next tick.
     if RepoContent.pending_images and #RepoContent.pending_images > 0 and RepoContent.cumulative_page_bytes < MAX_PAGE_PAYLOAD_BYTES then
         local UIManager = require("ui/uimanager")
         UIManager:scheduleIn(0.4, function()
             RepoContent.processPendingImages(on_update_cb)
         end)
-    else
-        -- Batch completed or cap reached: trigger viewer update ONCE
-        if on_update_cb and task then
-            pcall(on_update_cb, task.html_path)
+        return
+    end
+
+    -- All downloads done. Rebuild the HTML once with real img tags.
+    local html_path = task and task.html_path
+    if not html_path then return end
+
+    local html_content = util.readFromFile(html_path)
+    if not html_content then return end
+
+    html_content = html_content:gsub('(<span[^>]*id="imgbox%-[^"]+"[^>]*>)(.-)(</span>)', function(span_tag, inner, closetag)
+        local img_path = span_tag:match('id="imgbox%-([^"]+)"')
+        if not img_path then return span_tag .. inner .. closetag end
+        
+        local sz = lfs.attributes(img_path, "size") or 0
+        if sz == 0 then
+            return '<span style="display: block; text-align: center; margin: 0.6em auto; color: red; font-style: italic;">[ Image Failed ]</span>'
         end
+        local is_gif = img_path:lower():match("%.gif$") ~= nil
+        if is_gif then
+            return string.format('<a href="storefront-img:%s" style="display: block; text-align: center; margin: 0.6em auto; color: blue; text-decoration: underline;">[ View Animated GIF ]</a>', img_path)
+        end
+        local is_safe, uncompressed = isImageSafeForMemory(img_path, sz)
+        if not is_safe or (uncompressed and (RepoContent.cumulative_uncompressed_bytes + uncompressed) > MAX_UNCOMPRESSED_PAYLOAD) then
+            return string.format('<a href="storefront-img:%s" style="display: block; text-align: center; margin: 0.6em auto; color: blue; text-decoration: underline;">[ View Large Image ]</a>', img_path)
+        end
+        local filename = img_path:match("([^/]+)$") or ""
+        return string.format('<br/><a href="storefront-img:%s" style="display: block; text-align: center; margin: 1.5em auto;"><img src="%s" style="max-width: 100%%; height: auto; display: block; margin: 0 auto;" /></a>', img_path, filename)
+    end)
+
+    util.writeToFile(html_content, html_path)
+
+    if on_update_cb then
+        pcall(on_update_cb, html_path)
     end
 end
+
 
 local function getCacheDir()
     local dir = DataStorage:getDataDir() .. "/cache/Storefront/readme"
@@ -341,17 +350,6 @@ downloadImage = function(url, dest, max_redirects)
                             logger.warn("Storefront: downloaded file is not a valid image format:", current_url)
                             os.remove(dest)
                         else
-                            local mapped_ext = CONTENT_TYPE_EXT[content_type:match("^[^;%s]+") or ""]
-                            if mapped_ext then
-                                local current_ext = dest:match("%.([%w]+)$")
-                                if current_ext and current_ext:lower() ~= mapped_ext then
-                                    local new_dest = dest:gsub("%.[%w]+$", "." .. mapped_ext)
-                                    os.remove(new_dest)
-                                    if os.rename(dest, new_dest) then
-                                        return true, new_dest:gsub("\\", "/")
-                                    end
-                                end
-                            end
                             return true, dest:gsub("\\", "/")
                         end
                     end
@@ -499,8 +497,8 @@ function RepoContent.fetchReadmeHtml(owner, repo, force_refresh)
                     cached_content = cached_content:gsub('(<img[^>]+src=["\'])([^"\']+)(["\'][^>]*>)', function(prefix, filename, suffix)
                         local full_img_path = dir .. "/" .. filename
                         if lfs.attributes(full_img_path, "mode") == "file" then
-                            local img_tag = string.format('<img src="%s" width="100%%" style="display:block;" />', filename)
-                            return string.format('<a href="storefront-img:%s">%s</a>', full_img_path, img_tag)
+                            local img_tag = string.format('<img src="%s" style="display:block; margin: 0 auto;" />', filename)
+                            return string.format('<div style="page-break-before: always; text-align:center;"><a href="storefront-img:%s">%s</a></div>', full_img_path, img_tag)
                         end
                         return stripImgDimensions(prefix) .. filename .. stripImgDimensions(suffix)
                     end)
@@ -532,14 +530,26 @@ function RepoContent.fetchReadmeHtml(owner, repo, force_refresh)
     -- Strip explicit width and height attributes so images expand to full width
     body = stripImgDimensions(body)
 
+    -- Strip flexbox container styles because MuPDF doesn't support them and they
+    -- cause the engine to squish contents (like images) to microscopic sizes to avoid page breaks.
+    body = body:gsub('(<div[^>]+style=["\'][^"\']*display:%s*flex[^"\']*["\'][^>]*>)', function(match)
+        -- Just remove the style attribute entirely from flex containers
+        return match:gsub('%s*style=["\'][^"\']*["\']', '')
+    end)
+
     -- Download inline images locally for MuPDF HTML viewer widget
+    local valid_img_count = 0
     body = body:gsub('(<img[^>]+src=["\'])([^"\']+)(["\'][^>]*>)', function(prefix, raw_url, suffix)
         prefix = stripImgDimensions(prefix)
         suffix = stripImgDimensions(suffix)
         local url = raw_url:gsub("&amp;", "&")
-        if url:lower():match("%.svg") ~= nil then
+        
+        -- Filter out badges, shields, and SVG icons early before counting
+        local lower_url = url:lower()
+        if lower_url:find("%.svg") or lower_url:find("shields%.io") or lower_url:find("badge") or lower_url:find("liberapay") or lower_url:find("github%-actions") or lower_url:find("travis%-ci") or lower_url:find("codecov") then
             return ""
         end
+
         url = resolveImageUrl(url, owner, repo)
 
         local clean_url = url:gsub("[^%w]", "_")
@@ -550,10 +560,23 @@ function RepoContent.fetchReadmeHtml(owner, repo, force_refresh)
         ext = ext:lower()
         if ext == "svg" then return "" end
 
+        valid_img_count = valid_img_count + 1
+
         local img_filename = string.format("%s_%s_img_%s.%s", safe_owner, safe_repo, clean_url, ext)
         local img_dest = dir .. "/" .. img_filename
 
         local cached_sz = lfs.attributes(img_dest, "size") or 0
+
+        -- Synchronously fetch up to the first 4 valid content images at initial README load time
+        if cached_sz == 0 and valid_img_count <= 4 and RepoContent.cumulative_page_bytes < MAX_PAGE_PAYLOAD_BYTES then
+            if type(downloadImage) == "function" then
+                local pcall_ok, dl_ok, final_dest = pcall(downloadImage, url, img_dest)
+                if pcall_ok and dl_ok then
+                    cached_sz = lfs.attributes(img_dest, "size") or 0
+                end
+            end
+        end
+
         if cached_sz > 0 then
             local w_check, h_check = getImageDimensions(img_dest)
             if not w_check or not h_check or w_check == 0 or h_check == 0 then
@@ -574,12 +597,9 @@ function RepoContent.fetchReadmeHtml(owner, repo, force_refresh)
             local is_gif = img_dest:lower():match("%.gif$") ~= nil
             if is_gif or not is_safe or RepoContent.cumulative_uncompressed_bytes > MAX_UNCOMPRESSED_PAYLOAD then
                 local placeholder_text = is_gif and "[ View Animated GIF ]" or "[ View Large Image ]"
-                local placeholder = string.format('<span style="color: blue; text-decoration: underline;">%s</span>', placeholder_text)
-                return string.format('<a href="storefront-img:%s">%s</a>', img_dest, placeholder)
+                return string.format('<a href="storefront-img:%s" style="display: block; text-align: center; margin: 0.6em auto; color: blue; text-decoration: underline;">%s</a>', img_dest, placeholder_text)
             else
-                -- Use explicit width=100% so MuPDF stretches the image to fill the container
-                local img_tag = string.format('<img src="%s" width="100%%" style="display:block;" />', img_filename)
-                return string.format('<a href="storefront-img:%s">%s</a>', img_dest, img_tag)
+                return string.format('<br/><a href="storefront-img:%s" style="display: block; text-align: center; margin: 1.5em auto;"><img src="%s" style="max-width: 100%%; height: auto; display: block; margin: 0 auto;" /></a>', img_dest, img_filename)
             end
         end
 
@@ -589,9 +609,7 @@ function RepoContent.fetchReadmeHtml(owner, repo, force_refresh)
         end
         
         -- Default to a text placeholder so MuPDF doesn't OOM on missing/partial image files
-        local safe_dest = img_dest:gsub("([^%w])", "%%%1")
-        local placeholder = string.format('<span id="placeholder-%s" style="color: gray; font-style: italic;">[ Loading Image... ]</span>', safe_dest)
-        return string.format('<a href="storefront-img:%s">%s</a>', img_dest, placeholder)
+        return string.format('<span id="imgbox-%s" style="display: block; text-align: center; margin: 0.6em auto; color: gray; font-style: italic;">[ Loading Image... ]</span>', img_dest)
     end)
 
     local ok, write_err = util.writeToFile(body, path)
