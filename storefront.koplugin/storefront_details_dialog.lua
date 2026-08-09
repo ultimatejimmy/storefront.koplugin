@@ -1519,7 +1519,7 @@ h1, h2, h3, h4, h5, h6 { font-family: %s !important; margin-top: 0.8em !importan
 a { color: #000000 !important; text-decoration: underline; }
 a.plain-link { color: #000000 !important; text-decoration: none !important; }
 a.btn-primary { display: block !important; width: 100%% !important; background-color: #000000 !important; color: #ffffff !important; padding: 14px 0 !important; text-decoration: none !important; font-weight: bold !important; border-radius: 8px !important; text-align: center !important; font-size: 18px !important; box-sizing: border-box !important; }
-img { max-width: 100%%; height: auto; margin-left: auto; margin-right: auto; }
+img { display: block !important; max-width: 100%% !important; width: 100%% !important; height: auto !important; margin-left: auto !important; margin-right: auto !important; }
 table { width: 100%% !important; min-width: 100%% !important; border-collapse: collapse !important; margin: 0.6em 0 !important; border: 1px solid #666666 !important; }
 th { background-color: #e0e0e0 !important; font-weight: bold !important; border: 1px solid #888888 !important; padding: 5px 8px !important; text-align: left !important; }
 td { vertical-align: top !important; border: 1px solid #cccccc !important; padding: 5px 8px !important; }

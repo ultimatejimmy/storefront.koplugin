@@ -25,8 +25,8 @@ end
 local RepoContent = {}
 RepoContent.pending_images = {}
 RepoContent.cumulative_uncompressed_bytes = 0
-local MAX_PAGE_PAYLOAD_BYTES = 6291456 -- 6 MB cumulative limit per page
-local MAX_UNCOMPRESSED_PAYLOAD = 33554432 -- 32 MB max uncompressed RAM
+local MAX_PAGE_PAYLOAD_BYTES = 12582912 -- 12 MB cumulative limit per page
+local MAX_UNCOMPRESSED_PAYLOAD = 50331648 -- 48 MB max uncompressed RAM
 
 local function countCJKCharacters(text)
     if not text or type(text) ~= "string" then return 0 end
@@ -35,6 +35,19 @@ local function countCJKCharacters(text)
         count = count + 1
     end
     return count
+end
+
+local function stripImgDimensions(str)
+    if not str or type(str) ~= "string" then return str end
+    str = str:gsub("%s+width=[\"'][^\"']*[\"']", "")
+    str = str:gsub("%s+width=%d+%%?", "")
+    str = str:gsub("%s+height=[\"'][^\"']*[\"']", "")
+    str = str:gsub("%s+height=%d+%%?", "")
+    str = str:gsub("(style=[\"'][^\"']*)width:%s*[^;\"]+;?", "%1")
+    str = str:gsub("(style=[\"'][^\"']*)height:%s*[^;\"]+;?", "%1")
+    str = str:gsub("(style=[\"'][^\"']*)max%-width:%s*[^;\"]+;?", "%1")
+    str = str:gsub("(style=[\"'][^\"']*)max%-height:%s*[^;\"]+;?", "%1")
+    return str
 end
 
 local function getImageDimensions(path)
@@ -90,12 +103,12 @@ end
 local function isImageSafeForMemory(path, size_bytes)
     local w, h = getImageDimensions(path)
     if w and h then
-        -- Max 12MB uncompressed RAM per image (~1800x2200px screenshot)
+        -- Max 24MB uncompressed RAM per image
         local uncompressed = w * h * 4
-        return (uncompressed <= 12000000), uncompressed
+        return (uncompressed <= 24000000), uncompressed
     end
     local uncompressed_guess = size_bytes * 4
-    return (size_bytes <= 1048576), uncompressed_guess -- Fallback guess (1 MB)
+    return (size_bytes <= 3145728), uncompressed_guess -- Fallback guess (3 MB)
 end
 
 local downloadImage
@@ -112,7 +125,7 @@ function RepoContent.processPendingImages(on_update_cb)
     end
 
     if RepoContent.cumulative_page_bytes >= MAX_PAGE_PAYLOAD_BYTES then
-        logger.info("Storefront: 6MB cumulative image payload threshold reached for page.")
+        logger.info("Storefront: 12MB cumulative image payload threshold reached for page.")
         RepoContent.pending_images = {}
         return
     end
@@ -140,13 +153,18 @@ function RepoContent.processPendingImages(on_update_cb)
                         RepoContent.cumulative_uncompressed_bytes = RepoContent.cumulative_uncompressed_bytes + uncompressed
                     end
                     
-                    if sz > 1048576 or not is_safe or RepoContent.cumulative_uncompressed_bytes > MAX_UNCOMPRESSED_PAYLOAD then
+                    local is_gif = actual_dest:lower():match("%.gif$") ~= nil
+                    if is_gif then
+                        -- Animated GIFs are rendered as clickable links with a custom placeholder
+                        html_content = html_content:gsub(pattern, '%1<span style="color: blue; text-decoration: underline;">[ View Animated GIF ]</span>%3')
+                    elseif sz > 3145728 or not is_safe or RepoContent.cumulative_uncompressed_bytes > MAX_UNCOMPRESSED_PAYLOAD then
                         -- File is too large for RAM (or total page RAM exceeded), turn it into a clickable link
                         html_content = html_content:gsub(pattern, '%1<span style="color: blue; text-decoration: underline;">[ View Large Image ]</span>%3')
                     else
                         -- File is safe, upgrade the placeholder to a real image tag
                         local actual_filename = actual_dest:match("([^/]+)$") or task.filename or task.dest
-                        local real_img_tag = (task.prefix or "<img src=\"") .. actual_filename .. (task.suffix or "\"/>")
+                        -- Use explicit width=100% so MuPDF stretches the image to full container width
+                        local real_img_tag = string.format('<img src="%s" width="100%%" style="display:block;" />', actual_filename)
                         html_content = html_content:gsub(pattern, '%1' .. real_img_tag:gsub("%%", "%%%%") .. '%3')
                     end
                 else
@@ -241,29 +259,29 @@ downloadImage = function(url, dest, max_redirects)
         return false
     end
 
-    local urls_to_try = { url }
+    local urls_to_try = {}
     local w_owner, w_repo, w_path = url:match("^https?://raw%.githubusercontent%.com/wiki/([^/]+)/([^/]+)/(.+)$")
     if not w_owner then w_owner, w_repo, w_path = url:match("^https?://github%.com/([^/]+)/([^/]+)/wiki/(.+)$") end
 
     if w_owner and w_repo and w_path then
+        table.insert(urls_to_try, string.format("https://raw.githubusercontent.com/wiki/%s/%s/%s", w_owner, w_repo, w_path))
         table.insert(urls_to_try, string.format("https://raw.githubusercontent.com/%s/%s/master/%s", w_owner, w_repo, w_path))
         table.insert(urls_to_try, string.format("https://raw.githubusercontent.com/%s/%s/main/%s", w_owner, w_repo, w_path))
-        table.insert(urls_to_try, string.format("https://raw.githubusercontent.com/wiki/%s/%s/%s", w_owner, w_repo, w_path))
-        table.insert(urls_to_try, string.format("https://github.com/%s/%s/wiki/%s", w_owner, w_repo, w_path))
         table.insert(urls_to_try, string.format("https://github.com/%s/%s/raw/master/%s", w_owner, w_repo, w_path))
         table.insert(urls_to_try, string.format("https://github.com/%s/%s/raw/main/%s", w_owner, w_repo, w_path))
+        table.insert(urls_to_try, string.format("https://github.com/%s/%s/wiki/%s", w_owner, w_repo, w_path))
     else
         local r_owner, r_repo, r_branch, r_path = url:match("^https?://raw%.githubusercontent%.com/([^/]+)/([^/]+)/([^/]+)/(.+)$")
         if not r_owner then r_owner, r_repo, r_branch, r_path = url:match("^https?://github%.com/([^/]+)/([^/]+)/raw/([^/]+)/(.+)$") end
         if not r_owner then r_owner, r_repo, r_branch, r_path = url:match("^https?://github%.com/([^/]+)/([^/]+)/blob/([^/]+)/(.+)$") end
 
         if r_owner and r_repo and r_branch and r_path then
+            table.insert(urls_to_try, string.format("https://raw.githubusercontent.com/%s/%s/%s/%s", r_owner, r_repo, r_branch, r_path))
             table.insert(urls_to_try, string.format("https://raw.githubusercontent.com/%s/%s/master/%s", r_owner, r_repo, r_path))
             table.insert(urls_to_try, string.format("https://raw.githubusercontent.com/%s/%s/main/%s", r_owner, r_repo, r_path))
-            table.insert(urls_to_try, string.format("https://raw.githubusercontent.com/wiki/%s/%s/%s", r_owner, r_repo, r_path))
-            table.insert(urls_to_try, string.format("https://github.com/%s/%s/wiki/%s", r_owner, r_repo, r_path))
         end
     end
+    table.insert(urls_to_try, url)
 
     for _, current_url in ipairs(urls_to_try) do
         local f, err = io.open(dest, "wb")
@@ -274,7 +292,7 @@ downloadImage = function(url, dest, max_redirects)
             local file_sink = function(chunk, err_sink)
                 if chunk then
                     downloaded_size = downloaded_size + #chunk
-                    if downloaded_size > 1572864 or (os.time() - start_time) > 8 then
+                    if downloaded_size > 4718592 or (os.time() - start_time) > 12 then
                         return nil, "abort"
                     end
                     local ok, w_err = f:write(chunk)
@@ -310,28 +328,34 @@ downloadImage = function(url, dest, max_redirects)
 
             if code == 200 then
                 local sz = lfs.attributes(dest, "size") or 0
-                if sz > 1258291 then
-                    logger.warn("Storefront: image exceeds 1.2MB safety cap, removing to protect device memory:", current_url, sz)
+                if sz > 4194304 then
+                    logger.warn("Storefront: image exceeds 4MB safety cap, removing to protect device memory:", current_url, sz)
                     os.remove(dest)
-                    return false
-                end
-                local content_type = (headers and (headers["content-type"] or headers["Content-Type"]) or ""):lower()
-                if content_type:find("svg", 1, true) then
-                    os.remove(dest)
-                    return false
-                end
-                local mapped_ext = CONTENT_TYPE_EXT[content_type:match("^[^;%s]+") or ""]
-                if mapped_ext then
-                    local current_ext = dest:match("%.([%w]+)$")
-                    if current_ext and current_ext:lower() ~= mapped_ext then
-                        local new_dest = dest:gsub("%.[%w]+$", "." .. mapped_ext)
-                        os.remove(new_dest)
-                        if os.rename(dest, new_dest) then
-                            return true, new_dest:gsub("\\", "/")
+                else
+                    local content_type = (headers and (headers["content-type"] or headers["Content-Type"]) or ""):lower()
+                    if content_type:find("svg", 1, true) or content_type:find("html", 1, true) or content_type:find("text", 1, true) or content_type:find("json", 1, true) then
+                        os.remove(dest)
+                    else
+                        local w_check, h_check = getImageDimensions(dest)
+                        if not w_check or not h_check or w_check == 0 or h_check == 0 then
+                            logger.warn("Storefront: downloaded file is not a valid image format:", current_url)
+                            os.remove(dest)
+                        else
+                            local mapped_ext = CONTENT_TYPE_EXT[content_type:match("^[^;%s]+") or ""]
+                            if mapped_ext then
+                                local current_ext = dest:match("%.([%w]+)$")
+                                if current_ext and current_ext:lower() ~= mapped_ext then
+                                    local new_dest = dest:gsub("%.[%w]+$", "." .. mapped_ext)
+                                    os.remove(new_dest)
+                                    if os.rename(dest, new_dest) then
+                                        return true, new_dest:gsub("\\", "/")
+                                    end
+                                end
+                            end
+                            return true, dest:gsub("\\", "/")
                         end
                     end
                 end
-                return true, dest:gsub("\\", "/")
             else
                 local location = headers and (headers["location"] or headers["Location"])
                 os.remove(dest)
@@ -470,14 +494,15 @@ function RepoContent.fetchReadmeHtml(owner, repo, force_refresh)
         local cached_content = util.readFromFile(path)
         if cached_content and cached_content ~= "" then
             if cached_content:find("<img") then
-                cached_content = cached_content:gsub("(<img[^>]+style=[\"'][^\"']*[%s\"';])width:%s*[^;\"]+;?", "%1")
+                cached_content = stripImgDimensions(cached_content)
                 if not cached_content:find("storefront%-img:") then
                     cached_content = cached_content:gsub('(<img[^>]+src=["\'])([^"\']+)(["\'][^>]*>)', function(prefix, filename, suffix)
                         local full_img_path = dir .. "/" .. filename
                         if lfs.attributes(full_img_path, "mode") == "file" then
-                            return string.format('<a href="storefront-img:%s">%s%s%s</a>', full_img_path, prefix, filename, suffix)
+                            local img_tag = string.format('<img src="%s" width="100%%" style="display:block;" />', filename)
+                            return string.format('<a href="storefront-img:%s">%s</a>', full_img_path, img_tag)
                         end
-                        return prefix .. filename .. suffix
+                        return stripImgDimensions(prefix) .. filename .. stripImgDimensions(suffix)
                     end)
                 end
                 util.writeToFile(cached_content, path)
@@ -505,12 +530,12 @@ function RepoContent.fetchReadmeHtml(owner, repo, force_refresh)
     end
     
     -- Strip explicit width and height attributes so images expand to full width
-    body = body:gsub("(<img[^>]+)%s+width=[\"'][^\"']*[\"']", "%1")
-    body = body:gsub("(<img[^>]+)%s+height=[\"'][^\"']*[\"']", "%1")
-    body = body:gsub("(<img[^>]+style=[\"'][^\"']*[%s\"';])width:%s*[^;\"]+;?", "%1")
+    body = stripImgDimensions(body)
 
     -- Download inline images locally for MuPDF HTML viewer widget
     body = body:gsub('(<img[^>]+src=["\'])([^"\']+)(["\'][^>]*>)', function(prefix, raw_url, suffix)
+        prefix = stripImgDimensions(prefix)
+        suffix = stripImgDimensions(suffix)
         local url = raw_url:gsub("&amp;", "&")
         if url:lower():match("%.svg") ~= nil then
             return ""
@@ -530,6 +555,15 @@ function RepoContent.fetchReadmeHtml(owner, repo, force_refresh)
 
         local cached_sz = lfs.attributes(img_dest, "size") or 0
         if cached_sz > 0 then
+            local w_check, h_check = getImageDimensions(img_dest)
+            if not w_check or not h_check or w_check == 0 or h_check == 0 then
+                logger.info("Storefront: purging invalid non-image file from cache:", img_dest)
+                os.remove(img_dest)
+                cached_sz = 0
+            end
+        end
+
+        if cached_sz > 0 then
             RepoContent.cumulative_page_bytes = RepoContent.cumulative_page_bytes + cached_sz
             
             local is_safe, uncompressed = isImageSafeForMemory(img_dest, cached_sz)
@@ -537,12 +571,15 @@ function RepoContent.fetchReadmeHtml(owner, repo, force_refresh)
                 RepoContent.cumulative_uncompressed_bytes = RepoContent.cumulative_uncompressed_bytes + uncompressed
             end
             
-            if not is_safe or RepoContent.cumulative_uncompressed_bytes > MAX_UNCOMPRESSED_PAYLOAD then
-                local placeholder = '<span style="color: blue; text-decoration: underline;">[ View Large Image ]</span>'
+            local is_gif = img_dest:lower():match("%.gif$") ~= nil
+            if is_gif or not is_safe or RepoContent.cumulative_uncompressed_bytes > MAX_UNCOMPRESSED_PAYLOAD then
+                local placeholder_text = is_gif and "[ View Animated GIF ]" or "[ View Large Image ]"
+                local placeholder = string.format('<span style="color: blue; text-decoration: underline;">%s</span>', placeholder_text)
                 return string.format('<a href="storefront-img:%s">%s</a>', img_dest, placeholder)
             else
-                local img_html = prefix .. img_filename .. suffix
-                return string.format('<a href="storefront-img:%s">%s</a>', img_dest, img_html)
+                -- Use explicit width=100% so MuPDF stretches the image to fill the container
+                local img_tag = string.format('<img src="%s" width="100%%" style="display:block;" />', img_filename)
+                return string.format('<a href="storefront-img:%s">%s</a>', img_dest, img_tag)
             end
         end
 
