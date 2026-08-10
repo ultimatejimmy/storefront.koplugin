@@ -1119,8 +1119,9 @@ if ok_browser then
         MainStorefront:showRestartConfirmation("Test restart message")
 
         local restart_now_button
-        for _, button in ipairs(restart_buttons) do
-            if button.text == "Uruchom teraz" then
+        for i = #restart_buttons, 1, -1 do
+            local button = restart_buttons[i]
+            if button.text == "Uruchom teraz" and button.callback then
                 restart_now_button = button
                 break
             end

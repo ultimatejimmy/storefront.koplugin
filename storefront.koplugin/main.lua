@@ -220,14 +220,14 @@ local function getManagePageSize()
     return DEFAULT_MANAGE_PAGE_SIZE
 end
 
-local function showRestartConfirmation(message)
-    if _G.G_storefront_batch_updating then
+local function showRestartConfirmation(message, force)
+    if _G.G_storefront_batch_updating and not force then
         return
     end
 
     local storefront_theme = require("storefront_theme")
     local Device = require("device")
-    local Button = require("ui/widget/button")
+    local Button = package.loaded["ui/widget/button"] or require("ui/widget/button")
     local TextWidget = require("ui/widget/textwidget")
     local TextBoxWidget = require("ui/widget/textboxwidget")
     local Font = require("ui/font")
@@ -242,15 +242,17 @@ local function showRestartConfirmation(message)
     local LineWidget = require("ui/widget/linewidget")
     local Geom = require("ui/geometry")
     local UIManager = require("ui/uimanager")
-    local Localization = require("localization_storefront")
-    local _ = function(key, ...) return Localization:t(key, ...) end
+    local _ = function(key, ...)
+        local loc = package.loaded["localization_storefront"] or require("localization_storefront")
+        return loc:t(key, ...)
+    end
     local sc = function(val) return (Device and Device.screen and Device.screen.scaleBySize and Device.screen:scaleBySize(val)) or val end
 
     local sw = Device.screen:getWidth()
     local sh = Device.screen:getHeight()
     local card_padding = sc(12)
     local card_border = storefront_theme.border_window or sc(2)
-    local dialog_w = math.min(sw - sc(20), sc(360))
+    local dialog_w = math.min(sw - sc(20), sc(380))
     local inner_w = dialog_w - (card_padding * 2) - (card_border * 2)
 
     local ui_font_size  = storefront_theme.face_label_size or 18
@@ -271,15 +273,29 @@ local function showRestartConfirmation(message)
     local ok_text = _("Restart now")
     local btn_texts = { cancel_text, ok_text }
 
-    local btn_gap = sc(12)
-    local padding_per_btn = sc(20)
+    local btn_gap = sc(8)
+    local padding_per_btn = sc(12)
 
-    local function getTextWidth(text, face, sz)
-        sz = sz or 18
+    local function getTextWidth(text, sz)
+        sz = sz or 16
+        local face = Font:getFace("cfont", sz)
         if face and type(face.getLineWidth) == "function" then
-            local w = face:getLineWidth(text)
-            if type(w) == "number" and w > 0 then
+            local ok_lw, w = pcall(function() return face:getLineWidth(text) end)
+            if ok_lw and type(w) == "number" and w > 0 then
                 return w
+            end
+        end
+        local ok_tw, tw = pcall(function()
+            return TextWidget:new{
+                text = text or "",
+                face = face,
+                bold = true,
+            }
+        end)
+        if ok_tw and tw and type(tw.getSize) == "function" then
+            local ok_sz, sz_res = pcall(function() return tw:getSize() end)
+            if ok_sz and sz_res and type(sz_res.w) == "number" then
+                return sz_res.w
             end
         end
         local char_count = select(2, (text or ""):gsub("[%z\1-\127\194-\244][\128-\191]*", ""))
@@ -289,19 +305,18 @@ local function showRestartConfirmation(message)
 
     local function calcRestartBtnFontSize(texts, total_avail_width, gap, padding_per_item)
         local num = #texts
-        if num == 0 then return 18 end
+        if num == 0 then return 16 end
         local gaps_total = gap * math.max(0, num - 1)
-        for _, sz in ipairs({ 18, 17, 16, 15, 14, 13, 12 }) do
-            local face = Font:getFace("cfont", sz)
+        for _, sz in ipairs({ 16, 15, 14, 13, 12, 11, 10 }) do
             local total_w = gaps_total
             for _, text in ipairs(texts) do
-                total_w = total_w + getTextWidth(text, face, sz) + padding_per_item
+                total_w = total_w + getTextWidth(text, sz) + padding_per_item
             end
             if total_w <= total_avail_width then
                 return sz
             end
         end
-        return 12
+        return 10
     end
 
     local function calcProportionalWidths(button_texts, total_avail_width, gap, font_size, padding_per_item)
@@ -312,11 +327,10 @@ local function showRestartConfirmation(message)
         local usable_width = total_avail_width - gap * (num_btns - 1)
         local ideal_widths = {}
         local total_ideal = 0
-        local sz = font_size or 18
-        local face = Font:getFace("cfont", sz)
+        local sz = font_size or 16
 
         for i, text in ipairs(button_texts) do
-            local ideal = getTextWidth(text, face, sz) + padding_per_item
+            local ideal = getTextWidth(text, sz) + padding_per_item
             ideal_widths[i] = ideal
             total_ideal = total_ideal + ideal
         end
@@ -342,9 +356,11 @@ local function showRestartConfirmation(message)
     local cancel_btn = Button:new{
         text = cancel_text,
         text_font_size = btn_font_size,
+        text_font_bold = true,
         bordersize = sc(1),
+        border_color = Blitbuffer.COLOR_BLACK,
         radius = storefront_theme.radius_btn or sc(4),
-        padding = sc(10),
+        padding = 0,
         height = btn_h,
         width = btn_widths[1],
         callback = function()
@@ -355,12 +371,14 @@ local function showRestartConfirmation(message)
     local ok_btn = Button:new{
         text = ok_text,
         text_font_size = btn_font_size,
+        text_font_bold = true,
         text_font_color = Blitbuffer.COLOR_WHITE,
+        fgcolor = Blitbuffer.COLOR_WHITE,
         background = Blitbuffer.COLOR_BLACK,
         bordersize = sc(1),
         border_color = Blitbuffer.COLOR_BLACK,
         radius = storefront_theme.radius_btn or sc(4),
-        padding = sc(10),
+        padding = 0,
         height = btn_h,
         width = btn_widths[2],
         callback = function()
@@ -641,7 +659,7 @@ local function showFetchingProgress(message)
 end
 
 function Storefront:showRestartConfirmation(message)
-    return showRestartConfirmation(message)
+    return showRestartConfirmation(message, true)
 end
 
 function Storefront:showFetchingProgress(message)
