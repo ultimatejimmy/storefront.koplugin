@@ -6755,6 +6755,7 @@ function Storefront:calculateDynamicPageSize(tab_name)
         or (tab_name == "Plugins" and self.browser_state and self.browser_state.show_filter_bar_plugins == true)
         or (tab_name == "Patches" and self.browser_state and self.browser_state.show_filter_bar_patches == true)
         or (tab_name == "Fonts" and self.browser_state and self.browser_state.show_filter_bar_fonts == true)
+        or (tab_name == "Screensavers" and self.browser_state and self.browser_state.show_filter_bar_screensavers ~= false)
 
     local toolbar_height = 0
     local divider_height = thin + span
@@ -6830,6 +6831,7 @@ function Storefront:calculateAvailableListHeight(tab_name)
         or (tab_name == "Plugins" and self.browser_state and self.browser_state.show_filter_bar_plugins == true)
         or (tab_name == "Patches" and self.browser_state and self.browser_state.show_filter_bar_patches == true)
         or (tab_name == "Fonts" and self.browser_state and self.browser_state.show_filter_bar_fonts == true)
+        or (tab_name == "Screensavers" and self.browser_state and self.browser_state.show_filter_bar_screensavers ~= false)
 
     local toolbar_height = 0
     local divider_height = thin + span
@@ -7324,6 +7326,11 @@ function Storefront:hasActiveFilters(tab)
         local fs = self.installed_state.filter_status or "all"
         local sm = self.installed_state.sort_mode or "name_asc"
         return st ~= "" or ft ~= "all" or fd ~= "all" or fs ~= "all" or sm ~= "name_asc"
+    elseif tab == "Screensavers" then
+        local cat = (self.browser_state and self.browser_state.screensaver_category or ""):lower()
+        local sort = self.browser_state and self.browser_state.screensaver_sort or "popular"
+        local srch = (self.browser_state and self.browser_state.screensaver_search or ""):lower()
+        return (cat ~= "" and cat ~= "all") or (sort ~= "popular") or (srch ~= "")
     elseif tab == "Updates" then
         return false
     else
@@ -7378,7 +7385,307 @@ function Storefront:clearSearchAndFilters()
     self:reopenBrowser()
 end
 
-function Storefront:buildBrowserEntries(available_list_height)
+function Storefront:buildScreensaverEntries(available_list_height, available_list_width)
+    local StorefrontScreensavers = require("storefront_screensavers_ui")
+    local ok_ratings, StorefrontRatings = pcall(require, "storefront_ratings")
+
+    -- Fetch catalog (synchronous; cached after first call)
+    if not self.screensavers_cache then
+        StorefrontScreensavers.fetchCatalog(function(ok, catalog)
+            self.screensavers_cache = catalog
+        end)
+    end
+    local catalog = self.screensavers_cache or {}
+
+    -- ---- Widget helpers ---------------------------------------------------
+    local sc       = function(val) return Device.screen:scaleBySize(val) end
+    local sw       = Device.screen:getWidth()
+    local cols     = 3
+    local gap      = sc(8)
+    local usable_w = available_list_width or (sw - sc(24))
+    local card_w   = math.floor((usable_w - gap * (cols - 1)) / cols)
+    -- Portrait aspect ratio (3:4) - standard e-reader screen proportion
+    local img_h    = math.floor(card_w * 4 / 3)
+    local text_h   = sc(52)   -- title + meta below image
+    local card_h   = img_h + text_h
+    local row_h    = card_h + gap
+    -- How many rows fit in the available body?
+    local usable_h = available_list_height or sc(500)
+    local rows_per_page = math.max(1, math.floor(usable_h / row_h))
+    local page_size = rows_per_page * cols
+
+    -- ---- Filter & sort the catalog ----------------------------------------
+    self:ensureBrowserState()
+    local ss_cat  = (self.browser_state.screensaver_category or ""):lower()
+    local ss_sort = self.browser_state.screensaver_sort or "popular"  -- "popular" | "az" | "za"
+    local ss_srch = (self.browser_state.screensaver_search or ""):lower()
+
+    local filtered = {}
+    for _, entry in ipairs(catalog) do
+        local pass = true
+        if ss_cat ~= "" and ss_cat ~= "all" then
+            if (entry.category or ""):lower() ~= ss_cat then pass = false end
+        end
+        if pass and ss_srch ~= "" then
+            local t = (entry.title or entry.name or ""):lower()
+            if not t:find(ss_srch, 1, true) then pass = false end
+        end
+        if pass then table.insert(filtered, entry) end
+    end
+
+    local function getRatingScore(entry)
+        if ok_ratings and StorefrontRatings and StorefrontRatings.getRating then
+            local live_r = StorefrontRatings.getRating(entry)
+            if live_r and (live_r.up > 0 or live_r.down > 0) then
+                return live_r.up - live_r.down
+            end
+        end
+        return 0
+    end
+
+    if ss_sort == "az" then
+        table.sort(filtered, function(a, b)
+            return (a.title or a.name or ""):lower() < (b.title or b.name or ""):lower()
+        end)
+    elseif ss_sort == "za" then
+        table.sort(filtered, function(a, b)
+            return (a.title or a.name or ""):lower() > (b.title or b.name or ""):lower()
+        end)
+    else  -- "popular"
+        table.sort(filtered, function(a, b)
+            return getRatingScore(a) > getRatingScore(b)
+        end)
+    end
+
+    local total_pages  = math.max(1, math.ceil(#filtered / page_size))
+    local current_page = math.min(self.browser_state.page or 1, total_pages)
+    local start_idx    = (current_page - 1) * page_size + 1
+    local end_idx      = math.min(#filtered, start_idx + page_size - 1)
+
+    -- ---- Build each card --------------------------------------------------
+    local VerticalGroup   = require("ui/widget/verticalgroup")
+    local VerticalSpan    = require("ui/widget/verticalspan")
+    local HorizontalGroup = require("ui/widget/horizontalgroup")
+    local HorizontalSpan  = require("ui/widget/horizontalspan")
+    local FrameContainer  = require("ui/widget/container/framecontainer")
+    local CenterContainer = require("ui/widget/container/centercontainer")
+    local InputContainer  = require("ui/widget/container/inputcontainer")
+    local GestureRange    = require("ui/gesturerange")
+    local ImageWidget     = require("ui/widget/imagewidget")
+    local TextWidget      = require("ui/widget/textwidget")
+    local Geom            = require("ui/geometry")
+    local Blitbuffer      = require("ffi/blitbuffer")
+    local Font            = require("ui/font")
+    local ok_lfs, lfs    = pcall(require, "libs/libkoreader-lfs")
+
+    local name_face  = Font:getFace("cfont", 14)
+    local meta_face  = Font:getFace("cfont", 12)
+
+    local self_ref = self
+
+    local function makeCard(entry)
+        -- Thumbnail image (or grey placeholder)
+        local thumb_file = StorefrontScreensavers.fetchThumbnail(entry)
+        local img_widget
+        if thumb_file and ok_lfs and lfs and lfs.attributes
+                and lfs.attributes(thumb_file, "mode") == "file" then
+            img_widget = StorefrontScreensavers.createCoverImageWidget(thumb_file, card_w, img_h)
+            if not img_widget then
+                img_widget = ImageWidget:new{
+                    file         = thumb_file,
+                    width        = card_w,
+                    height       = img_h,
+                    scale_factor = 0,
+                }
+            end
+        else
+            img_widget = FrameContainer:new{
+                bordersize = 0,
+                background = Blitbuffer.Color8(230),
+                padding    = 0,
+                CenterContainer:new{
+                    dimen = Geom:new{ w = card_w, h = img_h },
+                    TextWidget:new{
+                        text    = "…",
+                        face    = meta_face,
+                        fgcolor = Blitbuffer.Color8(150),
+                    },
+                }
+            }
+        end
+
+        local getAssetPath = function(filename)
+            local info = debug.getinfo(1, "S")
+            local dir = info.source:match("^@(.*[/\\])") or ""
+            return dir .. "assets/" .. filename
+        end
+
+        -- Title (truncated)
+        local title_w = TextWidget:new{
+            text      = entry.title or entry.name or "",
+            face      = name_face,
+            bold      = true,
+            fgcolor   = Blitbuffer.COLOR_BLACK,
+            max_width = card_w - sc(8),
+        }
+
+        -- In-app ratings (thumbs up + net score) - ONLY shown if in-app ratings or user vote exist!
+        local live_r = (ok_ratings and StorefrontRatings and StorefrontRatings.getRating) and StorefrontRatings.getRating(entry) or nil
+        local user_vote = (ok_ratings and StorefrontRatings and StorefrontRatings.getUserVote) and StorefrontRatings.getUserVote(entry) or nil
+        local has_rating = (live_r and (live_r.up > 0 or live_r.down > 0)) or (user_vote == "up" or user_vote == "down")
+        local net_score = live_r and (live_r.up - live_r.down) or 0
+        local score_str = net_score >= 1000
+            and string.format("%.1fk", net_score / 1000):gsub("%.0k", "k")
+            or tostring(net_score)
+
+        local meta_items = {
+            TextWidget:new{
+                text      = (entry.category or ""),
+                face      = meta_face,
+                fgcolor   = Blitbuffer.Color8(100),
+                max_width = has_rating and math.floor(card_w * 0.50) or (card_w - sc(8)),
+            },
+        }
+
+        if has_rating then
+            local icon_file = (user_vote == "down") and getAssetPath("thumbs-down-filled.svg")
+                or ((user_vote == "up") and getAssetPath("thumbs-up-filled.svg") or getAssetPath("thumbs-up.svg"))
+            table.insert(meta_items, HorizontalSpan:new{ width = sc(3) })
+            table.insert(meta_items, TextWidget:new{ text = "·", face = meta_face, fgcolor = Blitbuffer.Color8(140) })
+            table.insert(meta_items, HorizontalSpan:new{ width = sc(3) })
+            table.insert(meta_items, ImageWidget:new{
+                file = icon_file,
+                width = sc(14), height = sc(14),
+                scale_factor = 0, is_icon = true, alpha = true,
+            })
+            table.insert(meta_items, HorizontalSpan:new{ width = sc(2) })
+            table.insert(meta_items, TextWidget:new{ text = score_str, face = meta_face, fgcolor = Blitbuffer.Color8(80) })
+        end
+
+        local meta_w = HorizontalGroup:new(meta_items)
+
+        local card_inner = VerticalGroup:new{
+            align = "left",
+            img_widget,
+            VerticalSpan:new{ width = sc(4) },
+            FrameContainer:new{
+                bordersize    = 0,
+                padding       = 0,
+                padding_left  = sc(4),
+                padding_right = sc(4),
+                VerticalGroup:new{
+                    align = "left",
+                    title_w,
+                    VerticalSpan:new{ width = sc(2) },
+                    meta_w,
+                },
+            },
+            VerticalSpan:new{ width = sc(4) },
+        }
+
+        local card_frame = FrameContainer:new{
+            bordersize = sc(1),
+            radius     = sc(6),
+            padding    = 0,
+            background = Blitbuffer.COLOR_WHITE,
+            card_inner,
+        }
+
+        local card_ic = InputContainer:new{ card_frame }
+        card_ic.dimen = Geom:new{ w = card_w, h = card_h }
+        local captured_entry = entry
+        card_ic.ges_events = {
+            SfssCardTap = {
+                GestureRange:new{
+                    ges = "tap",
+                    range = function()
+                        local d = card_ic.dimen
+                        if not d then return nil end
+                        return Geom:new{ x = d.x or 0, y = d.y or 0, w = card_w, h = card_h }
+                    end,
+                },
+            },
+        }
+        function card_ic:onSfssCardTap()
+            local ok_det, StorefrontScreensaverDetail = pcall(require, "storefront_screensaver_detail")
+            if ok_det and StorefrontScreensaverDetail then
+                local detail = StorefrontScreensaverDetail:new{
+                    item   = captured_entry,
+                    parent = self_ref,
+                }
+                detail:show()
+            end
+            return true
+        end
+
+        return card_ic
+    end
+
+    -- ---- Assemble rows ----------------------------------------------------
+    local page_entries = {}
+    for i = start_idx, end_idx do
+        if filtered[i] then table.insert(page_entries, filtered[i]) end
+    end
+
+    local rows_group = VerticalGroup:new{ align = "left" }
+    local all_cards = {}
+    local grid_rows = {}
+
+    local i = 1
+    while i <= #page_entries do
+        local row = HorizontalGroup:new{}
+        local row_cards = {}
+        for c = 1, cols do
+            if c > 1 then table.insert(row, HorizontalSpan:new{ width = gap }) end
+            if page_entries[i] then
+                local card = makeCard(page_entries[i])
+                table.insert(row, card)
+                table.insert(row_cards, card)
+                table.insert(all_cards, card)
+                i = i + 1
+            else
+                -- Empty filler to keep the last row aligned
+                local Widget = require("ui/widget/widget")
+                table.insert(row, Widget:new{
+                    dimen = Geom:new{ w = card_w, h = img_h + text_h },
+                })
+            end
+        end
+        table.insert(rows_group, row)
+        table.insert(grid_rows, row_cards)
+        table.insert(rows_group, VerticalSpan:new{ width = gap })
+    end
+
+    -- Show "no results" message when filter leaves nothing
+    if #page_entries == 0 then
+        table.insert(rows_group, CenterContainer:new{
+            dimen = Geom:new{ w = usable_w, h = sc(60) },
+            TextWidget:new{
+                text    = _("No screensavers match this filter."),
+                face    = Font:getFace("cfont", 16),
+                fgcolor = Blitbuffer.Color8(100),
+            },
+        })
+    end
+
+    local grid_container = FrameContainer:new{
+        bordersize   = 0,
+        padding      = 0,
+        padding_top  = sc(6),
+        rows_group,
+    }
+
+    return {
+        {
+            is_screensaver_grid = true,
+            grid_widget = grid_container,
+            cards = all_cards,
+            grid_rows = grid_rows,
+        }
+    }, total_pages
+end
+
+function Storefront:buildBrowserEntries(available_list_height, available_list_width)
     self:ensureBrowserState()
     local tab = self.browser_state.tab or "Plugins"
     if tab == "Updates" then
@@ -7391,7 +7698,13 @@ function Storefront:buildBrowserEntries(available_list_height)
         self._last_total_pages = total_pages
         self._last_total_kind = "installed"
         return items, total_pages
+    elseif tab == "Screensavers" then
+        local items, total_pages = self:buildScreensaverEntries(available_list_height, available_list_width)
+        self._last_total_pages = total_pages
+        self._last_total_kind = "screensaver"
+        return items, total_pages
     end
+
     local kind = (tab == "Plugins" and "plugin") or (tab == "Fonts" and "font") or "patch"
     self.browser_state.kind = kind
     local items = {}
@@ -7943,6 +8256,46 @@ function Storefront:showBrowser(kind)
                     callback = function() self:showInstalledFilter() end
                 })
                 end -- show_filter_bar_installed
+            elseif current_tab == "Screensavers" then
+                local is_ss_filter_active = self:hasActiveFilters("Screensavers")
+                if (self.browser_state and self.browser_state.show_filter_bar_screensavers ~= false) or is_ss_filter_active then
+                    -- Build toolbar: active category pill + sort cycle + Filter... button
+                    toolbar_buttons = {}
+                    local ss_cat  = self.browser_state.screensaver_category or ""
+                    local ss_sort = self.browser_state.screensaver_sort or "popular"
+                    local ss_srch = self.browser_state.screensaver_search or ""
+                    if ss_cat ~= "" and ss_cat ~= "all" then
+                        table.insert(toolbar_buttons, {
+                            id = "ss_cat",
+                            text = _("Category: ") .. ss_cat,
+                            callback = function() self:showScreensaverFilter() end
+                        })
+                    end
+                    if ss_srch ~= "" then
+                        table.insert(toolbar_buttons, {
+                            id = "ss_srch",
+                            text = _("Search: ") .. ss_srch,
+                            callback = function() self:showScreensaverFilter() end
+                        })
+                    end
+                    local sort_labels = { popular = _("Most Popular"), az = _("A → Z"), za = _("Z → A") }
+                    table.insert(toolbar_buttons, {
+                        id = "ss_sort",
+                        text = sort_labels[ss_sort] or _("Most Popular"),
+                        callback = function()
+                            -- Cycle: popular → az → za → popular
+                            local next = (ss_sort == "popular" and "az") or (ss_sort == "az" and "za") or "popular"
+                            self.browser_state.screensaver_sort = next
+                            self.browser_state.page = 1
+                            self:reopenBrowser()
+                        end
+                    })
+                    table.insert(toolbar_buttons, {
+                        id = "ss_filter",
+                        text = _("Filter..."),
+                        callback = function() self:showScreensaverFilter() end
+                    })
+                end
             end
 
             local current_generation = InstallStore.getGeneration and InstallStore.getGeneration() or 0
@@ -7973,7 +8326,7 @@ function Storefront:showBrowser(kind)
                 active_search_text = util.trim(self.browser_state.search_text or "")
             end
 
-            local available_list_height = StorefrontBrowserDialog:measureListViewport{
+            local available_list_height, available_list_width = StorefrontBrowserDialog:measureListViewport{
                 title = title,
                 toolbar_buttons = toolbar_buttons,
                 current_tab = current_tab,
@@ -7981,9 +8334,10 @@ function Storefront:showBrowser(kind)
                 show_filter_bar_plugins = (self.browser_state and self.browser_state.show_filter_bar_plugins == true) or is_catalog_search_active,
                 show_filter_bar_patches = (self.browser_state and self.browser_state.show_filter_bar_patches == true) or is_catalog_search_active,
                 show_filter_bar_fonts = (self.browser_state and self.browser_state.show_filter_bar_fonts == true) or is_catalog_search_active,
+                show_filter_bar_screensavers = (self.browser_state and self.browser_state.show_filter_bar_screensavers ~= false) or is_ss_filter_active,
                 show_filter_bar_installed = (self.browser_state and self.browser_state.show_filter_bar_installed ~= false) or is_installed_search_active,
             }
-            local items, total_pages = self:buildBrowserEntries(available_list_height)
+            local items, total_pages = self:buildBrowserEntries(available_list_height, available_list_width)
 
             local dialog = StorefrontBrowserDialog:new{
                 title = title,
@@ -8000,6 +8354,7 @@ function Storefront:showBrowser(kind)
                 show_filter_bar_plugins = (self.browser_state and self.browser_state.show_filter_bar_plugins == true) or is_catalog_search_active,
                 show_filter_bar_patches = (self.browser_state and self.browser_state.show_filter_bar_patches == true) or is_catalog_search_active,
                 show_filter_bar_fonts = (self.browser_state and self.browser_state.show_filter_bar_fonts == true) or is_catalog_search_active,
+                show_filter_bar_screensavers = (self.browser_state and self.browser_state.show_filter_bar_screensavers ~= false) or is_ss_filter_active,
                 show_filter_bar_installed = (self.browser_state and self.browser_state.show_filter_bar_installed ~= false) or is_installed_search_active,
                 on_toggle_filter_bar = function(tab_name)
                     self:toggleFilterBar(tab_name)
@@ -8067,7 +8422,7 @@ function Storefront:showBrowser(kind)
             end
         end,
         on_next_page = function()
-            local current_kind = (self.browser_state.tab == "Installed") and "installed" or (self.browser_state.kind or "plugin")
+            local current_kind = (self.browser_state.tab == "Installed") and "installed" or (self.browser_state.tab == "Screensavers") and "screensaver" or (self.browser_state.kind or "plugin")
             local total_pages = (self._last_total_kind == current_kind) and (self._last_total_pages or 1) or 1
             if self.browser_state.page < total_pages then
                 self:resetBrowserScrollState()
@@ -8080,7 +8435,7 @@ function Storefront:showBrowser(kind)
             end
         end,
         on_last_page = function()
-            local current_kind = (self.browser_state.tab == "Installed") and "installed" or (self.browser_state.kind or "plugin")
+            local current_kind = (self.browser_state.tab == "Installed") and "installed" or (self.browser_state.tab == "Screensavers") and "screensaver" or (self.browser_state.kind or "plugin")
             local total_pages = (self._last_total_kind == current_kind) and (self._last_total_pages or 1) or 1
             if self.browser_state.page < total_pages then
                 self:resetBrowserScrollState()
@@ -8093,7 +8448,7 @@ function Storefront:showBrowser(kind)
             end
         end,
         on_goto_page = function(page_num)
-            local current_kind = (self.browser_state.tab == "Installed") and "installed" or (self.browser_state.kind or "plugin")
+            local current_kind = (self.browser_state.tab == "Installed") and "installed" or (self.browser_state.tab == "Screensavers") and "screensaver" or (self.browser_state.kind or "plugin")
             local total_pages = (self._last_total_kind == current_kind) and (self._last_total_pages or 1) or 1
             if page_num >= 1 and page_num <= total_pages and page_num ~= self.browser_state.page then
                 local forward = page_num > self.browser_state.page
@@ -8140,9 +8495,14 @@ function Storefront:showFilterDialog()
     require("storefront_filter_dialog"):show(self)
 end
 
+function Storefront:showScreensaverFilter()
+    require("storefront_filter_dialog").showScreensaverFilter(self)
+end
+
 function Storefront:showInstalledFilter()
     require("storefront_filter_dialog"):showInstalledFilter(self)
 end
+
 
 function Storefront:showCatalogFilter()
     require("storefront_filter_dialog"):showCatalogFilter(self)
@@ -8158,6 +8518,8 @@ function Storefront:toggleFilterBar(tab_name)
         self.browser_state.show_filter_bar_fonts = not self.browser_state.show_filter_bar_fonts
     elseif tab_name == "Installed" then
         self.browser_state.show_filter_bar_installed = not (self.browser_state.show_filter_bar_installed ~= false)
+    elseif tab_name == "Screensavers" then
+        self.browser_state.show_filter_bar_screensavers = not (self.browser_state.show_filter_bar_screensavers ~= false)
     end
     self:saveBrowserState()
     self:reopenBrowser()

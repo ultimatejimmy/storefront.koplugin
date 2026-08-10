@@ -698,4 +698,279 @@ function StorefrontFilterDialog.show(arg1, arg2)
     UIManager:show(dialog)
 end
 
+function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
+    local Storefront = (arg1 ~= StorefrontFilterDialog and arg1 and arg1.ensureBrowserState) and arg1 or arg2
+    if not Storefront or type(Storefront) ~= "table" or not Storefront.ensureBrowserState then
+        Storefront = require("main")
+    end
+    Storefront:ensureBrowserState()
+    local state = Storefront.browser_state
+
+    local sw = Screen:getWidth()
+    local sh = Screen:getHeight()
+    local dialog_w = math.min(sw - sc(20), sc(380))
+
+    local ui_font_size = storefront_theme.face_label_size or 18
+    local title_font_size = storefront_theme.title_font_size or 22
+
+    local catalog = Storefront.screensavers_cache or {}
+    local seen_cats = {}
+    local cats = { "all" }
+    for _, entry in ipairs(catalog) do
+        local cat = entry.category and tostring(entry.category) or ""
+        if cat ~= "" and not seen_cats[cat] then
+            seen_cats[cat] = true
+            table.insert(cats, cat)
+        end
+    end
+    table.sort(cats, function(a, b)
+        if a == "all" then return true end
+        if b == "all" then return false end
+        return tostring(a):lower() < tostring(b):lower()
+    end)
+
+    local sort_order = { "popular", "az", "za" }
+    local sort_labels = { popular = _("Most Popular"), az = _("A -> Z"), za = _("Z -> A") }
+
+    local overlay
+    local refresh
+
+    refresh = function()
+        if overlay then
+            UIManager:close(overlay, "ui")
+        end
+
+        local title_label = TextWidget:new{
+            text = _("Filter & Sort Screensavers"),
+            face = Font:getFace("NotoSerif-Regular.ttf", title_font_size),
+            bold = true,
+            fgcolor = Blitbuffer.COLOR_BLACK,
+        }
+
+        local title_container = FrameContainer:new{
+            padding = sc(10),
+            bordersize = 0,
+            title_label,
+        }
+
+        local content_vg = VerticalGroup:new{
+            align = "left",
+            title_container,
+            LineWidget:new{
+                dimen = Geom:new{ w = dialog_w - sc(4), h = sc(1) },
+                background = Blitbuffer.COLOR_BLACK,
+            }
+        }
+
+        local function create_setting_row(left_text, right_widget, callback)
+            local row_elements = {}
+            local frame_padding = sc(10)
+            local avail_w = dialog_w - (frame_padding * 2) - sc(4)
+            local right_w = 0
+            if right_widget then
+                right_w = (right_widget.getSize and right_widget:getSize().w) or sc(60)
+            end
+
+            local max_left_w = math.max(sc(60), avail_w - right_w - sc(12))
+
+            local txt = TextBoxWidget:new{
+                text = left_text,
+                face = Font:getFace("cfont", ui_font_size),
+                fgcolor = Blitbuffer.COLOR_BLACK,
+                width = max_left_w,
+                alignment = "left",
+            }
+            table.insert(row_elements, txt)
+
+            local left_used_w = (txt.getSize and txt:getSize().w) or max_left_w
+            local spacer_w = math.max(sc(8), avail_w - left_used_w - right_w)
+            table.insert(row_elements, HorizontalSpan:new{ width = spacer_w })
+
+            if right_widget then
+                table.insert(row_elements, right_widget)
+            end
+
+            local frame = FrameContainer:new{
+                bordersize = 0,
+                padding = frame_padding,
+                width = dialog_w - sc(4),
+                HorizontalGroup:new(row_elements),
+            }
+
+            if not callback then return frame end
+
+            local item = InputContainer:new{ frame }
+            local row_size = frame:getSize() or { w = dialog_w - sc(4), h = 0 }
+            item.ges_events = {
+                Tap = {
+                    GestureRange:new{
+                        ges = "tap",
+                        range = function()
+                            local dim = item.dimen
+                            if not dim then
+                                return Geom:new{ x = -1, y = -1, w = 1, h = 1 }
+                            end
+                            return Geom:new{
+                                x = dim.x or 0,
+                                y = dim.y or 0,
+                                w = row_size.w or (dialog_w - sc(4)),
+                                h = row_size.h or 0,
+                            }
+                        end
+                    }
+                }
+            }
+            item.onTap = function()
+                callback()
+                return true
+            end
+            return item
+        end
+
+        local function create_section_header(title)
+            local label = TextWidget:new{
+                text = title:upper(),
+                face = Font:getFace("cfont", storefront_theme.section_header_font_size or 16),
+                bold = true,
+                fgcolor = Blitbuffer.COLOR_BLACK,
+            }
+            return FrameContainer:new{
+                padding = sc(5),
+                padding_left = sc(8),
+                bordersize = 0,
+                width = dialog_w - sc(4),
+                background = Blitbuffer.COLOR_LIGHT_GRAY,
+                label,
+            }
+        end
+
+        table.insert(content_vg, create_section_header(_("Filters")))
+
+        -- Category row
+        local cur_cat = state.screensaver_category or ""
+        local cat_display = (cur_cat == "" or cur_cat == "all") and _("All") or cur_cat
+        local cat_widget = TextWidget:new{
+            text = cat_display,
+            face = Font:getFace("cfont", storefront_theme.subtext_font_size or 16),
+            fgcolor = storefront_theme.color_label_dim,
+        }
+        table.insert(content_vg, create_setting_row(_("Category"), cat_widget, function()
+            local cur = (state.screensaver_category or ""):lower()
+            if cur == "" then cur = "all" end
+            local next_c = "all"
+            for idx, c in ipairs(cats) do
+                if cur == c:lower() then
+                    next_c = cats[(idx % #cats) + 1]
+                    break
+                end
+            end
+            state.screensaver_category = (next_c == "all") and "" or next_c
+            refresh()
+        end))
+
+        table.insert(content_vg, create_section_header(_("Sorting")))
+
+        -- Sort row
+        local cur_sort = state.screensaver_sort or "popular"
+        local sort_text = sort_labels[cur_sort] or sort_labels.popular
+        local sort_widget = TextWidget:new{
+            text = sort_text,
+            face = Font:getFace("cfont", storefront_theme.subtext_font_size or 16),
+            fgcolor = storefront_theme.color_label_dim,
+        }
+        table.insert(content_vg, create_setting_row(_("Sort mode"), sort_widget, function()
+            local next_s = "popular"
+            for idx, s in ipairs(sort_order) do
+                if cur_sort == s then
+                    next_s = sort_order[(idx % #sort_order) + 1]
+                    break
+                end
+            end
+            state.screensaver_sort = next_s
+            refresh()
+        end))
+
+        table.insert(content_vg, LineWidget:new{
+            dimen = Geom:new{ w = dialog_w - sc(4), h = sc(1) },
+            background = Blitbuffer.COLOR_LIGHT_GRAY,
+        })
+        local reset_widget = TextWidget:new{
+            text = _("Reset to defaults"),
+            face = Font:getFace("cfont", ui_font_size),
+            bold = true,
+            fgcolor = Blitbuffer.COLOR_BLACK,
+        }
+        table.insert(content_vg, create_setting_row(_("Reset filters"), reset_widget, function()
+            state.screensaver_category = ""
+            state.screensaver_sort = "popular"
+            state.screensaver_search = ""
+            refresh()
+        end))
+
+        -- Apply button at bottom
+        local apply_btn = Button:new{
+            text = _("Apply"),
+            text_font_size = 18,
+            text_font_color = Blitbuffer.COLOR_WHITE,
+            background = Blitbuffer.COLOR_BLACK,
+            bordersize = 0,
+            padding = sc(10),
+            radius = sc(4),
+            width = dialog_w - sc(36),
+            callback = function()
+                if overlay then UIManager:close(overlay, "ui") end
+                state.page = 1
+                Storefront:saveBrowserState()
+                Storefront:reopenBrowser()
+            end,
+        }
+        if apply_btn.label_widget then
+            apply_btn.label_widget.fgcolor = Blitbuffer.COLOR_WHITE
+        end
+
+        local apply_container = FrameContainer:new{
+            padding = sc(10),
+            bordersize = 0,
+            width = dialog_w - sc(4),
+            CenterContainer:new{
+                dimen = Geom:new{ w = dialog_w - sc(20), h = apply_btn:getSize().h },
+                apply_btn,
+            }
+        }
+        table.insert(content_vg, apply_container)
+
+        local card = FrameContainer:new{
+            padding = 0,
+            radius = storefront_theme.radius_window or 0,
+            bordersize = sc(2),
+            color = Blitbuffer.COLOR_BLACK,
+            background = storefront_theme.color_bg or Blitbuffer.COLOR_WHITE,
+            width = dialog_w,
+            content_vg,
+        }
+
+        overlay = InputContainer:new{
+            align = "center",
+            vertical_align = "center",
+            dimen = Geom:new{ w = sw, h = sh },
+            key_events = {
+                Close = { { "Back" } }
+            },
+            card,
+        }
+
+        overlay.onClose = function()
+            UIManager:close(overlay, "ui")
+            state.page = 1
+            Storefront:saveBrowserState()
+            Storefront:reopenBrowser()
+            return true
+        end
+
+        UIManager:show(overlay, "ui")
+    end
+
+    refresh()
+end
+
 return StorefrontFilterDialog

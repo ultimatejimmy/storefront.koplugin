@@ -1781,3 +1781,6 @@ msgstr "≥ %s ⭐"
 msgid "✓ Current"
 msgstr "✓ الحالي"
 
+msgid "Screensavers"
+msgstr ""
+

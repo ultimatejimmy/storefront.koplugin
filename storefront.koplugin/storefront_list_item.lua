@@ -479,8 +479,26 @@ function StorefrontListItem:init()
             group = VerticalGroup:new(group_items)
         end
 
+        local left_elements = {}
+        if entry.thumbnail_file then
+            local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
+            if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
+            if ok_lfs and lfs and lfs.attributes and lfs.attributes(entry.thumbnail_file, "mode") == "file" then
+                local thumb_w = ImageWidget:new{
+                    file = entry.thumbnail_file,
+                    width = sc(60),
+                    height = sc(80),
+                    scale_factor = 0,
+                }
+                table.insert(left_elements, thumb_w)
+                table.insert(left_elements, HorizontalSpan:new{ width = sc(12) })
+            end
+        end
+        table.insert(left_elements, group)
+        local main_content_group = HorizontalGroup:new(left_elements)
+
         local row_widget
-        local item_h = group:getSize().h
+        local item_h = main_content_group:getSize().h
         if badge_w then
             local badge_h = badge_w:getSize().h
             local total_h = math.max(item_h, badge_h)
@@ -488,7 +506,7 @@ function StorefrontListItem:init()
                 dimen = Geom:new{ w = content_inner, h = total_h },
                 LeftContainer:new{
                     dimen = Geom:new{ w = content_inner, h = total_h },
-                    group,
+                    main_content_group,
                 },
                 RightContainer:new{
                     dimen = Geom:new{ w = content_inner, h = total_h },
@@ -498,7 +516,7 @@ function StorefrontListItem:init()
         else
             row_widget = LeftContainer:new{
                 dimen = Geom:new{ w = content_inner, h = item_h },
-                group,
+                main_content_group,
             }
         end
 

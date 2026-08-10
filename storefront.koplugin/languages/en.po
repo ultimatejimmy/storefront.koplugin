@@ -1271,6 +1271,9 @@ msgstr "Restart now"
 msgid "Sample Text"
 msgstr "Sample Text"
 
+msgid "Screensavers"
+msgstr "Screensavers"
+
 msgid "Save"
 msgstr "Save"
 

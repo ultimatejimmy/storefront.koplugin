@@ -91,6 +91,7 @@ local StorefrontBrowserDialog = FocusManager:extend{
     show_filter_bar_plugins = false,
     show_filter_bar_patches = false,
     show_filter_bar_fonts = false,
+    show_filter_bar_screensavers = true,
     show_filter_bar_installed = true,
     on_tab_switch = nil,
     on_toggle_filter_bar = nil,
@@ -104,7 +105,7 @@ function StorefrontBrowserDialog:hasActiveFilters(tab)
 end
 
 function StorefrontBrowserDialog:buildTabBar()
-    local tabs = { "Plugins", "Patches", "Fonts", "Installed", "Updates" }
+    local tabs = { "Plugins", "Patches", "Fonts", "Screensavers", "Installed", "Updates" }
     local tab_widgets = {}
 
     local sc = function(val) return Device.screen:scaleBySize(val) end
@@ -113,37 +114,25 @@ function StorefrontBrowserDialog:buildTabBar()
         Plugins = _("Plugins"),
         Patches = _("Patches"),
         Fonts = _("Fonts"),
+        Screensavers = _("Screensavers"),
         Installed = _("Installed"),
         Updates = _("Updates"),
     }
 
-    -- Reserve space for the filter icon button on the right side.
-    -- icon=sc(20), btn padding lr=sc(12), frame padding lr=sc(24)
-    local filter_icon_reserve = sc(20) + sc(12) + sc(16)
-    local tab_bar_available = (self.width or Device.screen:getWidth()) - sc(24) - filter_icon_reserve
-    local num_tabs = #tabs
-    local tab_gap = sc(8)
-    local gaps_total = tab_gap * (num_tabs - 1)
+    local tab_icon_map = {
+        Plugins = "package.svg",
+        Patches = "code.svg",
+        Fonts = "type.svg",
+        Screensavers = "image.svg",
+        Installed = "check-square.svg",
+        Updates = "refresh-cw.svg",
+    }
 
-    -- Collect all labels and pick the largest font size where they all fit.
-    local all_labels = {}
-    for _, tab_name in ipairs(tabs) do
-        table.insert(all_labels, tab_label_map[tab_name] or tab_name)
-    end
+    local num_tabs = #tabs
+    local tab_gap = sc(18)
 
     local font_size = 18
-    for _, sz in ipairs({ 18, 17, 16, 15, 14 }) do
-        local total_w = gaps_total
-        local probe_face = Font:getFace("smallinfofont", sz)
-        for _, lbl in ipairs(all_labels) do
-            local tw = TextWidget:new{ text = lbl, face = probe_face, bold = true }
-            total_w = total_w + tw:getSize().w
-        end
-        if total_w <= tab_bar_available then
-            font_size = sz
-            break
-        end
-    end
+    local font_face = Font:getFace("smallinfofont", font_size)
 
     for i, tab_name in ipairs(tabs) do
         if i > 1 then
@@ -151,35 +140,58 @@ function StorefrontBrowserDialog:buildTabBar()
         end
 
         local is_active = (self.current_tab == tab_name)
-        local font_face = Font:getFace("smallinfofont", font_size)
-        
-        local label = TextWidget:new{
-            text = tab_label_map[tab_name] or tab_name,
-            face = font_face,
-            bold = is_active,
-            fgcolor = is_active and Blitbuffer.COLOR_BLACK or Blitbuffer.Color8(80),
-        }
+        local tab_elements = {}
 
-        local tab_elements = { label }
+        if tab_name == "Updates" then
+            local label = TextWidget:new{
+                text = tab_label_map[tab_name] or tab_name,
+                face = font_face,
+                bold = is_active,
+                fgcolor = is_active and Blitbuffer.COLOR_BLACK or Blitbuffer.Color8(80),
+            }
+            table.insert(tab_elements, label)
 
-        if tab_name == "Updates" and self.updates_count > 0 then
-            local badge_inner = TextWidget:new{
-                text = tostring(self.updates_count),
-                face = Font:getFace("smallinfofont", 12),
-                bold = true,
-                fgcolor = Blitbuffer.COLOR_WHITE,
+            if self.updates_count > 0 then
+                local badge_inner = TextWidget:new{
+                    text = tostring(self.updates_count),
+                    face = Font:getFace("smallinfofont", 12),
+                    bold = true,
+                    fgcolor = Blitbuffer.COLOR_WHITE,
+                }
+                local badge = FrameContainer:new{
+                    padding = sc(2),
+                    padding_left = sc(5),
+                    padding_right = sc(5),
+                    bordersize = 0,
+                    background = Blitbuffer.COLOR_BLACK,
+                    radius = sc(8),
+                    badge_inner,
+                }
+                table.insert(tab_elements, HorizontalSpan:new{ width = sc(3) })
+                table.insert(tab_elements, badge)
+            end
+        else
+            local icon_file = tab_icon_map[tab_name]
+            local icon_widget = ImageWidget:new{
+                file = getAssetPath(icon_file),
+                width = sc(22),
+                height = sc(22),
+                scale_factor = 0,
+                is_icon = true,
+                alpha = true,
             }
-            local badge = FrameContainer:new{
-                padding = sc(2),
-                padding_left = sc(5),
-                padding_right = sc(5),
-                bordersize = 0,
-                background = Blitbuffer.COLOR_BLACK,
-                radius = sc(8),
-                badge_inner,
-            }
-            table.insert(tab_elements, HorizontalSpan:new{ width = sc(3) })
-            table.insert(tab_elements, badge)
+            table.insert(tab_elements, icon_widget)
+
+            if is_active then
+                local label = TextWidget:new{
+                    text = tab_label_map[tab_name] or tab_name,
+                    face = font_face,
+                    bold = true,
+                    fgcolor = Blitbuffer.COLOR_BLACK,
+                }
+                table.insert(tab_elements, HorizontalSpan:new{ width = sc(4) })
+                table.insert(tab_elements, label)
+            end
         end
 
         local tab_row = HorizontalGroup:new(tab_elements)
@@ -232,7 +244,7 @@ function StorefrontBrowserDialog:buildTabBar()
     local tab_bar_group = HorizontalGroup:new(tab_widgets)
     local frame_content = tab_bar_group
 
-    if self.current_tab == "Plugins" or self.current_tab == "Patches" or self.current_tab == "Fonts" or self.current_tab == "Installed" then
+    if self.current_tab == "Plugins" or self.current_tab == "Patches" or self.current_tab == "Fonts" or self.current_tab == "Screensavers" or self.current_tab == "Installed" then
         local has_active_filters = false
         if type(self.hasActiveFilters) == "function" then
             has_active_filters = self:hasActiveFilters(self.current_tab)
@@ -332,6 +344,7 @@ function StorefrontBrowserDialog:measureListViewport(options)
         show_filter_bar_plugins = options.show_filter_bar_plugins == true,
         show_filter_bar_patches = options.show_filter_bar_patches == true,
         show_filter_bar_fonts = options.show_filter_bar_fonts == true,
+        show_filter_bar_screensavers = options.show_filter_bar_screensavers ~= false,
         show_filter_bar_installed = options.show_filter_bar_installed ~= false,
     }
     -- KOReader's Widget:new initializes instances, while the lightweight
@@ -340,7 +353,8 @@ function StorefrontBrowserDialog:measureListViewport(options)
         probe:init()
     end
     local viewport_h = probe.list_scroller:getSize().h
-    return math.max(1, viewport_h - 2 * Size.padding.default)
+    local viewport_w = probe:getListEntryWidth()
+    return math.max(1, viewport_h - 2 * Size.padding.default), math.max(1, viewport_w)
 end
 
 function StorefrontBrowserDialog:init()
@@ -498,6 +512,18 @@ function StorefrontBrowserDialog:init()
     local total_items = self.items and #self.items or 0
 
     if self.items then
+        -- Screensaver tab: render a 3-column portrait-thumbnail grid
+        if #self.items == 1 and self.items[1].is_screensaver_grid then
+            local grid_widget = self.items[1].grid_widget
+            if grid_widget then
+                list_group[#list_group + 1] = grid_widget
+            end
+            if self.items[1].cards then
+                for _, card in ipairs(self.items[1].cards) do
+                    self._focusable_items[#self._focusable_items + 1] = card
+                end
+            end
+        else
         for idx, entry in ipairs(self.items) do
             local item_widget = StorefrontListItem:new{
                 entry = entry,
@@ -527,6 +553,7 @@ function StorefrontBrowserDialog:init()
                 list_group[#list_group + 1] = VerticalSpan:new{ width = Size.span.vertical_default }
             end
         end
+        end -- end else (non-grid)
     end
 
     self.list_container = FrameContainer:new{
@@ -544,6 +571,7 @@ function StorefrontBrowserDialog:init()
         height = sc(48),
         bordersize = 0,
         background = nil,
+        allow_flash = false,
         callback = function()
             if self.on_prev_page then
                 self.on_prev_page()
@@ -602,6 +630,7 @@ function StorefrontBrowserDialog:init()
         height = sc(48),
         bordersize = 0,
         background = nil,
+        allow_flash = false,
         callback = function()
             if self.on_next_page then
                 self.on_next_page()
@@ -665,6 +694,7 @@ function StorefrontBrowserDialog:init()
                     radius         = use_primary and sc(10) or sc(16),
                     bordersize     = use_primary and 0 or sc(1),
                     background     = use_primary and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_WHITE,
+                    allow_flash    = false,
                     callback       = spec.callback,
                     show_parent    = self,
                 }
@@ -799,8 +829,14 @@ function StorefrontBrowserDialog:init()
     end
     local first_list_row_index = #self.layout + 1
     self._first_list_row_index = first_list_row_index
-    for _, item_widget in ipairs(self._focusable_items) do
-        table.insert(self.layout, { item_widget })
+    if self.items and #self.items == 1 and self.items[1].is_screensaver_grid and self.items[1].grid_rows then
+        for _, row_cards in ipairs(self.items[1].grid_rows) do
+            table.insert(self.layout, row_cards)
+        end
+    else
+        for _, item_widget in ipairs(self._focusable_items) do
+            table.insert(self.layout, { item_widget })
+        end
     end
     local footer_row = {}
     local footer_ids = {}
