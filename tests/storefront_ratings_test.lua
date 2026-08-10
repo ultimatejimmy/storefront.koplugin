@@ -43,4 +43,32 @@ describe("storefront_ratings", function()
         StorefrontRatings.saveUserVote(test_id, "none")
         assert.is_nil(StorefrontRatings.getUserVote(test_id))
     end)
+
+    it("should keep forks with the same name isolated by author", function()
+        local repoA = {
+            id = 111111,
+            repo_id = 111111,
+            owner = "authorA",
+            name = "xray.koplugin",
+            full_name = "authorA/xray.koplugin",
+        }
+        local repoB = {
+            id = 222222,
+            repo_id = 222222,
+            owner = "authorB",
+            name = "xray.koplugin",
+            full_name = "authorB/xray.koplugin",
+        }
+
+        assert.is_nil(StorefrontRatings.getUserVote(repoA))
+        assert.is_nil(StorefrontRatings.getUserVote(repoB))
+
+        StorefrontRatings.saveUserVote(repoA, "up")
+        assert.equals("up", StorefrontRatings.getUserVote(repoA))
+        assert.is_nil(StorefrontRatings.getUserVote(repoB))
+
+        StorefrontRatings.saveUserVote(repoA, "none")
+        assert.is_nil(StorefrontRatings.getUserVote(repoA))
+        assert.is_nil(StorefrontRatings.getUserVote(repoB))
+    end)
 end)

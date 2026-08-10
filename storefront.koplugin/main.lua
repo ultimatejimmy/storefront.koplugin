@@ -227,6 +227,23 @@ local function showRestartConfirmation(message)
 
     local storefront_theme = require("storefront_theme")
     local Device = require("device")
+    local Button = require("ui/widget/button")
+    local TextWidget = require("ui/widget/textwidget")
+    local TextBoxWidget = require("ui/widget/textboxwidget")
+    local Font = require("ui/font")
+    local Blitbuffer = require("ffi/blitbuffer")
+    local HorizontalGroup = require("ui/widget/horizontalgroup")
+    local HorizontalSpan = require("ui/widget/horizontalspan")
+    local VerticalGroup = require("ui/widget/verticalgroup")
+    local VerticalSpan = require("ui/widget/verticalspan")
+    local FrameContainer = require("ui/widget/container/framecontainer")
+    local CenterContainer = require("ui/widget/container/centercontainer")
+    local InputContainer = require("ui/widget/container/inputcontainer")
+    local LineWidget = require("ui/widget/linewidget")
+    local Geom = require("ui/geometry")
+    local UIManager = require("ui/uimanager")
+    local Localization = require("localization_storefront")
+    local _ = function(key, ...) return Localization:t(key, ...) end
     local sc = function(val) return (Device and Device.screen and Device.screen.scaleBySize and Device.screen:scaleBySize(val)) or val end
 
     local sw = Device.screen:getWidth()
@@ -250,30 +267,102 @@ local function showRestartConfirmation(message)
 
     local overlay
 
+    local cancel_text = _("Restart later")
+    local ok_text = _("Restart now")
+    local btn_texts = { cancel_text, ok_text }
+
     local btn_gap = sc(12)
-    local btn_w = math.floor((inner_w - btn_gap) / 2)
+    local padding_per_btn = sc(20)
+
+    local function getTextWidth(text, face, sz)
+        sz = sz or 18
+        if face and type(face.getLineWidth) == "function" then
+            local w = face:getLineWidth(text)
+            if type(w) == "number" and w > 0 then
+                return w
+            end
+        end
+        local char_count = select(2, (text or ""):gsub("[%z\1-\127\194-\244][\128-\191]*", ""))
+        if char_count == 0 then char_count = #(text or "") end
+        return math.floor(char_count * sz * 0.6)
+    end
+
+    local function calcRestartBtnFontSize(texts, total_avail_width, gap, padding_per_item)
+        local num = #texts
+        if num == 0 then return 18 end
+        local gaps_total = gap * math.max(0, num - 1)
+        for _, sz in ipairs({ 18, 17, 16, 15, 14, 13, 12 }) do
+            local face = Font:getFace("cfont", sz)
+            local total_w = gaps_total
+            for _, text in ipairs(texts) do
+                total_w = total_w + getTextWidth(text, face, sz) + padding_per_item
+            end
+            if total_w <= total_avail_width then
+                return sz
+            end
+        end
+        return 12
+    end
+
+    local function calcProportionalWidths(button_texts, total_avail_width, gap, font_size, padding_per_item)
+        local num_btns = #button_texts
+        if num_btns == 0 then return {} end
+        if num_btns == 1 then return { total_avail_width } end
+
+        local usable_width = total_avail_width - gap * (num_btns - 1)
+        local ideal_widths = {}
+        local total_ideal = 0
+        local sz = font_size or 18
+        local face = Font:getFace("cfont", sz)
+
+        for i, text in ipairs(button_texts) do
+            local ideal = getTextWidth(text, face, sz) + padding_per_item
+            ideal_widths[i] = ideal
+            total_ideal = total_ideal + ideal
+        end
+
+        local widths = {}
+        local sum = 0
+        for i = 1, num_btns do
+            if i == num_btns then
+                widths[i] = usable_width - sum
+            else
+                local w = math.floor(usable_width * (ideal_widths[i] / total_ideal))
+                widths[i] = w
+                sum = sum + w
+            end
+        end
+        return widths
+    end
+
+    local btn_font_size = calcRestartBtnFontSize(btn_texts, inner_w, btn_gap, padding_per_btn)
+    local btn_widths = calcProportionalWidths(btn_texts, inner_w, btn_gap, btn_font_size, padding_per_btn)
+    local btn_h = sc(58)
 
     local cancel_btn = Button:new{
-        text = _("Restart later"),
+        text = cancel_text,
+        text_font_size = btn_font_size,
         bordersize = sc(1),
         radius = storefront_theme.radius_btn or sc(4),
         padding = sc(10),
-        height = sc(58),
-        width = btn_w,
+        height = btn_h,
+        width = btn_widths[1],
         callback = function()
             if overlay then UIManager:close(overlay, "ui") end
         end,
     }
 
     local ok_btn = Button:new{
-        text = _("Restart now"),
+        text = ok_text,
+        text_font_size = btn_font_size,
         text_font_color = Blitbuffer.COLOR_WHITE,
         background = Blitbuffer.COLOR_BLACK,
-        bordersize = 0,
+        bordersize = sc(1),
+        border_color = Blitbuffer.COLOR_BLACK,
         radius = storefront_theme.radius_btn or sc(4),
         padding = sc(10),
-        height = sc(58),
-        width = inner_w - btn_gap - btn_w,
+        height = btn_h,
+        width = btn_widths[2],
         callback = function()
             if overlay then UIManager:close(overlay, "ui") end
             UIManager:restartKOReader()

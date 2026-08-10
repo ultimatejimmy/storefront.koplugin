@@ -122,6 +122,7 @@ local function loadVotesCache()
         end
         if type(votes) == "table" then
             user_votes_cache = {}
+            local migrated = false
             for k, v in pairs(votes) do
                 local str_k = tostring(k)
                 local num_k = tonumber(k)
@@ -129,6 +130,35 @@ local function loadVotesCache()
                 if num_k then
                     user_votes_cache[num_k] = v
                 end
+
+                -- Detect legacy bare keys (no '/' and not numeric) and migrate them if matched
+                if not str_k:find("/") and not str_k:match("^%d+$") and type(v) == "table" then
+                    local ok_inst, InstallStore = pcall(require, "storefront_installs")
+                    if ok_inst and InstallStore and InstallStore.list then
+                        local installs = InstallStore.list() or {}
+                        local rec = installs[str_k] or installs[str_k .. ".koplugin"] or installs[str_k:gsub("%.koplugin$", "")]
+                        if rec and rec.owner and rec.owner ~= "" then
+                            local name = rec.repo or str_k
+                            local auth_key = rec.owner .. "/" .. name
+                            user_votes_cache[auth_key] = v
+                            user_votes_cache[auth_key:lower()] = v
+                            if rec.repo_id then
+                                user_votes_cache[tostring(rec.repo_id)] = v
+                                user_votes_cache[rec.repo_id] = v
+                            end
+                            user_votes_cache[str_k] = nil
+                            if num_k then user_votes_cache[num_k] = nil end
+                            migrated = true
+                        end
+                    end
+                end
+            end
+            if migrated then
+                pcall(function()
+                    StorefrontSettings:saveSetting(VOTES_KEY, user_votes_cache)
+                    StorefrontSettings:flush()
+                end)
+                saveVotesBackupFile(user_votes_cache)
             end
         else
             user_votes_cache = {}
@@ -214,21 +244,23 @@ local function getCandidateKeys(item_or_id)
     local keys = {}
     local seen = {}
 
-    local function add_key(k)
+    local function add_single(s)
+        if s == nil then return end
+        local str_s = tostring(s)
+        if str_s == "" then return end
+        if not seen[str_s] then
+            seen[str_s] = true
+            table.insert(keys, str_s)
+        end
+    end
+
+    local function add_key_variants(k)
         if k == nil or k == "" then return end
         local str_k = tostring(k)
         if str_k == "" then return end
 
-        local function add_single(s)
-            if not seen[s] then
-                seen[s] = true
-                table.insert(keys, s)
-            end
-        end
-
         add_single(str_k)
-        local low_k = str_k:lower()
-        add_single(low_k)
+        add_single(str_k:lower())
 
         -- Handle .koplugin suffix variations
         if str_k:sub(-9) == ".koplugin" then
@@ -249,49 +281,73 @@ local function getCandidateKeys(item_or_id)
         end
     end
 
-    local function process_item(item)
-        if type(item) ~= "table" then
-            add_key(item)
-            return
+    if type(item_or_id) ~= "table" then
+        local val = tostring(item_or_id or "")
+        if val ~= "" then
+            if val:find("/") or val:match("^%d+$") then
+                add_key_variants(val)
+                return keys
+            end
+
+            local ok_inst, InstallStore = pcall(require, "storefront_installs")
+            if ok_inst and InstallStore and InstallStore.list then
+                local installs = InstallStore.list() or {}
+                local rec = installs[val] or installs[val .. ".koplugin"] or installs[val:gsub("%.koplugin$", "")]
+                if rec and rec.owner and rec.owner ~= "" then
+                    item_or_id = { owner = rec.owner, name = val, id = rec.repo_id or rec.id, repo_full_name = rec.repo_full_name }
+                end
+            end
         end
-
-        add_key(item.id)
-        add_key(item.repo_id)
-
-        local owner = item.owner
-            or (type(item.full_name) == "string" and item.full_name:match("^([^/]+)/"))
-            or (item.repo and item.repo.owner)
-            or (item.record and item.record.owner)
-        if type(owner) == "table" then owner = owner.login or owner.name end
-
-        local name = item.name
-            or item.dirname
-            or (type(item.full_name) == "string" and item.full_name:match("^[^/]+/(.+)$"))
-            or (item.repo and item.repo.name)
-            or (item.record and (item.record.repo or item.record.name))
-            or (item.plugin and (item.plugin.dirname or item.plugin.name))
-            or (item.patch and item.patch.filename)
-
-        if owner and type(owner) == "string" and owner ~= "" and name and type(name) == "string" and name ~= "" then
-            add_key(owner .. "/" .. name)
-            local clean_name = name:gsub("%.koplugin$", "")
-            add_key(owner .. "/" .. clean_name)
-        end
-
-        if item.repo and item.repo ~= item then process_item(item.repo) end
-        if item.record and item.record ~= item then process_item(item.record) end
-        if item.plugin and item.plugin ~= item then process_item(item.plugin) end
-        if item.patch and item.patch ~= item then process_item(item.patch) end
-
-        add_key(item.full_name)
-        add_key(item.name)
-        add_key(item.dirname)
-        add_key(item.filename)
-        add_key(item.font_name)
-        add_key(item.font_family)
     end
 
-    process_item(item_or_id)
+    if type(item_or_id) ~= "table" then
+        add_key_variants(item_or_id)
+        return keys
+    end
+
+    local item = item_or_id
+
+    local owner = item.owner
+        or (type(item.full_name) == "string" and item.full_name:match("^([^/]+)/"))
+        or (type(item.repo_full_name) == "string" and item.repo_full_name:match("^([^/]+)/"))
+        or (item.repo and (type(item.repo.owner) == "string" and item.repo.owner or (type(item.repo.owner) == "table" and (item.repo.owner.login or item.repo.owner.name))))
+        or (item.record and (item.record.owner or (type(item.record.repo_full_name) == "string" and item.record.repo_full_name:match("^([^/]+)/"))))
+        or (item.plugin and item.plugin.owner)
+
+    if type(owner) == "table" then owner = owner.login or owner.name end
+
+    local name = item.name
+        or item.dirname
+        or (type(item.full_name) == "string" and item.full_name:match("^[^/]+/(.+)$"))
+        or (type(item.repo_full_name) == "string" and item.repo_full_name:match("^[^/]+/(.+)$"))
+        or (item.repo and item.repo.name)
+        or (item.record and (item.record.name or item.record.repo))
+        or (item.plugin and (item.plugin.dirname or item.plugin.name))
+        or (item.patch and item.patch.filename)
+
+    local repo_id = item.repo_id
+        or (tonumber(item.id) and tonumber(item.id))
+        or (item.repo and (item.repo.repo_id or (tonumber(item.repo.id) and tonumber(item.repo.id))))
+        or (item.record and (item.record.repo_id or (tonumber(item.record.id) and tonumber(item.record.id))))
+
+    if owner and type(owner) == "string" and owner ~= "" and name and type(name) == "string" and name ~= "" then
+        if repo_id then
+            add_key_variants(repo_id)
+        end
+        add_key_variants(owner .. "/" .. name)
+        local clean_name = name:gsub("%.koplugin$", "")
+        add_key_variants(owner .. "/" .. clean_name)
+    elseif repo_id then
+        add_key_variants(repo_id)
+    else
+        add_key_variants(item.id)
+        add_key_variants(item.full_name)
+        add_key_variants(name)
+        add_key_variants(item.dirname)
+        add_key_variants(item.filename)
+        add_key_variants(item.font_name)
+    end
+
     return keys
 end
 

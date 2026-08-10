@@ -269,9 +269,30 @@ def main():
         print(f"Warning: could not import/fetch ratings_tally: {e}", file=sys.stderr)
         ratings_data = {}
 
-    for item in plugins + patches:
+    def get_rating_for_item(item):
         r_id = item.get("id") or item.get("repo_id")
-        r_info = ratings_data.get(r_id) or (isinstance(r_id, str) and r_id.isdigit() and ratings_data.get(int(r_id))) or {}
+        full_name = item.get("full_name") or ""
+        owner = item.get("owner") or ""
+        name = item.get("name") or ""
+        author_key = f"{owner}/{name}" if owner and name else ""
+        clean_name = name[:-9] if name.endswith(".koplugin") else name
+        clean_key = f"{owner}/{clean_name}" if owner and name else ""
+
+        return (
+            ratings_data.get(r_id)
+            or (isinstance(r_id, str) and r_id.isdigit() and ratings_data.get(int(r_id)))
+            or (isinstance(r_id, int) and ratings_data.get(str(r_id)))
+            or (full_name and ratings_data.get(full_name))
+            or (full_name and ratings_data.get(full_name.lower()))
+            or (author_key and ratings_data.get(author_key))
+            or (author_key and ratings_data.get(author_key.lower()))
+            or (clean_key and ratings_data.get(clean_key))
+            or (clean_key and ratings_data.get(clean_key.lower()))
+            or {}
+        )
+
+    for item in plugins + patches:
+        r_info = get_rating_for_item(item)
         item["user_thumbs_up"] = int(r_info.get("up", 0))
         item["user_thumbs_down"] = int(r_info.get("down", 0))
         item["wilson_score"] = float(r_info.get("wilson", 0.0))
@@ -292,8 +313,7 @@ def main():
             print(f"Warning: could not read existing catalog to preserve fonts: {e}")
 
     for font_item in existing_fonts:
-        f_id = font_item.get("id") or font_item.get("repo_id")
-        r_info = ratings_data.get(f_id) or (isinstance(f_id, str) and f_id.isdigit() and ratings_data.get(int(f_id))) or {}
+        r_info = get_rating_for_item(font_item)
         font_item["user_thumbs_up"] = int(r_info.get("up", 0))
         font_item["user_thumbs_down"] = int(r_info.get("down", 0))
         font_item["wilson_score"] = float(r_info.get("wilson", 0.0))
