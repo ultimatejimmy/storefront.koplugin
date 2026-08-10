@@ -9402,6 +9402,13 @@ function Storefront:init()
                 else
                     logger.warn("Storefront init: background catalog update failed: " .. tostring(err))
                     StorefrontLogger.warn("Storefront init: background catalog update failed: " .. tostring(err))
+                    if Cache.countRepos("plugin") == 0 then
+                        logger.info("Storefront init: catalog cache empty after fetch error, loading bundled catalog fallback")
+                        CatalogClient.loadBundledCatalog()
+                        if Storefront.instance and Storefront.instance.browser_menu then
+                            Storefront.instance:reopenBrowser()
+                        end
+                    end
                     if Storefront.instance and not Storefront.instance._init_catalog_retried then
                         Storefront.instance._init_catalog_retried = true
                         local UIManager = require("ui/uimanager")
@@ -9418,6 +9425,9 @@ function Storefront:init()
                                 else
                                     logger.warn("Storefront init: background catalog update retry failed: " .. tostring(retry_err))
                                     if StorefrontLogger then StorefrontLogger.warn("Storefront init: background catalog update retry failed: " .. tostring(retry_err)) end
+                                    if Cache.countRepos("plugin") == 0 then
+                                        CatalogClient.loadBundledCatalog()
+                                    end
                                 end
                             end)
                         end)

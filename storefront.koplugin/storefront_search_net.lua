@@ -313,6 +313,11 @@ function SearchNet:init(Storefront)
                     finishRefresh(true, summary, nil)
                 else
                     logger.warn("Storefront static catalog update failed:", catalog_err)
+                    local ok_c, Cache = pcall(require, "storefront_cache")
+                    if ok_c and Cache and (Cache.countRepos("plugin") or 0) == 0 then
+                        logger.info("Storefront: catalog cache empty after fetch error, loading bundled catalog fallback")
+                        CatalogClient.loadBundledCatalog()
+                    end
                     finishRefresh(false, nil, catalog_err)
                 end
             end)

@@ -64,14 +64,94 @@ end
 
 local FALLBACK_CATALOG_URL = "https://raw.githubusercontent.com/ultimatejimmy/storefront.koplugin/main/catalog.json"
 
-function CatalogClient.fetchCatalog(url_to_fetch)
+local function requestWithRedirects(target_url, sink_fn)
     local socketutil = require("socketutil")
+    local current_url = target_url
+    local max_redirects = 5
+    local redirect_count = 0
 
+    while redirect_count < max_redirects do
+        local max_retries = 3
+        local attempt = 0
+        local last_res_code, last_headers_res, last_ok_req
+
+        while attempt < max_retries do
+            attempt = attempt + 1
+            local is_https = current_url:match("^https://") ~= nil
+            local http_req = getHttpModule(current_url)
+            local headers = {
+                ["Accept"] = "application/json",
+                ["User-Agent"] = USER_AGENT,
+            }
+
+            local sink = sink_fn()
+            if not sink then
+                return false, "failed to create sink", nil
+            end
+
+            socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+            local ok_req, res_code, response_headers = pcall(function()
+                local params = {
+                    url = current_url,
+                    method = "GET",
+                    headers = headers,
+                    sink = sink,
+                }
+                if not is_https then params.redirect = true end
+                local _, c, h = http_req.request(params)
+                return c, h
+            end)
+            socketutil:reset_timeout()
+
+            last_ok_req = ok_req
+            last_res_code = res_code
+            last_headers_res = response_headers
+
+            local code = tonumber(res_code) or 0
+            if ok_req and code == 200 then
+                return true, 200, response_headers
+            elseif ok_req and (code == 301 or code == 302 or code == 303 or code == 307 or code == 308) then
+                break
+            end
+
+            if attempt < max_retries then
+                local ok_sec, socket = pcall(require, "socket")
+                if ok_sec and socket and socket.sleep then socket.sleep(0.1) end
+            end
+        end
+
+        local code = tonumber(last_res_code) or 0
+        if last_ok_req and (code == 301 or code == 302 or code == 303 or code == 307 or code == 308) then
+            local location = (type(last_headers_res) == "table") and (last_headers_res.location or last_headers_res.Location)
+            if location and location ~= "" then
+                if not location:match("^https?://") then
+                    local scheme_host = current_url:match("^(https?://[^/]+)")
+                    if scheme_host then
+                        if location:sub(1,1) == "/" then
+                            current_url = scheme_host .. location
+                        else
+                            current_url = scheme_host .. "/" .. location
+                        end
+                    end
+                else
+                    current_url = location
+                end
+                redirect_count = redirect_count + 1
+            else
+                return false, last_res_code, last_headers_res
+            end
+        else
+            return false, last_res_code, last_headers_res
+        end
+    end
+    return false, "too many redirects", nil
+end
+
+function CatalogClient.fetchCatalog(url_to_fetch)
     local urls_to_try = {}
-    if url_to_fetch then
-        table.insert(urls_to_try, url_to_fetch)
-    else
-        table.insert(urls_to_try, CatalogClient.getCatalogUrl())
+    local primary_url = url_to_fetch or CatalogClient.getCatalogUrl()
+    table.insert(urls_to_try, primary_url)
+    if primary_url ~= FALLBACK_CATALOG_URL then
         table.insert(urls_to_try, FALLBACK_CATALOG_URL)
     end
 
@@ -79,47 +159,24 @@ function CatalogClient.fetchCatalog(url_to_fetch)
     for _, target_url in ipairs(urls_to_try) do
         logger.info("Storefront: fetching static catalog from", target_url)
         local response_body = {}
-        local headers = {
-            ["Accept"] = "application/json",
-            ["User-Agent"] = USER_AGENT,
-        }
+        local sink_fn = function()
+            response_body = {}
+            return newTableSink(response_body)
+        end
 
-        local http_req = getHttpModule(target_url)
-        socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-        -- ssl.https does not support redirect=true; socket.http does
-        local is_https = target_url:match("^https://") ~= nil
-        local ok_req, res_code = pcall(function()
-            local params = {
-                url = target_url,
-                method = "GET",
-                headers = headers,
-                sink = newTableSink(response_body),
-            }
-            if not is_https then params.redirect = true end
-            local _, c = http_req.request(params)
-            return c
-        end)
-        socketutil:reset_timeout()
-
+        local ok, res_code = requestWithRedirects(target_url, sink_fn)
         local code = tonumber(res_code) or 0
-        if ok_req and code == 200 then
+        if ok and code == 200 then
             local body = table.concat(response_body)
-            local ok, parsed = pcall(json.decode, body)
-            if ok and type(parsed) == "table" and parsed.plugins then
+            local ok_dec, parsed = pcall(json.decode, body)
+            if ok_dec and type(parsed) == "table" and parsed.plugins then
                 return parsed, nil
             else
                 logger.warn("Storefront catalog decode error from", target_url)
                 last_err = "JSON decode error"
             end
         else
-            local err_str
-            if not ok_req then
-                err_str = "pcall failed: " .. tostring(res_code)
-            elseif tonumber(res_code) then
-                err_str = "HTTP " .. tostring(res_code)
-            else
-                err_str = tostring(res_code)
-            end
+            local err_str = tonumber(res_code) and ("HTTP " .. tostring(res_code)) or tostring(res_code)
             logger.warn("Storefront catalog fetch error from", target_url, err_str)
             last_err = err_str
         end
@@ -170,63 +227,40 @@ function CatalogClient.updateCacheFromCatalog(catalog_data, is_bundled)
 end
 
 function CatalogClient.fetchCatalogToFile(url_to_fetch, dest_path)
-    local socketutil = require("socketutil")
-
     local urls_to_try = {}
-    if url_to_fetch then
-        table.insert(urls_to_try, url_to_fetch)
-    else
-        table.insert(urls_to_try, CatalogClient.getCatalogUrl())
+    local primary_url = url_to_fetch or CatalogClient.getCatalogUrl()
+    table.insert(urls_to_try, primary_url)
+    if primary_url ~= FALLBACK_CATALOG_URL then
         table.insert(urls_to_try, FALLBACK_CATALOG_URL)
     end
 
     local last_err = "No catalog URLs attempted"
     for _, target_url in ipairs(urls_to_try) do
         logger.info("Storefront: fetching catalog to file from", target_url)
-        local file, f_err = io.open(dest_path, "wb")
-        if not file then
-            logger.err("Storefront: failed to open dest_path for writing", f_err)
-            last_err = "failed to open dest_path"
-        else
-            local http_req = getHttpModule(target_url)
-            local is_https = target_url:match("^https://") ~= nil
-            local headers = {
-                ["Accept"] = "application/json",
-                ["User-Agent"] = USER_AGENT,
-            }
-
-            socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-            local ok_req, res_code = pcall(function()
-                local params = {
-                    url = target_url,
-                    method = "GET",
-                    headers = headers,
-                    sink = socketutil.file_sink(file),
-                }
-                -- ssl.https does not support redirect=true
-                if not is_https then params.redirect = true end
-                local _, c = http_req.request(params)
-                return c
-            end)
-            pcall(function() file:close() end)
-            socketutil:reset_timeout()
-
-            local code = tonumber(res_code) or 0
-            if ok_req and code == 200 then
-                return true, nil
-            else
-                os.remove(dest_path)
-                local err_str
-                if not ok_req then
-                    err_str = "pcall failed: " .. tostring(res_code)
-                elseif tonumber(res_code) then
-                    err_str = "HTTP " .. tostring(res_code)
-                else
-                    err_str = tostring(res_code)
-                end
-                logger.warn("Storefront catalog fetch to file error from", target_url, err_str)
-                last_err = err_str
+        local current_file = nil
+        local sink_fn = function()
+            if current_file then pcall(function() current_file:close() end) end
+            os.remove(dest_path)
+            local f, err = io.open(dest_path, "wb")
+            if not f then
+                logger.err("Storefront: failed to open dest_path for writing", err)
+                return nil
             end
+            current_file = f
+            return require("socketutil").file_sink(f)
+        end
+
+        local ok, res_code = requestWithRedirects(target_url, sink_fn)
+        if current_file then pcall(function() current_file:close() end); current_file = nil end
+
+        local code = tonumber(res_code) or 0
+        if ok and code == 200 then
+            return true, nil
+        else
+            os.remove(dest_path)
+            local err_str = tonumber(res_code) and ("HTTP " .. tostring(res_code)) or tostring(res_code)
+            logger.warn("Storefront catalog fetch to file error from", target_url, err_str)
+            last_err = err_str
         end
     end
 
@@ -480,6 +514,22 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback)
     local pid, parent_read_fd = ffiutil.runInSubProcess(function(pid, child_write_fd)
         local ok, err = xpcall(function()
             local ok_dl, dl_err = CatalogClient.fetchCatalogToFile(target_url, staging_raw_catalog)
+            if not ok_dl then
+                logger.warn("Storefront: remote catalog download failed (" .. tostring(dl_err) .. "), attempting fallback to bundled catalog")
+                local bundled_path = CatalogClient.getBundledCatalogPath()
+                if bundled_path then
+                    local bf = io.open(bundled_path, "rb")
+                    if bf then
+                        local df = io.open(staging_raw_catalog, "wb")
+                        if df then
+                            df:write(bf:read("*all"))
+                            df:close()
+                            ok_dl = true
+                        end
+                        bf:close()
+                    end
+                end
+            end
             if not ok_dl then
                 if child_write_fd then ffiutil.writeToFD(child_write_fd, "ERR_DOWNLOAD: " .. tostring(dl_err), true) end
                 return

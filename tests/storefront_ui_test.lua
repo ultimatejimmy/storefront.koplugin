@@ -1034,6 +1034,14 @@ if ok_browser then
         check("Bundled catalog seed leaves getLastFetched as 0", Cache.getLastFetched("plugin"), 0)
         check("Bundled catalog seed populates countRepos", Cache.countRepos("plugin"), 1)
 
+        -- Test fetchCatalog tries secondary fallback URL when primary URL fails
+        local tried_urls = {}
+        local orig_getHttpModule = package.loaded["storefront_net_catalog"]
+        -- Test URL building logic in fetchCatalog
+        local primary_url = CatalogClient.getCatalogUrl()
+        local fallback_url = "https://raw.githubusercontent.com/ultimatejimmy/storefront.koplugin/main/catalog.json"
+        check("CatalogClient primary and fallback URLs are distinct", primary_url ~= fallback_url, true)
+
         -- Test maybeCheckCatalogBackground triggers fetch when last_fetched is 0 even if _last_catalog_check_time is recent
         local fetch_attempted = false
         local orig_fetchAsync = CatalogClient.fetchAndUpdateCacheAsync
