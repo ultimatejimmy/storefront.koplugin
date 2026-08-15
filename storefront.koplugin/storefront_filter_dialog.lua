@@ -739,9 +739,134 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
     local sort_order = { "popular", "az", "za" }
     local sort_labels = { popular = _("Most Popular"), az = _("A -> Z"), za = _("Z -> A") }
 
-    local page_size = 5
-    local cat_page = 1
-    local total_cat_pages = math.max(1, math.ceil(#cats / page_size))
+    local function getCategorySummary(set, legacy_cat)
+        if type(set) == "table" and next(set) and not set["all"] then
+            local selected_list = {}
+            for _, c in ipairs(cats) do
+                if c ~= "all" and set[c:lower()] then
+                    table.insert(selected_list, c)
+                end
+            end
+            if #selected_list == 1 then return selected_list[1] end
+            if #selected_list == 2 then return selected_list[1] .. ", " .. selected_list[2] end
+            if #selected_list > 2 then return selected_list[1] .. string.format(" (+%d)", #selected_list - 1) end
+        end
+        if legacy_cat and legacy_cat ~= "" and legacy_cat ~= "all" then
+            return legacy_cat
+        end
+        return _("All")
+    end
+
+    local function showCategoryCheckboxDialog(on_save)
+        local Menu = require("ui/widget/menu")
+
+        local current_set = {}
+        if type(state.screensaver_categories) == "table" then
+            for k, v in pairs(state.screensaver_categories) do current_set[k] = v end
+        elseif state.screensaver_category and state.screensaver_category ~= "" and state.screensaver_category ~= "all" then
+            current_set[state.screensaver_category:lower()] = true
+        end
+        if not next(current_set) then
+            current_set["all"] = true
+        end
+
+        local menu_dialog
+
+        local function build_item_table()
+            local items = {}
+
+            -- Apply selection row
+            table.insert(items, {
+                text = _("✓  Done"),
+                bold = true,
+                keep_menu_open = false,
+                callback = function()
+                    if menu_dialog then UIManager:close(menu_dialog) end
+                    if on_save then on_save(current_set) end
+                end,
+            })
+
+            -- Select All row
+            table.insert(items, {
+                text = _("Select All"),
+                keep_menu_open = true,
+                callback = function()
+                    local new_set = { all = true }
+                    for _, c in ipairs(cats) do
+                        if c ~= "all" then new_set[c:lower()] = true end
+                    end
+                    current_set = new_set
+                    if menu_dialog then
+                        menu_dialog:switchItemTable(_("Select Categories"), build_item_table())
+                    end
+                end,
+            })
+
+            -- "All Categories" option
+            local is_all = current_set["all"] == true
+            table.insert(items, {
+                text = (is_all and "☑  " or "☐  ") .. _("All Categories") .. string.format(" (%d)", cat_counts["all"] or 0),
+                bold = is_all,
+                keep_menu_open = true,
+                callback = function()
+                    current_set = { all = true }
+                    if menu_dialog then
+                        menu_dialog:switchItemTable(_("Select Categories"), build_item_table())
+                    end
+                end,
+            })
+
+            -- Individual category rows (All at once!)
+            for _, cat_name in ipairs(cats) do
+                if cat_name ~= "all" then
+                    local key = cat_name:lower()
+                    local is_checked = (current_set[key] == true) and not current_set["all"]
+                    local count_val = cat_counts[key]
+                    local count_str = count_val and string.format(" (%d)", count_val) or ""
+
+                    local target_key = key
+                    table.insert(items, {
+                        text = (is_checked and "☑  " or "☐  ") .. cat_name .. count_str,
+                        bold = is_checked,
+                        keep_menu_open = true,
+                        callback = function()
+                            current_set["all"] = nil
+                            if current_set[target_key] then
+                                current_set[target_key] = nil
+                            else
+                                current_set[target_key] = true
+                            end
+                            if not next(current_set) then
+                                current_set["all"] = true
+                            end
+                            if menu_dialog then
+                                menu_dialog:switchItemTable(_("Select Categories"), build_item_table())
+                            end
+                        end,
+                    })
+                end
+            end
+
+            return items
+        end
+
+        local total_items = #cats + 3
+        menu_dialog = Menu:new{
+            title = _("Select Categories"),
+            item_table = build_item_table(),
+            is_popmenu = true,
+            per_page = total_items, -- SHOW ALL AT ONCE! No pagination arrows!
+            width = math.min(sw - sc(20), sc(380)),
+            height = math.min(sh - sc(40), sc(500)),
+            onMenuChoice = function(item)
+                if item and item.callback then
+                    item.callback()
+                end
+            end,
+        }
+
+        UIManager:show(menu_dialog)
+    end
 
     local overlay
     local refresh
@@ -838,212 +963,6 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
             return item
         end
 
-        local function create_section_header_with_actions(title, action_widgets)
-            local label = TextWidget:new{
-                text = title:upper(),
-                face = Font:getFace("cfont", storefront_theme.section_header_font_size or 16),
-                bold = true,
-                fgcolor = Blitbuffer.COLOR_BLACK,
-            }
-
-            local row = { label }
-            if action_widgets and #action_widgets > 0 then
-                table.insert(row, HorizontalSpan:new{ width = sc(12) })
-                for _, w in ipairs(action_widgets) do
-                    table.insert(row, w)
-                    table.insert(row, HorizontalSpan:new{ width = sc(6) })
-                end
-            end
-
-            return FrameContainer:new{
-                padding = sc(5),
-                padding_left = sc(8),
-                bordersize = 0,
-                width = dialog_w - sc(4),
-                background = Blitbuffer.COLOR_LIGHT_GRAY,
-                HorizontalGroup:new(row),
-            }
-        end
-
-        -- Quick Action Buttons for Categories
-        local select_all_btn = Button:new{
-            text = _("Select All"),
-            text_font_size = 11,
-            padding = sc(2),
-            padding_h = sc(6),
-            bordersize = sc(1),
-            radius = sc(3),
-            background = Blitbuffer.COLOR_WHITE,
-            callback = function()
-                local new_set = { all = true }
-                for _, c in ipairs(cats) do
-                    if c ~= "all" then
-                        new_set[c:lower()] = true
-                    end
-                end
-                state.screensaver_categories = new_set
-                state.screensaver_category = ""
-                refresh()
-            end,
-        }
-
-        local clear_btn = Button:new{
-            text = _("Clear"),
-            text_font_size = 11,
-            padding = sc(2),
-            padding_h = sc(6),
-            bordersize = sc(1),
-            radius = sc(3),
-            background = Blitbuffer.COLOR_WHITE,
-            callback = function()
-                state.screensaver_categories = { all = true }
-                state.screensaver_category = ""
-                refresh()
-            end,
-        }
-
-        -- Categories Section Header
-        table.insert(content_vg, create_section_header_with_actions(_("Categories"), { select_all_btn, clear_btn }))
-
-        local cat_list_vg = VerticalGroup:new{ align = "left" }
-
-        local current_set = {}
-        if type(state.screensaver_categories) == "table" then
-            for k, v in pairs(state.screensaver_categories) do current_set[k] = v end
-        elseif state.screensaver_category and state.screensaver_category ~= "" and state.screensaver_category ~= "all" then
-            current_set[state.screensaver_category:lower()] = true
-        end
-        if not next(current_set) then
-            current_set["all"] = true
-        end
-
-        -- Paginated category rows
-        cat_page = math.max(1, math.min(cat_page, total_cat_pages))
-        local start_idx = (cat_page - 1) * page_size + 1
-        local end_idx = math.min(#cats, start_idx + page_size - 1)
-
-        for idx = start_idx, end_idx do
-            local cat_name = cats[idx]
-            local key = cat_name:lower()
-            local is_checked = (current_set[key] == true) or (current_set["all"] and key == "all")
-            local display_name = (cat_name == "all") and _("All Categories") or cat_name
-            local count_val = cat_counts[key]
-            local count_str = count_val and string.format(" (%d)", count_val) or ""
-
-            local check_str = is_checked and "☑  " or "☐  "
-            local label_str = check_str .. display_name .. count_str
-
-            local target_key = key
-            local cat_btn = Button:new{
-                text = label_str,
-                text_font_size = ui_font_size - 2,
-                text_font_bold = is_checked,
-                text_font_color = is_checked and Blitbuffer.COLOR_BLACK or storefront_theme.color_label_dim,
-                bordersize = 0,
-                background = is_checked and Blitbuffer.Color8(240) or Blitbuffer.COLOR_WHITE,
-                padding = sc(6),
-                padding_left = sc(10),
-                width = dialog_w - sc(12),
-                callback = function()
-                    if target_key == "all" then
-                        state.screensaver_categories = { all = true }
-                    else
-                        if not state.screensaver_categories then
-                            state.screensaver_categories = {}
-                        end
-                        state.screensaver_categories["all"] = nil
-                        if state.screensaver_categories[target_key] then
-                            state.screensaver_categories[target_key] = nil
-                        else
-                            state.screensaver_categories[target_key] = true
-                        end
-                        if not next(state.screensaver_categories) then
-                            state.screensaver_categories = { all = true }
-                        end
-                    end
-                    state.screensaver_category = ""
-                    refresh()
-                end,
-            }
-
-            table.insert(cat_list_vg, cat_btn)
-            if idx < end_idx then
-                table.insert(cat_list_vg, LineWidget:new{
-                    dimen = Geom:new{ w = dialog_w - sc(12), h = sc(1) },
-                    background = Blitbuffer.COLOR_LIGHT_GRAY,
-                })
-            end
-        end
-
-        local cat_frame = FrameContainer:new{
-            bordersize = sc(1),
-            color = Blitbuffer.COLOR_LIGHT_GRAY,
-            padding = 0,
-            width = dialog_w - sc(4),
-            cat_list_vg,
-        }
-        table.insert(content_vg, cat_frame)
-
-        -- Pagination Controls Row
-        if total_cat_pages > 1 then
-            local prev_btn = Button:new{
-                text = " < ",
-                text_font_size = ui_font_size - 2,
-                bordersize = sc(1),
-                padding = sc(3),
-                padding_h = sc(10),
-                radius = sc(3),
-                background = (cat_page > 1) and Blitbuffer.COLOR_WHITE or Blitbuffer.COLOR_LIGHT_GRAY,
-                callback = function()
-                    if cat_page > 1 then
-                        cat_page = cat_page - 1
-                        refresh()
-                    end
-                end,
-            }
-
-            local next_btn = Button:new{
-                text = " > ",
-                text_font_size = ui_font_size - 2,
-                bordersize = sc(1),
-                padding = sc(3),
-                padding_h = sc(10),
-                radius = sc(3),
-                background = (cat_page < total_cat_pages) and Blitbuffer.COLOR_WHITE or Blitbuffer.COLOR_LIGHT_GRAY,
-                callback = function()
-                    if cat_page < total_cat_pages then
-                        cat_page = cat_page + 1
-                        refresh()
-                    end
-                end,
-            }
-
-            local page_str = string.format("%d / %d", cat_page, total_cat_pages)
-            local page_txt = TextWidget:new{
-                text = page_str,
-                face = Font:getFace("cfont", storefront_theme.subtext_font_size or 14),
-                fgcolor = storefront_theme.color_label_dim,
-            }
-
-            local page_row = FrameContainer:new{
-                padding = sc(4),
-                bordersize = 0,
-                width = dialog_w - sc(4),
-                CenterContainer:new{
-                    dimen = Geom:new{ w = dialog_w - sc(20), h = sc(30) },
-                    HorizontalGroup:new{
-                        prev_btn,
-                        HorizontalSpan:new{ width = sc(16) },
-                        page_txt,
-                        HorizontalSpan:new{ width = sc(16) },
-                        next_btn,
-                    }
-                }
-            }
-            table.insert(content_vg, page_row)
-        end
-
-        -- Sorting Section Header
         local function create_section_header(title)
             local label = TextWidget:new{
                 text = title:upper(),
@@ -1060,6 +979,23 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
                 label,
             }
         end
+
+        table.insert(content_vg, create_section_header(_("Filters")))
+
+        -- Category row (opens Checkbox List dialog)
+        local cat_display = getCategorySummary(state.screensaver_categories, state.screensaver_category)
+        local cat_widget = TextWidget:new{
+            text = cat_display,
+            face = Font:getFace("cfont", storefront_theme.subtext_font_size or 16),
+            fgcolor = storefront_theme.color_label_dim,
+        }
+        table.insert(content_vg, create_setting_row(_("Categories"), cat_widget, function()
+            showCategoryCheckboxDialog(function(new_set)
+                state.screensaver_categories = new_set
+                state.screensaver_category = ""
+                refresh()
+            end)
+        end))
 
         table.insert(content_vg, create_section_header(_("Sorting")))
 
@@ -1098,7 +1034,6 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
             state.screensaver_categories = nil
             state.screensaver_sort = "popular"
             state.screensaver_search = ""
-            cat_page = 1
             refresh()
         end))
 
