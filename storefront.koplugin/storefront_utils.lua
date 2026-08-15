@@ -200,13 +200,39 @@ function storefront_utils.repoIsFork(repo)
     return false
 end
 
-function storefront_utils.getMappedScreensaverCategories(cat_str)
-    if not cat_str or cat_str == "" then
+function storefront_utils.getMappedScreensaverCategories(cat_input)
+    if not cat_input then
         return { "Fine Art" }
     end
+
+    local raw_list = {}
+    if type(cat_input) == "table" then
+        for _, v in ipairs(cat_input) do
+            if type(v) == "string" and v ~= "" then
+                table.insert(raw_list, v)
+            end
+        end
+        if #raw_list == 0 then
+            for _, v in pairs(cat_input) do
+                if type(v) == "string" and v ~= "" then
+                    table.insert(raw_list, v)
+                end
+            end
+        end
+    elseif type(cat_input) == "string" then
+        if cat_input == "" then return { "Fine Art" } end
+        for part in string.gmatch(cat_input, "[^,]+") do
+            table.insert(raw_list, part)
+        end
+    end
+
+    if #raw_list == 0 then
+        return { "Fine Art" }
+    end
+
     local result = {}
     local seen = {}
-    for part in string.gmatch(tostring(cat_str), "[^,]+") do
+    for _, part in ipairs(raw_list) do
         local c = part:match("^%s*(.-)%s*$"):lower()
         local mapped = nil
         if c:find("transparent") or c:find("overlay") then

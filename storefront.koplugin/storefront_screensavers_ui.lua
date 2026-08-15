@@ -269,8 +269,10 @@ function StorefrontScreensavers.showDetails(item, parent_storefront)
 
     local thumb_file = StorefrontScreensavers.fetchThumbnail(item)
 
+    local StorefrontUtils = require("storefront_utils")
+    local cat_str = table.concat(StorefrontUtils.getMappedScreensaverCategories(item.category), ", ")
     local meta_txt = TextWidget:new{
-        text = string.format("%s  ·  %s", item.author or "Community", item.category or "General"),
+        text = string.format("%s  ·  %s", item.author or "Community", cat_str),
         face = Font:getFace("cfont", 16),
         fgcolor = Blitbuffer.COLOR_DARK_GRAY,
     }
