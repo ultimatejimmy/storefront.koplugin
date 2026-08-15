@@ -738,6 +738,13 @@ if ok_browser then
         MainStorefront:toggleFilterBar("Plugins")
         check("toggleFilterBar Plugins toggles show_filter_bar_plugins back to false", MainStorefront.browser_state.show_filter_bar_plugins, false)
 
+        -- Test tab switch retains closed filter bar state
+        MainStorefront.browser_state.search_text = ""
+        MainStorefront.browser_state.show_filter_bar_plugins = false
+        MainStorefront.browser_state.tab = "Installed"
+        MainStorefront.browser_state.tab = "Plugins"
+        check("Tab switch preserves closed filter bar state when no active search", MainStorefront.browser_state.show_filter_bar_plugins, false)
+
         local catalog_filter_card_ok = pcall(function()
             StorefrontFilterDialog:showCatalogFilter(MainStorefront)
         end)

@@ -8030,15 +8030,6 @@ function Storefront:showBrowser(kind)
             self.browser_state.kind = (tab_name == "Patches" and "patch") or (tab_name == "Fonts" and "font") or "plugin"
             self.browser_state.page = 1
             self.browser_state.scroll_offset = nil
-
-            if self:hasActiveFilters(tab_name) then
-                if tab_name == "Plugins" then self.browser_state.show_filter_bar_plugins = true
-                elseif tab_name == "Patches" then self.browser_state.show_filter_bar_patches = true
-                elseif tab_name == "Fonts" then self.browser_state.show_filter_bar_fonts = true
-                elseif tab_name == "Installed" then self.browser_state.show_filter_bar_installed = true
-                end
-            end
-
             self:saveBrowserState()
             self:reopenBrowser()
         end,
