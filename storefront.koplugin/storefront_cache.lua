@@ -20,6 +20,7 @@ local _data = {
 
 local _by_id = {}
 local _by_name = {}
+local _by_plugin_name = {}
 
 local function ensureDirectory()
     local ok, err = util.makePath(DB_DIRECTORY)
@@ -114,8 +115,9 @@ function Cache.init()
 
     _by_id = {}
     _by_name = {}
+    _by_plugin_name = {}
     
-    local function indexRepos(repos)
+    local function indexRepos(repos, kind)
         for _, repo in ipairs(repos) do
             local s = tonumber(repo.stars) or 0
             if s == 0 and repo.data then
@@ -129,17 +131,24 @@ function Cache.init()
                 local key = string.format("%s/%s", repo.owner:lower(), repo.name:lower())
                 _by_name[key] = repo
             end
+            if kind == "plugin" and repo.name then
+                local clean = repo.name:gsub("%.koplugin$", ""):lower()
+                if not _by_plugin_name[clean] or (tonumber(repo.stars) or 0) > (tonumber(_by_plugin_name[clean].stars) or 0) then
+                    _by_plugin_name[clean] = repo
+                    _by_plugin_name[clean .. ".koplugin"] = repo
+                end
+            end
         end
     end
     
     if _data.plugin and _data.plugin.repos then
-        indexRepos(_data.plugin.repos)
+        indexRepos(_data.plugin.repos, "plugin")
     end
     if _data.patch and _data.patch.repos then
-        indexRepos(_data.patch.repos)
+        indexRepos(_data.patch.repos, "patch")
     end
     if _data.font and _data.font.repos then
-        indexRepos(_data.font.repos)
+        indexRepos(_data.font.repos, "font")
     end
     
     _loaded = true
@@ -298,6 +307,19 @@ function Cache.getRepoByName(owner, name)
     local plugin_key = string.format("%s/%s.koplugin", low_owner, clean_name)
     if _by_name[plugin_key] then
         return _by_name[plugin_key]
+    end
+    return nil
+end
+
+function Cache.getRepoByPluginName(name)
+    if not name or name == "" then return nil end
+    Cache.init()
+    local clean = name:gsub("%.koplugin$", ""):lower()
+    if _by_plugin_name[clean] then
+        return _by_plugin_name[clean]
+    end
+    if _by_plugin_name[clean .. ".koplugin"] then
+        return _by_plugin_name[clean .. ".koplugin"]
     end
     return nil
 end
@@ -462,6 +484,7 @@ function Cache.invalidate()
     }
     _by_id = {}
     _by_name = {}
+    _by_plugin_name = {}
 end
 
 function Cache.clear()
@@ -471,6 +494,7 @@ function Cache.clear()
     }
     _by_id = {}
     _by_name = {}
+    _by_plugin_name = {}
     os.remove(PLUGINS_FILE)
     os.remove(PATCHES_FILE)
 end

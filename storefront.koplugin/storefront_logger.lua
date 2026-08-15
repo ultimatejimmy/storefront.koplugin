@@ -19,8 +19,19 @@ local function getLogFilePath()
     return dir .. "/storefront.log"
 end
 
+local last_log_msg = nil
+local last_log_time = 0
+
 local function writeLog(level, msg)
     pcall(function()
+        local msg_str = tostring(msg)
+        local now = os.time()
+        if level == "INFO" and msg_str == last_log_msg and (now - last_log_time) < 10 then
+            return
+        end
+        last_log_msg = msg_str
+        last_log_time = now
+
         local path = getLogFilePath()
         write_count = write_count + 1
         if write_count >= 50 then
@@ -38,7 +49,7 @@ local function writeLog(level, msg)
 
         local f = io.open(path, "a")
         if f then
-            f:write(os.date("%Y-%m-%d %H:%M:%S") .. " [" .. level .. "] " .. tostring(msg) .. "\n")
+            f:write(os.date("%Y-%m-%d %H:%M:%S") .. " [" .. level .. "] " .. msg_str .. "\n")
             f:close()
         end
     end)

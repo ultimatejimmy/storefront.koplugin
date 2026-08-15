@@ -1350,13 +1350,25 @@ local function getPluginMetaPath(root, dirname)
     return string.format("%s/%s/_meta.lua", root, dirname)
 end
 
+local G_plugin_meta_cache = {}
+
 local function loadPluginMeta(root, dirname)
     local meta_path = getPluginMetaPath(root, dirname)
-    if not meta_path or lfs.attributes(meta_path, "mode") ~= "file" then
+    if not meta_path then
         return nil
+    end
+    local attr = lfs.attributes(meta_path)
+    if not attr or attr.mode ~= "file" then
+        return nil
+    end
+    local mtime = attr.modification or 0
+    local cached = G_plugin_meta_cache[meta_path]
+    if cached and cached.mtime == mtime then
+        return cached.meta
     end
     local ok, meta = pcall(dofile, meta_path)
     if ok and type(meta) == "table" then
+        G_plugin_meta_cache[meta_path] = { mtime = mtime, meta = meta }
         return meta
     end
 end
@@ -9255,119 +9267,125 @@ function Storefront:init()
     self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
     
-    -- Migrate settings to page size 5
-    StorefrontSettings:saveSetting(BROWSER_PAGE_SIZE_KEY, 5)
-    StorefrontSettings:saveSetting(MANAGE_PAGE_SIZE_KEY, 5)
-    StorefrontSettings:flush()
-
-    -- Cleanup legacy test files from plugin directory if updating from an older version
-    local plugin_dir = self.path or (PluginPaths.getDefaultPluginsRoot() .. "/storefront.koplugin")
-    local legacy_test_files = {
-        "storefront_plugin_paths_test.lua",
-        "storefront_readme_test.lua",
-        "storefront_release_notes_test.lua",
-        "storefront_ui_test.lua",
-    }
-    local lfs_mod = require("libs/libkoreader-lfs")
-    for _, legacy_file in ipairs(legacy_test_files) do
-        local legacy_path = plugin_dir .. "/" .. legacy_file
-        local ok_attr, attr = pcall(lfs_mod.attributes, legacy_path, "mode")
-        if ok_attr and attr == "file" then
-            os.remove(legacy_path)
-        end
+    -- Migrate settings to page size 5 if not set
+    if StorefrontSettings:readSetting(BROWSER_PAGE_SIZE_KEY) ~= 5 or StorefrontSettings:readSetting(MANAGE_PAGE_SIZE_KEY) ~= 5 then
+        StorefrontSettings:saveSetting(BROWSER_PAGE_SIZE_KEY, 5)
+        StorefrontSettings:saveSetting(MANAGE_PAGE_SIZE_KEY, 5)
+        StorefrontSettings:flush()
     end
 
-    -- Ensure any .asset files in plugin assets are restored to standard .ttf/.otf extension
-    local asset_dir_candidates = {
-        plugin_dir .. "/assets/fonts",
-        plugin_dir .. "/assets/bundled_fonts",
-        plugin_dir .. "/storefront.koplugin/assets/fonts",
-        plugin_dir .. "/storefront.koplugin/assets/bundled_fonts",
-    }
-    for _, a_dir in ipairs(asset_dir_candidates) do
-        if lfs_mod.attributes(a_dir, "mode") == "directory" then
-            for font_folder in lfs_mod.dir(a_dir) do
-                if font_folder ~= "." and font_folder ~= ".." then
-                    local f_path = a_dir .. "/" .. font_folder
-                    if lfs_mod.attributes(f_path, "mode") == "directory" then
-                        for item in lfs_mod.dir(f_path) do
-                            if item:match("%.asset$") then
-                                local restored_name = item:gsub("%.asset$", "")
-                                pcall(os.rename, f_path .. "/" .. item, f_path .. "/" .. restored_name)
-                            end
-                        end
-                    end
-                end
+    if not G_session_init_done then
+        G_session_init_done = true
+
+        -- Cleanup legacy test files from plugin directory if updating from an older version
+        local plugin_dir = self.path or (PluginPaths.getDefaultPluginsRoot() .. "/storefront.koplugin")
+        local legacy_test_files = {
+            "storefront_plugin_paths_test.lua",
+            "storefront_readme_test.lua",
+            "storefront_release_notes_test.lua",
+            "storefront_ui_test.lua",
+        }
+        local lfs_mod = require("libs/libkoreader-lfs")
+        for _, legacy_file in ipairs(legacy_test_files) do
+            local legacy_path = plugin_dir .. "/" .. legacy_file
+            local ok_attr, attr = pcall(lfs_mod.attributes, legacy_path, "mode")
+            if ok_attr and attr == "file" then
+                os.remove(legacy_path)
             end
         end
-    end
 
-    -- One-time migration: import legacy StorefrontSettings ignored_releases into InstallStore.
-    -- The old system stored a single ignored tag per repo under "owner/repo" keys.
-    -- The new system (InstallStore) stores per-tag flags under item_options[item_key].ignored_releases.
-    do
-        local MIGRATED_KEY = "ignored_releases_migrated_v1"
-        if not StorefrontSettings:readSetting(MIGRATED_KEY) then
-            local legacy_ignored = StorefrontSettings:readSetting(IGNORED_RELEASES_KEY) or {}
-            for repo_key, tag in pairs(legacy_ignored) do
-                if type(repo_key) == "string" and type(tag) == "string" and tag ~= "" then
-                    local owner_part, repo_part = repo_key:match("^([^/]+)/(.+)$")
-                    if owner_part and repo_part then
-                        -- Write into InstallStore keyed by both "owner/repo" and bare "repo"
-                        local full_key = string.format("%s/%s", owner_part, repo_part)
-                        local opts_full = InstallStore.getItemOptions(full_key)
-                        opts_full.ignored_releases[tag] = true
-                        InstallStore.setItemOptions(full_key, opts_full)
-                        local opts_bare = InstallStore.getItemOptions(repo_part)
-                        opts_bare.ignored_releases[tag] = true
-                        InstallStore.setItemOptions(repo_part, opts_bare)
-                    end
-                end
-            end
-            StorefrontSettings:saveSetting(MIGRATED_KEY, true)
-            StorefrontSettings:flush()
-        end
-    end
-
-    -- Cleanup any files or directories marked for deletion in previous sessions
-    local ok_ds, DataStorage = pcall(require, "datastorage")
-    if ok_ds and DataStorage then
-        local data_dir = DataStorage:getDataDir()
-        local fonts_roots = { data_dir .. "/fonts" }
-        if lfs_mod.attributes("fonts", "mode") == "directory" then
-            table.insert(fonts_roots, "fonts")
-        end
-        local found_deleted = false
-        for _, f_root in ipairs(fonts_roots) do
-            if lfs_mod.attributes(f_root, "mode") == "directory" then
-                for f in lfs_mod.dir(f_root) do
-                    if f:match("%.deleted$") then
-                        found_deleted = true
-                        local full_path = f_root .. "/" .. f
-                        local mode = lfs_mod.attributes(full_path, "mode")
-                        if mode == "directory" then
-                            local ok_ffi, ffiutil = pcall(require, "ffi/util")
-                            if ok_ffi and ffiutil and type(ffiutil.purgeDir) == "function" then
-                                pcall(ffiutil.purgeDir, full_path)
-                            end
-                            for inner in lfs_mod.dir(full_path) do
-                                if inner ~= "." and inner ~= ".." then
-                                    pcall(os.remove, full_path .. "/" .. inner)
+        -- Ensure any .asset files in plugin assets are restored to standard .ttf/.otf extension
+        local asset_dir_candidates = {
+            plugin_dir .. "/assets/fonts",
+            plugin_dir .. "/assets/bundled_fonts",
+            plugin_dir .. "/storefront.koplugin/assets/fonts",
+            plugin_dir .. "/storefront.koplugin/assets/bundled_fonts",
+        }
+        for _, a_dir in ipairs(asset_dir_candidates) do
+            if lfs_mod.attributes(a_dir, "mode") == "directory" then
+                for font_folder in lfs_mod.dir(a_dir) do
+                    if font_folder ~= "." and font_folder ~= ".." then
+                        local f_path = a_dir .. "/" .. font_folder
+                        if lfs_mod.attributes(f_path, "mode") == "directory" then
+                            for item in lfs_mod.dir(f_path) do
+                                if item:match("%.asset$") then
+                                    local restored_name = item:gsub("%.asset$", "")
+                                    pcall(os.rename, f_path .. "/" .. item, f_path .. "/" .. restored_name)
                                 end
                             end
-                            pcall(lfs_mod.rmdir, full_path)
-                        elseif mode == "file" then
-                            pcall(os.remove, full_path)
                         end
                     end
                 end
             end
         end
-        -- If we cleaned up any deleted fonts, also nuke fontinfo.dat so KOReader
-        -- does a fresh font scan on this startup rather than loading stale cache.
-        if found_deleted then
-            os.remove(data_dir .. "/cache/fontlist/fontinfo.dat")
-            os.remove(data_dir .. "/cache/fontinfo.dat")
+
+        -- One-time migration: import legacy StorefrontSettings ignored_releases into InstallStore.
+        -- The old system stored a single ignored tag per repo under "owner/repo" keys.
+        -- The new system (InstallStore) stores per-tag flags under item_options[item_key].ignored_releases.
+        do
+            local MIGRATED_KEY = "ignored_releases_migrated_v1"
+            if not StorefrontSettings:readSetting(MIGRATED_KEY) then
+                local legacy_ignored = StorefrontSettings:readSetting(IGNORED_RELEASES_KEY) or {}
+                for repo_key, tag in pairs(legacy_ignored) do
+                    if type(repo_key) == "string" and type(tag) == "string" and tag ~= "" then
+                        local owner_part, repo_part = repo_key:match("^([^/]+)/(.+)$")
+                        if owner_part and repo_part then
+                            -- Write into InstallStore keyed by both "owner/repo" and bare "repo"
+                            local full_key = string.format("%s/%s", owner_part, repo_part)
+                            local opts_full = InstallStore.getItemOptions(full_key)
+                            opts_full.ignored_releases[tag] = true
+                            InstallStore.setItemOptions(full_key, opts_full)
+                            local opts_bare = InstallStore.getItemOptions(repo_part)
+                            opts_bare.ignored_releases[tag] = true
+                            InstallStore.setItemOptions(repo_part, opts_bare)
+                        end
+                    end
+                end
+                StorefrontSettings:saveSetting(MIGRATED_KEY, true)
+                StorefrontSettings:flush()
+            end
+        end
+
+        -- Cleanup any files or directories marked for deletion in previous sessions
+        local ok_ds, DataStorage = pcall(require, "datastorage")
+        if ok_ds and DataStorage then
+            local data_dir = DataStorage:getDataDir()
+            local fonts_roots = { data_dir .. "/fonts" }
+            if lfs_mod.attributes("fonts", "mode") == "directory" then
+                table.insert(fonts_roots, "fonts")
+            end
+            local found_deleted = false
+            for _, f_root in ipairs(fonts_roots) do
+                if lfs_mod.attributes(f_root, "mode") == "directory" then
+                    for f in lfs_mod.dir(f_root) do
+                        if f:match("%.deleted$") then
+                            found_deleted = true
+                            local full_path = f_root .. "/" .. f
+                            local mode = lfs_mod.attributes(full_path, "mode")
+                            if mode == "directory" then
+                                local ok_ffi, ffiutil = pcall(require, "ffi/util")
+                                if ok_ffi and ffiutil and type(ffiutil.purgeDir) == "function" then
+                                    pcall(ffiutil.purgeDir, full_path)
+                                end
+                                for inner in lfs_mod.dir(full_path) do
+                                    if inner ~= "." and inner ~= ".." then
+                                        pcall(os.remove, full_path .. "/" .. inner)
+                                    end
+                                end
+                                pcall(lfs_mod.rmdir, full_path)
+                            elseif mode == "file" then
+                                pcall(os.remove, full_path)
+                            end
+                        end
+                    end
+                end
+            end
+            -- If we cleaned up any deleted fonts, also nuke fontinfo.dat so KOReader
+            -- does a fresh font scan on this startup rather than loading stale cache.
+            if found_deleted then
+                os.remove(data_dir .. "/cache/fontlist/fontinfo.dat")
+                os.remove(data_dir .. "/cache/fontinfo.dat")
+            end
         end
     end
 

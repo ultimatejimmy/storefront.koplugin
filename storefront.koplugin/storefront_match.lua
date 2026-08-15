@@ -116,16 +116,10 @@ function Matcher.isDefaultPlugin(plugin, maybe_plugin, StorefrontRef)
     end
 
     -- 4. Check if plugin matches a non-core descriptor in Storefront's catalog
-    if StorefrontRef and type(StorefrontRef.getRepoDescriptors) == "function" then
-        local descriptors = StorefrontRef:getRepoDescriptors("plugin") or {}
-        for _, cand in ipairs(candidates) do
-            local clean = cand:gsub("%.koplugin$", ""):lower()
-            for _, repo in ipairs(descriptors) do
-                local repo_name = (repo.name or ""):gsub("%.koplugin$", ""):lower()
-                if repo_name == clean then
-                    return false
-                end
-            end
+    for _, cand in ipairs(candidates) do
+        local clean = cand:gsub("%.koplugin$", ""):lower()
+        if type(Cache.getRepoByPluginName) == "function" and Cache.getRepoByPluginName(clean) then
+            return false
         end
     end
 

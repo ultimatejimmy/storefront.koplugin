@@ -239,6 +239,7 @@ package.loaded["storefront_cache"] = {
     isLegacyFormat = function() return false end,
     getRepo = function() return nil end,
     getRepoByName = function(owner, name) return nil end,
+    getRepoByPluginName = function(name) return nil end,
 }
 
 package.loaded["datastorage"] = {
