@@ -11,6 +11,14 @@ local StorefrontScreensavers = {}
 
 local DEFAULT_SCREENSAVER_CATALOG_URL = "https://raw.githubusercontent.com/ultimatejimmy/storefront-screensavers/main/screensavers.json"
 
+local function getHttpModule(url)
+    if url and url:match("^https://") then
+        local ok, https = pcall(require, "ssl.https")
+        if ok and https then return https end
+    end
+    return require("socket.http")
+end
+
 local function requestWithRedirects(target_url, sink_fn)
     local ltn12 = require("ltn12")
     local current_url = target_url
