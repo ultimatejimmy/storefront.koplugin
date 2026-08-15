@@ -758,8 +758,7 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
     end
 
     local function showCategoryCheckboxDialog(on_save)
-        local sub_w = math.min(sw - sc(20), sc(380))
-        local sub_h = math.min(sh - sc(40), sc(520))
+        local Menu = require("ui/widget/menu")
 
         local current_set = {}
         if type(state.screensaver_categories) == "table" then
@@ -771,177 +770,81 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
             current_set["all"] = true
         end
 
-        local sub_overlay
-        local title_label = TextWidget:new{
-            text = _("Select Categories"),
-            face = Font:getFace("NotoSerif-Regular.ttf", title_font_size),
-            bold = true,
-            fgcolor = Blitbuffer.COLOR_BLACK,
-        }
+        local menu_dialog
 
-        local list_vg = VerticalGroup:new{ align = "left" }
-        local row_updaters = {}
+        local function build_item_table()
+            local items = {}
 
-        local function update_all_rows()
-            for _, updater in ipairs(row_updaters) do
-                updater()
-            end
-        end
+            -- Apply selection row
+            table.insert(items, {
+                text = _("✓  Apply Category Selection"),
+                bold = true,
+                callback = function()
+                    if menu_dialog then UIManager:close(menu_dialog) end
+                    if on_save then on_save(current_set) end
+                end,
+            })
 
-        for idx, cat_name in ipairs(cats) do
-            local key = cat_name:lower()
-            local display_name = (cat_name == "all") and _("All Categories") or cat_name
-            local count_val = cat_counts[key]
-            local count_str = count_val and string.format(" (%d)", count_val) or ""
-
-            local txt_widget = TextBoxWidget:new{
-                text = "",
-                face = Font:getFace("cfont", ui_font_size),
-                width = sub_w - sc(36),
-                alignment = "left",
-            }
-
-            local row_frame = FrameContainer:new{
-                padding = sc(10),
-                bordersize = 0,
-                width = sub_w - sc(20),
-                txt_widget,
-            }
-
-            local function update_this_row()
-                local is_checked = (current_set[key] == true) or (current_set["all"] and key == "all")
-                local check_str = is_checked and "☑  " or "☐  "
-                txt_widget:setText(check_str .. display_name .. count_str)
-                txt_widget.bold = is_checked
-                txt_widget.fgcolor = is_checked and Blitbuffer.COLOR_BLACK or storefront_theme.color_label_dim
-                row_frame.background = is_checked and Blitbuffer.Color8(245) or Blitbuffer.COLOR_WHITE
-            end
-
-            update_this_row()
-            table.insert(row_updaters, update_this_row)
-
-            local row_item = InputContainer:new{ row_frame }
-            row_item.ges_events = {
-                Tap = {
-                    GestureRange:new{
-                        ges = "tap",
-                        range = function()
-                            local dim = row_item.dimen
-                            if not dim then return Geom:new{ x = -1, y = -1, w = 1, h = 1 } end
-                            return Geom:new{
-                                x = dim.x or 0, y = dim.y or 0,
-                                w = sub_w - sc(20), h = row_frame:getSize().h or sc(40)
-                            }
-                        end
-                    }
-                }
-            }
-
-            local target_key = key
-            row_item.onTap = function()
-                if target_key == "all" then
+            -- "All Categories" option
+            local is_all = current_set["all"] == true
+            table.insert(items, {
+                text = (is_all and "☑  " or "☐  ") .. _("All Categories") .. string.format(" (%d)", cat_counts["all"] or 0),
+                bold = is_all,
+                callback = function()
                     current_set = { all = true }
-                else
-                    current_set["all"] = nil
-                    if current_set[target_key] then
-                        current_set[target_key] = nil
-                    else
-                        current_set[target_key] = true
+                    if menu_dialog then
+                        menu_dialog:switchItemTable(_("Select Categories"), build_item_table())
                     end
-                    if not next(current_set) then
-                        current_set["all"] = true
-                    end
+                end,
+            })
+
+            -- Individual category rows
+            for _, cat_name in ipairs(cats) do
+                if cat_name ~= "all" then
+                    local key = cat_name:lower()
+                    local is_checked = (current_set[key] == true) and not current_set["all"]
+                    local count_val = cat_counts[key]
+                    local count_str = count_val and string.format(" (%d)", count_val) or ""
+
+                    local target_key = key
+                    table.insert(items, {
+                        text = (is_checked and "☑  " or "☐  ") .. cat_name .. count_str,
+                        bold = is_checked,
+                        callback = function()
+                            current_set["all"] = nil
+                            if current_set[target_key] then
+                                current_set[target_key] = nil
+                            else
+                                current_set[target_key] = true
+                            end
+                            if not next(current_set) then
+                                current_set["all"] = true
+                            end
+                            if menu_dialog then
+                                menu_dialog:switchItemTable(_("Select Categories"), build_item_table())
+                            end
+                        end,
+                    })
                 end
-                update_all_rows()
-                if sub_overlay then UIManager:setDirty(sub_overlay, "ui") end
-                return true
             end
 
-            table.insert(list_vg, row_item)
-            if idx < #cats then
-                table.insert(list_vg, LineWidget:new{
-                    dimen = Geom:new{ w = sub_w - sc(20), h = sc(1) },
-                    background = Blitbuffer.COLOR_LIGHT_GRAY,
-                })
-            end
+            return items
         end
 
-        local ScrollableContainer = require("ui/widget/container/scrollablecontainer")
-        local list_scroller = ScrollableContainer:new{
-            dimen = Geom:new{ w = sub_w - sc(20), h = sub_h - sc(130) },
-            bordersize = 0,
-            padding = 0,
-            list_vg,
-        }
-
-        local done_btn = Button:new{
-            text = _("Done"),
-            text_font_size = 16,
-            text_font_color = Blitbuffer.COLOR_WHITE,
-            background = Blitbuffer.COLOR_BLACK,
-            padding = sc(8),
-            padding_h = sc(24),
-            radius = sc(4),
-            bordersize = 0,
-            callback = function()
-                if sub_overlay then UIManager:close(sub_overlay, "ui") end
-                if on_save then on_save(current_set) end
-            end,
-        }
-        if done_btn.label_widget then done_btn.label_widget.fgcolor = Blitbuffer.COLOR_WHITE end
-
-        local select_all_btn = Button:new{
-            text = _("Select All"),
-            text_font_size = 14,
-            text_font_color = Blitbuffer.COLOR_BLACK,
-            background = Blitbuffer.COLOR_WHITE,
-            padding = sc(6),
-            padding_h = sc(12),
-            radius = sc(4),
-            bordersize = sc(1),
-            callback = function()
-                current_set = { all = true }
-                update_all_rows()
-                if sub_overlay then UIManager:setDirty(sub_overlay, "ui") end
+        menu_dialog = Menu:new{
+            title = _("Select Categories"),
+            item_table = build_item_table(),
+            is_popmenu = true,
+            width = math.min(sw - sc(20), sc(380)),
+            height = math.min(sh - sc(40), sc(500)),
+            onMenuChoice = function(item)
+                if item and item.callback then
+                    item.callback()
+                end
             end,
         }
 
-        local btn_group = HorizontalGroup:new{
-            select_all_btn,
-            HorizontalSpan:new{ width = sc(12) },
-            done_btn,
-        }
-
-        local sub_content = VerticalGroup:new{
-            align = "center",
-            FrameContainer:new{ padding = sc(10), bordersize = 0, title_label },
-            LineWidget:new{ dimen = Geom:new{ w = sub_w - sc(4), h = sc(1) }, background = Blitbuffer.COLOR_BLACK },
-            list_scroller,
-            LineWidget:new{ dimen = Geom:new{ w = sub_w - sc(4), h = sc(1) }, background = Blitbuffer.COLOR_LIGHT_GRAY },
-            VerticalSpan:new{ width = sc(6) },
-            btn_group,
-            VerticalSpan:new{ width = sc(6) },
-        }
-
-        local sub_frame = FrameContainer:new{
-            background = Blitbuffer.COLOR_WHITE,
-            bordersize = sc(2),
-            padding = sc(4),
-            width = sub_w,
-            sub_content,
-        }
-
-        sub_overlay = InputContainer:new{
-            align = "center",
-            vertical_align = "center",
-            dimen = Geom:new{ w = sw, h = sh },
-            key_events = {
-                Close = { { "Back" } }
-            },
-            sub_frame,
-        }
-
-        UIManager:show(sub_overlay, "ui")
+        UIManager:show(menu_dialog)
     end
 
     local overlay
