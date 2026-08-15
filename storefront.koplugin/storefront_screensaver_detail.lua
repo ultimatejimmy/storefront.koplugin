@@ -433,16 +433,15 @@ function StorefrontScreensaverDetail:init()
     if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
 
     if thumb_file and ok_lfs and lfs and lfs.attributes and lfs.attributes(thumb_file, "mode") == "file" then
-        preview_widget = StorefrontScreensaversUI.createCoverImageWidget(thumb_file, img_w, img_h)
-        if not preview_widget then
-            preview_widget = ImageWidget:new{
-                file         = thumb_file,
-                width        = img_w,
-                height       = img_h,
-                scale_factor = 0,
-            }
+        local ok_cov, res_cov = pcall(function()
+            return StorefrontScreensaversUI.createCoverImageWidget(thumb_file, img_w, img_h)
+        end)
+        if ok_cov and res_cov then
+            preview_widget = res_cov
         end
-    else
+    end
+
+    if not preview_widget then
         preview_widget = TextWidget:new{
             text    = _("[ Loading preview... ]"),
             face    = Font:getFace("cfont", 16),

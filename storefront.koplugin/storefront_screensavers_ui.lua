@@ -273,13 +273,15 @@ function StorefrontScreensavers.showDetails(item, parent_storefront)
     if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
 
     if thumb_file and ok_lfs and lfs and lfs.attributes and lfs.attributes(thumb_file, "mode") == "file" then
-        preview_widget = ImageWidget:new{
-            file = thumb_file,
-            width = sc(180),
-            height = sc(240),
-            scale_factor = 0,
-        }
-    else
+        local ok_c, res_c = pcall(function()
+            return StorefrontScreensavers.createCoverImageWidget(thumb_file, sc(180), sc(240))
+        end)
+        if ok_c and res_c then
+            preview_widget = res_c
+        end
+    end
+
+    if not preview_widget then
         preview_widget = TextWidget:new{
             text = "[ Wallpaper Preview Loading... ]",
             face = Font:getFace("cfont", 16),
@@ -365,10 +367,11 @@ function StorefrontScreensavers.createCoverImageWidget(file_path, target_w, targ
 
     if not file_path or not target_w or not target_h then return nil end
 
-    local is_png = file_path:lower():match("%.png$") ~= nil
+    local req_w = math.max(math.floor(target_w * 2), 160)
+    local req_h = math.max(math.floor(target_h * 2), 200)
 
     local ok, orig_bb = pcall(function()
-        return RenderImage:renderImageFile(file_path, is_png)
+        return RenderImage:renderImageFile(file_path, false, req_w, req_h)
     end)
 
     if not ok or not orig_bb then
@@ -379,7 +382,7 @@ function StorefrontScreensavers.createCoverImageWidget(file_path, target_w, targ
     local orig_h = orig_bb:getHeight()
 
     if not orig_w or not orig_h or orig_w <= 0 or orig_h <= 0 then
-        if orig_bb.free then orig_bb:free() end
+        if orig_bb.free then pcall(function() orig_bb:free() end) end
         return nil
     end
 
@@ -388,9 +391,11 @@ function StorefrontScreensavers.createCoverImageWidget(file_path, target_w, targ
     local scaled_w = math.max(1, math.ceil(orig_w * scale))
     local scaled_h = math.max(1, math.ceil(orig_h * scale))
 
-    local scaled_bb = RenderImage:scaleBlitBuffer(orig_bb, scaled_w, scaled_h, is_png)
-    if orig_bb.free then orig_bb:free() end
-    if not scaled_bb then return nil end
+    local ok_scale, scaled_bb = pcall(function()
+        return RenderImage:scaleBlitBuffer(orig_bb, scaled_w, scaled_h, false)
+    end)
+    if orig_bb.free then pcall(function() orig_bb:free() end) end
+    if not ok_scale or not scaled_bb then return nil end
 
     local crop_x = math.max(0, math.floor((scaled_bb:getWidth() - target_w) / 2))
     local crop_y = math.max(0, math.floor((scaled_bb:getHeight() - target_h) / 2))
@@ -400,10 +405,12 @@ function StorefrontScreensavers.createCoverImageWidget(file_path, target_w, targ
     local dest_bb = Blitbuffer.new(target_w, target_h, bb_type)
     pcall(function() dest_bb:fill(Blitbuffer.COLOR_WHITE) end)
 
-    dest_bb:blitFrom(scaled_bb, 0, 0, crop_x, crop_y, target_w, target_h)
+    pcall(function()
+        dest_bb:blitFrom(scaled_bb, 0, 0, crop_x, crop_y, target_w, target_h)
+    end)
 
     if scaled_bb.free then
-        scaled_bb:free()
+        pcall(function() scaled_bb:free() end)
     end
 
     return ImageWidget:new{

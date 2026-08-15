@@ -484,14 +484,20 @@ function StorefrontListItem:init()
             local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
             if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
             if ok_lfs and lfs and lfs.attributes and lfs.attributes(entry.thumbnail_file, "mode") == "file" then
-                local thumb_w = ImageWidget:new{
-                    file = entry.thumbnail_file,
-                    width = sc(60),
-                    height = sc(80),
-                    scale_factor = 0,
-                }
-                table.insert(left_elements, thumb_w)
-                table.insert(left_elements, HorizontalSpan:new{ width = sc(12) })
+                local thumb_w = nil
+                local ok_screensavers, StorefrontScreensavers = pcall(require, "storefront_screensavers_ui")
+                if ok_screensavers and StorefrontScreensavers and StorefrontScreensavers.createCoverImageWidget then
+                    local ok_c, res_c = pcall(function()
+                        return StorefrontScreensavers.createCoverImageWidget(entry.thumbnail_file, sc(60), sc(80))
+                    end)
+                    if ok_c and res_c then
+                        thumb_w = res_c
+                    end
+                end
+                if thumb_w then
+                    table.insert(left_elements, thumb_w)
+                    table.insert(left_elements, HorizontalSpan:new{ width = sc(12) })
+                end
             end
         end
         table.insert(left_elements, group)

@@ -285,8 +285,6 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
                 next_fill = "black"
             end
             StorefrontScreensaverMgr.setScreensaverMode(settings.effective_mode, { background = next_fill })
-            local StorefrontToast = require("storefront_toast")
-            StorefrontToast.show(string.format(_("Wallpaper Fill: %s"), fill_labels[next_fill] or next_fill), 2)
             refresh()
         end
 

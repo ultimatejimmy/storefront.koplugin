@@ -6064,7 +6064,9 @@ function Storefront:loadBrowserStateFromSettings()
     end
     self.browser_state = {
         kind = (decoded.kind == "patch" and "patch") or (decoded.kind == "font" and "font") or "plugin",
-        tab = decoded.tab or (decoded.kind == "patch" and "Patches" or (decoded.kind == "font" and "Fonts" or "Plugins")),
+        -- Never restore Screensavers tab from session — it triggers a synchronous
+        -- network fetch on open which can exhaust memory on low-RAM devices (Kindle).
+        tab = (decoded.tab == "Screensavers") and "Plugins" or (decoded.tab or (decoded.kind == "patch" and "Patches" or (decoded.kind == "font" and "Fonts" or "Plugins"))),
         search_text = decoded.search_text or "",
         owner = decoded.owner or "",
         font_category = decoded.font_category or "all",
@@ -7452,10 +7454,12 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
     local StorefrontScreensavers = require("storefront_screensavers_ui")
     local ok_ratings, StorefrontRatings = pcall(require, "storefront_ratings")
 
-    -- Fetch catalog (synchronous; cached after first call)
+    -- Fetch catalog (cached after first call)
     if not self.screensavers_cache then
-        StorefrontScreensavers.fetchCatalog(function(ok, catalog)
-            self.screensavers_cache = catalog
+        pcall(function()
+            StorefrontScreensavers.fetchCatalog(function(ok, catalog)
+                self.screensavers_cache = catalog
+            end)
         end)
     end
     local catalog = self.screensavers_cache or {}
@@ -7615,23 +7619,36 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
 
     local function makeCard(entry)
         -- Thumbnail image (or grey placeholder)
-        local thumb_file = StorefrontScreensavers.fetchThumbnail(entry)
-        local raw_img
-        if thumb_file and ok_lfs and lfs and lfs.attributes
-                and lfs.attributes(thumb_file, "mode") == "file" then
-            raw_img = StorefrontScreensavers.createCoverImageWidget(thumb_file, inner_w, img_h)
-            if not raw_img then
-                raw_img = ImageWidget:new{
-                    file         = thumb_file,
-                    width        = inner_w,
-                    height       = img_h,
-                    scale_factor = 0,
-                }
+        local thumb_file = nil
+        pcall(function()
+            local cache_dir = DataStorage:getDataDir() .. "/cache/storefront_thumbs"
+            local cat_str = type(entry.category) == "table" and table.concat(entry.category, " ") or tostring(entry.category or "")
+            local is_transparent = cat_str:lower():find("transparent", 1, true) ~= nil
+            local raw_url = tostring(entry.thumbnailUrl or ""):lower()
+            local ext = (is_transparent or raw_url:find("%.png")) and ".png" or ".jpg"
+            local p = cache_dir .. "/" .. tostring(entry.id) .. ext
+            if ok_lfs and lfs and lfs.attributes and lfs.attributes(p, "mode") == "file" then
+                thumb_file = p
+            end
+        end)
+
+        local raw_img = nil
+        if thumb_file then
+            local ok_cov, res_cov = pcall(function()
+                return StorefrontScreensavers.createCoverImageWidget(thumb_file, inner_w, img_h)
+            end)
+            if ok_cov and res_cov then
+                raw_img = res_cov
+            else
+                pcall(os.remove, thumb_file)
             end
         else
             if not entry._thumb_failed then
                 table.insert(missing_thumbs, entry)
             end
+        end
+
+        if not raw_img then
             raw_img = FrameContainer:new{
                 bordersize = 0,
                 background = Blitbuffer.Color8(235),
@@ -7814,10 +7831,13 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
         UIManager:nextTick(function()
             local downloaded = false
             for _, m_entry in ipairs(missing_thumbs) do
-                local res = StorefrontScreensavers.fetchThumbnail(m_entry)
-                if res then downloaded = true end
+                local ok_fetch, res = pcall(function()
+                    return StorefrontScreensavers.fetchThumbnail(m_entry)
+                end)
+                if ok_fetch and res then downloaded = true end
             end
-            if downloaded and self_ref and self_ref.reopenBrowser then
+            if downloaded and self_ref and self_ref.browser_menu and self_ref.browser_state and self_ref.browser_state.tab == "Screensavers" then
+                self_ref._browser_refresh_mode_hint = "partial"
                 self_ref:reopenBrowser()
             end
         end)
@@ -8263,6 +8283,7 @@ function Storefront:showBrowser(kind)
             local is_catalog_search_active = util.trim(self.browser_state and self.browser_state.search_text or "") ~= ""
             local raw_installed_st = (self.installed_state and self.installed_state.search_text ~= "" and self.installed_state.search_text) or (self.browser_state and self.browser_state.search_text) or ""
             local is_installed_search_active = util.trim(raw_installed_st) ~= ""
+            local is_ss_filter_active = self:hasActiveFilters("Screensavers")
 
             local toolbar_buttons
             local show_plugins_bar = (current_tab == "Plugins" and ((self.browser_state and self.browser_state.show_filter_bar_plugins == true) or is_catalog_search_active))
@@ -8405,7 +8426,7 @@ function Storefront:showBrowser(kind)
                 })
                 end -- show_filter_bar_installed
             elseif current_tab == "Screensavers" then
-                local is_ss_filter_active = self:hasActiveFilters("Screensavers")
+                is_ss_filter_active = self:hasActiveFilters("Screensavers")
                 if (self.browser_state and self.browser_state.show_filter_bar_screensavers ~= false) or is_ss_filter_active then
                     -- Build toolbar: active category pill + sort cycle + Filter... button
                     toolbar_buttons = {}
