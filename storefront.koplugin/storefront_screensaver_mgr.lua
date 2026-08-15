@@ -77,7 +77,9 @@ function StorefrontScreensaverMgr.getScreensaverSettings()
     local settings = getReaderSettings()
     local s_type = readSettingSafe(settings, "screensaver_type", "cover")
     local s_mode = readSettingSafe(settings, "screensaver_mode", "single")
-    local s_file = readSettingSafe(settings, "screensaver_file", nil) or readSettingSafe(settings, "screensaver_image", "")
+    local s_file = readSettingSafe(settings, "screensaver_document_cover", nil)
+        or readSettingSafe(settings, "screensaver_file", nil)
+        or readSettingSafe(settings, "screensaver_image", "")
     local s_dir = readSettingSafe(settings, "screensaver_dir", nil)
         or readSettingSafe(settings, "screensaver_random_dir", nil)
         or readSettingSafe(settings, "screensaver_images_dir", nil)
@@ -86,19 +88,23 @@ function StorefrontScreensaverMgr.getScreensaverSettings()
     
     local banner = readSettingSafe(settings, "screensaver_banner", nil)
     local is_banner = (banner == true or (type(banner) == "table" and banner.enabled ~= false))
-    local stretch = isTrueSetting(settings, "screensaver_stretch")
+    local stretch = isTrueSetting(settings, "screensaver_stretch_images") or isTrueSetting(settings, "screensaver_stretch")
     local invert = isTrueSetting(settings, "screensaver_invert") or isTrueSetting(settings, "screensaver_random_invert")
+    local background = readSettingSafe(settings, "screensaver_img_background", "black")
+    if background ~= "black" and background ~= "white" and background ~= "none" then
+        background = "black"
+    end
 
     local effective_mode = "cover"
     if s_type == "random_image" or (s_type == "image" and (s_mode == "random" or s_mode == "folder" or s_mode == "shuffle")) then
         effective_mode = "shuffle"
-    elseif s_type == "image" then
+    elseif s_type == "document_cover" or s_type == "image_file" or s_type == "image" then
         effective_mode = "single"
     elseif s_type == "cover" then
         effective_mode = "cover"
-    elseif s_type == "book_status" or s_type == "reading_progress" then
+    elseif s_type == "bookstatus" or s_type == "book_status" or s_type == "readingprogress" or s_type == "reading_progress" then
         effective_mode = "book_status"
-    elseif s_type == "blank" or s_type == "disabled" then
+    elseif s_type == "disable" or s_type == "blank" or s_type == "disabled" then
         effective_mode = "blank"
     else
         effective_mode = s_type or "cover"
@@ -113,6 +119,7 @@ function StorefrontScreensaverMgr.getScreensaverSettings()
         banner = is_banner,
         stretch = stretch,
         invert = invert,
+        background = background,
     }
 end
 
@@ -130,9 +137,10 @@ function StorefrontScreensaverMgr.setScreensaverMode(mode, params)
             end
         end
 
-        saveSettingSafe(settings, "screensaver_type", "image")
+        saveSettingSafe(settings, "screensaver_type", "document_cover")
         saveSettingSafe(settings, "screensaver_mode", "single")
         if target_file and target_file ~= "" then
+            saveSettingSafe(settings, "screensaver_document_cover", target_file)
             saveSettingSafe(settings, "screensaver_file", target_file)
             saveSettingSafe(settings, "screensaver_image", target_file)
         end
@@ -143,19 +151,24 @@ function StorefrontScreensaverMgr.setScreensaverMode(mode, params)
         saveSettingSafe(settings, "screensaver_dir", target_dir)
         saveSettingSafe(settings, "screensaver_random_dir", target_dir)
         saveSettingSafe(settings, "screensaver_images_dir", target_dir)
+        saveSettingSafe(settings, "screensaver_folder", target_dir)
     elseif mode == "cover" then
         saveSettingSafe(settings, "screensaver_type", "cover")
         saveSettingSafe(settings, "screensaver_mode", "single")
     elseif mode == "book_status" then
-        saveSettingSafe(settings, "screensaver_type", "book_status")
+        saveSettingSafe(settings, "screensaver_type", "bookstatus")
     elseif mode == "blank" then
-        saveSettingSafe(settings, "screensaver_type", "blank")
+        saveSettingSafe(settings, "screensaver_type", "disable")
     end
 
+    if params.background ~= nil then
+        saveSettingSafe(settings, "screensaver_img_background", params.background)
+    end
     if params.banner ~= nil then
         saveSettingSafe(settings, "screensaver_banner", params.banner)
     end
     if params.stretch ~= nil then
+        saveSettingSafe(settings, "screensaver_stretch_images", params.stretch)
         saveSettingSafe(settings, "screensaver_stretch", params.stretch)
     end
     if params.invert ~= nil then

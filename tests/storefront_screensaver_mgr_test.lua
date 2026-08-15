@@ -69,9 +69,9 @@ describe("StorefrontScreensaverMgr", function()
     describe("setScreensaverMode", function()
         it("sets single mode properly", function()
             StorefrontScreensaverMgr.setScreensaverMode("single", { file = "/test/wallpaper.jpg" })
-            assert.are.same("image", dummy_settings["screensaver_type"])
+            assert.are.same("document_cover", dummy_settings["screensaver_type"])
             assert.are.same("single", dummy_settings["screensaver_mode"])
-            assert.are.same("/test/wallpaper.jpg", dummy_settings["screensaver_file"])
+            assert.are.same("/test/wallpaper.jpg", dummy_settings["screensaver_document_cover"])
         end)
 
         it("sets shuffle mode properly", function()
@@ -87,16 +87,18 @@ describe("StorefrontScreensaverMgr", function()
             assert.are.same("single", dummy_settings["screensaver_mode"])
         end)
 
-        it("updates toggles (banner, stretch, invert)", function()
+        it("updates toggles (banner, stretch, invert, background)", function()
             StorefrontScreensaverMgr.setScreensaverMode("single", {
                 file = "/test/wallpaper.jpg",
                 banner = true,
                 stretch = true,
                 invert = true,
+                background = "none",
             })
             assert.are.same(true, dummy_settings["screensaver_banner"])
-            assert.are.same(true, dummy_settings["screensaver_stretch"])
+            assert.are.same(true, dummy_settings["screensaver_stretch_images"])
             assert.are.same(true, dummy_settings["screensaver_invert"])
+            assert.are.same("none", dummy_settings["screensaver_img_background"])
         end)
     end)
 end)

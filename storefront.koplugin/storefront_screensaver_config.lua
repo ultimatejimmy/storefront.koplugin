@@ -266,6 +266,75 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
         -- SECTION 2: DISPLAY OPTIONS
         table.insert(scroll_vg, create_section_header(_("Display Options")))
 
+        -- Border Fill & Background (Black / White / No Fill)
+        local fill_labels = {
+            black = _("Black Fill"),
+            white = _("White Fill"),
+            none = _("No Fill (Transparent)"),
+        }
+        local current_fill = settings.background or "black"
+        local fill_display = fill_labels[current_fill] or _("Black Fill")
+
+        local function cycle_fill()
+            local next_fill = "black"
+            if current_fill == "black" then
+                next_fill = "white"
+            elseif current_fill == "white" then
+                next_fill = "none"
+            else
+                next_fill = "black"
+            end
+            StorefrontScreensaverMgr.setScreensaverMode(settings.effective_mode, { background = next_fill })
+            local StorefrontToast = require("storefront_toast")
+            StorefrontToast.show(string.format(_("Wallpaper Fill: %s"), fill_labels[next_fill] or next_fill), 2)
+            refresh()
+        end
+
+        local fill_title = TextWidget:new{
+            text = _("Border Fill / Background"),
+            face = Font:getFace("cfont", 16),
+            bold = true,
+            fgcolor = Blitbuffer.COLOR_BLACK,
+        }
+        local fill_badge = TextWidget:new{
+            text = fill_display .. " ▾",
+            face = Font:getFace("cfont", 14),
+            bold = true,
+            fgcolor = (current_fill == "none") and Blitbuffer.COLOR_BLACK or storefront_theme.color_label_dim,
+        }
+        local fill_desc = TextWidget:new{
+            text = (current_fill == "none") and _("Transparent overlay (page content visible behind)") or _("Solid fill for screen margins & letterboxing"),
+            face = Font:getFace("cfont", 12),
+            fgcolor = storefront_theme.color_label_dim,
+        }
+
+        local fill_top_row = HorizontalGroup:new{
+            fill_title,
+            HorizontalSpan:new{ width = math.max(sc(8), dialog_w - sc(36) - fill_title:getSize().w - fill_badge:getSize().w) },
+            fill_badge,
+        }
+
+        local fill_vg = VerticalGroup:new{
+            align = "left",
+            fill_top_row,
+            VerticalSpan:new{ width = sc(2) },
+            fill_desc,
+        }
+
+        local fill_frame = FrameContainer:new{
+            padding = sc(8),
+            bordersize = 0,
+            width = dialog_w - sc(4),
+            fill_vg,
+        }
+
+        table.insert(scroll_vg, make_row_item(fill_frame, cycle_fill))
+
+        table.insert(scroll_vg, LineWidget:new{
+            dimen = Geom:new{ w = dialog_w - sc(4), h = Size.line.thin },
+            background = Blitbuffer.COLOR_LIGHT_GRAY,
+        })
+
         -- Banner toggle
         table.insert(scroll_vg, create_toggle_row(settings.banner, _("Show reading progress banner overlay"), function()
             StorefrontScreensaverMgr.setScreensaverMode(settings.effective_mode, { banner = not settings.banner })

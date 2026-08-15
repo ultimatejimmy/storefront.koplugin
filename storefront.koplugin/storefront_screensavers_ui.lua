@@ -170,19 +170,19 @@ function StorefrontScreensavers.downloadAsSingle(item, callback)
     StorefrontScreensaverMgr.downloadWallpaper(item, function(ok, result)
         if info_dialog and info_dialog.onClose then info_dialog:onClose() end
         if ok and result then
-            StorefrontScreensaverMgr.setScreensaverMode("single", { file = result })
+            local cat_str = type(item.category) == "table" and table.concat(item.category, " ") or tostring(item.category or "")
+            local is_transparent = cat_str:lower():find("transparent", 1, true) ~= nil
+            local params = { file = result }
+            if is_transparent then
+                params.background = "none"
+            end
+            StorefrontScreensaverMgr.setScreensaverMode("single", params)
             local Toast = require("storefront_toast")
-            Toast:new{
-                text = _("Wallpaper set as active KOReader screensaver!"),
-                timeout = 3,
-            }:show()
+            Toast.show(_("Wallpaper set as active KOReader screensaver!"), 3)
             if callback then callback(true, result) end
         else
             local Toast = require("storefront_toast")
-            Toast:new{
-                text = _("Failed to download screensaver."),
-                timeout = 3,
-            }:show()
+            Toast.show(_("Failed to download screensaver."), 3)
             if callback then callback(false, result) end
         end
     end)
@@ -199,22 +199,13 @@ function StorefrontScreensavers.downloadToShufflePool(item, callback)
     StorefrontScreensaverMgr.downloadWallpaper(item, function(ok, result)
         if info_dialog and info_dialog.onClose then info_dialog:onClose() end
         if ok and result then
-            local current_settings = StorefrontScreensaverMgr.getScreensaverSettings()
-            if current_settings.effective_mode ~= "shuffle" then
-                StorefrontScreensaverMgr.setScreensaverMode("shuffle")
-            end
+            StorefrontScreensaverMgr.setScreensaverMode("shuffle")
             local Toast = require("storefront_toast")
-            Toast:new{
-                text = _("Added to shuffle pool & Folder Shuffle enabled!"),
-                timeout = 3,
-            }:show()
+            Toast.show(_("Added to shuffle pool & Folder Shuffle enabled!"), 3)
             if callback then callback(true, result) end
         else
             local Toast = require("storefront_toast")
-            Toast:new{
-                text = _("Failed to download screensaver."),
-                timeout = 3,
-            }:show()
+            Toast.show(_("Failed to download screensaver."), 3)
             if callback then callback(false, result) end
         end
     end)
