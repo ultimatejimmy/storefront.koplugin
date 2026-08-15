@@ -198,7 +198,7 @@ function StorefrontFilterDialog.showInstalledFilter(arg1, arg2)
 
         table.insert(content_vg, create_section_header(_("Filters")))
 
-        local type_labels = { all = _("All Types"), plugin = _("Plugins"), patch = _("Patches"), font = _("Fonts") }
+        local type_labels = { all = _("All Types"), plugin = _("Plugins"), patch = _("Patches"), font = _("Fonts"), screensaver = _("Screensavers") }
         local cur_type = state.filter_type or "all"
         local type_widget = TextWidget:new{
             text = type_labels[cur_type] or cur_type,
@@ -209,6 +209,7 @@ function StorefrontFilterDialog.showInstalledFilter(arg1, arg2)
             if cur_type == "all" then state.filter_type = "plugin"
             elseif cur_type == "plugin" then state.filter_type = "patch"
             elseif cur_type == "patch" then state.filter_type = "font"
+            elseif cur_type == "font" then state.filter_type = "screensaver"
             else state.filter_type = "all" end
             Storefront.browser_state.page = 1
             Storefront:saveInstalledState()

@@ -102,6 +102,11 @@ function StorefrontToastWidget:close()
     UIManager:close(self)
 end
 
+function StorefrontToastWidget:show()
+    UIManager:show(self)
+    return self
+end
+
 function StorefrontToastWidget:setText(text)
     self.text = text or ""
     if self.label_widget then

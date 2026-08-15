@@ -224,58 +224,175 @@ function StorefrontScreensaverDetail:init()
     } or nil
 
     -- -----------------------------------------------------------------------
-    -- 5. Action buttons (mirrors details dialog proportional layout)
+    -- 5. Action buttons (smart context-aware + options sheet)
     -- -----------------------------------------------------------------------
     local btn_area_w = sw - sc(24)
     local btn_h      = sc(44)
     local btn_gap    = sc(8)
 
     local StorefrontScreensaversUI = require("storefront_screensavers_ui")
+    local StorefrontScreensaverMgr = require("storefront_screensaver_mgr")
+    local ButtonDialog = require("ui/widget/buttondialog")
+    local ConfirmBox = require("ui/widget/confirmbox")
+    local Toast = require("storefront_toast")
+
+    local is_downloaded, local_filepath = StorefrontScreensaverMgr.isWallpaperDownloaded(item)
+    local ss_settings = StorefrontScreensaverMgr.getScreensaverSettings()
+
+    local primary_text
+    local primary_action
+
+    if is_downloaded then
+        if local_filepath and ss_settings.file == local_filepath and ss_settings.effective_mode == "single" then
+            primary_text = _("Active Wallpaper ✓")
+            primary_action = function()
+                Toast:new{ text = _("This wallpaper is currently set as your active screensaver."), timeout = 3 }:show()
+            end
+        else
+            primary_text = _("Set Active Single")
+            primary_action = function()
+                StorefrontScreensaverMgr.setScreensaverMode("single", { file = local_filepath })
+                Toast:new{ text = _("Wallpaper set as active KOReader screensaver!"), timeout = 3 }:show()
+                self:onClose()
+            end
+        end
+    elseif ss_settings.effective_mode == "shuffle" then
+        primary_text = _("+ Add to Shuffle Pool")
+        primary_action = function()
+            self:onClose()
+            StorefrontScreensaversUI.downloadToShufflePool(item)
+        end
+    else
+        primary_text = _("Download & Set Active")
+        primary_action = function()
+            self:onClose()
+            StorefrontScreensaversUI.downloadAsSingle(item)
+        end
+    end
 
     local primary_btn = Button:new{
-        text           = _("Download & Set Active"),
-        text_font_size = 18,
+        text           = primary_text,
+        text_font_size = 17,
         text_font_color = Blitbuffer.COLOR_WHITE,
         background     = Blitbuffer.COLOR_BLACK,
         bordersize     = 0,
         padding        = 0,
         radius         = sc(4),
-        width          = math.floor(btn_area_w * 0.55),
+        width          = math.floor(btn_area_w * 0.58),
         height         = btn_h,
         show_parent    = self,
-        callback       = function()
-            self:onClose()
-            StorefrontScreensaversUI.downloadAndSetScreensaver(item)
-        end,
+        callback       = primary_action,
     }
     if primary_btn.label_widget then
         primary_btn.label_widget.fgcolor = Blitbuffer.COLOR_WHITE
     end
 
-    local share_btn = Button:new{
-        text           = _("Community"),
-        text_font_size = 16,
+    local options_btn = Button:new{
+        text           = _("Options ▾"),
+        text_font_size = 15,
         bordersize     = sc(1),
         padding        = 0,
         radius         = sc(4),
-        width          = math.floor(btn_area_w * 0.42) - btn_gap,
+        width          = math.floor(btn_area_w * 0.38) - btn_gap,
         height         = btn_h,
         show_parent    = self,
         callback       = function()
-            local ok_ui, InfoMessage = pcall(require, "ui/widget/infomessage")
-            if ok_ui then
-                UIManager:show(InfoMessage:new{
-                    text = _("Submit your own wallpapers at:\nhttps://ultimatejimmy.github.io/storefront-screensavers"),
-                    timeout = 5,
+            local opt_dialog
+            local buttons_list = {}
+
+            -- Row 1: Set Active Single / Download Single
+            table.insert(buttons_list, {
+                {
+                    text = _("Set as Active Single Wallpaper"),
+                    callback = function()
+                        UIManager:close(opt_dialog)
+                        self:onClose()
+                        if is_downloaded and local_filepath then
+                            StorefrontScreensaverMgr.setScreensaverMode("single", { file = local_filepath })
+                            Toast:new{ text = _("Wallpaper set as active screensaver!"), timeout = 3 }:show()
+                        else
+                            StorefrontScreensaversUI.downloadAsSingle(item)
+                        end
+                    end,
+                }
+            })
+
+            -- Row 2: Add to Shuffle Pool
+            table.insert(buttons_list, {
+                {
+                    text = _("Add to Shuffle Pool (Enable Shuffle)"),
+                    callback = function()
+                        UIManager:close(opt_dialog)
+                        self:onClose()
+                        if is_downloaded then
+                            StorefrontScreensaverMgr.setScreensaverMode("shuffle")
+                            Toast:new{ text = _("Folder Shuffle enabled with this wallpaper!"), timeout = 3 }:show()
+                        else
+                            StorefrontScreensaversUI.downloadToShufflePool(item)
+                        end
+                    end,
+                }
+            })
+
+            -- Row 3: Download Only / Delete
+            local row3 = {}
+            if not is_downloaded then
+                table.insert(row3, {
+                    text = _("Download Only (Save to Device)"),
+                    callback = function()
+                        UIManager:close(opt_dialog)
+                        StorefrontScreensaversUI.downloadOnly(item)
+                    end,
+                })
+            else
+                table.insert(row3, {
+                    text = _("Delete from Device"),
+                    callback = function()
+                        UIManager:close(opt_dialog)
+                        UIManager:show(ConfirmBox:new{
+                            text = string.format(_("Delete '%s' from your device?"), item.title or item.id),
+                            ok_text = _("Delete"),
+                            cancel_text = _("Cancel"),
+                            callback = function()
+                                StorefrontScreensaverMgr.deleteLocalScreensaver(local_filepath)
+                                self:onClose()
+                            end
+                        })
+                    end,
                 })
             end
+            table.insert(row3, {
+                text = _("⚙ Settings..."),
+                callback = function()
+                    UIManager:close(opt_dialog)
+                    local StorefrontScreensaverConfig = require("storefront_screensaver_config")
+                    StorefrontScreensaverConfig.show(self.parent)
+                end,
+            })
+            table.insert(buttons_list, row3)
+
+            -- Row 4: Cancel
+            table.insert(buttons_list, {
+                {
+                    text = _("Cancel"),
+                    callback = function()
+                        UIManager:close(opt_dialog)
+                    end,
+                }
+            })
+
+            opt_dialog = ButtonDialog:new{
+                title = item.title or item.name or _("Wallpaper Options"),
+                buttons = buttons_list,
+            }
+            UIManager:show(opt_dialog)
         end,
     }
 
     local action_row = HorizontalGroup:new{
         primary_btn,
         HorizontalSpan:new{ width = btn_gap },
-        share_btn,
+        options_btn,
     }
 
     -- -----------------------------------------------------------------------

@@ -420,7 +420,55 @@ end
             token_dialog:onShowKeyboard()
         end))
 
-        -- SECTION 3: ABOUT STOREFRONT
+        -- SECTION 3: SCREENSAVER & WALLPAPERS
+        table.insert(content_vg, create_section_header(_("Screensaver & Wallpapers")))
+
+        local StorefrontScreensaverMgr = require("storefront_screensaver_mgr")
+        local ss_settings = StorefrontScreensaverMgr.getScreensaverSettings()
+        local ss_local = StorefrontScreensaverMgr.listLocalScreensavers()
+
+        local mode_display_str = _("Book Cover")
+        if ss_settings.effective_mode == "single" then
+            local fname = (ss_settings.file ~= "") and ss_settings.file:match("([^/\\]+)$") or _("Single")
+            mode_display_str = _("Single") .. " (" .. fname .. ")"
+        elseif ss_settings.effective_mode == "shuffle" then
+            mode_display_str = string.format(_("Shuffle (%d)"), #ss_local)
+        elseif ss_settings.effective_mode == "book_status" then
+            mode_display_str = _("Reading Progress")
+        elseif ss_settings.effective_mode == "blank" then
+            mode_display_str = _("Blank")
+        end
+
+        local mode_widget = TextWidget:new{
+            text = mode_display_str,
+            face = Font:getFace("cfont", storefront_theme.subtext_font_size or 16),
+            fgcolor = storefront_theme.color_label_dim,
+            max_width = sc(140),
+        }
+
+        table.insert(content_vg, create_setting_row("image.svg", _("Screensaver mode"), mode_widget, function()
+            UIManager:close(overlay, "ui")
+            local StorefrontScreensaverConfig = require("storefront_screensaver_config")
+            StorefrontScreensaverConfig.show(Storefront, function()
+                StorefrontSettingsCard.show(Storefront)
+            end)
+        end))
+
+        local count_widget = TextWidget:new{
+            text = string.format(_("%d wallpapers"), #ss_local),
+            face = Font:getFace("cfont", storefront_theme.subtext_font_size or 16),
+            fgcolor = storefront_theme.color_label_dim,
+        }
+
+        table.insert(content_vg, create_setting_row(nil, _("My wallpaper collection"), count_widget, function()
+            UIManager:close(overlay, "ui")
+            local StorefrontScreensaverGallery = require("storefront_screensaver_gallery")
+            StorefrontScreensaverGallery.show(Storefront, function()
+                StorefrontSettingsCard.show(Storefront)
+            end)
+        end))
+
+        -- SECTION 4: ABOUT STOREFRONT
         table.insert(content_vg, create_section_header(_("About Storefront")))
 
         -- About Storefront Row
@@ -525,7 +573,7 @@ end
         }
 
         overlay.onClose = function()
-            UIManager:close(overlay, "ui")
+            overlay = nil
             return true
         end
 

@@ -7281,6 +7281,53 @@ function Storefront:buildInstalledEntries(available_list_height)
             ::continue_font::
         end
     end
+
+    -- 4. Screensavers
+    if filter_type == "all" or filter_type == "screensaver" then
+        local StorefrontScreensaverMgr = require("storefront_screensaver_mgr")
+        local local_ss = StorefrontScreensaverMgr.listLocalScreensavers()
+        local ss_settings = StorefrontScreensaverMgr.getScreensaverSettings()
+
+        for i, ss_item in ipairs(local_ss) do
+            local is_active_single = ss_item.is_active_single and ss_settings.effective_mode == "single"
+            local is_in_shuffle = ss_settings.effective_mode == "shuffle"
+            local badge_str = is_active_single and _("Active Single") or (is_in_shuffle and _("Shuffle Pool") or nil)
+
+            local match_search = true
+            if search_text ~= "" then
+                local s_title = (ss_item.title or ""):lower()
+                local s_fname = (ss_item.filename or ""):lower()
+                if not (s_title:find(search_text, 1, true) or s_fname:find(search_text, 1, true)) then
+                    match_search = false
+                end
+            end
+
+            if match_search then
+                table.insert(items, {
+                    name = ss_item.title or ss_item.filename,
+                    owner = "",
+                    updated = formatTimestamp(ss_item.mtime),
+                    mtime = ss_item.mtime or 0,
+                    kind_label = _("Screensaver"),
+                    description = ss_item.filename,
+                    badge = badge_str,
+                    thumbnail_file = ss_item.filepath,
+                    is_entry = true,
+                    is_installed_item = true,
+                    is_screensaver = true,
+                    kind = "screensaver",
+                    filepath = ss_item.filepath,
+                    callback = function()
+                        local StorefrontScreensaverGallery = require("storefront_screensaver_gallery")
+                        StorefrontScreensaverGallery.show(self, function()
+                            self:reopenBrowser()
+                        end)
+                    end,
+                })
+            end
+        end
+    end
+
     table.sort(items, function(a, b)
         local na = tostring(a and a.name or ""):lower()
         local nb = tostring(b and b.name or ""):lower()
@@ -7481,8 +7528,36 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
             if not match_found then pass = false end
         end
         if pass and ss_srch ~= "" then
+            local match_search = false
             local t = (entry.title or entry.name or ""):lower()
-            if not t:find(ss_srch, 1, true) then pass = false end
+            if t:find(ss_srch, 1, true) then
+                match_search = true
+            end
+            if not match_search and entry.author then
+                if tostring(entry.author):lower():find(ss_srch, 1, true) then
+                    match_search = true
+                end
+            end
+            if not match_search and entry.id then
+                if tostring(entry.id):lower():find(ss_srch, 1, true) then
+                    match_search = true
+                end
+            end
+            if not match_search and entry.tags then
+                if type(entry.tags) == "table" then
+                    for _, tag in ipairs(entry.tags) do
+                        if tostring(tag):lower():find(ss_srch, 1, true) then
+                            match_search = true
+                            break
+                        end
+                    end
+                elseif type(entry.tags) == "string" then
+                    if entry.tags:lower():find(ss_srch, 1, true) then
+                        match_search = true
+                    end
+                end
+            end
+            if not match_search then pass = false end
         end
         if pass then table.insert(filtered, entry) end
     end
@@ -8386,6 +8461,16 @@ function Storefront:showBrowser(kind)
                         id = "ss_filter",
                         text = _("Filter..."),
                         callback = function() self:showScreensaverFilter() end
+                    })
+                    table.insert(toolbar_buttons, {
+                        id = "ss_settings",
+                        text = _("⚙ Settings"),
+                        callback = function()
+                            local StorefrontScreensaverConfig = require("storefront_screensaver_config")
+                            StorefrontScreensaverConfig.show(self, function()
+                                self:reopenBrowser()
+                            end)
+                        end
                     })
                 end
             end

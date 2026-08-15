@@ -157,65 +157,98 @@ function StorefrontScreensavers.fetchThumbnail(item, callback)
     return nil
 end
 
-function StorefrontScreensavers.downloadAndSetScreensaver(item, callback)
+StorefrontScreensavers.requestWithRedirects = requestWithRedirects
+
+function StorefrontScreensavers.downloadAsSingle(item, callback)
+    local StorefrontScreensaverMgr = require("storefront_screensaver_mgr")
     local info_dialog = InfoMessage:new{
         text = _("Downloading screensaver...") .. "\n" .. (item.title or item.name or ""),
         timeout = 2,
     }
     UIManager:show(info_dialog)
 
-    local target_url = item.fullUrl or item.thumbnailUrl
-    local ltn12 = require("ltn12")
-    local img_data = {}
-    local sink_fn = function()
-        img_data = {}
-        return ltn12.sink.table(img_data)
-    end
-
-    local ok, code = requestWithRedirects(target_url, sink_fn)
-    if info_dialog and info_dialog.onClose then info_dialog:onClose() end
-
-    if ok and code == 200 then
-        local screensaver_dir = DataStorage:getDataDir() .. "/screensavers"
-        local lfs = require("libs/libkoreader-lfs")
-        if lfs and lfs.attributes and not lfs.attributes(screensaver_dir) then
-            lfs.mkdir(screensaver_dir)
+    StorefrontScreensaverMgr.downloadWallpaper(item, function(ok, result)
+        if info_dialog and info_dialog.onClose then info_dialog:onClose() end
+        if ok and result then
+            StorefrontScreensaverMgr.setScreensaverMode("single", { file = result })
+            local Toast = require("storefront_toast")
+            Toast:new{
+                text = _("Wallpaper set as active KOReader screensaver!"),
+                timeout = 3,
+            }:show()
+            if callback then callback(true, result) end
+        else
+            local Toast = require("storefront_toast")
+            Toast:new{
+                text = _("Failed to download screensaver."),
+                timeout = 3,
+            }:show()
+            if callback then callback(false, result) end
         end
+    end)
+end
 
-        local filename = screensaver_dir .. "/" .. item.id .. ".jpg"
-        local file = io.open(filename, "wb")
-        if file then
-            file:write(table.concat(img_data))
-            file:close()
+function StorefrontScreensavers.downloadToShufflePool(item, callback)
+    local StorefrontScreensaverMgr = require("storefront_screensaver_mgr")
+    local info_dialog = InfoMessage:new{
+        text = _("Downloading to shuffle pool...") .. "\n" .. (item.title or item.name or ""),
+        timeout = 2,
+    }
+    UIManager:show(info_dialog)
 
-            UIManager:show(ConfirmBox:new{
-                text = _("Screensaver downloaded successfully!\nSaved to: %s\n\nSet as active KOReader screensaver?", item.id .. ".jpg"),
-                ok_text = _("Set Active"),
-                cancel_text = _("Close"),
-                callback = function()
-                    local G_reader_settings = require("luasettings"):open(DataStorage:getSettingsDir() .. "/settings.reader.lua")
-                    G_reader_settings:saveSetting("screensaver_type", "image")
-                    G_reader_settings:saveSetting("screensaver_mode", "single")
-                    G_reader_settings:saveSetting("screensaver_file", filename)
-                    G_reader_settings:saveSetting("screensaver_image", filename)
-                    G_reader_settings:flush()
-
-                    UIManager:show(InfoMessage:new{
-                        text = _("Screensaver updated successfully!"),
-                        timeout = 3,
-                    })
-                end
-            })
-            if callback then callback(true) end
-            return
+    StorefrontScreensaverMgr.downloadWallpaper(item, function(ok, result)
+        if info_dialog and info_dialog.onClose then info_dialog:onClose() end
+        if ok and result then
+            local current_settings = StorefrontScreensaverMgr.getScreensaverSettings()
+            if current_settings.effective_mode ~= "shuffle" then
+                StorefrontScreensaverMgr.setScreensaverMode("shuffle")
+            end
+            local Toast = require("storefront_toast")
+            Toast:new{
+                text = _("Added to shuffle pool & Folder Shuffle enabled!"),
+                timeout = 3,
+            }:show()
+            if callback then callback(true, result) end
+        else
+            local Toast = require("storefront_toast")
+            Toast:new{
+                text = _("Failed to download screensaver."),
+                timeout = 3,
+            }:show()
+            if callback then callback(false, result) end
         end
-    end
+    end)
+end
 
-    UIManager:show(InfoMessage:new{
-        text = _("Failed to download screensaver."),
-        timeout = 3,
-    })
-    if callback then callback(false) end
+function StorefrontScreensavers.downloadOnly(item, callback)
+    local StorefrontScreensaverMgr = require("storefront_screensaver_mgr")
+    local info_dialog = InfoMessage:new{
+        text = _("Downloading screensaver...") .. "\n" .. (item.title or item.name or ""),
+        timeout = 2,
+    }
+    UIManager:show(info_dialog)
+
+    StorefrontScreensaverMgr.downloadWallpaper(item, function(ok, result)
+        if info_dialog and info_dialog.onClose then info_dialog:onClose() end
+        local Toast = require("storefront_toast")
+        if ok and result then
+            Toast:new{
+                text = _("Wallpaper saved to collection!"),
+                timeout = 3,
+            }:show()
+            if callback then callback(true, result) end
+        else
+            Toast:new{
+                text = _("Failed to download screensaver."),
+                timeout = 3,
+            }:show()
+            if callback then callback(false, result) end
+        end
+    end)
+end
+
+function StorefrontScreensavers.downloadAndSetScreensaver(item, callback)
+    StorefrontScreensavers.downloadAsSingle(item, callback)
 end
 
 function StorefrontScreensavers.showDetails(item, parent_storefront)
@@ -260,18 +293,44 @@ function StorefrontScreensavers.showDetails(item, parent_storefront)
         }
     end
 
+    local tags_str = ""
+    if item.tags then
+        if type(item.tags) == "table" and #item.tags > 0 then
+            local display_tags = {}
+            for i = 1, math.min(#item.tags, 5) do
+                table.insert(display_tags, "#" .. tostring(item.tags[i]))
+            end
+            tags_str = table.concat(display_tags, "  ")
+        elseif type(item.tags) == "string" and item.tags ~= "" then
+            tags_str = item.tags
+        end
+    end
+
+    local dialog_vg = VerticalGroup:new{
+        align = "center",
+        meta_txt,
+    }
+
+    if tags_str ~= "" then
+        table.insert(dialog_vg, VerticalSpan:new{ width = sc(3) })
+        table.insert(dialog_vg, TextWidget:new{
+            text = tags_str,
+            face = Font:getFace("cfont", 13),
+            fgcolor = Blitbuffer.COLOR_DARK_GRAY,
+            max_width = sc(260),
+        })
+    end
+
+    table.insert(dialog_vg, VerticalSpan:new{ width = sc(8) })
+    table.insert(dialog_vg, preview_widget)
+
     local dialog
     dialog = ButtonDialog:new{
         title = item.title or item.name or _("Screensaver Details"),
         widgets = {
             CenterContainer:new{
-                dimen = require("ui/geometry"):new{ w = sc(280), h = sc(300) },
-                VerticalGroup:new{
-                    align = "center",
-                    meta_txt,
-                    VerticalSpan:new{ width = sc(8) },
-                    preview_widget,
-                }
+                dimen = require("ui/geometry"):new{ w = sc(280), h = sc(320) },
+                dialog_vg
             }
         },
         buttons = {
@@ -313,10 +372,10 @@ function StorefrontScreensavers.createCoverImageWidget(file_path, target_w, targ
 
     if not file_path or not target_w or not target_h then return nil end
 
-    -- Transparent thumbnails are pre-composited with a checkerboard background at
-    -- download/generation time, so we don't need alpha compositing here.
+    local is_png = file_path:lower():match("%.png$") ~= nil
+
     local ok, orig_bb = pcall(function()
-        return RenderImage:renderImageFile(file_path, false)
+        return RenderImage:renderImageFile(file_path, is_png)
     end)
 
     if not ok or not orig_bb then
@@ -336,17 +395,18 @@ function StorefrontScreensavers.createCoverImageWidget(file_path, target_w, targ
     local scaled_w = math.max(1, math.ceil(orig_w * scale))
     local scaled_h = math.max(1, math.ceil(orig_h * scale))
 
-    local scaled_bb = RenderImage:scaleBlitBuffer(orig_bb, scaled_w, scaled_h, false)
+    local scaled_bb = RenderImage:scaleBlitBuffer(orig_bb, scaled_w, scaled_h, is_png)
     if orig_bb.free then orig_bb:free() end
     if not scaled_bb then return nil end
 
     local crop_x = math.max(0, math.floor((scaled_bb:getWidth() - target_w) / 2))
     local crop_y = math.max(0, math.floor((scaled_bb:getHeight() - target_h) / 2))
 
-    -- Create destination buffer matching source buffer color type (RGB24/ARGB32/BPP8)
+    -- Create destination buffer matching source buffer color type
     local bb_type = (scaled_bb.getType and scaled_bb:getType()) or Blitbuffer.TYPE_BPP24
     local dest_bb = Blitbuffer.new(target_w, target_h, bb_type)
     pcall(function() dest_bb:fill(Blitbuffer.COLOR_WHITE) end)
+
     dest_bb:blitFrom(scaled_bb, 0, 0, crop_x, crop_y, target_w, target_h)
 
     if scaled_bb.free then
