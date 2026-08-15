@@ -1782,5 +1782,145 @@ msgid "✓ Current"
 msgstr "✓ Trenutno"
 
 msgid "Screensavers"
-msgstr ""
+msgstr "Чувари екрана"
 
+# en-hash: 6df6c2dd7dd08e6108bf1b8dea56c527
+msgid "Screensaver Settings"
+msgstr "Подешавања чувара екрана"
+
+# en-hash: dabeb2a6efa064595e4fbf43fda02f42
+msgid "Wallpaper Collection"
+msgstr "Колекција позадина"
+
+# en-hash: aaaca14de025427e39ed056b29af4058
+msgid "Open Wallpaper Collection Gallery"
+msgstr "Отвори галерију позадина"
+
+# en-hash: 261dba00113a7f7e9754902b83293f85
+msgid "Browse Wallpapers in Storefront"
+msgstr "Прегледај позадине у Storefront-у"
+
+# en-hash: bda5dcfc5c6a544bb9dd8ede06326bff
+msgid "Active Wallpaper ✓"
+msgstr "Активна позадина ✓"
+
+# en-hash: 704f03f7c5dd59a9b3ae46df8e1e46a4
+msgid "Set Active Single"
+msgstr "Постави као активну појединачну"
+
+# en-hash: 2722ddcbfd20786cc8715dac74c0531a
+msgid "+ Add to Shuffle Pool"
+msgstr "+ Додај у насумични избор"
+
+# en-hash: 938a7f69f98b48f241a295717988ac23
+msgid "Download & Set Active"
+msgstr "Преузми и активирај"
+
+# en-hash: ba8ef34da8f377a1c718ff0f10e107b1
+msgid "Wallpaper set as active KOReader screensaver!"
+msgstr "Позадина је постављена као активни чувар екрана!"
+
+# en-hash: f50b510e22815838c4d2d12e1d79bddf
+msgid "Added to shuffle pool & Folder Shuffle enabled!"
+msgstr "Додато у избор и омогућено насумично приказивање!"
+
+# en-hash: b6dea7fce89bd30f8c3d5b898849aa4b
+msgid "Wallpaper saved to collection!"
+msgstr "Позадина је сачувана у колекцији!"
+
+# en-hash: c1cb41ea040ff053e2219930470897ed
+msgid "Single Wallpaper"
+msgstr "Појединачна позадина"
+
+# en-hash: 16803106d3aa4c6852022f3da9d4c54a
+msgid "Folder Shuffle"
+msgstr "Насумично из фасцикле"
+
+# en-hash: 03ea37a723d863ca6c1918209c5c1a6f
+msgid "Book Cover"
+msgstr "Корице књиге"
+
+# en-hash: 7f58b08556c5375e2559f267873d1218
+msgid "Reading Progress"
+msgstr "Напредак читања"
+
+# en-hash: 9f20e45267caff9e39ca3b9bea16db47
+msgid "Transparent overlay (page content visible behind)"
+msgstr "Провидна позадина (садржај странице видљив иза)"
+
+# en-hash: bc586928ac8f7c25dabb909c67bdfa88
+msgid "Solid fill for screen margins & letterboxing"
+msgstr "Пуна боја за маргине екрана"
+
+# en-hash: 1f1b02ee24bf2ce675bc4c571ec2b586
+msgid "Show reading progress banner overlay"
+msgstr "Прикажи траку напретка читања"
+
+# en-hash: dd2d866df5da52a1aed8e63192026530
+msgid "Stretch image to fill entire screen"
+msgstr "Развуци слику преко целог екрана"
+
+# en-hash: 1554833122e9bc723e16d2f1b927dc98
+msgid "Invert colors (night mode / dark background)"
+msgstr "Инвертуј боје (ноћни режим / тамна позадина)"
+
+
+msgid "Screensaver Settings"
+msgstr "Подешавања чувара екрана"
+
+msgid "Wallpaper Collection"
+msgstr "Колекција позадина"
+
+msgid "Open Wallpaper Collection Gallery"
+msgstr "Отвори галерију позадина"
+
+msgid "Browse Wallpapers in Storefront"
+msgstr "Прегледај позадине у Storefront-у"
+
+msgid "Active Wallpaper ✓"
+msgstr "Активна позадина ✓"
+
+msgid "Set Active Single"
+msgstr "Постави као активну појединачну"
+
+msgid "+ Add to Shuffle Pool"
+msgstr "+ Додај у насумични избор"
+
+msgid "Download & Set Active"
+msgstr "Преузми и активирај"
+
+msgid "Wallpaper set as active KOReader screensaver!"
+msgstr "Позадина је постављена као активни чувар екрана!"
+
+msgid "Added to shuffle pool & Folder Shuffle enabled!"
+msgstr "Додато у избор и омогућено насумично приказивање!"
+
+msgid "Wallpaper saved to collection!"
+msgstr "Позадина је сачувана у колекцији!"
+
+msgid "Single Wallpaper"
+msgstr "Појединачна позадина"
+
+msgid "Folder Shuffle"
+msgstr "Насумично из фасцикле"
+
+msgid "Book Cover"
+msgstr "Корице књиге"
+
+msgid "Reading Progress"
+msgstr "Напредак читања"
+
+msgid "Transparent overlay (page content visible behind)"
+msgstr "Провидна позадина (садржај странице видљив иза)"
+
+msgid "Solid fill for screen margins & letterboxing"
+msgstr "Пуна боја за маргине екрана"
+
+msgid "Show reading progress banner overlay"
+msgstr "Прикажи траку напретка читања"
+
+msgid "Stretch image to fill entire screen"
+msgstr "Развуци слику преко целог екрана"
+
+msgid "Invert colors (night mode / dark background)"
+msgstr "Инвертуј боје (ноћни режим / тамна позадина)"

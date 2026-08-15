@@ -8,11 +8,32 @@ msgstr ""
 msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
 msgstr "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
 
+msgid "%d Categories"
+msgstr "%d Categories"
+
+msgid "%d items"
+msgstr "%d items"
+
 msgid "%d patches"
 msgstr "%d patches"
 
 msgid "%d plugins"
 msgstr "%d plugins"
+
+msgid "%d wallpapers"
+msgstr "%d wallpapers"
+
+msgid "%d wallpapers stored on device"
+msgstr "%d wallpapers stored on device"
+
+msgid "%d wallpapers · Folder Shuffle (all in rotation)"
+msgstr "%d wallpapers · Folder Shuffle (all in rotation)"
+
+msgid "%d wallpapers · Mode: Book Cover"
+msgstr "%d wallpapers · Mode: Book Cover"
+
+msgid "%d wallpapers · Single mode active"
+msgstr "%d wallpapers · Single mode active"
 
 msgid "%s and %s"
 msgstr "%s and %s"
@@ -32,6 +53,9 @@ msgstr "(fork)"
 msgid "(showing %d of %d commits)"
 msgstr "(showing %d of %d commits)"
 
+msgid "+ Add to Shuffle Pool"
+msgstr "+ Add to Shuffle Pool"
+
 msgid "1 / 1"
 msgstr "1 / 1"
 
@@ -50,14 +74,35 @@ msgstr "< Prev"
 msgid "?"
 msgstr "?"
 
+msgid "A -> Z"
+msgstr "A -> Z"
+
+msgid "A → Z"
+msgstr "A → Z"
+
 msgid "About"
 msgstr "About"
 
 msgid "About Storefront"
 msgstr "About Storefront"
 
+msgid "Active Single"
+msgstr "Active Single"
+
+msgid "Active Wallpaper ✓"
+msgstr "Active Wallpaper ✓"
+
+msgid "Add to Shuffle Pool (Enable Shuffle)"
+msgstr "Add to Shuffle Pool (Enable Shuffle)"
+
+msgid "Added to shuffle pool & Folder Shuffle enabled!"
+msgstr "Added to shuffle pool & Folder Shuffle enabled!"
+
 msgid "All"
 msgstr "All"
+
+msgid "All Categories"
+msgstr "All Categories"
 
 msgid "All Types"
 msgstr "All Types"
@@ -116,11 +161,29 @@ msgstr "Back"
 msgid "Beta"
 msgstr "Beta"
 
+msgid "Black Fill"
+msgstr "Black Fill"
+
+msgid "Blank"
+msgstr "Blank"
+
+msgid "Book Cover"
+msgstr "Book Cover"
+
+msgid "Border Fill / Background"
+msgstr "Border Fill / Background"
+
 msgid "Both owner and repository name are required."
 msgstr "Both owner and repository name are required."
 
 msgid "Branch: %s"
 msgstr "Branch: %s"
+
+msgid "Browse Wallpapers in Storefront"
+msgstr "Browse Wallpapers in Storefront"
+
+msgid "By "
+msgstr "By "
 
 msgid "By: %s"
 msgstr "By: %s"
@@ -173,8 +236,17 @@ msgstr "Catalog source"
 msgid "Catalog updated: %d plugins, %d patches, %d fonts."
 msgstr "Catalog updated: %d plugins, %d patches, %d fonts."
 
+msgid "Categories"
+msgstr "Categories"
+
+msgid "Category: "
+msgstr "Category: "
+
 msgid "Category: %s"
 msgstr "Category: %s"
+
+msgid "Change..."
+msgstr "Change..."
 
 msgid "Changelog for %s\n%s \\xE2\\x86\\x92 %s"
 msgstr "Changelog for %s\n%s \\xE2\\x86\\x92 %s"
@@ -248,6 +320,9 @@ msgstr "Clear search/filters"
 msgid "Close"
 msgstr "Close"
 
+msgid "Collection"
+msgstr "Collection"
+
 msgid "Commit diff: %s → %s"
 msgstr "Commit diff: %s → %s"
 
@@ -256,6 +331,9 @@ msgstr "Commits: %s \\xE2\\x86\\x92 %s"
 
 msgid "Commits: %s → %s"
 msgstr "Commits: %s → %s"
+
+msgid "Community"
+msgstr "Community"
 
 msgid "Config files only"
 msgstr "Config files only"
@@ -320,6 +398,9 @@ msgstr "Default only"
 msgid "Delete"
 msgstr "Delete"
 
+msgid "Delete "
+msgstr "Delete "
+
 msgid "Delete all cached README files? They will be re-downloaded on demand."
 msgstr "Delete all cached README files? They will be re-downloaded on demand."
 
@@ -334,6 +415,9 @@ msgstr "Delete font "
 
 msgid "Delete font '%s'?"
 msgstr "Delete font '%s'?"
+
+msgid "Delete from Device"
+msgstr "Delete from Device"
 
 msgid "Delete patch"
 msgstr "Delete patch"
@@ -380,6 +464,21 @@ msgstr "Disable plugin"
 msgid "Disabled"
 msgstr "Disabled"
 
+msgid "Display Options"
+msgstr "Display Options"
+
+msgid "Displays a static wallpaper on sleep.\\nActive: %s"
+msgstr "Displays a static wallpaper on sleep.\\nActive: %s"
+
+msgid "Done"
+msgstr "Done"
+
+msgid "Download & Set Active"
+msgstr "Download & Set Active"
+
+msgid "Download Only (Save to Device)"
+msgstr "Download Only (Save to Device)"
+
 msgid "Download failed: "
 msgstr "Download failed: "
 
@@ -391,6 +490,9 @@ msgstr "Download options — %s"
 
 msgid "Download options — %s (%s)"
 msgstr "Download options — %s (%s)"
+
+msgid "Downloading "
+msgstr "Downloading "
 
 msgid "Downloading %s%s…\nThis may take a moment."
 msgstr "Downloading %s%s…\nThis may take a moment."
@@ -409,6 +511,12 @@ msgstr "Downloading patch %s…"
 
 msgid "Downloading patch \\\"%s\\\"…"
 msgstr "Downloading patch \\\"%s\\\"…"
+
+msgid "Downloading screensaver..."
+msgstr "Downloading screensaver..."
+
+msgid "Downloading to shuffle pool..."
+msgstr "Downloading to shuffle pool..."
 
 msgid "Edit"
 msgstr "Edit"
@@ -463,6 +571,9 @@ msgstr "Failed to disable patch '%s'."
 
 msgid "Failed to download patch: %s"
 msgstr "Failed to download patch: %s"
+
+msgid "Failed to download screensaver."
+msgstr "Failed to download screensaver."
 
 msgid "Failed to enable patch "
 msgstr "Failed to enable patch "
@@ -536,6 +647,9 @@ msgstr "Filter & Sort Patches"
 msgid "Filter & Sort Plugins"
 msgstr "Filter & Sort Plugins"
 
+msgid "Filter & Sort Screensavers"
+msgstr "Filter & Sort Screensavers"
+
 msgid "Filter Installed Patches"
 msgstr "Filter Installed Patches"
 
@@ -559,6 +673,12 @@ msgstr "Filters: "
 
 msgid "Filters: (none)"
 msgstr "Filters: (none)"
+
+msgid "Folder Shuffle"
+msgstr "Folder Shuffle"
+
+msgid "Folder Shuffle enabled with this wallpaper!"
+msgstr "Folder Shuffle enabled with this wallpaper!"
 
 msgid "Font"
 msgstr "Font"
@@ -712,6 +832,9 @@ msgstr "Invalid patch target filename."
 
 msgid "Invalid selection."
 msgstr "Invalid selection."
+
+msgid "Invert colors (night mode / dark background)"
+msgstr "Invert colors (night mode / dark background)"
 
 msgid "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters."
 msgstr "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters."
@@ -875,8 +998,14 @@ msgstr "Modify Plugin"
 msgid "Modify Plugin: %s"
 msgstr "Modify Plugin: %s"
 
+msgid "Most Popular"
+msgstr "Most Popular"
+
 msgid "Multiple custom plugin folders are configured. Where should this plugin be installed?"
 msgstr "Multiple custom plugin folders are configured. Where should this plugin be installed?"
+
+msgid "My wallpaper collection"
+msgstr "My wallpaper collection"
 
 msgid "Name (A-Z)"
 msgstr "Name (A-Z)"
@@ -904,6 +1033,9 @@ msgstr "Next"
 
 msgid "Next >"
 msgstr "Next >"
+
+msgid "No Fill (Transparent)"
+msgstr "No Fill (Transparent)"
 
 msgid "No Lua files found in plugin directory"
 msgstr "No Lua files found in plugin directory"
@@ -998,11 +1130,20 @@ msgstr "No releases found for this repository."
 msgid "No remote version info for %s."
 msgstr "No remote version info for %s."
 
+msgid "No screensavers match this filter."
+msgstr "No screensavers match this filter."
+
 msgid "No stable releases found — uncheck filter to show all releases"
 msgstr "No stable releases found — uncheck filter to show all releases"
 
 msgid "No tracked plugins to check."
 msgstr "No tracked plugins to check."
+
+msgid "No wallpapers found in your screensavers folder.\\n\\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
+msgstr "No wallpapers found in your screensavers folder.\\n\\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
+
+msgid "None selected"
+msgstr "None selected"
 
 msgid "Not matched with a repository."
 msgstr "Not matched with a repository."
@@ -1019,6 +1160,9 @@ msgstr "Offline Regular"
 msgid "Open"
 msgstr "Open"
 
+msgid "Open Wallpaper Collection Gallery"
+msgstr "Open Wallpaper Collection Gallery"
+
 msgid "Open details"
 msgstr "Open details"
 
@@ -1027,6 +1171,9 @@ msgstr "Optional. Raises the GitHub API rate limit. Generate one (classic, "
 
 msgid "Optional. Raises the GitHub API rate limit. Generate one (classic, 'public_repo' scope is enough) at github.com/settings/tokens, then paste it here."
 msgstr "Optional. Raises the GitHub API rate limit. Generate one (classic, 'public_repo' scope is enough) at github.com/settings/tokens, then paste it here."
+
+msgid "Options ▾"
+msgstr "Options ▾"
 
 msgid "Origin"
 msgstr "Origin"
@@ -1151,8 +1298,17 @@ msgstr "README"
 msgid "README download failed: "
 msgstr "README download failed: "
 
+msgid "Rate Wallpaper"
+msgstr "Rate Wallpaper"
+
 msgid "Reading Passage Specimen"
 msgstr "Reading Passage Specimen"
+
+msgid "Reading Progress"
+msgstr "Reading Progress"
+
+msgid "Reading Progress / Summary"
+msgstr "Reading Progress / Summary"
 
 msgid "Refresh"
 msgstr "Refresh"
@@ -1220,6 +1376,9 @@ msgstr "Remote: (not checked)"
 msgid "Remove"
 msgstr "Remove"
 
+msgid "Remove "
+msgstr "Remove "
+
 msgid "Rename"
 msgstr "Rename"
 
@@ -1271,11 +1430,29 @@ msgstr "Restart now"
 msgid "Sample Text"
 msgstr "Sample Text"
 
-msgid "Screensavers"
-msgstr "Screensavers"
-
 msgid "Save"
 msgstr "Save"
+
+msgid "Screensaver"
+msgstr "Screensaver"
+
+msgid "Screensaver & Wallpapers"
+msgstr "Screensaver & Wallpapers"
+
+msgid "Screensaver Details"
+msgstr "Screensaver Details"
+
+msgid "Screensaver Mode"
+msgstr "Screensaver Mode"
+
+msgid "Screensaver Settings"
+msgstr "Screensaver Settings"
+
+msgid "Screensaver mode"
+msgstr "Screensaver mode"
+
+msgid "Screensavers"
+msgstr "Screensavers"
 
 msgid "Search"
 msgstr "Search"
@@ -1297,6 +1474,12 @@ msgstr "Search text"
 
 msgid "Search: "
 msgstr "Search: "
+
+msgid "Select All"
+msgstr "Select All"
+
+msgid "Select Categories"
+msgstr "Select Categories"
 
 msgid "Select a repository patch entry to match with the chosen file."
 msgstr "Select a repository patch entry to match with the chosen file."
@@ -1322,11 +1505,50 @@ msgstr "Select repository"
 msgid "Set"
 msgstr "Set"
 
+msgid "Set Active Single"
+msgstr "Set Active Single"
+
+msgid "Set Single"
+msgstr "Set Single"
+
+msgid "Set as Active Single Wallpaper"
+msgstr "Set as Active Single Wallpaper"
+
+msgid "Set as active single wallpaper!"
+msgstr "Set as active single wallpaper!"
+
 msgid "Settings"
 msgstr "Settings"
 
 msgid "Show needs update"
 msgstr "Show needs update"
+
+msgid "Show reading progress banner overlay"
+msgstr "Show reading progress banner overlay"
+
+msgid "Shows reading stats, percentage, and chapter progress"
+msgstr "Shows reading stats, percentage, and chapter progress"
+
+msgid "Shows the cover of the book currently being read"
+msgstr "Shows the cover of the book currently being read"
+
+msgid "Shuffle (%d)"
+msgstr "Shuffle (%d)"
+
+msgid "Shuffle Pool"
+msgstr "Shuffle Pool"
+
+msgid "Shuffles through all wallpapers in folder on sleep.\\nPool size: %d wallpapers in rotation"
+msgstr "Shuffles through all wallpapers in folder on sleep.\\nPool size: %d wallpapers in rotation"
+
+msgid "Single"
+msgstr "Single"
+
+msgid "Single Wallpaper"
+msgstr "Single Wallpaper"
+
+msgid "Solid fill for screen margins & letterboxing"
+msgstr "Solid fill for screen margins & letterboxing"
 
 msgid "Sort"
 msgstr "Sort"
@@ -1336,6 +1558,9 @@ msgstr "Sort mode"
 
 msgid "Sort: A-Z"
 msgstr "Sort: A-Z"
+
+msgid "Sort: Most Liked"
+msgstr "Sort: Most Liked"
 
 msgid "Sort: Name (A → Z)"
 msgstr "Sort: Name (A → Z)"
@@ -1400,6 +1625,9 @@ msgstr "Storefront · Updates"
 msgid "Storefront: Open"
 msgstr "Storefront: Open"
 
+msgid "Stretch image to fill entire screen"
+msgstr "Stretch image to fill entire screen"
+
 msgid "Style: "
 msgstr "Style: "
 
@@ -1442,6 +1670,9 @@ msgstr "This action cannot be undone.\n\nChanges will take effect after restart.
 msgid "This action cannot be undone.\\n\\nChanges will take effect after restart."
 msgstr "This action cannot be undone.\\n\\nChanges will take effect after restart."
 
+msgid "This wallpaper is currently set as your active screensaver."
+msgstr "This wallpaper is currently set as your active screensaver."
+
 msgid "This will take effect on next restart."
 msgstr "This will take effect on next restart."
 
@@ -1450,6 +1681,9 @@ msgstr "Total commits: %d"
 
 msgid "Tracked: %d"
 msgstr "Tracked: %d"
+
+msgid "Transparent overlay (page content visible behind)"
+msgstr "Transparent overlay (page content visible behind)"
 
 msgid "Type"
 msgstr "Type"
@@ -1580,14 +1814,47 @@ msgstr "View commits (%s \\xE2\\x86\\x92 %s)"
 msgid "View commits (%s → %s)"
 msgstr "View commits (%s → %s)"
 
+msgid "Wallpaper Collection"
+msgstr "Wallpaper Collection"
+
+msgid "Wallpaper Options"
+msgstr "Wallpaper Options"
+
+msgid "Wallpaper removed"
+msgstr "Wallpaper removed"
+
+msgid "Wallpaper saved to collection!"
+msgstr "Wallpaper saved to collection!"
+
+msgid "Wallpaper set as active KOReader screensaver!"
+msgstr "Wallpaper set as active KOReader screensaver!"
+
+msgid "Wallpaper set as active screensaver!"
+msgstr "Wallpaper set as active screensaver!"
+
 msgid "Warning: the selected version is older than what is currently installed. You are downgrading."
 msgstr "Warning: the selected version is older than what is currently installed. You are downgrading."
+
+msgid "White Fill"
+msgstr "White Fill"
 
 msgid "Wiki"
 msgstr "Wiki"
 
 msgid "Wiki Pages"
 msgstr "Wiki Pages"
+
+msgid "Z -> A"
+msgstr "Z -> A"
+
+msgid "Z → A"
+msgstr "Z → A"
+
+msgid "[ Loading preview... ]"
+msgstr "[ Loading preview... ]"
+
+msgid "[ Wallpaper Preview Loading... ]"
+msgstr "[ Wallpaper Preview Loading... ]"
 
 msgid "[Ignored]"
 msgstr "[Ignored]"
@@ -1846,6 +2113,15 @@ msgstr "·"
 
 msgid "≥ %s ⭐"
 msgstr "≥ %s ⭐"
+
+msgid "★ ACTIVE"
+msgstr "★ ACTIVE"
+
+msgid "⚙ Settings"
+msgstr "⚙ Settings"
+
+msgid "⚙ Settings..."
+msgstr "⚙ Settings..."
 
 msgid "✓ Current"
 msgstr "✓ Current"

@@ -185,11 +185,38 @@ function StorefrontScreensaverGallery.show(Storefront, on_close_callback, on_set
         }
 
         local list_vg = VerticalGroup:new{ align = "left" }
+        local row_pad_h = sc(8)
+        local row_pad_v = sc(6)
         local thumb_w = sc(48)
         local thumb_h = sc(64)
-        local btn_col_w = sc(92)
-        local mid_w = dialog_w - sc(24) - thumb_w - btn_col_w - sc(20)
+        local btn_col_w = sc(88)
+        local btn_h = sc(25)
+        local gap = sc(8)
+        local mid_w = dialog_w - sc(4) - (row_pad_h * 2) - thumb_w - btn_col_w - (gap * 2) - sc(2)
         local fixed_list_h = sc(395) -- Exact height for 5 item rows
+
+        local function make_action_btn(label_str, bg_color, fg_color, callback)
+            local btn_text = TextWidget:new{
+                text = label_str,
+                face = Font:getFace("cfont", 12),
+                bold = true,
+                fgcolor = fg_color or Blitbuffer.COLOR_BLACK,
+            }
+            local frame = FrameContainer:new{
+                bordersize = sc(1),
+                color = Blitbuffer.COLOR_BLACK,
+                radius = sc(4),
+                padding = 0,
+                width = btn_col_w,
+                height = btn_h,
+                background = bg_color or Blitbuffer.COLOR_WHITE,
+                CenterContainer:new{
+                    dimen = Geom:new{ w = btn_col_w, h = btn_h },
+                    btn_text,
+                }
+            }
+            return make_tap_item(frame, callback)
+        end
 
         if #items == 0 then
             local empty_text = TextBoxWidget:new{
@@ -221,14 +248,14 @@ function StorefrontScreensaverGallery.show(Storefront, on_close_callback, on_set
                 local ok_img, res_img = false, nil
 
                 -- 1. Check for pre-cached thumbnail in storefront_thumbs cache
-                local thumb_file = nil
                 local ok_ds, DataStorage = pcall(require, "datastorage")
                 local data_dir = (ok_ds and DataStorage and DataStorage.getDataDir) and DataStorage:getDataDir() or "/tmp/koreader"
                 local cache_dir = data_dir .. "/cache/storefront_thumbs"
                 local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
                 if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
 
-                if lfs and lfs.attributes then
+                local thumb_file = current_item.thumbnail_file
+                if not thumb_file and lfs and lfs.attributes then
                     for _, ext in ipairs({".png", ".jpg", ".jpeg"}) do
                         local p = cache_dir .. "/" .. tostring(current_item.id) .. ext
                         if lfs.attributes(p, "mode") == "file" then
@@ -239,7 +266,7 @@ function StorefrontScreensaverGallery.show(Storefront, on_close_callback, on_set
                 end
 
                 if not thumb_file and ok_screensavers and StorefrontScreensavers and StorefrontScreensavers.fetchThumbnail then
-                    pcall(function() thumb_file = StorefrontScreensavers.fetchThumbnail(current_item) end)
+                    pcall(function() thumb_file = StorefrontScreensavers.fetchThumbnail(current_item.catalog_item or current_item) end)
                 end
 
                 local source_file = thumb_file or current_item.filepath
@@ -319,11 +346,11 @@ function StorefrontScreensaverGallery.show(Storefront, on_close_callback, on_set
                 -- Right Action Buttons Column
                 local right_actions_vg = VerticalGroup:new{ align = "center" }
                 local is_this_active = is_single_mode and current_item.is_active_single
-                local btn_h = sc(24)
 
                 if is_this_active then
                     local active_badge_frame = FrameContainer:new{
-                        bordersize = 0,
+                        bordersize = sc(1),
+                        color = Blitbuffer.COLOR_BLACK,
                         radius = sc(4),
                         padding = 0,
                         width = btn_col_w,
@@ -341,71 +368,53 @@ function StorefrontScreensaverGallery.show(Storefront, on_close_callback, on_set
                     }
                     table.insert(right_actions_vg, active_badge_frame)
                 else
-                    local set_active_btn = Button:new{
-                        text = _("Set Single"),
-                        text_font_size = 12,
-                        text_font_face = "cfont",
-                        bold = true,
-                        bordersize = sc(1),
-                        color = Blitbuffer.COLOR_BLACK,
-                        radius = sc(4),
-                        padding = sc(3),
-                        padding_h = sc(4),
-                        width = btn_col_w,
-                        height = btn_h,
-                        background = Blitbuffer.Color8(245),
-                        callback = function()
-                            StorefrontScreensaverMgr.setScreensaverMode("single", { file = current_item.filepath })
-                            local StorefrontToast = require("storefront_toast")
-                            StorefrontToast.show(_("Set as active single wallpaper!"), 2)
-                            refresh()
-                        end,
-                    }
+                    local set_active_btn = make_action_btn(_("Set Single"), Blitbuffer.Color8(240), Blitbuffer.COLOR_BLACK, function()
+                        StorefrontScreensaverMgr.setScreensaverMode("single", { file = current_item.filepath })
+                        local StorefrontToast = require("storefront_toast")
+                        StorefrontToast.show(_("Set as active single wallpaper!"), 2)
+                        refresh()
+                    end)
                     table.insert(right_actions_vg, set_active_btn)
                 end
 
-                table.insert(right_actions_vg, VerticalSpan:new{ width = sc(5) })
+                table.insert(right_actions_vg, VerticalSpan:new{ width = sc(4) })
 
-                local delete_btn = Button:new{
-                    text = _("Remove"),
-                    text_font_size = 12,
-                    text_font_face = "cfont",
-                    bold = true,
-                    bordersize = sc(1),
-                    color = Blitbuffer.COLOR_BLACK,
-                    radius = sc(4),
-                    padding = sc(3),
-                    padding_h = sc(4),
-                    width = btn_col_w,
-                    height = btn_h,
-                    background = Blitbuffer.COLOR_WHITE,
-                    callback = function()
-                        UIManager:show(ConfirmBox:new{
-                            text = string.format(_("Remove '%s' from your wallpaper collection?"), current_item.title or current_item.filename),
-                            ok_text = _("Remove"),
-                            cancel_text = _("Cancel"),
-                            ok_callback = function()
-                                StorefrontScreensaverMgr.deleteLocalScreensaver(current_item.filepath)
-                                local StorefrontToast = require("storefront_toast")
-                                StorefrontToast.show(_("Wallpaper removed"), 2)
-                                refresh()
-                            end
-                        })
-                    end,
-                }
+                local delete_btn = make_action_btn(_("Remove"), Blitbuffer.COLOR_WHITE, Blitbuffer.COLOR_BLACK, function()
+                    UIManager:show(ConfirmBox:new{
+                        text = string.format(_("Remove '%s' from your wallpaper collection?"), current_item.title or current_item.filename),
+                        ok_text = _("Remove"),
+                        cancel_text = _("Cancel"),
+                        ok_callback = function()
+                            StorefrontScreensaverMgr.deleteLocalScreensaver(current_item.filepath)
+                            local StorefrontToast = require("storefront_toast")
+                            StorefrontToast.show(_("Wallpaper removed"), 2)
+                            refresh()
+                        end
+                    })
+                end)
                 table.insert(right_actions_vg, delete_btn)
 
-                local row_elements = {
+                local left_group = HorizontalGroup:new{
+                    align = "center",
                     thumb_tap,
-                    HorizontalSpan:new{ width = sc(10) },
+                    HorizontalSpan:new{ width = gap },
                     mid_container,
-                    HorizontalSpan:new{ width = sc(10) },
-                    right_actions_vg,
                 }
 
-                local row_content = HorizontalGroup:new(row_elements)
+                local row_w = dialog_w - sc(4) - (row_pad_h * 2)
+                local left_w = left_group:getSize().w
+                local right_w = right_actions_vg:getSize().w
+                local flex_span = math.max(gap, row_w - left_w - right_w)
+
+                local row_content = HorizontalGroup:new{
+                    align = "center",
+                    left_group,
+                    HorizontalSpan:new{ width = flex_span },
+                    right_actions_vg,
+                }
                 local row_frame = FrameContainer:new{
-                    padding = sc(6),
+                    padding_v = row_pad_v,
+                    padding_h = row_pad_h,
                     bordersize = 0,
                     width = dialog_w - sc(4),
                     row_content,

@@ -1782,5 +1782,145 @@ msgid "✓ Current"
 msgstr "✓ 当前版本"
 
 msgid "Screensavers"
-msgstr ""
+msgstr "屏幕保护"
 
+# en-hash: 6df6c2dd7dd08e6108bf1b8dea56c527
+msgid "Screensaver Settings"
+msgstr "屏幕保护设置"
+
+# en-hash: dabeb2a6efa064595e4fbf43fda02f42
+msgid "Wallpaper Collection"
+msgstr "壁纸收藏"
+
+# en-hash: aaaca14de025427e39ed056b29af4058
+msgid "Open Wallpaper Collection Gallery"
+msgstr "打开壁纸图库"
+
+# en-hash: 261dba00113a7f7e9754902b83293f85
+msgid "Browse Wallpapers in Storefront"
+msgstr "在 Storefront 中浏览壁纸"
+
+# en-hash: bda5dcfc5c6a544bb9dd8ede06326bff
+msgid "Active Wallpaper ✓"
+msgstr "当前壁纸 ✓"
+
+# en-hash: 704f03f7c5dd59a9b3ae46df8e1e46a4
+msgid "Set Active Single"
+msgstr "设为当前单张壁纸"
+
+# en-hash: 2722ddcbfd20786cc8715dac74c0531a
+msgid "+ Add to Shuffle Pool"
+msgstr "+ 加入随机轮播池"
+
+# en-hash: 938a7f69f98b48f241a295717988ac23
+msgid "Download & Set Active"
+msgstr "下载并应用"
+
+# en-hash: ba8ef34da8f377a1c718ff0f10e107b1
+msgid "Wallpaper set as active KOReader screensaver!"
+msgstr "壁纸已设为 KOReader 当前屏幕保护！"
+
+# en-hash: f50b510e22815838c4d2d12e1d79bddf
+msgid "Added to shuffle pool & Folder Shuffle enabled!"
+msgstr "已加入轮播池并启用文件夹随机轮播！"
+
+# en-hash: b6dea7fce89bd30f8c3d5b898849aa4b
+msgid "Wallpaper saved to collection!"
+msgstr "壁纸已保存至收藏！"
+
+# en-hash: c1cb41ea040ff053e2219930470897ed
+msgid "Single Wallpaper"
+msgstr "单张壁纸"
+
+# en-hash: 16803106d3aa4c6852022f3da9d4c54a
+msgid "Folder Shuffle"
+msgstr "文件夹轮播"
+
+# en-hash: 03ea37a723d863ca6c1918209c5c1a6f
+msgid "Book Cover"
+msgstr "图书封面"
+
+# en-hash: 7f58b08556c5375e2559f267873d1218
+msgid "Reading Progress"
+msgstr "阅读进度"
+
+# en-hash: 9f20e45267caff9e39ca3b9bea16db47
+msgid "Transparent overlay (page content visible behind)"
+msgstr "透明图层（背景显示当前页面）"
+
+# en-hash: bc586928ac8f7c25dabb909c67bdfa88
+msgid "Solid fill for screen margins & letterboxing"
+msgstr "纯色填充屏幕留白与黑边"
+
+# en-hash: 1f1b02ee24bf2ce675bc4c571ec2b586
+msgid "Show reading progress banner overlay"
+msgstr "显示阅读进度横幅图层"
+
+# en-hash: dd2d866df5da52a1aed8e63192026530
+msgid "Stretch image to fill entire screen"
+msgstr "拉伸图片以铺满全屏"
+
+# en-hash: 1554833122e9bc723e16d2f1b927dc98
+msgid "Invert colors (night mode / dark background)"
+msgstr "反转颜色（夜间模式 / 深色背景）"
+
+
+msgid "Screensaver Settings"
+msgstr "屏幕保护设置"
+
+msgid "Wallpaper Collection"
+msgstr "壁纸收藏"
+
+msgid "Open Wallpaper Collection Gallery"
+msgstr "打开壁纸图库"
+
+msgid "Browse Wallpapers in Storefront"
+msgstr "在 Storefront 中浏览壁纸"
+
+msgid "Active Wallpaper ✓"
+msgstr "当前壁纸 ✓"
+
+msgid "Set Active Single"
+msgstr "设为当前单张壁纸"
+
+msgid "+ Add to Shuffle Pool"
+msgstr "+ 加入随机轮播池"
+
+msgid "Download & Set Active"
+msgstr "下载并应用"
+
+msgid "Wallpaper set as active KOReader screensaver!"
+msgstr "壁纸已设为 KOReader 当前屏幕保护！"
+
+msgid "Added to shuffle pool & Folder Shuffle enabled!"
+msgstr "已加入轮播池并启用文件夹随机轮播！"
+
+msgid "Wallpaper saved to collection!"
+msgstr "壁纸已保存至收藏！"
+
+msgid "Single Wallpaper"
+msgstr "单张壁纸"
+
+msgid "Folder Shuffle"
+msgstr "文件夹轮播"
+
+msgid "Book Cover"
+msgstr "图书封面"
+
+msgid "Reading Progress"
+msgstr "阅读进度"
+
+msgid "Transparent overlay (page content visible behind)"
+msgstr "透明图层（背景显示当前页面）"
+
+msgid "Solid fill for screen margins & letterboxing"
+msgstr "纯色填充屏幕留白与黑边"
+
+msgid "Show reading progress banner overlay"
+msgstr "显示阅读进度横幅图层"
+
+msgid "Stretch image to fill entire screen"
+msgstr "拉伸图片以铺满全屏"
+
+msgid "Invert colors (night mode / dark background)"
+msgstr "反转颜色（夜间模式 / 深色背景）"

@@ -248,6 +248,12 @@ function StorefrontScreensaverMgr.listLocalScreensavers(custom_dir)
         end
     end
 
+    local cache_dir = nil
+    local ok_ds, DataStorage = pcall(require, "datastorage")
+    if ok_ds and DataStorage and DataStorage.getDataDir then
+        cache_dir = DataStorage:getDataDir() .. "/cache/storefront_thumbs"
+    end
+
     for filename in lfs.dir(dir) do
         if filename ~= "." and filename ~= ".." then
             local lower = filename:lower()
@@ -256,10 +262,25 @@ function StorefrontScreensaverMgr.listLocalScreensavers(custom_dir)
                 local attr = lfs.attributes(fullpath)
                 if attr and attr.mode == "file" then
                     local item_id = filename:gsub("%..+$", "")
+                    local matched = catalog_map[item_id:lower()] or catalog_map[filename:lower()]
                     local clean_title, author = extractScreensaverTitleAndAuthor(filename, catalog_map)
 
                     local active_file_str = tostring(active_file or "")
                     local is_active = (active_file_str ~= "" and (fullpath == active_file_str or filename == (active_file_str:match("([^/\\]+)$") or active_file_str)))
+
+                    local thumb_file = nil
+                    if cache_dir and lfs.attributes then
+                        local p_png = cache_dir .. "/" .. tostring(item_id) .. ".png"
+                        local p_jpg = cache_dir .. "/" .. tostring(item_id) .. ".jpg"
+                        if lfs.attributes(p_png, "mode") == "file" then
+                            thumb_file = p_png
+                        elseif lfs.attributes(p_jpg, "mode") == "file" then
+                            thumb_file = p_jpg
+                        end
+                    end
+                    if not thumb_file and matched and ok_ss and StorefrontScreensavers and StorefrontScreensavers.fetchThumbnail then
+                        thumb_file = StorefrontScreensavers.fetchThumbnail(matched)
+                    end
 
                     table.insert(result, {
                         filename = filename,
@@ -270,6 +291,8 @@ function StorefrontScreensaverMgr.listLocalScreensavers(custom_dir)
                         mtime = attr.modification or 0,
                         is_active_single = is_active,
                         id = item_id,
+                        thumbnail_file = thumb_file or fullpath,
+                        catalog_item = matched,
                     })
                 end
             end

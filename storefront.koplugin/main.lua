@@ -7314,7 +7314,7 @@ function Storefront:buildInstalledEntries(available_list_height)
                     kind_label = _("Screensaver"),
                     description = desc_str,
                     badge = badge_str,
-                    thumbnail_file = ss_item.filepath,
+                    thumbnail_file = ss_item.thumbnail_file or ss_item.filepath,
                     is_entry = true,
                     is_installed_item = true,
                     is_screensaver = true,

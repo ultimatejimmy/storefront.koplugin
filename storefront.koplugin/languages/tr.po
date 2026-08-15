@@ -1782,5 +1782,145 @@ msgid "✓ Current"
 msgstr "✓ Geçerli"
 
 msgid "Screensavers"
-msgstr ""
+msgstr "Ekran Koruyucular"
 
+# en-hash: 6df6c2dd7dd08e6108bf1b8dea56c527
+msgid "Screensaver Settings"
+msgstr "Ekran Koruyucu Ayarları"
+
+# en-hash: dabeb2a6efa064595e4fbf43fda02f42
+msgid "Wallpaper Collection"
+msgstr "Duvar Kağıdı Koleksiyonu"
+
+# en-hash: aaaca14de025427e39ed056b29af4058
+msgid "Open Wallpaper Collection Gallery"
+msgstr "Duvar Kağıdı Galerisini Aç"
+
+# en-hash: 261dba00113a7f7e9754902b83293f85
+msgid "Browse Wallpapers in Storefront"
+msgstr "Storefront Duvar Kağıtlarına Göz At"
+
+# en-hash: bda5dcfc5c6a544bb9dd8ede06326bff
+msgid "Active Wallpaper ✓"
+msgstr "Aktif Duvar Kağıdı ✓"
+
+# en-hash: 704f03f7c5dd59a9b3ae46df8e1e46a4
+msgid "Set Active Single"
+msgstr "Aktif Tekil Olarak Ayarla"
+
+# en-hash: 2722ddcbfd20786cc8715dac74c0531a
+msgid "+ Add to Shuffle Pool"
+msgstr "+ Karışık Havuzuna Ekle"
+
+# en-hash: 938a7f69f98b48f241a295717988ac23
+msgid "Download & Set Active"
+msgstr "İndir ve Etkinleştir"
+
+# en-hash: ba8ef34da8f377a1c718ff0f10e107b1
+msgid "Wallpaper set as active KOReader screensaver!"
+msgstr "Duvar kağıdı aktif KOReader ekran koruyucusu yapıldı!"
+
+# en-hash: f50b510e22815838c4d2d12e1d79bddf
+msgid "Added to shuffle pool & Folder Shuffle enabled!"
+msgstr "Havuza eklendi ve Klasör Karıştırma etkinleştirildi!"
+
+# en-hash: b6dea7fce89bd30f8c3d5b898849aa4b
+msgid "Wallpaper saved to collection!"
+msgstr "Duvar kağıdı koleksiyona kaydedildi!"
+
+# en-hash: c1cb41ea040ff053e2219930470897ed
+msgid "Single Wallpaper"
+msgstr "Tekil Duvar Kağıdı"
+
+# en-hash: 16803106d3aa4c6852022f3da9d4c54a
+msgid "Folder Shuffle"
+msgstr "Klasör Karıştırma"
+
+# en-hash: 03ea37a723d863ca6c1918209c5c1a6f
+msgid "Book Cover"
+msgstr "Kitap Kapağı"
+
+# en-hash: 7f58b08556c5375e2559f267873d1218
+msgid "Reading Progress"
+msgstr "Okuma İlerlemesi"
+
+# en-hash: 9f20e45267caff9e39ca3b9bea16db47
+msgid "Transparent overlay (page content visible behind)"
+msgstr "Saydam katman (sayfa içeriği arkada görünür)"
+
+# en-hash: bc586928ac8f7c25dabb909c67bdfa88
+msgid "Solid fill for screen margins & letterboxing"
+msgstr "Ekran kenar boşlukları için düz dolgu"
+
+# en-hash: 1f1b02ee24bf2ce675bc4c571ec2b586
+msgid "Show reading progress banner overlay"
+msgstr "Okuma ilerleme çubuğunu göster"
+
+# en-hash: dd2d866df5da52a1aed8e63192026530
+msgid "Stretch image to fill entire screen"
+msgstr "Resmi tüm ekrana sığdıracak şekilde uzat"
+
+# en-hash: 1554833122e9bc723e16d2f1b927dc98
+msgid "Invert colors (night mode / dark background)"
+msgstr "Renkleri tersine çevir (gece modu / koyu arka plan)"
+
+
+msgid "Screensaver Settings"
+msgstr "Ekran Koruyucu Ayarları"
+
+msgid "Wallpaper Collection"
+msgstr "Duvar Kağıdı Koleksiyonu"
+
+msgid "Open Wallpaper Collection Gallery"
+msgstr "Duvar Kağıdı Galerisini Aç"
+
+msgid "Browse Wallpapers in Storefront"
+msgstr "Storefront Duvar Kağıtlarına Göz At"
+
+msgid "Active Wallpaper ✓"
+msgstr "Aktif Duvar Kağıdı ✓"
+
+msgid "Set Active Single"
+msgstr "Aktif Tekil Olarak Ayarla"
+
+msgid "+ Add to Shuffle Pool"
+msgstr "+ Karışık Havuzuna Ekle"
+
+msgid "Download & Set Active"
+msgstr "İndir ve Etkinleştir"
+
+msgid "Wallpaper set as active KOReader screensaver!"
+msgstr "Duvar kağıdı aktif KOReader ekran koruyucusu yapıldı!"
+
+msgid "Added to shuffle pool & Folder Shuffle enabled!"
+msgstr "Havuza eklendi ve Klasör Karıştırma etkinleştirildi!"
+
+msgid "Wallpaper saved to collection!"
+msgstr "Duvar kağıdı koleksiyona kaydedildi!"
+
+msgid "Single Wallpaper"
+msgstr "Tekil Duvar Kağıdı"
+
+msgid "Folder Shuffle"
+msgstr "Klasör Karıştırma"
+
+msgid "Book Cover"
+msgstr "Kitap Kapağı"
+
+msgid "Reading Progress"
+msgstr "Okuma İlerlemesi"
+
+msgid "Transparent overlay (page content visible behind)"
+msgstr "Saydam katman (sayfa içeriği arkada görünür)"
+
+msgid "Solid fill for screen margins & letterboxing"
+msgstr "Ekran kenar boşlukları için düz dolgu"
+
+msgid "Show reading progress banner overlay"
+msgstr "Okuma ilerleme çubuğunu göster"
+
+msgid "Stretch image to fill entire screen"
+msgstr "Resmi tüm ekrana sığdıracak şekilde uzat"
+
+msgid "Invert colors (night mode / dark background)"
+msgstr "Renkleri tersine çevir (gece modu / koyu arka plan)"

@@ -175,7 +175,7 @@ def validate_translations(lang_code, requested, translated):
             errors.append(f"{lang_code}: missing translation for {key!r}")
         elif "???" in value or (key in REPAIR_TRANSLATION_KEYS and "?" in value):
             errors.append(f"{lang_code}: placeholder/corrupt translation for {key!r}")
-        elif value == english and key not in {'1 / 1', '[pre]', '·', 'README', 'tab_readme', '≥ %s ⭐', 'ghp_...', '?', 'Beta', 'Default', 'Go', 'Ignore', 'Match', 'Version', 'Author', 'Font', 'Filters', 'Copy', 'Clear', 'Edit', 'Enabled', 'Disabled'}:
+        elif value == english and key not in {'1 / 1', '[pre]', '·', '\xc2\xb7', 'README', 'tab_readme', '≥ %s ⭐', 'ghp_...', '?', 'Beta', 'Default', 'Go', 'Ignore', 'Match', 'Version', 'Author', 'Font', 'Filters', 'Copy', 'Clear', 'Edit', 'Enabled', 'Disabled', 'A → Z', 'Z → A', 'A -> Z', 'Z -> A', 'Options ▾', 'Collection', 'Screensaver'}:
             errors.append(f"{lang_code}: English fallback returned for {key!r}")
         elif format_specifiers(value) != format_specifiers(english):
             errors.append(f"{lang_code}: format specifiers differ for {key!r}")

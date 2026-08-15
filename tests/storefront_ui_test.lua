@@ -1282,6 +1282,80 @@ if ok_browser then
         check("promptPluginInstallOptions triggers asset picker for release_override with multiple assets", modal_rendered, true)
         MainStorefront.renderAssetPickerModal = orig_picker
 
+        -- ----------------------------------------------------
+        -- SCREENSAVER FEATURE REGRESSION TESTS
+        -- ----------------------------------------------------
+        -- 1. Test hasActiveFilters for Screensavers
+        MainStorefront:ensureBrowserState()
+        MainStorefront.browser_state.screensaver_category = ""
+        MainStorefront.browser_state.screensaver_categories = nil
+        MainStorefront.browser_state.screensaver_search = ""
+        MainStorefront.browser_state.screensaver_sort = "popular"
+        check("hasActiveFilters Screensavers returns false when default", MainStorefront:hasActiveFilters("Screensavers"), false)
+
+        MainStorefront.browser_state.screensaver_category = "Nature"
+        check("hasActiveFilters Screensavers returns true when category set", MainStorefront:hasActiveFilters("Screensavers"), true)
+
+        MainStorefront.browser_state.screensaver_category = ""
+        MainStorefront.browser_state.screensaver_categories = { nature = true }
+        check("hasActiveFilters Screensavers returns true when categories table set", MainStorefront:hasActiveFilters("Screensavers"), true)
+
+        MainStorefront.browser_state.screensaver_categories = nil
+        MainStorefront.browser_state.screensaver_sort = "az"
+        check("hasActiveFilters Screensavers returns true when sort changed", MainStorefront:hasActiveFilters("Screensavers"), true)
+
+        MainStorefront.browser_state.screensaver_sort = "popular"
+        MainStorefront.browser_state.screensaver_search = "mountain"
+        check("hasActiveFilters Screensavers returns true when search active", MainStorefront:hasActiveFilters("Screensavers"), true)
+        MainStorefront.browser_state.screensaver_search = ""
+
+        -- 2. Test Installed Tab Screensaver Entry Building
+        local StorefrontScreensaverMgr = require("storefront_screensaver_mgr")
+        local orig_list_ss = StorefrontScreensaverMgr.listLocalScreensavers
+        StorefrontScreensaverMgr.listLocalScreensavers = function()
+            return {
+                {
+                    id = "whisperingsea4-highres-landscape-2a",
+                    title = "Highres Landscape 2A",
+                    author = "whisperingsea4",
+                    filename = "whisperingsea4-highres-landscape-2a.png",
+                    filepath = "/tmp/koreader/screensavers/whisperingsea4-highres-landscape-2a.png",
+                    mtime = 1700000000,
+                    is_active_single = true,
+                }
+            }
+        end
+
+        MainStorefront.installed_state.filter_type = "screensaver"
+        MainStorefront.installed_state.search_text = ""
+        local ss_installed_entries = MainStorefront:buildInstalledEntries(600)
+        check("buildInstalledEntries includes screensavers", #ss_installed_entries >= 1, true)
+        if #ss_installed_entries >= 1 then
+            local ss_e = ss_installed_entries[1]
+            check("Screensaver entry has clean title without author prefix", ss_e.name, "Highres Landscape 2A")
+            check("Screensaver entry has author description", ss_e.description, "By whisperingsea4")
+            check("Screensaver entry has kind_label", ss_e.kind_label, "Screensaver")
+            check("Screensaver entry has thumbnail_file", ss_e.thumbnail_file, "/tmp/koreader/screensavers/whisperingsea4-highres-landscape-2a.png")
+        end
+
+        -- 3. Test StorefrontListItem with screensaver thumbnail
+        local ss_item_widget_ok, ss_item_widget = pcall(function()
+            return StorefrontListItem:new{
+                entry = {
+                    name = "Highres Landscape 2A",
+                    kind_label = "Screensaver",
+                    description = "By whisperingsea4",
+                    badge = "Shuffle Pool",
+                    thumbnail_file = "/tmp/koreader/screensavers/whisperingsea4-highres-landscape-2a.png",
+                    is_screensaver = true,
+                },
+                width = 560,
+            }
+        end)
+        check("StorefrontListItem with screensaver thumbnail instantiates without error", ss_item_widget_ok, true)
+
+        StorefrontScreensaverMgr.listLocalScreensavers = orig_list_ss
+        MainStorefront.installed_state.filter_type = "all"
     end
 end
 

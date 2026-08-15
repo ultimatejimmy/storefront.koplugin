@@ -1782,5 +1782,145 @@ msgid "✓ Current"
 msgstr "✓ Atual"
 
 msgid "Screensavers"
-msgstr ""
+msgstr "Protetores de tela"
 
+# en-hash: 6df6c2dd7dd08e6108bf1b8dea56c527
+msgid "Screensaver Settings"
+msgstr "Configurações do protetor de tela"
+
+# en-hash: dabeb2a6efa064595e4fbf43fda02f42
+msgid "Wallpaper Collection"
+msgstr "Coleção de papéis de parede"
+
+# en-hash: aaaca14de025427e39ed056b29af4058
+msgid "Open Wallpaper Collection Gallery"
+msgstr "Abrir galeria de papéis de parede"
+
+# en-hash: 261dba00113a7f7e9754902b83293f85
+msgid "Browse Wallpapers in Storefront"
+msgstr "Navegar por papéis de parede no Storefront"
+
+# en-hash: bda5dcfc5c6a544bb9dd8ede06326bff
+msgid "Active Wallpaper ✓"
+msgstr "Papel de parede ativo ✓"
+
+# en-hash: 704f03f7c5dd59a9b3ae46df8e1e46a4
+msgid "Set Active Single"
+msgstr "Definir como papel de parede único"
+
+# en-hash: 2722ddcbfd20786cc8715dac74c0531a
+msgid "+ Add to Shuffle Pool"
+msgstr "+ Adicionar à lista aleatória"
+
+# en-hash: 938a7f69f98b48f241a295717988ac23
+msgid "Download & Set Active"
+msgstr "Baixar e ativar"
+
+# en-hash: ba8ef34da8f377a1c718ff0f10e107b1
+msgid "Wallpaper set as active KOReader screensaver!"
+msgstr "Papel de parede definido como protetor de tela do KOReader!"
+
+# en-hash: f50b510e22815838c4d2d12e1d79bddf
+msgid "Added to shuffle pool & Folder Shuffle enabled!"
+msgstr "Adicionado à lista e modo aleatório ativado!"
+
+# en-hash: b6dea7fce89bd30f8c3d5b898849aa4b
+msgid "Wallpaper saved to collection!"
+msgstr "Papel de parede salvo na coleção!"
+
+# en-hash: c1cb41ea040ff053e2219930470897ed
+msgid "Single Wallpaper"
+msgstr "Papel de parede único"
+
+# en-hash: 16803106d3aa4c6852022f3da9d4c54a
+msgid "Folder Shuffle"
+msgstr "Aleatório da pasta"
+
+# en-hash: 03ea37a723d863ca6c1918209c5c1a6f
+msgid "Book Cover"
+msgstr "Capa do livro"
+
+# en-hash: 7f58b08556c5375e2559f267873d1218
+msgid "Reading Progress"
+msgstr "Progresso de leitura"
+
+# en-hash: 9f20e45267caff9e39ca3b9bea16db47
+msgid "Transparent overlay (page content visible behind)"
+msgstr "Sobreposição transparente (página visível atrás)"
+
+# en-hash: bc586928ac8f7c25dabb909c67bdfa88
+msgid "Solid fill for screen margins & letterboxing"
+msgstr "Preenchimento sólido para bordas"
+
+# en-hash: 1f1b02ee24bf2ce675bc4c571ec2b586
+msgid "Show reading progress banner overlay"
+msgstr "Exibir faixa de progresso de leitura"
+
+# en-hash: dd2d866df5da52a1aed8e63192026530
+msgid "Stretch image to fill entire screen"
+msgstr "Ajustar imagem para tela cheia"
+
+# en-hash: 1554833122e9bc723e16d2f1b927dc98
+msgid "Invert colors (night mode / dark background)"
+msgstr "Inverter cores (modo noturno / fundo escuro)"
+
+
+msgid "Screensaver Settings"
+msgstr "Configurações do protetor de tela"
+
+msgid "Wallpaper Collection"
+msgstr "Coleção de papéis de parede"
+
+msgid "Open Wallpaper Collection Gallery"
+msgstr "Abrir galeria de papéis de parede"
+
+msgid "Browse Wallpapers in Storefront"
+msgstr "Navegar por papéis de parede no Storefront"
+
+msgid "Active Wallpaper ✓"
+msgstr "Papel de parede ativo ✓"
+
+msgid "Set Active Single"
+msgstr "Definir como papel de parede único"
+
+msgid "+ Add to Shuffle Pool"
+msgstr "+ Adicionar à lista aleatória"
+
+msgid "Download & Set Active"
+msgstr "Baixar e ativar"
+
+msgid "Wallpaper set as active KOReader screensaver!"
+msgstr "Papel de parede definido como protetor de tela do KOReader!"
+
+msgid "Added to shuffle pool & Folder Shuffle enabled!"
+msgstr "Adicionado à lista e modo aleatório ativado!"
+
+msgid "Wallpaper saved to collection!"
+msgstr "Papel de parede salvo na coleção!"
+
+msgid "Single Wallpaper"
+msgstr "Papel de parede único"
+
+msgid "Folder Shuffle"
+msgstr "Aleatório da pasta"
+
+msgid "Book Cover"
+msgstr "Capa do livro"
+
+msgid "Reading Progress"
+msgstr "Progresso de leitura"
+
+msgid "Transparent overlay (page content visible behind)"
+msgstr "Sobreposição transparente (página visível atrás)"
+
+msgid "Solid fill for screen margins & letterboxing"
+msgstr "Preenchimento sólido para bordas"
+
+msgid "Show reading progress banner overlay"
+msgstr "Exibir faixa de progresso de leitura"
+
+msgid "Stretch image to fill entire screen"
+msgstr "Ajustar imagem para tela cheia"
+
+msgid "Invert colors (night mode / dark background)"
+msgstr "Inverter cores (modo noturno / fundo escuro)"

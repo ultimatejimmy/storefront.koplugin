@@ -1782,5 +1782,145 @@ msgid "✓ Current"
 msgstr "✓ Actuel"
 
 msgid "Screensavers"
-msgstr ""
+msgstr "Écrans de veille"
 
+# en-hash: 6df6c2dd7dd08e6108bf1b8dea56c527
+msgid "Screensaver Settings"
+msgstr "Paramètres de l'écran de veille"
+
+# en-hash: dabeb2a6efa064595e4fbf43fda02f42
+msgid "Wallpaper Collection"
+msgstr "Collection de fonds d'écran"
+
+# en-hash: aaaca14de025427e39ed056b29af4058
+msgid "Open Wallpaper Collection Gallery"
+msgstr "Ouvrir la galerie de fonds d'écran"
+
+# en-hash: 261dba00113a7f7e9754902b83293f85
+msgid "Browse Wallpapers in Storefront"
+msgstr "Parcourir les fonds d'écran dans Storefront"
+
+# en-hash: bda5dcfc5c6a544bb9dd8ede06326bff
+msgid "Active Wallpaper ✓"
+msgstr "Fond d'écran actif ✓"
+
+# en-hash: 704f03f7c5dd59a9b3ae46df8e1e46a4
+msgid "Set Active Single"
+msgstr "Définir comme fond unique actif"
+
+# en-hash: 2722ddcbfd20786cc8715dac74c0531a
+msgid "+ Add to Shuffle Pool"
+msgstr "+ Ajouter à la sélection aléatoire"
+
+# en-hash: 938a7f69f98b48f241a295717988ac23
+msgid "Download & Set Active"
+msgstr "Télécharger et activer"
+
+# en-hash: ba8ef34da8f377a1c718ff0f10e107b1
+msgid "Wallpaper set as active KOReader screensaver!"
+msgstr "Fond d'écran défini comme écran de veille actif !"
+
+# en-hash: f50b510e22815838c4d2d12e1d79bddf
+msgid "Added to shuffle pool & Folder Shuffle enabled!"
+msgstr "Ajouté à la sélection et mode aléatoire activé !"
+
+# en-hash: b6dea7fce89bd30f8c3d5b898849aa4b
+msgid "Wallpaper saved to collection!"
+msgstr "Fond d'écran enregistré dans la collection !"
+
+# en-hash: c1cb41ea040ff053e2219930470897ed
+msgid "Single Wallpaper"
+msgstr "Fond d'écran unique"
+
+# en-hash: 16803106d3aa4c6852022f3da9d4c54a
+msgid "Folder Shuffle"
+msgstr "Aléatoire par dossier"
+
+# en-hash: 03ea37a723d863ca6c1918209c5c1a6f
+msgid "Book Cover"
+msgstr "Couverture du livre"
+
+# en-hash: 7f58b08556c5375e2559f267873d1218
+msgid "Reading Progress"
+msgstr "Progression de lecture"
+
+# en-hash: 9f20e45267caff9e39ca3b9bea16db47
+msgid "Transparent overlay (page content visible behind)"
+msgstr "Superposition transparente (page visible en arrière-plan)"
+
+# en-hash: bc586928ac8f7c25dabb909c67bdfa88
+msgid "Solid fill for screen margins & letterboxing"
+msgstr "Remplissage plein pour marges d'écran"
+
+# en-hash: 1f1b02ee24bf2ce675bc4c571ec2b586
+msgid "Show reading progress banner overlay"
+msgstr "Afficher la bannière de progression de lecture"
+
+# en-hash: dd2d866df5da52a1aed8e63192026530
+msgid "Stretch image to fill entire screen"
+msgstr "Étirer l'image sur tout l'écran"
+
+# en-hash: 1554833122e9bc723e16d2f1b927dc98
+msgid "Invert colors (night mode / dark background)"
+msgstr "Inverser les couleurs (mode nuit / fond sombre)"
+
+
+msgid "Screensaver Settings"
+msgstr "Paramètres de l'écran de veille"
+
+msgid "Wallpaper Collection"
+msgstr "Collection de fonds d'écran"
+
+msgid "Open Wallpaper Collection Gallery"
+msgstr "Ouvrir la galerie de fonds d'écran"
+
+msgid "Browse Wallpapers in Storefront"
+msgstr "Parcourir les fonds d'écran dans Storefront"
+
+msgid "Active Wallpaper ✓"
+msgstr "Fond d'écran actif ✓"
+
+msgid "Set Active Single"
+msgstr "Définir comme fond unique actif"
+
+msgid "+ Add to Shuffle Pool"
+msgstr "+ Ajouter à la sélection aléatoire"
+
+msgid "Download & Set Active"
+msgstr "Télécharger et activer"
+
+msgid "Wallpaper set as active KOReader screensaver!"
+msgstr "Fond d'écran défini comme écran de veille actif !"
+
+msgid "Added to shuffle pool & Folder Shuffle enabled!"
+msgstr "Ajouté à la sélection et mode aléatoire activé !"
+
+msgid "Wallpaper saved to collection!"
+msgstr "Fond d'écran enregistré dans la collection !"
+
+msgid "Single Wallpaper"
+msgstr "Fond d'écran unique"
+
+msgid "Folder Shuffle"
+msgstr "Aléatoire par dossier"
+
+msgid "Book Cover"
+msgstr "Couverture du livre"
+
+msgid "Reading Progress"
+msgstr "Progression de lecture"
+
+msgid "Transparent overlay (page content visible behind)"
+msgstr "Superposition transparente (page visible en arrière-plan)"
+
+msgid "Solid fill for screen margins & letterboxing"
+msgstr "Remplissage plein pour marges d'écran"
+
+msgid "Show reading progress banner overlay"
+msgstr "Afficher la bannière de progression de lecture"
+
+msgid "Stretch image to fill entire screen"
+msgstr "Étirer l'image sur tout l'écran"
+
+msgid "Invert colors (night mode / dark background)"
+msgstr "Inverser les couleurs (mode nuit / fond sombre)"

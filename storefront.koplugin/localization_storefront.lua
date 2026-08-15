@@ -364,10 +364,34 @@ local FALLBACKS = {
     confirm_update = "Update '%s' from v%s to v%s?",
     prompt_restart_needed = "Installation complete. Restart KOReader now to enable '%s'?",
 
+    -- Screensavers
+    tab_screensavers = "Screensavers",
+    Screensavers = "Screensavers",
+    ["Screensaver Settings"] = "Screensaver Settings",
+    ["Wallpaper Collection"] = "Wallpaper Collection",
+    ["Open Wallpaper Collection Gallery"] = "Open Wallpaper Collection Gallery",
+    ["Browse Wallpapers in Storefront"] = "Browse Wallpapers in Storefront",
+    ["Active Wallpaper ✓"] = "Active Wallpaper ✓",
+    ["Set Active Single"] = "Set Active Single",
+    ["+ Add to Shuffle Pool"] = "+ Add to Shuffle Pool",
+    ["Download & Set Active"] = "Download & Set Active",
+    ["Wallpaper set as active KOReader screensaver!"] = "Wallpaper set as active KOReader screensaver!",
+    ["Added to shuffle pool & Folder Shuffle enabled!"] = "Added to shuffle pool & Folder Shuffle enabled!",
+    ["Wallpaper saved to collection!"] = "Wallpaper saved to collection!",
+    ["Single Wallpaper"] = "Single Wallpaper",
+    ["Folder Shuffle"] = "Folder Shuffle",
+    ["Book Cover"] = "Book Cover",
+    ["Reading Progress"] = "Reading Progress",
+    ["Transparent overlay (page content visible behind)"] = "Transparent overlay (page content visible behind)",
+    ["Solid fill for screen margins & letterboxing"] = "Solid fill for screen margins & letterboxing",
+    ["Show reading progress banner overlay"] = "Show reading progress banner overlay",
+    ["Stretch image to fill entire screen"] = "Stretch image to fill entire screen",
+    ["Invert colors (night mode / dark background)"] = "Invert colors (night mode / dark background)",
+
     -- Settings & About
     menu_settings = "Storefront Settings",
     menu_about = "About Storefront",
-    about_text = "Storefront is an in-app package manager for KOReader plugins, patches, and fonts.",
+    about_text = "Storefront is an in-app package manager for KOReader plugins, patches, fonts, and screensavers.",
 
     -- Errors & Messages
     err_network_failed = "Network error: Unable to download catalog.",
@@ -381,6 +405,7 @@ local KEY_ALIASES = {
     ["Plugins"] = "tab_plugins",
     ["Patches"] = "tab_patches",
     ["Fonts"] = "tab_fonts",
+    ["Screensavers"] = "tab_screensavers",
     ["Installed"] = "filter_installed",
     ["Updates"] = "header_updates",
     ["Back"] = "btn_back",
