@@ -118,13 +118,22 @@ function StorefrontScreensavers.fetchThumbnail(item, callback)
         lfs.mkdir(cache_dir)
     end
 
-    local thumb_path = cache_dir .. "/" .. item.id .. ".jpg"
+    -- Safely check if item is in Transparent category
+    local cat_str = type(item.category) == "table" and table.concat(item.category, " ") or tostring(item.category or "")
+    local is_transparent = cat_str:lower():find("transparent", 1, true) ~= nil
+
+    -- Use matching extension from URL or category
+    local raw_url = tostring(item.thumbnailUrl or ""):lower()
+    local ext = (is_transparent or raw_url:find("%.png")) and ".png" or ".jpg"
+    local thumb_path = cache_dir .. "/" .. tostring(item.id) .. ext
+
     if lfs and lfs.attributes and lfs.attributes(thumb_path, "mode") == "file" then
         if callback then callback(thumb_path) end
         return thumb_path
     end
 
-    if not item.thumbnailUrl or item._thumb_failed then return nil end
+    local fetch_url = (is_transparent and item.pluginThumbnailUrl) or item.thumbnailUrl
+    if not fetch_url or item._thumb_failed then return nil end
 
     local ltn12 = require("ltn12")
     local img_data = {}
@@ -133,7 +142,7 @@ function StorefrontScreensavers.fetchThumbnail(item, callback)
         return ltn12.sink.table(img_data)
     end
 
-    local ok, code = requestWithRedirects(item.thumbnailUrl, sink_fn)
+    local ok, code = requestWithRedirects(fetch_url, sink_fn)
     if ok and code == 200 then
         local file = io.open(thumb_path, "wb")
         if file then
@@ -304,6 +313,8 @@ function StorefrontScreensavers.createCoverImageWidget(file_path, target_w, targ
 
     if not file_path or not target_w or not target_h then return nil end
 
+    -- Transparent thumbnails are pre-composited with a checkerboard background at
+    -- download/generation time, so we don't need alpha compositing here.
     local ok, orig_bb = pcall(function()
         return RenderImage:renderImageFile(file_path, false)
     end)
@@ -320,37 +331,30 @@ function StorefrontScreensavers.createCoverImageWidget(file_path, target_w, targ
         return nil
     end
 
+    -- Scale with cover mode (fill target box edge-to-edge, center-cropped)
     local scale = math.max(target_w / orig_w, target_h / orig_h)
     local scaled_w = math.max(1, math.ceil(orig_w * scale))
     local scaled_h = math.max(1, math.ceil(orig_h * scale))
 
-    local scaled_bb = RenderImage:scaleBlitBuffer(orig_bb, scaled_w, scaled_h, true)
+    local scaled_bb = RenderImage:scaleBlitBuffer(orig_bb, scaled_w, scaled_h, false)
+    if orig_bb.free then orig_bb:free() end
     if not scaled_bb then return nil end
 
-    local final_w = scaled_bb:getWidth()
-    local final_h = scaled_bb:getHeight()
+    local crop_x = math.max(0, math.floor((scaled_bb:getWidth() - target_w) / 2))
+    local crop_y = math.max(0, math.floor((scaled_bb:getHeight() - target_h) / 2))
 
-    if final_w == target_w and final_h == target_h then
-        return ImageWidget:new{
-            image = scaled_bb,
-            image_disposable = true,
-            width = target_w,
-            height = target_h,
-        }
-    end
-
-    local crop_x = math.max(0, math.floor((final_w - target_w) / 2))
-    local crop_y = math.max(0, math.floor((final_h - target_h) / 2))
-
-    local cropped_bb = Blitbuffer.new(target_w, target_h, scaled_bb:getType())
-    cropped_bb:blitFrom(scaled_bb, 0, 0, crop_x, crop_y, target_w, target_h)
+    -- Create destination buffer matching source buffer color type (RGB24/ARGB32/BPP8)
+    local bb_type = (scaled_bb.getType and scaled_bb:getType()) or Blitbuffer.TYPE_BPP24
+    local dest_bb = Blitbuffer.new(target_w, target_h, bb_type)
+    pcall(function() dest_bb:fill(Blitbuffer.COLOR_WHITE) end)
+    dest_bb:blitFrom(scaled_bb, 0, 0, crop_x, crop_y, target_w, target_h)
 
     if scaled_bb.free then
         scaled_bb:free()
     end
 
     return ImageWidget:new{
-        image = cropped_bb,
+        image = dest_bb,
         image_disposable = true,
         width = target_w,
         height = target_h,

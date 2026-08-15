@@ -18,15 +18,55 @@ local LineWidget = require("ui/widget/linewidget")
 local CheckButton = require("ui/widget/checkbutton")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local InputDialog = require("ui/widget/inputdialog")
+local ImageWidget = require("ui/widget/imagewidget")
+local DataStorage = require("datastorage")
 local util = require("util")
 local Localization = require("localization_storefront")
 local _ = function(key, ...) return Localization:t(key, ...) end
 local storefront_theme = require("storefront_theme")
+local StorefrontUtils = require("storefront_utils")
 
 local StorefrontFilterDialog = {}
 
 local function sc(val)
     return Screen:scaleBySize(val)
+end
+
+local function getAssetPath(filename)
+    local info = debug.getinfo(1, "S")
+    local dir = info.source:match("^@(.*[/\\])") or ""
+    local rel_path = dir .. "assets/" .. filename
+
+    local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
+    if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
+
+    local paths_to_try = {
+        rel_path,
+        "plugins/storefront.koplugin/assets/" .. filename,
+    }
+
+    local ok_ds, DataStorage = pcall(require, "datastorage")
+    if ok_ds and DataStorage and DataStorage.getDataDir then
+        local data_dir = DataStorage:getDataDir()
+        table.insert(paths_to_try, data_dir .. "/plugins/storefront.koplugin/assets/" .. filename)
+    end
+
+    local ok_paths, StorefrontPluginPaths = pcall(require, "storefront_plugin_paths")
+    if ok_paths and StorefrontPluginPaths and StorefrontPluginPaths.getLookupPaths then
+        for _, root in ipairs(StorefrontPluginPaths.getLookupPaths()) do
+            table.insert(paths_to_try, root .. "/storefront.koplugin/assets/" .. filename)
+        end
+    end
+
+    if ok_lfs and lfs and lfs.attributes then
+        for _, p in ipairs(paths_to_try) do
+            if lfs.attributes(p, "mode") == "file" then
+                return p
+            end
+        end
+    end
+
+    return rel_path
 end
 
 function StorefrontFilterDialog.showInstalledFilter(arg1, arg2)
@@ -720,13 +760,13 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
     cat_counts["all"] = #catalog
 
     for _, entry in ipairs(catalog) do
-        local cat = entry.category and tostring(entry.category) or ""
-        if cat ~= "" then
-            local key = cat:lower()
+        local mapped_cats = StorefrontUtils.getMappedScreensaverCategories(entry.category)
+        for _, mc in ipairs(mapped_cats) do
+            local key = mc:lower()
             cat_counts[key] = (cat_counts[key] or 0) + 1
             if not seen_cats[key] then
                 seen_cats[key] = true
-                table.insert(cats, cat)
+                table.insert(cats, mc)
             end
         end
     end
@@ -757,232 +797,271 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
         return _("All")
     end
 
-    local function showCategoryCheckboxDialog(on_save)
-        local Menu = require("ui/widget/menu")
+    -- Shared helpers
+    local function make_row_item(frame, callback, row_w, row_h)
+        local item = InputContainer:new{ frame }
+        item.ges_events = {
+            Tap = {
+                GestureRange:new{
+                    ges = "tap",
+                    range = function()
+                        local dim = item.dimen
+                        if not dim then return Geom:new{ x = -1, y = -1, w = 1, h = 1 } end
+                        return Geom:new{
+                            x = dim.x or 0, y = dim.y or 0,
+                            w = row_w or (dialog_w - sc(4)), h = row_h or 0,
+                        }
+                    end
+                }
+            }
+        }
+        item.onTap = function() callback(); return true end
+        return item
+    end
 
-        local current_set = {}
+    local function make_section_header(title)
+        local label = TextWidget:new{
+            text = title:upper(),
+            face = Font:getFace("cfont", storefront_theme.section_header_font_size or 16),
+            bold = true, fgcolor = Blitbuffer.COLOR_BLACK,
+        }
+        return FrameContainer:new{
+            padding = sc(5), padding_left = sc(8), bordersize = 0,
+            width = dialog_w - sc(4), background = Blitbuffer.COLOR_LIGHT_GRAY,
+            label,
+        }
+    end
+
+    -- Category picker: full second card that looks like the main filter card
+    local function showCategoryOverlay(on_save)
+        local cat_overlay
+        local cat_set = {}
         if type(state.screensaver_categories) == "table" then
-            for k, v in pairs(state.screensaver_categories) do current_set[k] = v end
+            for k, v in pairs(state.screensaver_categories) do cat_set[k] = v end
         elseif state.screensaver_category and state.screensaver_category ~= "" and state.screensaver_category ~= "all" then
-            current_set[state.screensaver_category:lower()] = true
+            cat_set[state.screensaver_category:lower()] = true
         end
-        if not next(current_set) then
-            current_set["all"] = true
-        end
+        if not next(cat_set) then cat_set["all"] = true end
 
-        local menu_dialog
+        local function build_cat_overlay()
+            if cat_overlay then UIManager:close(cat_overlay, "ui") end
 
-        local function build_item_table()
-            local items = {}
+            local title_label = TextWidget:new{
+                text = _("Select Categories"),
+                face = Font:getFace("NotoSerif-Regular.ttf", title_font_size),
+                bold = true, fgcolor = Blitbuffer.COLOR_BLACK,
+            }
+            local content = VerticalGroup:new{
+                align = "left",
+                FrameContainer:new{ padding = sc(10), bordersize = 0, title_label },
+                LineWidget:new{ dimen = Geom:new{ w = dialog_w - sc(4), h = sc(1) }, background = Blitbuffer.COLOR_BLACK },
+            }
 
-            -- Apply selection row
-            table.insert(items, {
-                text = _("✓  Done"),
-                bold = true,
-                keep_menu_open = false,
+            -- Select All / Clear buttons row
+            local sel_all_btn = Button:new{
+                text = _("Select All"), text_font_size = 14,
+                bordersize = sc(1), radius = sc(3), padding = sc(4), padding_h = sc(12),
+                background = Blitbuffer.COLOR_WHITE,
                 callback = function()
-                    if menu_dialog then UIManager:close(menu_dialog) end
-                    if on_save then on_save(current_set) end
+                    local new_set = {}
+                    for _, c in ipairs(cats) do new_set[c:lower()] = true end
+                    cat_set = new_set
+                    build_cat_overlay()
                 end,
+            }
+            local clear_btn = Button:new{
+                text = _("Clear"), text_font_size = 14,
+                bordersize = sc(1), radius = sc(3), padding = sc(4), padding_h = sc(12),
+                background = Blitbuffer.COLOR_WHITE,
+                callback = function()
+                    cat_set = { all = true }
+                    build_cat_overlay()
+                end,
+            }
+            local done_btn = Button:new{
+                text = _("Done"), text_font_size = 14,
+                bordersize = 0, radius = sc(3), padding = sc(4), padding_h = sc(16),
+                background = Blitbuffer.COLOR_BLACK,
+                text_font_color = Blitbuffer.COLOR_WHITE,
+                callback = function()
+                    if cat_overlay then UIManager:close(cat_overlay, "ui") end
+                    on_save(cat_set)
+                end,
+            }
+            if done_btn.label_widget then done_btn.label_widget.fgcolor = Blitbuffer.COLOR_WHITE end
+
+            local action_row_frame = FrameContainer:new{
+                padding = sc(8), bordersize = 0, width = dialog_w - sc(4),
+                CenterContainer:new{
+                    dimen = Geom:new{ w = dialog_w - sc(20), h = sc(36) },
+                    HorizontalGroup:new{
+                        sel_all_btn,
+                        HorizontalSpan:new{ width = sc(10) },
+                        clear_btn,
+                        HorizontalSpan:new{ width = sc(10) },
+                        done_btn,
+                    }
+                }
+            }
+            table.insert(content, action_row_frame)
+            table.insert(content, LineWidget:new{
+                dimen = Geom:new{ w = dialog_w - sc(4), h = sc(1) },
+                background = Blitbuffer.COLOR_LIGHT_GRAY,
             })
 
-            -- Select All row
-            table.insert(items, {
-                text = _("Select All"),
-                keep_menu_open = true,
-                callback = function()
-                    local new_set = { all = true }
-                    for _, c in ipairs(cats) do
-                        if c ~= "all" then new_set[c:lower()] = true end
-                    end
-                    current_set = new_set
-                    if menu_dialog then
-                        menu_dialog:switchItemTable(_("Select Categories"), build_item_table())
-                    end
-                end,
-            })
+            -- All category rows (with generous padding, FeatherIcons, and text)
+            for idx, cat_name in ipairs(cats) do
+                local key = cat_name:lower()
+                local is_checked = (cat_set[key] == true) or (cat_set["all"] and key == "all")
+                local display_name = (cat_name == "all") and _("All Categories") or cat_name
+                local count_str = cat_counts[key] and string.format(" (%d)", cat_counts[key]) or ""
 
-            -- "All Categories" option
-            local is_all = current_set["all"] == true
-            table.insert(items, {
-                text = (is_all and "☑  " or "☐  ") .. _("All Categories") .. string.format(" (%d)", cat_counts["all"] or 0),
-                bold = is_all,
-                keep_menu_open = true,
-                callback = function()
-                    current_set = { all = true }
-                    if menu_dialog then
-                        menu_dialog:switchItemTable(_("Select Categories"), build_item_table())
+                local icon_file = getAssetPath(is_checked and "check-square.svg" or "square.svg")
+                local icon_widget = ImageWidget:new{
+                    file = icon_file,
+                    width = sc(22),
+                    height = sc(22),
+                    scale_factor = 0,
+                    is_icon = true,
+                    alpha = true,
+                }
+
+                local row_label = TextBoxWidget:new{
+                    text = display_name .. count_str,
+                    face = Font:getFace("cfont", ui_font_size - 1),
+                    fgcolor = Blitbuffer.COLOR_BLACK,
+                    width = dialog_w - sc(68),
+                    alignment = "left",
+                }
+
+                local row_group = HorizontalGroup:new{
+                    CenterContainer:new{
+                        dimen = Geom:new{ w = sc(24), h = sc(24) },
+                        icon_widget,
+                    },
+                    HorizontalSpan:new{ width = sc(12) },
+                    row_label,
+                }
+
+                local row_frame = FrameContainer:new{
+                    bordersize = 0,
+                    padding = sc(12),
+                    padding_left = sc(16),
+                    padding_right = sc(16),
+                    width = dialog_w - sc(4),
+                    background = Blitbuffer.COLOR_WHITE,
+                    row_group,
+                }
+
+                local target_key = key
+                local row_item = InputContainer:new{ row_frame }
+                row_item.ges_events = {
+                    Tap = {
+                        GestureRange:new{
+                            ges = "tap",
+                            range = function()
+                                return row_item.dimen or row_frame:getSize()
+                            end,
+                        },
+                    },
+                }
+                row_item.onTap = function()
+                    if target_key == "all" then
+                        cat_set = { all = true }
+                    else
+                        cat_set["all"] = nil
+                        if cat_set[target_key] then
+                            cat_set[target_key] = nil
+                        else
+                            cat_set[target_key] = true
+                        end
+                        if not next(cat_set) then cat_set["all"] = true end
                     end
-                end,
-            })
+                    build_cat_overlay()
+                    return true
+                end
+                table.insert(content, row_item)
 
-            -- Individual category rows (All at once!)
-            for _, cat_name in ipairs(cats) do
-                if cat_name ~= "all" then
-                    local key = cat_name:lower()
-                    local is_checked = (current_set[key] == true) and not current_set["all"]
-                    local count_val = cat_counts[key]
-                    local count_str = count_val and string.format(" (%d)", count_val) or ""
-
-                    local target_key = key
-                    table.insert(items, {
-                        text = (is_checked and "☑  " or "☐  ") .. cat_name .. count_str,
-                        bold = is_checked,
-                        keep_menu_open = true,
-                        callback = function()
-                            current_set["all"] = nil
-                            if current_set[target_key] then
-                                current_set[target_key] = nil
-                            else
-                                current_set[target_key] = true
-                            end
-                            if not next(current_set) then
-                                current_set["all"] = true
-                            end
-                            if menu_dialog then
-                                menu_dialog:switchItemTable(_("Select Categories"), build_item_table())
-                            end
-                        end,
+                if idx < #cats then
+                    table.insert(content, LineWidget:new{
+                        dimen = Geom:new{ w = dialog_w - sc(4), h = sc(1) },
+                        background = Blitbuffer.COLOR_LIGHT_GRAY,
                     })
                 end
             end
 
-            return items
+            local card = FrameContainer:new{
+                padding = 0,
+                radius = storefront_theme.radius_window or 0,
+                bordersize = sc(2), color = Blitbuffer.COLOR_BLACK,
+                background = storefront_theme.color_bg or Blitbuffer.COLOR_WHITE,
+                width = dialog_w,
+                content,
+            }
+
+            cat_overlay = InputContainer:new{
+                align = "center",
+                vertical_align = "center",
+                dimen = Geom:new{ w = sw, h = sh },
+                key_events = { Close = { { "Back" } } },
+                card,
+            }
+            cat_overlay.onClose = function()
+                if cat_overlay then UIManager:close(cat_overlay, "ui") end
+                on_save(cat_set)
+                return true
+            end
+
+            UIManager:show(cat_overlay, "ui")
         end
 
-        local total_items = #cats + 3
-        menu_dialog = Menu:new{
-            title = _("Select Categories"),
-            item_table = build_item_table(),
-            is_popmenu = true,
-            per_page = total_items, -- SHOW ALL AT ONCE! No pagination arrows!
-            width = math.min(sw - sc(20), sc(380)),
-            height = math.min(sh - sc(40), sc(500)),
-            onMenuChoice = function(item)
-                if item and item.callback then
-                    item.callback()
-                end
-            end,
-        }
-
-        UIManager:show(menu_dialog)
+        build_cat_overlay()
     end
 
     local overlay
     local refresh
 
     refresh = function()
-        if overlay then
-            UIManager:close(overlay, "ui")
-        end
+        if overlay then UIManager:close(overlay, "ui") end
 
         local title_label = TextWidget:new{
             text = _("Filter & Sort Screensavers"),
             face = Font:getFace("NotoSerif-Regular.ttf", title_font_size),
-            bold = true,
-            fgcolor = Blitbuffer.COLOR_BLACK,
+            bold = true, fgcolor = Blitbuffer.COLOR_BLACK,
         }
-
-        local title_container = FrameContainer:new{
-            padding = sc(10),
-            bordersize = 0,
-            title_label,
-        }
-
         local content_vg = VerticalGroup:new{
             align = "left",
-            title_container,
-            LineWidget:new{
-                dimen = Geom:new{ w = dialog_w - sc(4), h = sc(1) },
-                background = Blitbuffer.COLOR_BLACK,
-            }
+            FrameContainer:new{ padding = sc(10), bordersize = 0, title_label },
+            LineWidget:new{ dimen = Geom:new{ w = dialog_w - sc(4), h = sc(1) }, background = Blitbuffer.COLOR_BLACK },
         }
 
         local function create_setting_row(left_text, right_widget, callback)
-            local row_elements = {}
             local frame_padding = sc(10)
             local avail_w = dialog_w - (frame_padding * 2) - sc(4)
-            local right_w = 0
-            if right_widget then
-                right_w = (right_widget.getSize and right_widget:getSize().w) or sc(60)
-            end
-
+            local right_w = right_widget and ((right_widget.getSize and right_widget:getSize().w) or sc(60)) or 0
             local max_left_w = math.max(sc(60), avail_w - right_w - sc(12))
 
             local txt = TextBoxWidget:new{
-                text = left_text,
-                face = Font:getFace("cfont", ui_font_size),
-                fgcolor = Blitbuffer.COLOR_BLACK,
-                width = max_left_w,
-                alignment = "left",
+                text = left_text, face = Font:getFace("cfont", ui_font_size),
+                fgcolor = Blitbuffer.COLOR_BLACK, width = max_left_w, alignment = "left",
             }
-            table.insert(row_elements, txt)
-
             local left_used_w = (txt.getSize and txt:getSize().w) or max_left_w
             local spacer_w = math.max(sc(8), avail_w - left_used_w - right_w)
-            table.insert(row_elements, HorizontalSpan:new{ width = spacer_w })
 
-            if right_widget then
-                table.insert(row_elements, right_widget)
-            end
+            local row_children = { txt, HorizontalSpan:new{ width = spacer_w } }
+            if right_widget then table.insert(row_children, right_widget) end
 
             local frame = FrameContainer:new{
-                bordersize = 0,
-                padding = frame_padding,
-                width = dialog_w - sc(4),
-                HorizontalGroup:new(row_elements),
+                bordersize = 0, padding = frame_padding,
+                width = dialog_w - sc(4), HorizontalGroup:new(row_children),
             }
-
             if not callback then return frame end
-
-            local item = InputContainer:new{ frame }
-            local row_size = frame:getSize() or { w = dialog_w - sc(4), h = 0 }
-            item.ges_events = {
-                Tap = {
-                    GestureRange:new{
-                        ges = "tap",
-                        range = function()
-                            local dim = item.dimen
-                            if not dim then
-                                return Geom:new{ x = -1, y = -1, w = 1, h = 1 }
-                            end
-                            return Geom:new{
-                                x = dim.x or 0,
-                                y = dim.y or 0,
-                                w = row_size.w or (dialog_w - sc(4)),
-                                h = row_size.h or 0,
-                            }
-                        end
-                    }
-                }
-            }
-            item.onTap = function()
-                callback()
-                return true
-            end
-            return item
+            return make_row_item(frame, callback, dialog_w - sc(4), (frame:getSize() or { h = 0 }).h)
         end
 
-        local function create_section_header(title)
-            local label = TextWidget:new{
-                text = title:upper(),
-                face = Font:getFace("cfont", storefront_theme.section_header_font_size or 16),
-                bold = true,
-                fgcolor = Blitbuffer.COLOR_BLACK,
-            }
-            return FrameContainer:new{
-                padding = sc(5),
-                padding_left = sc(8),
-                bordersize = 0,
-                width = dialog_w - sc(4),
-                background = Blitbuffer.COLOR_LIGHT_GRAY,
-                label,
-            }
-        end
+        table.insert(content_vg, make_section_header(_("Filters")))
 
-        table.insert(content_vg, create_section_header(_("Filters")))
-
-        -- Category row (opens Checkbox List dialog)
+        -- Category row
         local cat_display = getCategorySummary(state.screensaver_categories, state.screensaver_category)
         local cat_widget = TextWidget:new{
             text = cat_display,
@@ -990,30 +1069,26 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
             fgcolor = storefront_theme.color_label_dim,
         }
         table.insert(content_vg, create_setting_row(_("Categories"), cat_widget, function()
-            showCategoryCheckboxDialog(function(new_set)
+            showCategoryOverlay(function(new_set)
                 state.screensaver_categories = new_set
                 state.screensaver_category = ""
                 refresh()
             end)
         end))
 
-        table.insert(content_vg, create_section_header(_("Sorting")))
+        table.insert(content_vg, make_section_header(_("Sorting")))
 
         -- Sort row
         local cur_sort = state.screensaver_sort or "popular"
-        local sort_text = sort_labels[cur_sort] or sort_labels.popular
         local sort_widget = TextWidget:new{
-            text = sort_text,
+            text = sort_labels[cur_sort] or sort_labels.popular,
             face = Font:getFace("cfont", storefront_theme.subtext_font_size or 16),
             fgcolor = storefront_theme.color_label_dim,
         }
         table.insert(content_vg, create_setting_row(_("Sort mode"), sort_widget, function()
             local next_s = "popular"
             for idx, s in ipairs(sort_order) do
-                if cur_sort == s then
-                    next_s = sort_order[(idx % #sort_order) + 1]
-                    break
-                end
+                if cur_sort == s then next_s = sort_order[(idx % #sort_order) + 1]; break end
             end
             state.screensaver_sort = next_s
             refresh()
@@ -1024,10 +1099,8 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
             background = Blitbuffer.COLOR_LIGHT_GRAY,
         })
         local reset_widget = TextWidget:new{
-            text = _("Reset to defaults"),
-            face = Font:getFace("cfont", ui_font_size),
-            bold = true,
-            fgcolor = Blitbuffer.COLOR_BLACK,
+            text = _("Reset to defaults"), face = Font:getFace("cfont", ui_font_size),
+            bold = true, fgcolor = Blitbuffer.COLOR_BLACK,
         }
         table.insert(content_vg, create_setting_row(_("Reset filters"), reset_widget, function()
             state.screensaver_category = ""
@@ -1037,16 +1110,11 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
             refresh()
         end))
 
-        -- Apply button at bottom
+        -- Apply button
         local apply_btn = Button:new{
-            text = _("Apply"),
-            text_font_size = 18,
-            text_font_color = Blitbuffer.COLOR_WHITE,
-            background = Blitbuffer.COLOR_BLACK,
-            bordersize = 0,
-            padding = sc(10),
-            radius = sc(4),
-            width = dialog_w - sc(36),
+            text = _("Apply"), text_font_size = 18,
+            text_font_color = Blitbuffer.COLOR_WHITE, background = Blitbuffer.COLOR_BLACK,
+            bordersize = 0, padding = sc(10), radius = sc(4), width = dialog_w - sc(36),
             callback = function()
                 if overlay then UIManager:close(overlay, "ui") end
                 state.page = 1
@@ -1054,48 +1122,35 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
                 Storefront:reopenBrowser()
             end,
         }
-        if apply_btn.label_widget then
-            apply_btn.label_widget.fgcolor = Blitbuffer.COLOR_WHITE
-        end
+        if apply_btn.label_widget then apply_btn.label_widget.fgcolor = Blitbuffer.COLOR_WHITE end
 
-        local apply_container = FrameContainer:new{
-            padding = sc(10),
-            bordersize = 0,
-            width = dialog_w - sc(4),
+        table.insert(content_vg, FrameContainer:new{
+            padding = sc(10), bordersize = 0, width = dialog_w - sc(4),
             CenterContainer:new{
                 dimen = Geom:new{ w = dialog_w - sc(20), h = apply_btn:getSize().h },
                 apply_btn,
             }
-        }
-        table.insert(content_vg, apply_container)
+        })
 
         local card = FrameContainer:new{
-            padding = 0,
-            radius = storefront_theme.radius_window or 0,
-            bordersize = sc(2),
-            color = Blitbuffer.COLOR_BLACK,
+            padding = 0, radius = storefront_theme.radius_window or 0,
+            bordersize = sc(2), color = Blitbuffer.COLOR_BLACK,
             background = storefront_theme.color_bg or Blitbuffer.COLOR_WHITE,
-            width = dialog_w,
-            content_vg,
+            width = dialog_w, content_vg,
         }
 
         overlay = InputContainer:new{
-            align = "center",
-            vertical_align = "center",
+            align = "center", vertical_align = "center",
             dimen = Geom:new{ w = sw, h = sh },
-            key_events = {
-                Close = { { "Back" } }
-            },
+            key_events = { Close = { { "Back" } } },
             card,
         }
-
         overlay.onClose = function()
             state.page = 1
             Storefront:saveBrowserState()
             Storefront:reopenBrowser()
             return true
         end
-
         UIManager:show(overlay, "ui")
     end
 

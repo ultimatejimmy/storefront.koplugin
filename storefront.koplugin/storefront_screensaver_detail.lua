@@ -102,8 +102,10 @@ function StorefrontScreensaverDetail:init()
 
     if item.category and item.category ~= "" then
         add_sep()
+        local StorefrontUtils = require("storefront_utils")
+        local cat_disp = table.concat(StorefrontUtils.getMappedScreensaverCategories(item.category), ", ")
         table.insert(meta_items, TextWidget:new{
-            text    = item.category,
+            text    = cat_disp,
             face    = meta_face,
             fgcolor = Blitbuffer.COLOR_BLACK,
         })

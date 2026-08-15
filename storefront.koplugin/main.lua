@@ -7416,19 +7416,38 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
     -- ---- Widget helpers ---------------------------------------------------
     local sc       = function(val) return Device.screen:scaleBySize(val) end
     local sw       = Device.screen:getWidth()
+    local sh       = Device.screen:getHeight()
     local cols     = 3
-    local gap      = sc(6)
+    local gap      = sc(10)
+    local card_pad = sc(5)
     local usable_w = available_list_width or (sw - sc(24))
     local card_w   = math.floor((usable_w - gap * (cols - 1)) / cols)
-    -- Compact aspect ratio (1.15) and text height to fit more cards on screen
-    local img_h    = math.floor(card_w * 1.15)
-    local text_h   = sc(44)   -- title + meta below image
-    local card_h   = img_h + text_h
-    local row_h    = card_h + gap
-    -- How many rows fit in the available body?
-    local usable_h = available_list_height or sc(500)
-    local rows_per_page = math.max(1, math.floor(usable_h / row_h))
+    local inner_w  = card_w - (card_pad * 2)
+
+    -- Accurate card overhead: padding (top+bottom), card border (top+bottom), image border (top+bottom), vertical spans, title text, and meta text
+    local card_overhead = (card_pad * 2) + sc(46)
+
+    -- Determine rows: always at least 2 rows of 3; 3 rows of 3 on taller screens
+    local usable_h = available_list_height or (sh - sc(210))
+    local target_rows = 2
+    local available_for_3 = usable_h - (gap * 2) - sc(16)
+    local max_card_h_3 = math.floor(available_for_3 / 3)
+    local inner_img_h_3 = max_card_h_3 - card_overhead
+    if usable_h >= sc(680) and inner_img_h_3 >= math.floor(inner_w * 1.05) then
+        target_rows = 3
+    end
+
+    local rows_per_page = target_rows
     local page_size = rows_per_page * cols
+
+    -- Calculate card_h and img_h so exactly target_rows fit in usable_h with clean margins
+    local available_for_cards = usable_h - (gap * (target_rows - 1)) - sc(16)
+    local max_card_h = math.floor(available_for_cards / target_rows)
+    local ideal_img_h = math.floor(inner_w * 4 / 3)
+    local ideal_card_h = ideal_img_h + card_overhead
+
+    local card_h = math.min(ideal_card_h, max_card_h)
+    local img_h  = math.max(sc(60), card_h - card_overhead)
 
     -- ---- Filter & sort the catalog ----------------------------------------
     self:ensureBrowserState()
@@ -7441,10 +7460,25 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
     for _, entry in ipairs(catalog) do
         local pass = true
         if type(ss_cats) == "table" and next(ss_cats) and not ss_cats["all"] then
-            local entry_cat = (entry.category or ""):lower()
-            if not ss_cats[entry_cat] then pass = false end
+            local mapped_cats = StorefrontUtils.getMappedScreensaverCategories(entry.category)
+            local match_found = false
+            for _, mc in ipairs(mapped_cats) do
+                if ss_cats[mc:lower()] then
+                    match_found = true
+                    break
+                end
+            end
+            if not match_found then pass = false end
         elseif ss_cat ~= "" and ss_cat ~= "all" then
-            if (entry.category or ""):lower() ~= ss_cat then pass = false end
+            local mapped_cats = StorefrontUtils.getMappedScreensaverCategories(entry.category)
+            local match_found = false
+            for _, mc in ipairs(mapped_cats) do
+                if mc:lower() == ss_cat then
+                    match_found = true
+                    break
+                end
+            end
+            if not match_found then pass = false end
         end
         if pass and ss_srch ~= "" then
             local t = (entry.title or entry.name or ""):lower()
@@ -7498,8 +7532,8 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
     local Font            = require("ui/font")
     local ok_lfs, lfs    = pcall(require, "libs/libkoreader-lfs")
 
-    local name_face  = Font:getFace("cfont", 14)
-    local meta_face  = Font:getFace("cfont", 12)
+    local name_face  = Font:getFace("cfont", 13)
+    local meta_face  = Font:getFace("cfont", 11)
 
     local self_ref = self
     local missing_thumbs = {}
@@ -7507,14 +7541,14 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
     local function makeCard(entry)
         -- Thumbnail image (or grey placeholder)
         local thumb_file = StorefrontScreensavers.fetchThumbnail(entry)
-        local img_widget
+        local raw_img
         if thumb_file and ok_lfs and lfs and lfs.attributes
                 and lfs.attributes(thumb_file, "mode") == "file" then
-            img_widget = StorefrontScreensavers.createCoverImageWidget(thumb_file, card_w, img_h)
-            if not img_widget then
-                img_widget = ImageWidget:new{
+            raw_img = StorefrontScreensavers.createCoverImageWidget(thumb_file, inner_w, img_h)
+            if not raw_img then
+                raw_img = ImageWidget:new{
                     file         = thumb_file,
-                    width        = card_w,
+                    width        = inner_w,
                     height       = img_h,
                     scale_factor = 0,
                 }
@@ -7523,12 +7557,12 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
             if not entry._thumb_failed then
                 table.insert(missing_thumbs, entry)
             end
-            img_widget = FrameContainer:new{
+            raw_img = FrameContainer:new{
                 bordersize = 0,
-                background = Blitbuffer.Color8(230),
+                background = Blitbuffer.Color8(235),
                 padding    = 0,
                 CenterContainer:new{
-                    dimen = Geom:new{ w = card_w, h = img_h },
+                    dimen = Geom:new{ w = inner_w, h = img_h },
                     TextWidget:new{
                         text    = "…",
                         face    = meta_face,
@@ -7537,6 +7571,15 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
                 }
             }
         end
+
+        local img_widget = FrameContainer:new{
+            bordersize = sc(1),
+            color      = Blitbuffer.Color8(220),
+            radius     = sc(3),
+            padding    = 0,
+            background = Blitbuffer.COLOR_WHITE,
+            raw_img,
+        }
 
         local getAssetPath = function(filename)
             local info = debug.getinfo(1, "S")
@@ -7550,7 +7593,7 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
             face      = name_face,
             bold      = true,
             fgcolor   = Blitbuffer.COLOR_BLACK,
-            max_width = card_w - sc(8),
+            max_width = inner_w,
         }
 
         -- In-app ratings (thumbs up + net score) - ONLY shown if in-app ratings or user vote exist!
@@ -7562,12 +7605,13 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
             and string.format("%.1fk", net_score / 1000):gsub("%.0k", "k")
             or tostring(net_score)
 
+        local display_cat = table.concat(StorefrontUtils.getMappedScreensaverCategories(entry.category), ", ")
         local meta_items = {
             TextWidget:new{
-                text      = (entry.category or ""),
+                text      = display_cat,
                 face      = meta_face,
-                fgcolor   = Blitbuffer.Color8(100),
-                max_width = has_rating and math.floor(card_w * 0.50) or (card_w - sc(8)),
+                fgcolor   = Blitbuffer.Color8(110),
+                max_width = has_rating and math.floor(inner_w * 0.50) or inner_w,
             },
         }
 
@@ -7579,11 +7623,11 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
             table.insert(meta_items, HorizontalSpan:new{ width = sc(3) })
             table.insert(meta_items, ImageWidget:new{
                 file = icon_file,
-                width = sc(14), height = sc(14),
+                width = sc(13), height = sc(13),
                 scale_factor = 0, is_icon = true, alpha = true,
             })
             table.insert(meta_items, HorizontalSpan:new{ width = sc(2) })
-            table.insert(meta_items, TextWidget:new{ text = score_str, face = meta_face, fgcolor = Blitbuffer.Color8(80) })
+            table.insert(meta_items, TextWidget:new{ text = score_str, face = meta_face, fgcolor = Blitbuffer.Color8(90) })
         end
 
         local meta_w = HorizontalGroup:new(meta_items)
@@ -7592,25 +7636,16 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
             align = "left",
             img_widget,
             VerticalSpan:new{ width = sc(4) },
-            FrameContainer:new{
-                bordersize    = 0,
-                padding       = 0,
-                padding_left  = sc(4),
-                padding_right = sc(4),
-                VerticalGroup:new{
-                    align = "left",
-                    title_w,
-                    VerticalSpan:new{ width = sc(2) },
-                    meta_w,
-                },
-            },
-            VerticalSpan:new{ width = sc(4) },
+            title_w,
+            VerticalSpan:new{ width = sc(2) },
+            meta_w,
         }
 
         local card_frame = FrameContainer:new{
             bordersize = sc(1),
+            color      = Blitbuffer.Color8(180),
             radius     = sc(6),
-            padding    = 0,
+            padding    = card_pad,
             background = Blitbuffer.COLOR_WHITE,
             card_inner,
         }
@@ -7671,7 +7706,7 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
                 -- Empty filler to keep the last row aligned
                 local Widget = require("ui/widget/widget")
                 table.insert(row, Widget:new{
-                    dimen = Geom:new{ w = card_w, h = img_h + text_h },
+                    dimen = Geom:new{ w = card_w, h = card_h },
                 })
             end
         end
@@ -8300,12 +8335,31 @@ function Storefront:showBrowser(kind)
                     -- Build toolbar: active category pill + sort cycle + Filter... button
                     toolbar_buttons = {}
                     local ss_cat  = self.browser_state.screensaver_category or ""
+                    local ss_cats = self.browser_state.screensaver_categories
                     local ss_sort = self.browser_state.screensaver_sort or "popular"
                     local ss_srch = self.browser_state.screensaver_search or ""
-                    if ss_cat ~= "" and ss_cat ~= "all" then
+
+                    local active_cat_names = {}
+                    if ss_cats and not ss_cats["all"] then
+                        for k, v in pairs(ss_cats) do
+                            if v then
+                                local c_name = k:sub(1,1):upper() .. k:sub(2)
+                                if k == "scifi" or k == "sci-fi" then c_name = "Sci-Fi" end
+                                if k == "fine art" then c_name = "Fine Art" end
+                                if k == "pop culture" then c_name = "Pop Culture" end
+                                table.insert(active_cat_names, c_name)
+                            end
+                        end
+                        table.sort(active_cat_names)
+                    elseif ss_cat ~= "" and ss_cat ~= "all" then
+                        table.insert(active_cat_names, ss_cat:sub(1,1):upper() .. ss_cat:sub(2))
+                    end
+
+                    if #active_cat_names > 0 then
+                        local cat_str = #active_cat_names == 1 and active_cat_names[1] or string.format(_("%d Categories"), #active_cat_names)
                         table.insert(toolbar_buttons, {
                             id = "ss_cat",
-                            text = _("Category: ") .. ss_cat,
+                            text = _("Category: ") .. cat_str,
                             callback = function() self:showScreensaverFilter() end
                         })
                     end

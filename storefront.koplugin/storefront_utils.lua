@@ -200,4 +200,53 @@ function storefront_utils.repoIsFork(repo)
     return false
 end
 
+function storefront_utils.getMappedScreensaverCategories(cat_str)
+    if not cat_str or cat_str == "" then
+        return { "Fine Art" }
+    end
+    local result = {}
+    local seen = {}
+    for part in string.gmatch(tostring(cat_str), "[^,]+") do
+        local c = part:match("^%s*(.-)%s*$"):lower()
+        local mapped = nil
+        if c:find("transparent") or c:find("overlay") then
+            mapped = "Transparent"
+        elseif c:find("space") or c:find("astronomy") or c:find("sci") then
+            mapped = "Sci-Fi"
+        elseif c:find("nature") or c:find("landscape") then
+            mapped = "Nature"
+        elseif c:find("pop") or c:find("culture") then
+            mapped = "Pop Culture"
+        elseif c:find("cozy") or c:find("minimal") then
+            mapped = "Minimalist"
+        elseif c:find("abstract") or c:find("dark") then
+            mapped = "Abstract"
+        elseif c:find("anime") then
+            mapped = "Anime"
+        elseif c:find("architect") or c:find("miniature") then
+            mapped = "Architecture"
+        elseif c:find("fantasy") then
+            mapped = "Fantasy"
+        elseif c:find("quote") then
+            mapped = "Quotes"
+        elseif c:find("art") or c:find("ceramic") or c:find("drawing") or c:find("paint") or c:find("print") or c:find("sculpture") or c:find("installation") or c:find("funerary") then
+            mapped = "Fine Art"
+        else
+            local clean = part:match("^%s*(.-)%s*$")
+            if clean ~= "" then
+                mapped = clean:sub(1,1):upper() .. clean:sub(2):lower()
+            else
+                mapped = "Fine Art"
+            end
+        end
+        if mapped and not seen[mapped:lower()] then
+            seen[mapped:lower()] = true
+            table.insert(result, mapped)
+        end
+    end
+    if #result == 0 then table.insert(result, "Fine Art") end
+    return result
+end
+
 return storefront_utils
+
