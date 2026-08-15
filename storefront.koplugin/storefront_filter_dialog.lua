@@ -714,13 +714,20 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
     local title_font_size = storefront_theme.title_font_size or 22
 
     local catalog = Storefront.screensavers_cache or {}
+    local cat_counts = {}
     local seen_cats = {}
     local cats = { "all" }
+    cat_counts["all"] = #catalog
+
     for _, entry in ipairs(catalog) do
         local cat = entry.category and tostring(entry.category) or ""
-        if cat ~= "" and not seen_cats[cat] then
-            seen_cats[cat] = true
-            table.insert(cats, cat)
+        if cat ~= "" then
+            local key = cat:lower()
+            cat_counts[key] = (cat_counts[key] or 0) + 1
+            if not seen_cats[key] then
+                seen_cats[key] = true
+                table.insert(cats, cat)
+            end
         end
     end
     table.sort(cats, function(a, b)
@@ -731,6 +738,202 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
 
     local sort_order = { "popular", "az", "za" }
     local sort_labels = { popular = _("Most Popular"), az = _("A -> Z"), za = _("Z -> A") }
+
+    local function getCategorySummary(set, legacy_cat)
+        if type(set) == "table" and next(set) and not set["all"] then
+            local selected_list = {}
+            for _, c in ipairs(cats) do
+                if c ~= "all" and set[c:lower()] then
+                    table.insert(selected_list, c)
+                end
+            end
+            if #selected_list == 1 then return selected_list[1] end
+            if #selected_list == 2 then return selected_list[1] .. ", " .. selected_list[2] end
+            if #selected_list > 2 then return selected_list[1] .. string.format(" (+%d)", #selected_list - 1) end
+        end
+        if legacy_cat and legacy_cat ~= "" and legacy_cat ~= "all" then
+            return legacy_cat
+        end
+        return _("All")
+    end
+
+    local function showCategoryCheckboxDialog(on_save)
+        local sub_w = math.min(sw - sc(20), sc(380))
+        local sub_h = math.min(sh - sc(40), sc(520))
+
+        local current_set = {}
+        if type(state.screensaver_categories) == "table" then
+            for k, v in pairs(state.screensaver_categories) do current_set[k] = v end
+        elseif state.screensaver_category and state.screensaver_category ~= "" and state.screensaver_category ~= "all" then
+            current_set[state.screensaver_category:lower()] = true
+        end
+        if not next(current_set) then
+            current_set["all"] = true
+        end
+
+        local sub_overlay
+        local refresh_sub
+
+        refresh_sub = function()
+            if sub_overlay then
+                UIManager:close(sub_overlay, "ui")
+            end
+
+            local title_label = TextWidget:new{
+                text = _("Select Categories"),
+                face = Font:getFace("NotoSerif-Regular.ttf", title_font_size),
+                bold = true,
+                fgcolor = Blitbuffer.COLOR_BLACK,
+            }
+
+            local list_vg = VerticalGroup:new{ align = "left" }
+
+            for idx, cat_name in ipairs(cats) do
+                local key = cat_name:lower()
+                local is_checked = current_set[key] == true
+                if current_set["all"] and key == "all" then is_checked = true end
+
+                local check_str = is_checked and "☑  " or "☐  "
+                local display_name = (cat_name == "all") and _("All Categories") or cat_name
+                local count_val = cat_counts[key]
+                local count_str = count_val and string.format(" (%d)", count_val) or ""
+
+                local txt_widget = TextBoxWidget:new{
+                    text = check_str .. display_name .. count_str,
+                    face = Font:getFace("cfont", ui_font_size),
+                    bold = is_checked,
+                    fgcolor = is_checked and Blitbuffer.COLOR_BLACK or storefront_theme.color_label_dim,
+                    width = sub_w - sc(36),
+                    alignment = "left",
+                }
+
+                local row_frame = FrameContainer:new{
+                    padding = sc(10),
+                    bordersize = 0,
+                    width = sub_w - sc(20),
+                    background = is_checked and Blitbuffer.Color8(245) or Blitbuffer.COLOR_WHITE,
+                    txt_widget,
+                }
+
+                local row_item = InputContainer:new{ row_frame }
+                row_item.ges_events = {
+                    Tap = {
+                        GestureRange:new{
+                            ges = "tap",
+                            range = function()
+                                local dim = row_item.dimen
+                                if not dim then return Geom:new{ x = -1, y = -1, w = 1, h = 1 } end
+                                return Geom:new{
+                                    x = dim.x or 0, y = dim.y or 0,
+                                    w = sub_w - sc(20), h = row_frame:getSize().h or sc(40)
+                                }
+                            end
+                        }
+                    }
+                }
+
+                local target_key = key
+                row_item.onTap = function()
+                    if target_key == "all" then
+                        current_set = { all = true }
+                    else
+                        current_set["all"] = nil
+                        if current_set[target_key] then
+                            current_set[target_key] = nil
+                        else
+                            current_set[target_key] = true
+                        end
+                        if not next(current_set) then
+                            current_set["all"] = true
+                        end
+                    end
+                    refresh_sub()
+                    return true
+                end
+
+                table.insert(list_vg, row_item)
+                if idx < #cats then
+                    table.insert(list_vg, LineWidget:new{
+                        dimen = Geom:new{ w = sub_w - sc(20), h = sc(1) },
+                        background = Blitbuffer.COLOR_LIGHT_GRAY,
+                    })
+                end
+            end
+
+            local ScrollableContainer = require("ui/widget/container/scrollablecontainer")
+            local list_scroller = ScrollableContainer:new{
+                dimen = Geom:new{ w = sub_w - sc(20), h = sub_h - sc(130) },
+                bordersize = 0,
+                padding = 0,
+                list_vg,
+            }
+
+            local done_btn = Button:new{
+                text = _("Done"),
+                text_font_size = 16,
+                text_font_color = Blitbuffer.COLOR_WHITE,
+                background = Blitbuffer.COLOR_BLACK,
+                padding = sc(8),
+                padding_h = sc(24),
+                radius = sc(4),
+                bordersize = 0,
+                callback = function()
+                    if sub_overlay then UIManager:close(sub_overlay, "ui") end
+                    if on_save then on_save(current_set) end
+                end,
+            }
+            if done_btn.label_widget then done_btn.label_widget.fgcolor = Blitbuffer.COLOR_WHITE end
+
+            local select_all_btn = Button:new{
+                text = _("Select All"),
+                text_font_size = 14,
+                text_font_color = Blitbuffer.COLOR_BLACK,
+                background = Blitbuffer.COLOR_WHITE,
+                padding = sc(6),
+                padding_h = sc(12),
+                radius = sc(4),
+                bordersize = sc(1),
+                callback = function()
+                    current_set = { all = true }
+                    refresh_sub()
+                end,
+            }
+
+            local btn_group = HorizontalGroup:new{
+                select_all_btn,
+                HorizontalSpan:new{ width = sc(12) },
+                done_btn,
+            }
+
+            local sub_content = VerticalGroup:new{
+                align = "center",
+                FrameContainer:new{ padding = sc(10), bordersize = 0, title_label },
+                LineWidget:new{ dimen = Geom:new{ w = sub_w - sc(4), h = sc(1) }, background = Blitbuffer.COLOR_BLACK },
+                list_scroller,
+                LineWidget:new{ dimen = Geom:new{ w = sub_w - sc(4), h = sc(1) }, background = Blitbuffer.COLOR_LIGHT_GRAY },
+                VerticalSpan:new{ width = sc(6) },
+                btn_group,
+                VerticalSpan:new{ width = sc(6) },
+            }
+
+            local sub_frame = FrameContainer:new{
+                background = Blitbuffer.COLOR_WHITE,
+                bordersize = sc(2),
+                padding = sc(4),
+                width = sub_w,
+                sub_content,
+            }
+
+            sub_overlay = CenterContainer:new{
+                dimen = Geom:new{ w = sw, h = sh },
+                sub_frame,
+            }
+
+            UIManager:show(sub_overlay, "ui")
+        end
+
+        refresh_sub()
+    end
 
     local overlay
     local refresh
@@ -846,26 +1049,19 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
 
         table.insert(content_vg, create_section_header(_("Filters")))
 
-        -- Category row
-        local cur_cat = state.screensaver_category or ""
-        local cat_display = (cur_cat == "" or cur_cat == "all") and _("All") or cur_cat
+        -- Category row (opens Checkbox List dialog)
+        local cat_display = getCategorySummary(state.screensaver_categories, state.screensaver_category)
         local cat_widget = TextWidget:new{
             text = cat_display,
             face = Font:getFace("cfont", storefront_theme.subtext_font_size or 16),
             fgcolor = storefront_theme.color_label_dim,
         }
-        table.insert(content_vg, create_setting_row(_("Category"), cat_widget, function()
-            local cur = (state.screensaver_category or ""):lower()
-            if cur == "" then cur = "all" end
-            local next_c = "all"
-            for idx, c in ipairs(cats) do
-                if cur == c:lower() then
-                    next_c = cats[(idx % #cats) + 1]
-                    break
-                end
-            end
-            state.screensaver_category = (next_c == "all") and "" or next_c
-            refresh()
+        table.insert(content_vg, create_setting_row(_("Categories"), cat_widget, function()
+            showCategoryCheckboxDialog(function(new_set)
+                state.screensaver_categories = new_set
+                state.screensaver_category = ""
+                refresh()
+            end)
         end))
 
         table.insert(content_vg, create_section_header(_("Sorting")))
@@ -902,6 +1098,7 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
         }
         table.insert(content_vg, create_setting_row(_("Reset filters"), reset_widget, function()
             state.screensaver_category = ""
+            state.screensaver_categories = nil
             state.screensaver_sort = "popular"
             state.screensaver_search = ""
             refresh()

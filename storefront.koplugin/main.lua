@@ -7340,9 +7340,11 @@ function Storefront:hasActiveFilters(tab)
         return st ~= "" or ft ~= "all" or fd ~= "all" or fs ~= "all" or sm ~= "name_asc"
     elseif tab == "Screensavers" then
         local cat = (self.browser_state and self.browser_state.screensaver_category or ""):lower()
+        local cats = self.browser_state and self.browser_state.screensaver_categories
+        local has_cats = type(cats) == "table" and next(cats) and not cats["all"]
         local sort = self.browser_state and self.browser_state.screensaver_sort or "popular"
         local srch = (self.browser_state and self.browser_state.screensaver_search or ""):lower()
-        return (cat ~= "" and cat ~= "all") or (sort ~= "popular") or (srch ~= "")
+        return has_cats or (cat ~= "" and cat ~= "all") or (sort ~= "popular") or (srch ~= "")
     elseif tab == "Updates" then
         return false
     else
@@ -7376,6 +7378,8 @@ function Storefront:clearSearchAndFilters()
     self.browser_state.min_stars = 0
     self.browser_state.font_category = "all"
     self.browser_state.sort_mode = "stars_desc"
+    self.browser_state.screensaver_category = ""
+    self.browser_state.screensaver_categories = nil
     self.browser_state.page = 1
     self.browser_state.scroll_offset = nil
 
@@ -7429,13 +7433,17 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
     -- ---- Filter & sort the catalog ----------------------------------------
     self:ensureBrowserState()
     local ss_cat  = (self.browser_state.screensaver_category or ""):lower()
+    local ss_cats = self.browser_state.screensaver_categories
     local ss_sort = self.browser_state.screensaver_sort or "popular"  -- "popular" | "az" | "za"
     local ss_srch = (self.browser_state.screensaver_search or ""):lower()
 
     local filtered = {}
     for _, entry in ipairs(catalog) do
         local pass = true
-        if ss_cat ~= "" and ss_cat ~= "all" then
+        if type(ss_cats) == "table" and next(ss_cats) and not ss_cats["all"] then
+            local entry_cat = (entry.category or ""):lower()
+            if not ss_cats[entry_cat] then pass = false end
+        elseif ss_cat ~= "" and ss_cat ~= "all" then
             if (entry.category or ""):lower() ~= ss_cat then pass = false end
         end
         if pass and ss_srch ~= "" then
