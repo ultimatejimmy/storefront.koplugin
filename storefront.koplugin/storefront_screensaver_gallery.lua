@@ -187,7 +187,7 @@ function StorefrontScreensaverGallery.show(Storefront, on_close_callback, on_set
         local list_vg = VerticalGroup:new{ align = "left" }
         local thumb_w = sc(48)
         local thumb_h = sc(64)
-        local btn_col_w = sc(86)
+        local btn_col_w = sc(92)
         local mid_w = dialog_w - sc(24) - thumb_w - btn_col_w - sc(20)
         local fixed_list_h = sc(395) -- Exact height for 5 item rows
 
@@ -319,16 +319,18 @@ function StorefrontScreensaverGallery.show(Storefront, on_close_callback, on_set
                 -- Right Action Buttons Column
                 local right_actions_vg = VerticalGroup:new{ align = "center" }
                 local is_this_active = is_single_mode and current_item.is_active_single
+                local btn_h = sc(24)
 
                 if is_this_active then
                     local active_badge_frame = FrameContainer:new{
                         bordersize = 0,
-                        radius = sc(3),
-                        padding = sc(3),
+                        radius = sc(4),
+                        padding = 0,
                         width = btn_col_w,
+                        height = btn_h,
                         background = Blitbuffer.COLOR_BLACK,
                         CenterContainer:new{
-                            dimen = Geom:new{ w = btn_col_w, h = sc(18) },
+                            dimen = Geom:new{ w = btn_col_w, h = btn_h },
                             TextWidget:new{
                                 text = _("★ ACTIVE"),
                                 face = Font:getFace("cfont", 11),
@@ -342,13 +344,16 @@ function StorefrontScreensaverGallery.show(Storefront, on_close_callback, on_set
                     local set_active_btn = Button:new{
                         text = _("Set Single"),
                         text_font_size = 12,
+                        text_font_face = "cfont",
                         bold = true,
                         bordersize = sc(1),
-                        radius = sc(3),
+                        color = Blitbuffer.COLOR_BLACK,
+                        radius = sc(4),
                         padding = sc(3),
-                        padding_h = sc(6),
+                        padding_h = sc(4),
                         width = btn_col_w,
-                        background = Blitbuffer.COLOR_WHITE,
+                        height = btn_h,
+                        background = Blitbuffer.Color8(245),
                         callback = function()
                             StorefrontScreensaverMgr.setScreensaverMode("single", { file = current_item.filepath })
                             local StorefrontToast = require("storefront_toast")
@@ -359,17 +364,20 @@ function StorefrontScreensaverGallery.show(Storefront, on_close_callback, on_set
                     table.insert(right_actions_vg, set_active_btn)
                 end
 
-                table.insert(right_actions_vg, VerticalSpan:new{ width = sc(4) })
+                table.insert(right_actions_vg, VerticalSpan:new{ width = sc(5) })
 
                 local delete_btn = Button:new{
                     text = _("Remove"),
                     text_font_size = 12,
+                    text_font_face = "cfont",
                     bold = true,
                     bordersize = sc(1),
-                    radius = sc(3),
+                    color = Blitbuffer.COLOR_BLACK,
+                    radius = sc(4),
                     padding = sc(3),
-                    padding_h = sc(6),
+                    padding_h = sc(4),
                     width = btn_col_w,
+                    height = btn_h,
                     background = Blitbuffer.COLOR_WHITE,
                     callback = function()
                         UIManager:show(ConfirmBox:new{

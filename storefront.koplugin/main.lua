@@ -7305,13 +7305,14 @@ function Storefront:buildInstalledEntries(available_list_height)
             end
 
             if match_search then
+                local desc_str = (ss_item.author and ss_item.author ~= "") and (_("By ") .. ss_item.author) or ss_item.filename
                 table.insert(items, {
                     name = ss_item.title or ss_item.filename,
-                    owner = "",
+                    owner = ss_item.author or "",
                     updated = formatTimestamp(ss_item.mtime),
                     mtime = ss_item.mtime or 0,
                     kind_label = _("Screensaver"),
-                    description = ss_item.filename,
+                    description = desc_str,
                     badge = badge_str,
                     thumbnail_file = ss_item.filepath,
                     is_entry = true,
@@ -7576,17 +7577,35 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
         return 0
     end
 
-    if ss_sort == "az" then
+    if ss_sort == "popular" then
+        local scores = {}
+        if ok_ratings and StorefrontRatings and StorefrontRatings.getRating then
+            for _, entry in ipairs(filtered) do
+                local live_r = StorefrontRatings.getRating(entry)
+                scores[entry] = (live_r and (live_r.up - live_r.down)) or 0
+            end
+        end
         table.sort(filtered, function(a, b)
-            return (a.title or a.name or ""):lower() < (b.title or b.name or ""):lower()
+            local sa = scores[a] or 0
+            local sb = scores[b] or 0
+            if sa ~= sb then return sa > sb end
+            return (a.title or a.name or "") < (b.title or b.name or "")
+        end)
+    elseif ss_sort == "az" then
+        local titles = {}
+        for _, entry in ipairs(filtered) do
+            titles[entry] = (entry.title or entry.name or ""):lower()
+        end
+        table.sort(filtered, function(a, b)
+            return (titles[a] or "") < (titles[b] or "")
         end)
     elseif ss_sort == "za" then
+        local titles = {}
+        for _, entry in ipairs(filtered) do
+            titles[entry] = (entry.title or entry.name or ""):lower()
+        end
         table.sort(filtered, function(a, b)
-            return (a.title or a.name or ""):lower() > (b.title or b.name or ""):lower()
-        end)
-    else  -- "popular"
-        table.sort(filtered, function(a, b)
-            return getRatingScore(a) > getRatingScore(b)
+            return (titles[a] or "") > (titles[b] or "")
         end)
     end
 
@@ -8246,11 +8265,6 @@ function Storefront:maybeCheckCatalogBackground()
 end
 
 function Storefront:showBrowser(kind)
-    logger.info("Storefront: showBrowser called")
-    invalidateInstalledPluginsCache()
-    self._cached_plugin_summary = nil
-    self._cached_patch_summary = nil
-    self._merged_updates_cache = nil
     self:ensureBrowserState()
     self:ensureUpdatesState()
     self:ensurePatchUpdatesState()
@@ -8260,17 +8274,20 @@ function Storefront:showBrowser(kind)
     end
     local current_tab = self.browser_state.tab or "Plugins"
     
-    -- Schedule deferred update and catalog background checks AFTER opening UI (zero launch delay)
-    UIManager:nextTick(function()
-        pcall(function() self:syncPendingFontDownloads() end)
-        pcall(function() self:maybeAutoCheckUpdates() end)
-    end)
-
-    local now = os.time()
-    if not self._last_catalog_check_time or (now - self._last_catalog_check_time) >= MIN_CATALOG_CHECK_INTERVAL then
-        UIManager:scheduleIn(0.5, function()
-            pcall(function() self:maybeCheckCatalogBackground() end)
+    -- Schedule deferred update and catalog background checks ONCE per session on launch (zero launch delay)
+    if not self._session_bg_checks_done then
+        self._session_bg_checks_done = true
+        UIManager:nextTick(function()
+            pcall(function() self:syncPendingFontDownloads() end)
+            pcall(function() self:maybeAutoCheckUpdates() end)
         end)
+
+        local now = os.time()
+        if not self._last_catalog_check_time or (now - self._last_catalog_check_time) >= MIN_CATALOG_CHECK_INTERVAL then
+            UIManager:scheduleIn(1.5, function()
+                pcall(function() self:maybeCheckCatalogBackground() end)
+            end)
+        end
     end
 
     local title = _("Storefront")
@@ -8383,7 +8400,8 @@ function Storefront:showBrowser(kind)
                 local type_label = _("All Types")
                 if self.installed_state.filter_type == "plugin" then type_label = _("Plugins")
                 elseif self.installed_state.filter_type == "patch" then type_label = _("Patches")
-                elseif self.installed_state.filter_type == "font" then type_label = _("Fonts") end
+                elseif self.installed_state.filter_type == "font" then type_label = _("Fonts")
+                elseif self.installed_state.filter_type == "screensaver" then type_label = _("Screensavers") end
                 table.insert(toolbar_buttons, {
                     id = "type",
                     text = type_label,
@@ -8660,6 +8678,7 @@ function Storefront:showBrowser(kind)
             self:saveBrowserState()
             self:dismissProgressMessage()
             self.browser_menu = nil
+            self._session_bg_checks_done = nil
         end,
     }
     if dialog._used_trapper_progress then

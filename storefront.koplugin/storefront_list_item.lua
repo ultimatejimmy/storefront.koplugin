@@ -356,7 +356,11 @@ function StorefrontListItem:init()
             right_reserve = badge_w:getSize().w + Size.padding.default
         end
 
-        local text_w = content_inner - right_reserve
+        local thumb_reserve = 0
+        if entry.thumbnail_file then
+            thumb_reserve = sc(60) + sc(12)
+        end
+        local text_w = content_inner - right_reserve - thumb_reserve
 
         -- Line 1: Name
         local is_font_item = (entry.kind == "font" or entry.is_font)

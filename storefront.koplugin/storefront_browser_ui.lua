@@ -119,17 +119,26 @@ function StorefrontBrowserDialog:buildTabBar()
         Updates = _("Updates"),
     }
 
-    local tab_icon_map = {
+    local tab_icon_active_map = {
+        Plugins = "package-active.svg",
+        Patches = "code-active.svg",
+        Fonts = "type-active.svg",
+        Screensavers = "image-active.svg",
+        Installed = "tab-installed-active.svg",
+        Updates = "refresh-cw-active.svg",
+    }
+
+    local tab_icon_inactive_map = {
         Plugins = "package.svg",
         Patches = "code.svg",
         Fonts = "type.svg",
         Screensavers = "image.svg",
-        Installed = "check-square.svg",
+        Installed = "tab-installed.svg",
         Updates = "refresh-cw.svg",
     }
 
     local num_tabs = #tabs
-    local tab_gap = sc(18)
+    local tab_gap = sc(22)
 
     local font_size = 18
     local font_face = Font:getFace("smallinfofont", font_size)
@@ -171,7 +180,7 @@ function StorefrontBrowserDialog:buildTabBar()
                 table.insert(tab_elements, badge)
             end
         else
-            local icon_file = tab_icon_map[tab_name]
+            local icon_file = is_active and (tab_icon_active_map[tab_name] or tab_icon_inactive_map[tab_name]) or (tab_icon_inactive_map[tab_name] or tab_icon_active_map[tab_name])
             local icon_widget = ImageWidget:new{
                 file = getAssetPath(icon_file),
                 width = sc(22),
@@ -189,7 +198,7 @@ function StorefrontBrowserDialog:buildTabBar()
                     bold = true,
                     fgcolor = Blitbuffer.COLOR_BLACK,
                 }
-                table.insert(tab_elements, HorizontalSpan:new{ width = sc(4) })
+                table.insert(tab_elements, HorizontalSpan:new{ width = sc(6) })
                 table.insert(tab_elements, label)
             end
         end

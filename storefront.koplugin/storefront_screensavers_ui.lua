@@ -2,7 +2,6 @@ local json = require("json")
 local logger = require("logger")
 local DataStorage = require("datastorage")
 local UIManager = require("ui/uimanager")
-local InfoMessage = require("ui/widget/infomessage")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Localization = require("localization_storefront")
 local _ = function(key, ...) return Localization:t(key, ...) end
@@ -66,6 +65,35 @@ local function requestWithRedirects(target_url, sink_fn)
     return false, 0, nil
 end
 
+local cached_catalog_mem = nil
+
+function StorefrontScreensavers.getCachedCatalog()
+    if cached_catalog_mem and type(cached_catalog_mem) == "table" and #cached_catalog_mem > 0 then
+        return cached_catalog_mem
+    end
+    local ok_ds, DataStorage = pcall(require, "datastorage")
+    if ok_ds and DataStorage and DataStorage.getDataDir then
+        local cat_file = DataStorage:getDataDir() .. "/cache/storefront_screensavers_catalog.json"
+        local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
+        if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
+        if ok_lfs and lfs and lfs.attributes and lfs.attributes(cat_file, "mode") == "file" then
+            local f = io.open(cat_file, "r")
+            if f then
+                local content = f:read("*a")
+                f:close()
+                if content and content ~= "" then
+                    local ok_j, parsed = pcall(json.decode, content)
+                    if ok_j and type(parsed) == "table" then
+                        cached_catalog_mem = parsed
+                        return parsed
+                    end
+                end
+            end
+        end
+    end
+    return nil
+end
+
 function StorefrontScreensavers.fetchCatalog(callback)
     local ltn12 = require("ltn12")
     local response_body = {}
@@ -79,9 +107,27 @@ function StorefrontScreensavers.fetchCatalog(callback)
         local body_str = table.concat(response_body)
         local parsed_ok, data = pcall(json.decode, body_str)
         if parsed_ok and type(data) == "table" then
+            cached_catalog_mem = data
+            pcall(function()
+                local ok_ds, DataStorage = pcall(require, "datastorage")
+                if ok_ds and DataStorage and DataStorage.getDataDir then
+                    local cat_file = DataStorage:getDataDir() .. "/cache/storefront_screensavers_catalog.json"
+                    local f = io.open(cat_file, "w")
+                    if f then
+                        f:write(body_str)
+                        f:close()
+                    end
+                end
+            end)
             callback(true, data)
             return
         end
+    end
+
+    local local_cached = StorefrontScreensavers.getCachedCatalog()
+    if local_cached then
+        callback(true, local_cached)
+        return
     end
 
     -- Fallback dummy data if offline / initial test
@@ -144,12 +190,17 @@ function StorefrontScreensavers.fetchThumbnail(item, callback)
 
     local ok, code = requestWithRedirects(fetch_url, sink_fn)
     if ok and code == 200 then
-        local file = io.open(thumb_path, "wb")
+        local tmp_path = thumb_path .. ".tmp"
+        local file = io.open(tmp_path, "wb")
         if file then
             file:write(table.concat(img_data))
             file:close()
-            if callback then callback(thumb_path) end
-            return thumb_path
+            os.remove(thumb_path)
+            local ok_ren = os.rename(tmp_path, thumb_path)
+            if ok_ren then
+                if callback then callback(thumb_path) end
+                return thumb_path
+            end
         end
     end
 
@@ -161,14 +212,11 @@ StorefrontScreensavers.requestWithRedirects = requestWithRedirects
 
 function StorefrontScreensavers.downloadAsSingle(item, callback)
     local StorefrontScreensaverMgr = require("storefront_screensaver_mgr")
-    local info_dialog = InfoMessage:new{
-        text = _("Downloading screensaver...") .. "\n" .. (item.title or item.name or ""),
-        timeout = 2,
-    }
-    UIManager:show(info_dialog)
+    local StorefrontToast = require("storefront_toast")
+    local title_str = item.title or item.name or ""
+    StorefrontToast.show(title_str ~= "" and string.format(_("Downloading '%s'..."), title_str) or _("Downloading screensaver..."), 2)
 
     StorefrontScreensaverMgr.downloadWallpaper(item, function(ok, result)
-        if info_dialog and info_dialog.onClose then info_dialog:onClose() end
         if ok and result then
             local cat_str = type(item.category) == "table" and table.concat(item.category, " ") or tostring(item.category or "")
             local is_transparent = cat_str:lower():find("transparent", 1, true) ~= nil
@@ -177,12 +225,10 @@ function StorefrontScreensavers.downloadAsSingle(item, callback)
                 params.background = "none"
             end
             StorefrontScreensaverMgr.setScreensaverMode("single", params)
-            local Toast = require("storefront_toast")
-            Toast.show(_("Wallpaper set as active KOReader screensaver!"), 3)
+            StorefrontToast.show(_("Wallpaper set as active KOReader screensaver!"), 3)
             if callback then callback(true, result) end
         else
-            local Toast = require("storefront_toast")
-            Toast.show(_("Failed to download screensaver."), 3)
+            StorefrontToast.show(_("Failed to download screensaver."), 3)
             if callback then callback(false, result) end
         end
     end)
@@ -190,22 +236,17 @@ end
 
 function StorefrontScreensavers.downloadToShufflePool(item, callback)
     local StorefrontScreensaverMgr = require("storefront_screensaver_mgr")
-    local info_dialog = InfoMessage:new{
-        text = _("Downloading to shuffle pool...") .. "\n" .. (item.title or item.name or ""),
-        timeout = 2,
-    }
-    UIManager:show(info_dialog)
+    local StorefrontToast = require("storefront_toast")
+    local title_str = item.title or item.name or ""
+    StorefrontToast.show(title_str ~= "" and string.format(_("Downloading '%s'..."), title_str) or _("Downloading to shuffle pool..."), 2)
 
     StorefrontScreensaverMgr.downloadWallpaper(item, function(ok, result)
-        if info_dialog and info_dialog.onClose then info_dialog:onClose() end
         if ok and result then
             StorefrontScreensaverMgr.setScreensaverMode("shuffle")
-            local Toast = require("storefront_toast")
-            Toast.show(_("Added to shuffle pool & Folder Shuffle enabled!"), 3)
+            StorefrontToast.show(_("Added to shuffle pool & Folder Shuffle enabled!"), 3)
             if callback then callback(true, result) end
         else
-            local Toast = require("storefront_toast")
-            Toast.show(_("Failed to download screensaver."), 3)
+            StorefrontToast.show(_("Failed to download screensaver."), 3)
             if callback then callback(false, result) end
         end
     end)
@@ -213,26 +254,16 @@ end
 
 function StorefrontScreensavers.downloadOnly(item, callback)
     local StorefrontScreensaverMgr = require("storefront_screensaver_mgr")
-    local info_dialog = InfoMessage:new{
-        text = _("Downloading screensaver...") .. "\n" .. (item.title or item.name or ""),
-        timeout = 2,
-    }
-    UIManager:show(info_dialog)
+    local StorefrontToast = require("storefront_toast")
+    local title_str = item.title or item.name or ""
+    StorefrontToast.show(title_str ~= "" and string.format(_("Downloading '%s'..."), title_str) or _("Downloading screensaver..."), 2)
 
     StorefrontScreensaverMgr.downloadWallpaper(item, function(ok, result)
-        if info_dialog and info_dialog.onClose then info_dialog:onClose() end
-        local Toast = require("storefront_toast")
         if ok and result then
-            Toast:new{
-                text = _("Wallpaper saved to collection!"),
-                timeout = 3,
-            }:show()
+            StorefrontToast.show(_("Wallpaper saved to collection!"), 3)
             if callback then callback(true, result) end
         else
-            Toast:new{
-                text = _("Failed to download screensaver."),
-                timeout = 3,
-            }:show()
+            StorefrontToast.show(_("Failed to download screensaver."), 3)
             if callback then callback(false, result) end
         end
     end)

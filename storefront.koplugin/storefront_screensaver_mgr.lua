@@ -180,6 +180,50 @@ function StorefrontScreensaverMgr.setScreensaverMode(mode, params)
     return true
 end
 
+local function extractScreensaverTitleAndAuthor(filename, catalog_map)
+    local item_id = filename:gsub("%..+$", "")
+    local matched = catalog_map and (catalog_map[item_id:lower()] or catalog_map[filename:lower()])
+    if matched and matched.title and matched.title ~= "" then
+        return matched.title, (matched.author or "")
+    end
+
+    local raw_name = item_id
+    local author = ""
+    local title = raw_name
+
+    -- Check if catalog has known authors that prefix this filename
+    if catalog_map then
+        for _, entry in pairs(catalog_map) do
+            if entry.author and entry.author ~= "" then
+                local auth_slug = entry.author:lower():gsub("[%s_]+", "-")
+                if raw_name:lower():sub(1, #auth_slug + 1) == auth_slug .. "-" then
+                    author = entry.author
+                    title = raw_name:sub(#auth_slug + 2)
+                    break
+                end
+            end
+        end
+    end
+
+    -- If author wasn't found from catalog, check if filename starts with author handle (e.g. whisperingsea4-...)
+    if title == raw_name and raw_name:find("-") then
+        local first_part, rest = raw_name:match("^([%w_]+)%-(.+)$")
+        if first_part and rest then
+            if rest:find("-") or rest:find("_") or first_part:match("%d$") then
+                author = first_part
+                title = rest
+            end
+        end
+    end
+
+    local clean_title = title:gsub("[-_]", " ")
+    clean_title = clean_title:gsub("(%a)([%w_']*)", function(first, rest)
+        return first:upper() .. rest:lower()
+    end)
+
+    return clean_title, author
+end
+
 function StorefrontScreensaverMgr.listLocalScreensavers(custom_dir)
     local dir = custom_dir or StorefrontScreensaverMgr.getScreensaverFolder()
     local lfs = getLfs()
@@ -192,6 +236,18 @@ function StorefrontScreensaverMgr.listLocalScreensavers(custom_dir)
     local current_settings = StorefrontScreensaverMgr.getScreensaverSettings()
     local active_file = current_settings.file or ""
 
+    local catalog_map = {}
+    local ok_ss, StorefrontScreensavers = pcall(require, "storefront_screensavers_ui")
+    if ok_ss and StorefrontScreensavers and StorefrontScreensavers.getCachedCatalog then
+        local cat = StorefrontScreensavers.getCachedCatalog()
+        if type(cat) == "table" then
+            for _, item in ipairs(cat) do
+                if item.id then catalog_map[tostring(item.id):lower()] = item end
+                if item.filename then catalog_map[tostring(item.filename):lower()] = item end
+            end
+        end
+    end
+
     for filename in lfs.dir(dir) do
         if filename ~= "." and filename ~= ".." then
             local lower = filename:lower()
@@ -199,10 +255,8 @@ function StorefrontScreensaverMgr.listLocalScreensavers(custom_dir)
                 local fullpath = dir .. "/" .. filename
                 local attr = lfs.attributes(fullpath)
                 if attr and attr.mode == "file" then
-                    local clean_title = filename:gsub("%..+$", ""):gsub("[-_]", " ")
-                    clean_title = clean_title:gsub("(%a)([%w_']*)", function(first, rest)
-                        return first:upper() .. rest:lower()
-                    end)
+                    local item_id = filename:gsub("%..+$", "")
+                    local clean_title, author = extractScreensaverTitleAndAuthor(filename, catalog_map)
 
                     local active_file_str = tostring(active_file or "")
                     local is_active = (active_file_str ~= "" and (fullpath == active_file_str or filename == (active_file_str:match("([^/\\]+)$") or active_file_str)))
@@ -211,10 +265,11 @@ function StorefrontScreensaverMgr.listLocalScreensavers(custom_dir)
                         filename = filename,
                         filepath = fullpath,
                         title = clean_title,
+                        author = author,
                         size = attr.size or 0,
                         mtime = attr.modification or 0,
                         is_active_single = is_active,
-                        id = filename:gsub("%..+$", ""),
+                        id = item_id,
                     })
                 end
             end
@@ -304,12 +359,17 @@ function StorefrontScreensaverMgr.downloadWallpaper(item, callback)
 
     local ok, code = StorefrontScreensavers.requestWithRedirects(target_url, sink_fn)
     if ok and code == 200 then
-        local file = io.open(filename, "wb")
+        local tmp_file = filename .. ".tmp"
+        local file = io.open(tmp_file, "wb")
         if file then
             file:write(table.concat(img_data))
             file:close()
-            if callback then callback(true, filename) end
-            return filename
+            os.remove(filename)
+            local ok_ren = os.rename(tmp_file, filename)
+            if ok_ren then
+                if callback then callback(true, filename) end
+                return filename
+            end
         end
     end
 
