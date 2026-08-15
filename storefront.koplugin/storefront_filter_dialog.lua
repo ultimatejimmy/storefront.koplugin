@@ -739,6 +739,10 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
     local sort_order = { "popular", "az", "za" }
     local sort_labels = { popular = _("Most Popular"), az = _("A -> Z"), za = _("Z -> A") }
 
+    local page_size = 5
+    local cat_page = 1
+    local total_cat_pages = math.max(1, math.ceil(#cats / page_size))
+
     local overlay
     local refresh
 
@@ -834,25 +838,72 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
             return item
         end
 
-        local function create_section_header(title)
+        local function create_section_header_with_actions(title, action_widgets)
             local label = TextWidget:new{
                 text = title:upper(),
                 face = Font:getFace("cfont", storefront_theme.section_header_font_size or 16),
                 bold = true,
                 fgcolor = Blitbuffer.COLOR_BLACK,
             }
+
+            local row = { label }
+            if action_widgets and #action_widgets > 0 then
+                table.insert(row, HorizontalSpan:new{ width = sc(12) })
+                for _, w in ipairs(action_widgets) do
+                    table.insert(row, w)
+                    table.insert(row, HorizontalSpan:new{ width = sc(6) })
+                end
+            end
+
             return FrameContainer:new{
                 padding = sc(5),
                 padding_left = sc(8),
                 bordersize = 0,
                 width = dialog_w - sc(4),
                 background = Blitbuffer.COLOR_LIGHT_GRAY,
-                label,
+                HorizontalGroup:new(row),
             }
         end
 
-        -- Categories Section
-        table.insert(content_vg, create_section_header(_("Categories")))
+        -- Quick Action Buttons for Categories
+        local select_all_btn = Button:new{
+            text = _("Select All"),
+            text_font_size = 11,
+            padding = sc(2),
+            padding_h = sc(6),
+            bordersize = sc(1),
+            radius = sc(3),
+            background = Blitbuffer.COLOR_WHITE,
+            callback = function()
+                local new_set = { all = true }
+                for _, c in ipairs(cats) do
+                    if c ~= "all" then
+                        new_set[c:lower()] = true
+                    end
+                end
+                state.screensaver_categories = new_set
+                state.screensaver_category = ""
+                refresh()
+            end,
+        }
+
+        local clear_btn = Button:new{
+            text = _("Clear"),
+            text_font_size = 11,
+            padding = sc(2),
+            padding_h = sc(6),
+            bordersize = sc(1),
+            radius = sc(3),
+            background = Blitbuffer.COLOR_WHITE,
+            callback = function()
+                state.screensaver_categories = { all = true }
+                state.screensaver_category = ""
+                refresh()
+            end,
+        }
+
+        -- Categories Section Header
+        table.insert(content_vg, create_section_header_with_actions(_("Categories"), { select_all_btn, clear_btn }))
 
         local cat_list_vg = VerticalGroup:new{ align = "left" }
 
@@ -866,7 +917,13 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
             current_set["all"] = true
         end
 
-        for idx, cat_name in ipairs(cats) do
+        -- Paginated category rows
+        cat_page = math.max(1, math.min(cat_page, total_cat_pages))
+        local start_idx = (cat_page - 1) * page_size + 1
+        local end_idx = math.min(#cats, start_idx + page_size - 1)
+
+        for idx = start_idx, end_idx do
+            local cat_name = cats[idx]
             local key = cat_name:lower()
             local is_checked = (current_set[key] == true) or (current_set["all"] and key == "all")
             local display_name = (cat_name == "all") and _("All Categories") or cat_name
@@ -910,7 +967,7 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
             }
 
             table.insert(cat_list_vg, cat_btn)
-            if idx < #cats then
+            if idx < end_idx then
                 table.insert(cat_list_vg, LineWidget:new{
                     dimen = Geom:new{ w = dialog_w - sc(12), h = sc(1) },
                     background = Blitbuffer.COLOR_LIGHT_GRAY,
@@ -918,18 +975,92 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
             end
         end
 
-        local ScrollableContainer = require("ui/widget/container/scrollablecontainer")
-        local cat_scroller = ScrollableContainer:new{
-            dimen = Geom:new{ w = dialog_w - sc(4), h = sc(180) },
+        local cat_frame = FrameContainer:new{
             bordersize = sc(1),
             color = Blitbuffer.COLOR_LIGHT_GRAY,
             padding = 0,
+            width = dialog_w - sc(4),
             cat_list_vg,
         }
+        table.insert(content_vg, cat_frame)
 
-        table.insert(content_vg, cat_scroller)
+        -- Pagination Controls Row
+        if total_cat_pages > 1 then
+            local prev_btn = Button:new{
+                text = " < ",
+                text_font_size = ui_font_size - 2,
+                bordersize = sc(1),
+                padding = sc(3),
+                padding_h = sc(10),
+                radius = sc(3),
+                background = (cat_page > 1) and Blitbuffer.COLOR_WHITE or Blitbuffer.COLOR_LIGHT_GRAY,
+                callback = function()
+                    if cat_page > 1 then
+                        cat_page = cat_page - 1
+                        refresh()
+                    end
+                end,
+            }
 
-        -- Sorting Section
+            local next_btn = Button:new{
+                text = " > ",
+                text_font_size = ui_font_size - 2,
+                bordersize = sc(1),
+                padding = sc(3),
+                padding_h = sc(10),
+                radius = sc(3),
+                background = (cat_page < total_cat_pages) and Blitbuffer.COLOR_WHITE or Blitbuffer.COLOR_LIGHT_GRAY,
+                callback = function()
+                    if cat_page < total_cat_pages then
+                        cat_page = cat_page + 1
+                        refresh()
+                    end
+                end,
+            }
+
+            local page_str = string.format("%d / %d", cat_page, total_cat_pages)
+            local page_txt = TextWidget:new{
+                text = page_str,
+                face = Font:getFace("cfont", storefront_theme.subtext_font_size or 14),
+                fgcolor = storefront_theme.color_label_dim,
+            }
+
+            local page_row = FrameContainer:new{
+                padding = sc(4),
+                bordersize = 0,
+                width = dialog_w - sc(4),
+                CenterContainer:new{
+                    dimen = Geom:new{ w = dialog_w - sc(20), h = sc(30) },
+                    HorizontalGroup:new{
+                        prev_btn,
+                        HorizontalSpan:new{ width = sc(16) },
+                        page_txt,
+                        HorizontalSpan:new{ width = sc(16) },
+                        next_btn,
+                    }
+                }
+            }
+            table.insert(content_vg, page_row)
+        end
+
+        -- Sorting Section Header
+        local function create_section_header(title)
+            local label = TextWidget:new{
+                text = title:upper(),
+                face = Font:getFace("cfont", storefront_theme.section_header_font_size or 16),
+                bold = true,
+                fgcolor = Blitbuffer.COLOR_BLACK,
+            }
+            return FrameContainer:new{
+                padding = sc(5),
+                padding_left = sc(8),
+                bordersize = 0,
+                width = dialog_w - sc(4),
+                background = Blitbuffer.COLOR_LIGHT_GRAY,
+                label,
+            }
+        end
+
         table.insert(content_vg, create_section_header(_("Sorting")))
 
         -- Sort row
@@ -967,6 +1098,7 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
             state.screensaver_categories = nil
             state.screensaver_sort = "popular"
             state.screensaver_search = ""
+            cat_page = 1
             refresh()
         end))
 
