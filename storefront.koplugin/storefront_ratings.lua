@@ -169,33 +169,39 @@ end
 
 local is_fetching = false
 local last_fetch_time = 0
-local FETCH_COOLDOWN = 60 -- seconds
+local session_ratings_fetched = false
+local FETCH_COOLDOWN = 3600 -- seconds (1 hour)
 
 --- Fetches all live ratings from the Cloudflare D1 backend asynchronously.
 --- @param callback function|nil Called with (success, ratings_table)
-function StorefrontRatings.fetchRatings(callback)
+--- @param force_refresh boolean|nil If true, bypasses session cache & cooldown
+function StorefrontRatings.fetchRatings(callback, force_refresh)
     local UIManager = require("ui/uimanager")
     local NetworkMgr = require("ui/network/manager")
+
+    local now = os.time()
+    if not force_refresh then
+        if session_ratings_fetched or (now - last_fetch_time) < FETCH_COOLDOWN then
+            if callback then UIManager:scheduleIn(0, function() callback(true, StorefrontRatings.liveRatings) end) end
+            return
+        end
+    end
+
+    session_ratings_fetched = true
+    last_fetch_time = now
 
     if NetworkMgr and type(NetworkMgr.isConnected) == "function" and not NetworkMgr:isConnected() then
         logger.info("StorefrontRatings: network not connected, returning local cache")
         if callback then UIManager:scheduleIn(0, function() callback(true, StorefrontRatings.liveRatings) end) end
-        UIManager:scheduleIn(5, function() StorefrontRatings.fetchRatings(nil) end)
         return
     end
 
-    local now = os.time()
-    if (now - last_fetch_time) < FETCH_COOLDOWN and next(StorefrontRatings.liveRatings) ~= nil then
-        if callback then UIManager:scheduleIn(0, function() callback(true, StorefrontRatings.liveRatings) end) end
-        return
-    end
     if is_fetching then
         if callback then UIManager:scheduleIn(0, function() callback(true, StorefrontRatings.liveRatings) end) end
         return
     end
 
     is_fetching = true
-    last_fetch_time = now
     local fetch_task = function()
         local http_req = getHttpModule(StorefrontRatings.BASE_URL)
         local response_body = {}

@@ -34,19 +34,27 @@ local function normalizeData(data)
     return data
 end
 
+local cached_store_data = nil
+
 local function readStore()
+    if cached_store_data then
+        return cached_store_data
+    end
     local encoded = settings:readSetting(store_key)
     if type(encoded) ~= "string" or encoded == "" then
-        return normalizeData({})
+        cached_store_data = normalizeData({})
+        return cached_store_data
     end
     local ok, decoded = pcall(function()
         return json.decode(encoded)
     end)
     if not ok or type(decoded) ~= "table" then
         logger.warn("Storefront installs decode error", decoded)
-        return normalizeData({})
+        cached_store_data = normalizeData({})
+        return cached_store_data
     end
-    return normalizeData(decoded)
+    cached_store_data = normalizeData(decoded)
+    return cached_store_data
 end
 
 local function writeStore(data)
@@ -60,6 +68,7 @@ local function writeStore(data)
     end
     settings:saveSetting(store_key, encoded)
     settings:flush()
+    cached_store_data = payload
     generation = generation + 1
     return true
 end
@@ -106,14 +115,18 @@ local function isRecordEqual(a, b)
     return a.owner == b.owner
        and a.repo == b.repo
        and a.repo_full_name == b.repo_full_name
+       and a.repo_description == b.repo_description
        and a.repo_id == b.repo_id
        and a.branch == b.branch
        and a.sha == b.sha
        and a.path == b.path
+       and a.filename == b.filename
        and a.is_auto_matched == b.is_auto_matched
        and a.version == b.version
        and a.installed_version == b.installed_version
+       and a.installed_tag == b.installed_tag
        and a.tag_name == b.tag_name
+       and a.matched_at == b.matched_at
        and a.pending_download == b.pending_download
        and a.full_installed == b.full_installed
        and a.download_url == b.download_url
