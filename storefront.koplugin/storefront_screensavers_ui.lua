@@ -11,30 +11,63 @@ local StorefrontScreensavers = {}
 
 local DEFAULT_SCREENSAVER_CATALOG_URL = "https://raw.githubusercontent.com/ultimatejimmy/storefront-screensavers/main/screensavers.json"
 
-local function getHttpModule(url)
-    if url and url:match("^https://") then
-        local ok, https = pcall(require, "ssl.https")
-        if ok and https then return https end
+local function requestWithRedirects(target_url, sink_fn)
+    local ltn12 = require("ltn12")
+    local current_url = target_url
+    local max_redirects = 5
+    local redirect_count = 0
+
+    while redirect_count < max_redirects do
+        local is_https = current_url:match("^https://") ~= nil
+        local http_req = getHttpModule(current_url)
+        local headers = {
+            ["User-Agent"] = "KOReader-Storefront",
+        }
+
+        local sink = sink_fn()
+        if not sink then return false, 0, nil end
+
+        local params = {
+            url = current_url,
+            method = "GET",
+            headers = headers,
+            sink = sink,
+        }
+        if not is_https then params.redirect = true end
+
+        local ok_req, res_code, response_headers = pcall(function()
+            local _, c, h = http_req.request(params)
+            return c, h
+        end)
+
+        local code = tonumber(res_code) or 0
+        if ok_req and code == 200 then
+            return true, 200, response_headers
+        elseif ok_req and (code == 301 or code == 302 or code == 303 or code == 307 or code == 308) then
+            local loc = response_headers and (response_headers.location or response_headers.Location)
+            if loc and loc ~= "" then
+                current_url = loc
+                redirect_count = redirect_count + 1
+            else
+                break
+            end
+        else
+            break
+        end
     end
-    return require("socket.http")
+    return false, 0, nil
 end
 
 function StorefrontScreensavers.fetchCatalog(callback)
-    local http = getHttpModule(DEFAULT_SCREENSAVER_CATALOG_URL)
     local ltn12 = require("ltn12")
     local response_body = {}
+    local sink_fn = function()
+        response_body = {}
+        return ltn12.sink.table(response_body)
+    end
 
-    local request = {
-        url = DEFAULT_SCREENSAVER_CATALOG_URL,
-        method = "GET",
-        headers = {
-            ["User-Agent"] = "KOReader-Storefront",
-        },
-        sink = ltn12.sink.table(response_body),
-    }
-
-    local ok, code, headers, status = http.request(request)
-    if ok and (code == 200 or code == "200") then
+    local ok, code = requestWithRedirects(DEFAULT_SCREENSAVER_CATALOG_URL, sink_fn)
+    if ok and code == 200 then
         local body_str = table.concat(response_body)
         local parsed_ok, data = pcall(json.decode, body_str)
         if parsed_ok and type(data) == "table" then
@@ -83,21 +116,17 @@ function StorefrontScreensavers.fetchThumbnail(item, callback)
         return thumb_path
     end
 
-    if not item.thumbnailUrl then return nil end
+    if not item.thumbnailUrl or item._thumb_failed then return nil end
 
-    local http = getHttpModule(item.thumbnailUrl)
     local ltn12 = require("ltn12")
     local img_data = {}
+    local sink_fn = function()
+        img_data = {}
+        return ltn12.sink.table(img_data)
+    end
 
-    local request = {
-        url = item.thumbnailUrl,
-        method = "GET",
-        headers = { ["User-Agent"] = "KOReader-Storefront" },
-        sink = ltn12.sink.table(img_data),
-    }
-
-    local ok, code = http.request(request)
-    if ok and (code == 200 or code == "200") then
+    local ok, code = requestWithRedirects(item.thumbnailUrl, sink_fn)
+    if ok and code == 200 then
         local file = io.open(thumb_path, "wb")
         if file then
             file:write(table.concat(img_data))
@@ -107,6 +136,7 @@ function StorefrontScreensavers.fetchThumbnail(item, callback)
         end
     end
 
+    item._thumb_failed = true
     return nil
 end
 
@@ -118,21 +148,17 @@ function StorefrontScreensavers.downloadAndSetScreensaver(item, callback)
     UIManager:show(info_dialog)
 
     local target_url = item.fullUrl or item.thumbnailUrl
-    local http = getHttpModule(target_url)
     local ltn12 = require("ltn12")
     local img_data = {}
+    local sink_fn = function()
+        img_data = {}
+        return ltn12.sink.table(img_data)
+    end
 
-    local request = {
-        url = target_url,
-        method = "GET",
-        headers = { ["User-Agent"] = "KOReader-Storefront" },
-        sink = ltn12.sink.table(img_data),
-    }
-
-    local ok, code = http.request(request)
+    local ok, code = requestWithRedirects(target_url, sink_fn)
     if info_dialog and info_dialog.onClose then info_dialog:onClose() end
 
-    if ok and (code == 200 or code == "200") then
+    if ok and code == 200 then
         local screensaver_dir = DataStorage:getDataDir() .. "/screensavers"
         local lfs = require("libs/libkoreader-lfs")
         if lfs and lfs.attributes and not lfs.attributes(screensaver_dir) then

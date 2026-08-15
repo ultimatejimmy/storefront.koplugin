@@ -7413,12 +7413,12 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
     local sc       = function(val) return Device.screen:scaleBySize(val) end
     local sw       = Device.screen:getWidth()
     local cols     = 3
-    local gap      = sc(8)
+    local gap      = sc(6)
     local usable_w = available_list_width or (sw - sc(24))
     local card_w   = math.floor((usable_w - gap * (cols - 1)) / cols)
-    -- Portrait aspect ratio (3:4) - standard e-reader screen proportion
-    local img_h    = math.floor(card_w * 4 / 3)
-    local text_h   = sc(52)   -- title + meta below image
+    -- Compact aspect ratio (1.15) and text height to fit more cards on screen
+    local img_h    = math.floor(card_w * 1.15)
+    local text_h   = sc(44)   -- title + meta below image
     local card_h   = img_h + text_h
     local row_h    = card_h + gap
     -- How many rows fit in the available body?
@@ -7494,6 +7494,7 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
     local meta_face  = Font:getFace("cfont", 12)
 
     local self_ref = self
+    local missing_thumbs = {}
 
     local function makeCard(entry)
         -- Thumbnail image (or grey placeholder)
@@ -7511,6 +7512,9 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
                 }
             end
         else
+            if not entry._thumb_failed then
+                table.insert(missing_thumbs, entry)
+            end
             img_widget = FrameContainer:new{
                 bordersize = 0,
                 background = Blitbuffer.Color8(230),
@@ -7686,6 +7690,20 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
         padding_top  = sc(6),
         rows_group,
     }
+
+    if #missing_thumbs > 0 then
+        local UIManager = require("ui/uimanager")
+        UIManager:nextTick(function()
+            local downloaded = false
+            for _, m_entry in ipairs(missing_thumbs) do
+                local res = StorefrontScreensavers.fetchThumbnail(m_entry)
+                if res then downloaded = true end
+            end
+            if downloaded and self_ref and self_ref.reopenBrowser then
+                self_ref:reopenBrowser()
+            end
+        end)
+    end
 
     return {
         {
