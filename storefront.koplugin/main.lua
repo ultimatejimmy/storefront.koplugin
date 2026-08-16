@@ -7702,18 +7702,17 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
         end
 
         if not raw_img then
-            placeholder_txt = TextWidget:new{
-                text    = "···",
-                face    = meta_face,
-                fgcolor = Blitbuffer.Color8(160),
-            }
             placeholder_frame = FrameContainer:new{
                 bordersize = 0,
-                background = Blitbuffer.Color8(238),
+                background = Blitbuffer.Color8(235),
                 padding    = 0,
                 CenterContainer:new{
                     dimen = Geom:new{ w = inner_w, h = img_h },
-                    placeholder_txt,
+                    TextWidget:new{
+                        text    = "…",
+                        face    = meta_face,
+                        fgcolor = Blitbuffer.Color8(150),
+                    },
                 }
             }
             raw_img = placeholder_frame
@@ -7801,8 +7800,6 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
         card_ic.dimen = Geom:new{ w = card_w, h = card_h }
         card_ic._entry = entry
         card_ic._img_widget = img_widget
-        card_ic._placeholder_frame = placeholder_frame
-        card_ic._placeholder_txt = placeholder_txt
         card_ic._inner_w = inner_w
         card_ic._img_h = img_h
 
@@ -7904,27 +7901,7 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
             local c_inner_w = card._inner_w
             local c_img_h = card._img_h
 
-            -- Option 1: Soft pulse state on the active card currently downloading
-            local pulse_shades = { 215, 195, 230 }
-            local pulse_idx = 1
-            local is_active = true
-
-            local function applyPulse()
-                if not is_active or self_ref._ss_thumb_task_id ~= task_id then return end
-                if card and card._placeholder_frame and card._placeholder_txt then
-                    local shade = pulse_shades[pulse_idx]
-                    pulse_idx = (pulse_idx % #pulse_shades) + 1
-                    card._placeholder_frame.background = Blitbuffer.Color8(shade)
-                    card._placeholder_txt.text = (pulse_idx == 1 and "·") or (pulse_idx == 2 and "··") or "···"
-                    card._placeholder_txt.fgcolor = Blitbuffer.Color8(110)
-                    UIManager:setDirty(self_ref.browser_menu or card, "ui")
-                end
-            end
-
-            -- Show active indicator on this card immediately
-            applyPulse()
-
-            -- Fetch thumbnail on next tick so the active state is rendered first
+            -- Download thumbnail on next tick
             UIManager:nextTick(function()
                 if self_ref._ss_thumb_task_id ~= task_id then return end
                 if not self_ref.browser_menu or (self_ref.browser_state and self_ref.browser_state.tab ~= "Screensavers") then return end
@@ -7937,8 +7914,6 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
                     thumb_path = res
                 end
 
-                is_active = false
-
                 if self_ref._ss_thumb_task_id ~= task_id then return end
                 if not self_ref.browser_menu or (self_ref.browser_state and self_ref.browser_state.tab ~= "Screensavers") then return end
 
@@ -7948,21 +7923,14 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
                     end)
                     if ok_cov and res_cov then
                         card._img_widget[1] = res_cov
-                        UIManager:setDirty(self_ref.browser_menu or card, "ui")
+                        -- Perform localized partial repaint restricted to just this card box
+                        UIManager:setDirty(card._img_widget, "ui")
                     else
                         pcall(os.remove, thumb_path)
                     end
-                elseif not thumb_path and card and card._placeholder_txt then
-                    -- Failed indicator: subtle static mark
-                    card._placeholder_txt.text = "·"
-                    card._placeholder_txt.fgcolor = Blitbuffer.Color8(180)
-                    if card._placeholder_frame then
-                        card._placeholder_frame.background = Blitbuffer.Color8(242)
-                    end
-                    UIManager:setDirty(self_ref.browser_menu or card, "ui")
                 end
 
-                -- Proceed to the next card in queue
+                -- Proceed sequentially to the next card in queue
                 UIManager:nextTick(function()
                     processQueue(idx + 1)
                 end)
