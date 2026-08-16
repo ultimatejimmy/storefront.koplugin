@@ -7665,8 +7665,11 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
     local name_face  = Font:getFace("cfont", 13)
     local meta_face  = Font:getFace("cfont", 11)
 
+    self._ss_thumb_task_id = (self._ss_thumb_task_id or 0) + 1
+    local task_id = self._ss_thumb_task_id
+
     local self_ref = self
-    local missing_thumbs = {}
+    local missing_cards = {}
 
     local function makeCard(entry)
         -- Thumbnail image (or grey placeholder)
@@ -7684,6 +7687,9 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
         end)
 
         local raw_img = nil
+        local placeholder_frame = nil
+        local placeholder_txt = nil
+
         if thumb_file then
             local ok_cov, res_cov = pcall(function()
                 return StorefrontScreensavers.createCoverImageWidget(thumb_file, inner_w, img_h)
@@ -7693,26 +7699,24 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
             else
                 pcall(os.remove, thumb_file)
             end
-        else
-            if not entry._thumb_failed then
-                table.insert(missing_thumbs, entry)
-            end
         end
 
         if not raw_img then
-            raw_img = FrameContainer:new{
+            placeholder_txt = TextWidget:new{
+                text    = "···",
+                face    = meta_face,
+                fgcolor = Blitbuffer.Color8(160),
+            }
+            placeholder_frame = FrameContainer:new{
                 bordersize = 0,
-                background = Blitbuffer.Color8(235),
+                background = Blitbuffer.Color8(238),
                 padding    = 0,
                 CenterContainer:new{
                     dimen = Geom:new{ w = inner_w, h = img_h },
-                    TextWidget:new{
-                        text    = "…",
-                        face    = meta_face,
-                        fgcolor = Blitbuffer.Color8(150),
-                    },
+                    placeholder_txt,
                 }
             }
+            raw_img = placeholder_frame
         end
 
         local img_widget = FrameContainer:new{
@@ -7795,6 +7799,17 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
 
         local card_ic = InputContainer:new{ card_frame }
         card_ic.dimen = Geom:new{ w = card_w, h = card_h }
+        card_ic._entry = entry
+        card_ic._img_widget = img_widget
+        card_ic._placeholder_frame = placeholder_frame
+        card_ic._placeholder_txt = placeholder_txt
+        card_ic._inner_w = inner_w
+        card_ic._img_h = img_h
+
+        if placeholder_frame and not entry._thumb_failed then
+            table.insert(missing_cards, card_ic)
+        end
+
         local captured_entry = entry
         card_ic.ges_events = {
             SfssCardTap = {
@@ -7877,20 +7892,86 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
         rows_group,
     }
 
-    if #missing_thumbs > 0 then
+    if #missing_cards > 0 then
         local UIManager = require("ui/uimanager")
-        UIManager:nextTick(function()
-            local downloaded = false
-            for _, m_entry in ipairs(missing_thumbs) do
+        local function processQueue(idx)
+            if self_ref._ss_thumb_task_id ~= task_id then return end
+            if not self_ref.browser_menu or (self_ref.browser_state and self_ref.browser_state.tab ~= "Screensavers") then return end
+            if idx > #missing_cards then return end
+
+            local card = missing_cards[idx]
+            local entry = card._entry
+            local c_inner_w = card._inner_w
+            local c_img_h = card._img_h
+
+            -- Option 1: Soft pulse state on the active card currently downloading
+            local pulse_shades = { 215, 195, 230 }
+            local pulse_idx = 1
+            local is_active = true
+
+            local function applyPulse()
+                if not is_active or self_ref._ss_thumb_task_id ~= task_id then return end
+                if card and card._placeholder_frame and card._placeholder_txt then
+                    local shade = pulse_shades[pulse_idx]
+                    pulse_idx = (pulse_idx % #pulse_shades) + 1
+                    card._placeholder_frame.background = Blitbuffer.Color8(shade)
+                    card._placeholder_txt.text = (pulse_idx == 1 and "·") or (pulse_idx == 2 and "··") or "···"
+                    card._placeholder_txt.fgcolor = Blitbuffer.Color8(110)
+                    UIManager:setDirty(self_ref.browser_menu or card, "ui")
+                end
+            end
+
+            -- Show active indicator on this card immediately
+            applyPulse()
+
+            -- Fetch thumbnail on next tick so the active state is rendered first
+            UIManager:nextTick(function()
+                if self_ref._ss_thumb_task_id ~= task_id then return end
+                if not self_ref.browser_menu or (self_ref.browser_state and self_ref.browser_state.tab ~= "Screensavers") then return end
+
+                local thumb_path = nil
                 local ok_fetch, res = pcall(function()
-                    return StorefrontScreensavers.fetchThumbnail(m_entry)
+                    return StorefrontScreensavers.fetchThumbnail(entry)
                 end)
-                if ok_fetch and res then downloaded = true end
-            end
-            if downloaded and self_ref and self_ref.browser_menu and self_ref.browser_state and self_ref.browser_state.tab == "Screensavers" then
-                self_ref._browser_refresh_mode_hint = "partial"
-                self_ref:reopenBrowser()
-            end
+                if ok_fetch and res then
+                    thumb_path = res
+                end
+
+                is_active = false
+
+                if self_ref._ss_thumb_task_id ~= task_id then return end
+                if not self_ref.browser_menu or (self_ref.browser_state and self_ref.browser_state.tab ~= "Screensavers") then return end
+
+                if thumb_path and card and card._img_widget then
+                    local ok_cov, res_cov = pcall(function()
+                        return StorefrontScreensavers.createCoverImageWidget(thumb_path, c_inner_w, c_img_h)
+                    end)
+                    if ok_cov and res_cov then
+                        card._img_widget[1] = res_cov
+                        UIManager:setDirty(self_ref.browser_menu or card, "ui")
+                    else
+                        pcall(os.remove, thumb_path)
+                    end
+                elseif not thumb_path and card and card._placeholder_txt then
+                    -- Failed indicator: subtle static mark
+                    card._placeholder_txt.text = "·"
+                    card._placeholder_txt.fgcolor = Blitbuffer.Color8(180)
+                    if card._placeholder_frame then
+                        card._placeholder_frame.background = Blitbuffer.Color8(242)
+                    end
+                    UIManager:setDirty(self_ref.browser_menu or card, "ui")
+                end
+
+                -- Proceed to the next card in queue
+                UIManager:nextTick(function()
+                    processQueue(idx + 1)
+                end)
+            end)
+        end
+
+        -- Start queue
+        UIManager:nextTick(function()
+            processQueue(1)
         end)
     end
 
@@ -8720,6 +8801,7 @@ function Storefront:showBrowser(kind)
             self:dismissProgressMessage()
             self.browser_menu = nil
             self._session_bg_checks_done = nil
+            self._ss_thumb_task_id = (self._ss_thumb_task_id or 0) + 1
         end,
     }
     if dialog._used_trapper_progress then

@@ -452,4 +452,55 @@ function StorefrontScreensavers.createCoverImageWidget(file_path, target_w, targ
     }
 end
 
+function StorefrontScreensavers.getThumbnailsCacheStats()
+    local cache_dir = DataStorage:getDataDir() .. "/cache/storefront_thumbs"
+    local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
+    if not ok_lfs or not lfs then ok_lfs, lfs = pcall(require, "lfs") end
+    local files = 0
+    local bytes = 0
+    if ok_lfs and lfs and lfs.attributes and lfs.attributes(cache_dir, "mode") == "directory" then
+        for entry in lfs.dir(cache_dir) do
+            if entry ~= "." and entry ~= ".." then
+                local full = cache_dir .. "/" .. entry
+                local attr = lfs.attributes(full)
+                if attr and attr.mode == "file" then
+                    files = files + 1
+                    bytes = bytes + (attr.size or 0)
+                end
+            end
+        end
+    end
+    return {
+        files = files,
+        bytes = bytes,
+    }
+end
+
+function StorefrontScreensavers.clearThumbnailsCache()
+    local cache_dir = DataStorage:getDataDir() .. "/cache/storefront_thumbs"
+    local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
+    if not ok_lfs or not lfs then ok_lfs, lfs = pcall(require, "lfs") end
+    local removed = 0
+    local bytes = 0
+    local errors = {}
+    if ok_lfs and lfs and lfs.attributes and lfs.attributes(cache_dir, "mode") == "directory" then
+        for entry in lfs.dir(cache_dir) do
+            if entry ~= "." and entry ~= ".." then
+                local full = cache_dir .. "/" .. entry
+                local attr = lfs.attributes(full)
+                if attr and attr.mode == "file" then
+                    local sz = attr.size or 0
+                    if os.remove(full) then
+                        removed = removed + 1
+                        bytes = bytes + sz
+                    else
+                        table.insert(errors, full)
+                    end
+                end
+            end
+        end
+    end
+    return { removed = removed, bytes = bytes, errors = errors }
+end
+
 return StorefrontScreensavers

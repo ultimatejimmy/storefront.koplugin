@@ -47,6 +47,12 @@ msgstr "%s is up to date."
 msgid "%s needs an update."
 msgstr "%s needs an update."
 
+msgid "%s · %d files"
+msgstr "%s · %d files"
+
+msgid "%s · 1 file"
+msgstr "%s · 1 file"
+
 msgid "(fork)"
 msgstr "(fork)"
 
@@ -100,6 +106,9 @@ msgstr "Added to shuffle pool & Folder Shuffle enabled!"
 
 msgid "All"
 msgstr "All"
+
+msgid "All Caches"
+msgstr "All Caches"
 
 msgid "All Categories"
 msgstr "All Categories"
@@ -305,17 +314,53 @@ msgstr "Checking plugin updates…"
 msgid "Choose Build — %s"
 msgstr "Choose Build — %s"
 
+msgid "Clean"
+msgstr "Clean"
+
 msgid "Clear"
 msgstr "Clear"
 
+msgid "Clear All"
+msgstr "Clear All"
+
+msgid "Clear Cache"
+msgstr "Clear Cache"
+
 msgid "Clear README cache"
 msgstr "Clear README cache"
+
+msgid "Clear README cache (%s)?\\nCached README files and images will be deleted."
+msgstr "Clear README cache (%s)?\\nCached README files and images will be deleted."
+
+msgid "Clear Wiki cache (%s)?\\nCached wiki articles and images will be deleted."
+msgstr "Clear Wiki cache (%s)?\\nCached wiki articles and images will be deleted."
+
+msgid "Clear all cached data (%s)?\\nAll README files, wiki articles, and thumbnails will be deleted."
+msgstr "Clear all cached data (%s)?\\nAll README files, wiki articles, and thumbnails will be deleted."
+
+msgid "Clear cache…"
+msgstr "Clear cache…"
+
+msgid "Clear screensaver thumbnail cache (%s)?\\nThumbnails will be re-downloaded when viewing wallpapers."
+msgstr "Clear screensaver thumbnail cache (%s)?\\nThumbnails will be re-downloaded when viewing wallpapers."
 
 msgid "Clear search & filters"
 msgstr "Clear search & filters"
 
 msgid "Clear search/filters"
 msgstr "Clear search/filters"
+
+msgid "Cleared README cache (%s freed)."
+msgstr "Cleared README cache (%s freed)."
+
+msgid "Cleared Wiki cache (%s freed)."
+msgstr "Cleared Wiki cache (%s freed)."
+
+msgid "Cleared all caches (%s freed, %d files)."
+msgstr "Cleared all caches (%s freed, %d files)."
+
+msgid "Cleared screensaver thumbnails (%s freed)."
+msgstr "Cleared screensaver thumbnails (%s freed)."
 
 msgid "Close"
 msgstr "Close"
@@ -521,6 +566,9 @@ msgstr "Downloading to shuffle pool..."
 msgid "Edit"
 msgstr "Edit"
 
+msgid "Empty (0 KB)"
+msgstr "Empty (0 KB)"
+
 msgid "Enable"
 msgstr "Enable"
 
@@ -697,6 +745,9 @@ msgstr "Font style"
 
 msgid "Fonts"
 msgstr "Fonts"
+
+msgid "Free up storage space on your device. Cached items are re-downloaded automatically when needed."
+msgstr "Free up storage space on your device. Cached items are re-downloaded automatically when needed."
 
 msgid "GitHub API rate limit exceeded. Add a GitHub token in Storefront settings to increase the limit (10→30 req/min)."
 msgstr "GitHub API rate limit exceeded. Add a GitHub token in Storefront settings to increase the limit (10→30 req/min)."
@@ -1298,6 +1349,9 @@ msgstr "README"
 msgid "README download failed: "
 msgstr "README download failed: "
 
+msgid "README files & images"
+msgstr "README files & images"
+
 msgid "Rate Wallpaper"
 msgstr "Rate Wallpaper"
 
@@ -1315,6 +1369,9 @@ msgstr "Refresh"
 
 msgid "Refresh cache"
 msgstr "Refresh cache"
+
+msgid "Refresh catalog"
+msgstr "Refresh catalog"
 
 msgid "Refreshing catalog via Direct GitHub API…"
 msgstr "Refreshing catalog via Direct GitHub API…"
@@ -1450,6 +1507,9 @@ msgstr "Screensaver Settings"
 
 msgid "Screensaver mode"
 msgstr "Screensaver mode"
+
+msgid "Screensaver thumbnails"
+msgstr "Screensaver thumbnails"
 
 msgid "Screensavers"
 msgstr "Screensavers"
@@ -1844,6 +1904,9 @@ msgstr "Wiki"
 msgid "Wiki Pages"
 msgstr "Wiki Pages"
 
+msgid "Wiki pages & images"
+msgstr "Wiki pages & images"
+
 msgid "Z -> A"
 msgstr "Z -> A"
 
@@ -2095,6 +2158,9 @@ msgstr "README"
 
 msgid "tab_sample_text"
 msgstr "Sample Text"
+
+msgid "tab_screensavers"
+msgstr "Screensavers"
 
 msgid "tab_versions"
 msgstr "Versions"

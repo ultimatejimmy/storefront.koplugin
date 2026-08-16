@@ -309,7 +309,7 @@ local function formatDateTime(ts)
     end
 end
 
-        -- Refresh Cache Row
+        -- Refresh Catalog Row
         local is_currently_refreshing = Storefront.isRefreshing and Storefront:isRefreshing()
         local ts = Cache.getLastFetched(current_kind)
         local meta_text = is_currently_refreshing
@@ -320,7 +320,7 @@ end
             face = Font:getFace("cfont", storefront_theme.subtext_font_size or 16),
             fgcolor = storefront_theme.color_label_dim,
         }
-        table.insert(content_vg, create_setting_row("rotate-cw.svg", _("Refresh cache"), meta_widget, function()
+        table.insert(content_vg, create_setting_row("rotate-cw.svg", _("Refresh catalog"), meta_widget, function()
             if Storefront.isRefreshing and Storefront:isRefreshing() then
                 InfoMessage:new{ text = _("Catalog refresh is already in progress in the background."), timeout = 3 }:show()
                 return
@@ -343,10 +343,18 @@ end
             end
         end))
 
-        -- Clear README Cache Row
-        table.insert(content_vg, create_setting_row(nil, _("Clear README cache"), nil, function()
+        -- Clear Cache Row
+        local cache_arrow_widget = TextWidget:new{
+            text = "›",
+            face = Font:getFace("cfont", storefront_theme.subtext_font_size or 16),
+            fgcolor = storefront_theme.color_label_dim,
+        }
+        table.insert(content_vg, create_setting_row(nil, _("Clear cache…"), cache_arrow_widget, function()
             UIManager:close(overlay, "ui")
-            Storefront:clearCachedReadmeFiles()
+            local StorefrontClearCacheDialog = require("storefront_clear_cache_dialog")
+            StorefrontClearCacheDialog.show(Storefront, function()
+                StorefrontSettingsCard.show(Storefront)
+            end)
         end))
 
         -- SECTION 2: SEARCH & API
@@ -446,7 +454,7 @@ end
             max_width = sc(140),
         }
 
-        table.insert(content_vg, create_setting_row("image.svg", _("Screensaver mode"), mode_widget, function()
+        table.insert(content_vg, create_setting_row("image-active.svg", _("Screensaver mode"), mode_widget, function()
             UIManager:close(overlay, "ui")
             local StorefrontScreensaverConfig = require("storefront_screensaver_config")
             StorefrontScreensaverConfig.show(Storefront, function()
