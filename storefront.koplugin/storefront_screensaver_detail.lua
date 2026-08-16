@@ -251,22 +251,25 @@ function StorefrontScreensaverDetail:init()
         else
             primary_text = _("Set Active Single")
             primary_action = function()
-                StorefrontScreensaverMgr.setScreensaverMode("single", { file = local_filepath })
-                Toast:new{ text = _("Wallpaper set as active KOReader screensaver!"), timeout = 3 }:show()
-                self:onClose()
+                self:onClose(function()
+                    StorefrontScreensaverMgr.setScreensaverMode("single", { file = local_filepath })
+                    Toast:new{ text = _("Wallpaper set as active KOReader screensaver!"), timeout = 3 }:show()
+                end)
             end
         end
     elseif ss_settings.effective_mode == "shuffle" then
         primary_text = _("+ Add to Shuffle Pool")
         primary_action = function()
-            self:onClose()
-            StorefrontScreensaversUI.downloadToShufflePool(item)
+            self:onClose(function()
+                StorefrontScreensaversUI.downloadToShufflePool(item)
+            end)
         end
     else
         primary_text = _("Download & Set Active")
         primary_action = function()
-            self:onClose()
-            StorefrontScreensaversUI.downloadAsSingle(item)
+            self:onClose(function()
+                StorefrontScreensaversUI.downloadAsSingle(item)
+            end)
         end
     end
 
@@ -306,13 +309,14 @@ function StorefrontScreensaverDetail:init()
                     text = _("Set as Active Single Wallpaper"),
                     callback = function()
                         UIManager:close(opt_dialog)
-                        self:onClose()
-                        if is_downloaded and local_filepath then
-                            StorefrontScreensaverMgr.setScreensaverMode("single", { file = local_filepath })
-                            Toast:new{ text = _("Wallpaper set as active screensaver!"), timeout = 3 }:show()
-                        else
-                            StorefrontScreensaversUI.downloadAsSingle(item)
-                        end
+                        self:onClose(function()
+                            if is_downloaded and local_filepath then
+                                StorefrontScreensaverMgr.setScreensaverMode("single", { file = local_filepath })
+                                Toast:new{ text = _("Wallpaper set as active screensaver!"), timeout = 3 }:show()
+                            else
+                                StorefrontScreensaversUI.downloadAsSingle(item)
+                            end
+                        end)
                     end,
                 }
             })
@@ -323,13 +327,14 @@ function StorefrontScreensaverDetail:init()
                     text = _("Add to Shuffle Pool (Enable Shuffle)"),
                     callback = function()
                         UIManager:close(opt_dialog)
-                        self:onClose()
-                        if is_downloaded then
-                            StorefrontScreensaverMgr.setScreensaverMode("shuffle")
-                            Toast:new{ text = _("Folder Shuffle enabled with this wallpaper!"), timeout = 3 }:show()
-                        else
-                            StorefrontScreensaversUI.downloadToShufflePool(item)
-                        end
+                        self:onClose(function()
+                            if is_downloaded then
+                                StorefrontScreensaverMgr.setScreensaverMode("shuffle")
+                                Toast:new{ text = _("Folder Shuffle enabled with this wallpaper!"), timeout = 3 }:show()
+                            else
+                                StorefrontScreensaversUI.downloadToShufflePool(item)
+                            end
+                        end)
                     end,
                 }
             })
@@ -341,7 +346,9 @@ function StorefrontScreensaverDetail:init()
                     text = _("Download Only (Save to Device)"),
                     callback = function()
                         UIManager:close(opt_dialog)
-                        StorefrontScreensaversUI.downloadOnly(item)
+                        self:onClose(function()
+                            StorefrontScreensaversUI.downloadOnly(item)
+                        end)
                     end,
                 })
             else
@@ -513,13 +520,16 @@ function StorefrontScreensaverDetail:init()
     }
 end
 
-function StorefrontScreensaverDetail:onClose()
+function StorefrontScreensaverDetail:onClose(callback)
     self.is_closed = true
     UIManager:close(self)
     if self._vote_toggled and self.parent and type(self.parent.reopenBrowser) == "function" then
-        self.parent:reopenBrowser()
+        self.parent:reopenBrowser(nil, callback)
     else
         UIManager:setDirty(nil, "full")
+        if callback then
+            UIManager:nextTick(callback)
+        end
     end
 end
 

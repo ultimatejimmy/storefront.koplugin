@@ -1108,6 +1108,8 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
             state.screensaver_categories = nil
             state.screensaver_sort = "popular"
             state.screensaver_search = ""
+            state.search_text = ""
+            state.owner = ""
             refresh()
         end))
 

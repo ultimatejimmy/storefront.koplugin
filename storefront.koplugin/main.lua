@@ -7393,8 +7393,10 @@ function Storefront:hasActiveFilters(tab)
         local cats = self.browser_state and self.browser_state.screensaver_categories
         local has_cats = type(cats) == "table" and next(cats) and not cats["all"]
         local sort = self.browser_state and self.browser_state.screensaver_sort or "popular"
+        local st = util.trim(self.browser_state and self.browser_state.search_text or "")
+        local ow = util.trim(self.browser_state and self.browser_state.owner or "")
         local srch = (self.browser_state and self.browser_state.screensaver_search or ""):lower()
-        return has_cats or (cat ~= "" and cat ~= "all") or (sort ~= "popular") or (srch ~= "")
+        return has_cats or (cat ~= "" and cat ~= "all") or (sort ~= "popular") or (st ~= "") or (ow ~= "") or (srch ~= "")
     elseif tab == "Updates" then
         return false
     else
@@ -7506,11 +7508,15 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
     local ss_cat  = (self.browser_state.screensaver_category or ""):lower()
     local ss_cats = self.browser_state.screensaver_categories
     local ss_sort = self.browser_state.screensaver_sort or "popular"  -- "popular" | "az" | "za"
-    local ss_srch = (self.browser_state.screensaver_search or ""):lower()
+    local raw_search = util.trim((self.browser_state.search_text and self.browser_state.search_text ~= "") and self.browser_state.search_text or (self.browser_state.screensaver_search or ""))
+    local raw_owner  = util.trim(self.browser_state.owner or "")
+    local search_terms = extractSearchTerms(raw_search)
+    local owner_term   = normalizedLower(raw_owner)
 
     local filtered = {}
     for _, entry in ipairs(catalog) do
         local pass = true
+        -- 1. Category filter
         if type(ss_cats) == "table" and next(ss_cats) and not ss_cats["all"] then
             local mapped_cats = StorefrontUtils.getMappedScreensaverCategories(entry.category)
             local match_found = false
@@ -7532,38 +7538,64 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
             end
             if not match_found then pass = false end
         end
-        if pass and ss_srch ~= "" then
-            local match_search = false
-            local t = (entry.title or entry.name or ""):lower()
-            if t:find(ss_srch, 1, true) then
-                match_search = true
-            end
-            if not match_search and entry.author then
-                if tostring(entry.author):lower():find(ss_srch, 1, true) then
-                    match_search = true
+
+        -- 2. Main search bar: matches titles and tags
+        if pass and search_terms then
+            local title_val = normalizedLower(entry.title or entry.name or "")
+            local tag_haystacks = {}
+            if type(entry.tags) == "table" then
+                for _, tag in ipairs(entry.tags) do
+                    local t_norm = normalizedLower(tag)
+                    if t_norm ~= "" then
+                        table.insert(tag_haystacks, t_norm)
+                    end
+                end
+            elseif type(entry.tags) == "string" and entry.tags ~= "" then
+                for tag in entry.tags:gmatch("[^,]+") do
+                    local t_norm = normalizedLower(tag)
+                    if t_norm ~= "" then
+                        table.insert(tag_haystacks, t_norm)
+                    end
                 end
             end
-            if not match_search and entry.id then
-                if tostring(entry.id):lower():find(ss_srch, 1, true) then
-                    match_search = true
-                end
-            end
-            if not match_search and entry.tags then
-                if type(entry.tags) == "table" then
-                    for _, tag in ipairs(entry.tags) do
-                        if tostring(tag):lower():find(ss_srch, 1, true) then
-                            match_search = true
+
+            for _, term in ipairs(search_terms) do
+                local term_match = false
+                if title_val:find(term, 1, true) then
+                    term_match = true
+                else
+                    for _, tag_val in ipairs(tag_haystacks) do
+                        if tag_val:find(term, 1, true) then
+                            term_match = true
                             break
                         end
                     end
-                elseif type(entry.tags) == "string" then
-                    if entry.tags:lower():find(ss_srch, 1, true) then
-                        match_search = true
-                    end
+                end
+                if not term_match then
+                    pass = false
+                    break
                 end
             end
-            if not match_search then pass = false end
         end
+
+        -- 3. Owner bar: matches submitter / author / attribution
+        if pass and owner_term ~= "" then
+            local owner_match = false
+            local author_val = normalizedLower(entry.author)
+            local submitter_val = normalizedLower(entry.submitter)
+            local attribution_val = normalizedLower(entry.attribution)
+
+            if (author_val ~= "" and author_val:find(owner_term, 1, true)) or
+               (submitter_val ~= "" and submitter_val:find(owner_term, 1, true)) or
+               (attribution_val ~= "" and attribution_val:find(owner_term, 1, true)) then
+                owner_match = true
+            end
+
+            if not owner_match then
+                pass = false
+            end
+        end
+
         if pass then table.insert(filtered, entry) end
     end
 
@@ -8446,12 +8478,28 @@ function Storefront:showBrowser(kind)
             elseif current_tab == "Screensavers" then
                 is_ss_filter_active = self:hasActiveFilters("Screensavers")
                 if (self.browser_state and self.browser_state.show_filter_bar_screensavers ~= false) or is_ss_filter_active then
-                    -- Build toolbar: active category pill + sort cycle + Filter... button
+                    -- Build toolbar: active search/owner pills + active category pill + sort cycle + Filter... button
                     toolbar_buttons = {}
+                    local effective_ss_search = util.trim((self.browser_state.search_text and self.browser_state.search_text ~= "") and self.browser_state.search_text or (self.browser_state.screensaver_search or ""))
+                    local effective_ss_owner  = util.trim(self.browser_state.owner or "")
                     local ss_cat  = self.browser_state.screensaver_category or ""
                     local ss_cats = self.browser_state.screensaver_categories
                     local ss_sort = self.browser_state.screensaver_sort or "popular"
-                    local ss_srch = self.browser_state.screensaver_search or ""
+
+                    if effective_ss_search ~= "" then
+                        table.insert(toolbar_buttons, {
+                            id = "ss_srch",
+                            text = _("Search: ") .. effective_ss_search,
+                            callback = function() self:showFilterDialog() end
+                        })
+                    end
+                    if effective_ss_owner ~= "" then
+                        table.insert(toolbar_buttons, {
+                            id = "ss_owner",
+                            text = _("Owner: ") .. effective_ss_owner,
+                            callback = function() self:showFilterDialog() end
+                        })
+                    end
 
                     local active_cat_names = {}
                     if ss_cats and not ss_cats["all"] then
@@ -8474,13 +8522,6 @@ function Storefront:showBrowser(kind)
                         table.insert(toolbar_buttons, {
                             id = "ss_cat",
                             text = _("Category: ") .. cat_str,
-                            callback = function() self:showScreensaverFilter() end
-                        })
-                    end
-                    if ss_srch ~= "" then
-                        table.insert(toolbar_buttons, {
-                            id = "ss_srch",
-                            text = _("Search: ") .. ss_srch,
                             callback = function() self:showScreensaverFilter() end
                         })
                     end
