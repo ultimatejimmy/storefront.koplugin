@@ -8,11 +8,32 @@ msgstr ""
 msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
 msgstr "\"Mijn beste Mr. Bennet,\" zei zijn echtgenote op een dag tegen hem, \"heeft u gehoord dat Netherfield Park eindelijk verhuurd is?\" Mr. Bennet antwoordde dat hij dat niet had. \"Maar het is zo,\" hervatte zij; \"want Mrs. Long is hier net geweest en ze heeft me er alles over verteld.\" Mr. Bennet gaf geen antwoord."
 
+msgid "%d Categories"
+msgstr "%d Categorieën"
+
+msgid "%d items"
+msgstr "%d items"
+
 msgid "%d patches"
 msgstr "%d patches"
 
 msgid "%d plugins"
 msgstr "%d plugins"
+
+msgid "%d wallpapers"
+msgstr "%d achtergronden"
+
+msgid "%d wallpapers stored on device"
+msgstr "%d achtergronden opgeslagen op apparaat"
+
+msgid "%d wallpapers · Folder Shuffle (all in rotation)"
+msgstr "%d achtergronden · Map willekeurig (alle in rotatie)"
+
+msgid "%d wallpapers · Mode: Book Cover"
+msgstr "%d achtergronden · Modus: Boekomslag"
+
+msgid "%d wallpapers · Single mode active"
+msgstr "%d achtergronden · Enkele modus actief"
 
 msgid "%s and %s"
 msgstr "%s en %s"
@@ -26,11 +47,20 @@ msgstr "%s is up-to-date."
 msgid "%s needs an update."
 msgstr "%s heeft een update nodig."
 
+msgid "%s · %d files"
+msgstr "%s · %d bestanden"
+
+msgid "%s · 1 file"
+msgstr "%s · 1 bestand"
+
 msgid "(fork)"
 msgstr "(fork)"
 
 msgid "(showing %d of %d commits)"
 msgstr "(toont %d van %d commits)"
+
+msgid "+ Add to Shuffle Pool"
+msgstr "+ Toevoegen aan willekeurige selectie"
 
 msgid "1 / 1"
 msgstr "1 / 1"
@@ -50,14 +80,44 @@ msgstr "< Vorig"
 msgid "?"
 msgstr "?"
 
+msgid "A -> Z"
+msgstr "A -> Z"
+
+msgid "A → Z"
+msgstr "A → Z"
+
 msgid "About"
 msgstr "Over"
 
 msgid "About Storefront"
 msgstr "Over Storefront"
 
+msgid "Active Single"
+msgstr "Actief enkel"
+
+msgid "Active Wallpaper ✓"
+msgstr "Actieve achtergrond ✓"
+
+msgid "Active: %s"
+msgstr "Actief: %s"
+
+msgid "Add to Shuffle"
+msgstr "Aan shuffle toevoegen"
+
+msgid "Add to Shuffle Pool (Enable Shuffle)"
+msgstr "Aan shufflepool toevoegen (shuffle inschakelen)"
+
+msgid "Added to shuffle pool & Folder Shuffle enabled!"
+msgstr "Toegevoegd aan selectie & willekeurige weergave ingeschakeld!"
+
 msgid "All"
 msgstr "Alle"
+
+msgid "All Caches"
+msgstr "Alle caches"
+
+msgid "All Categories"
+msgstr "Alle categorieën"
 
 msgid "All Types"
 msgstr "Alle typen"
@@ -116,11 +176,29 @@ msgstr "Terug"
 msgid "Beta"
 msgstr "Beta"
 
+msgid "Black Fill"
+msgstr "Zwarte opvulling"
+
+msgid "Blank"
+msgstr "Leeg"
+
+msgid "Book Cover"
+msgstr "Boekomslag"
+
+msgid "Border Fill / Background"
+msgstr "Randopvulling / Achtergrond"
+
 msgid "Both owner and repository name are required."
 msgstr "Zowel eigenaar als repositorynaam zijn verplicht."
 
 msgid "Branch: %s"
 msgstr "Branch: %s"
+
+msgid "Browse Wallpapers in Storefront"
+msgstr "Achtergronden bekijken in Storefront"
+
+msgid "By "
+msgstr "By"
 
 msgid "By: %s"
 msgstr "Door: %s"
@@ -173,11 +251,26 @@ msgstr "Catalogusbron"
 msgid "Catalog updated: %d plugins, %d patches, %d fonts."
 msgstr "Catalogus bijgewerkt: %d plugins, %d patches, %d lettertypen."
 
+msgid "Categories"
+msgstr "Categorieën"
+
+msgid "Category: "
+msgstr "Categorie: "
+
 msgid "Category: %s"
 msgstr "Categorie: %s"
 
+msgid "Change..."
+msgstr "Wijzigen..."
+
+msgid "Changelog for %s\n%s \\\\xE2\\\\x86\\\\x92 %s"
+msgstr "Changelog for %s\n%s \\\\xE2\\\\x86\\\\x92 %s"
+
 msgid "Changelog for %s\n%s → %s"
 msgstr "Wijzigingslog voor %s\n%s → %s"
+
+msgid "Changelog for %s\\\n%s \\\\xE2\\\\x86\\\\x92 %s"
+msgstr "Changelog for %s\\\n%s \\\\xE2\\\\x86\\\\x92 %s"
 
 msgid "Changelog: %s"
 msgstr "Wijzigingslogboek: %s"
@@ -227,29 +320,92 @@ msgstr "Plugin-updates controleren…"
 msgid "Choose Build — %s"
 msgstr "Kies build — %s"
 
+msgid "Clean"
+msgstr "Opschonen"
+
 msgid "Clear"
 msgstr "Wis"
+
+msgid "Clear All"
+msgstr "Alles wissen"
+
+msgid "Clear All Caches?"
+msgstr "Alle caches wissen?"
+
+msgid "Clear Cache"
+msgstr "Cache wissen"
+
+msgid "Clear README Cache?"
+msgstr "README-cache wissen?"
 
 msgid "Clear README cache"
 msgstr "README-cache wissen"
 
+msgid "Clear README cache (%s)?\nCached README files and images will be deleted."
+msgstr "Clear README cache (%s)?\nCached README files and images will be deleted."
+
+msgid "Clear Thumbnail Cache?"
+msgstr "Miniaturen-cache wissen?"
+
+msgid "Clear Wiki Cache?"
+msgstr "Wiki-cache wissen?"
+
+msgid "Clear Wiki cache (%s)?\nCached wiki articles and images will be deleted."
+msgstr "Clear Wiki cache (%s)?\nCached wiki articles and images will be deleted."
+
+msgid "Clear all cached data (%s)?\nAll README files, wiki articles, and thumbnails will be deleted."
+msgstr "Clear all cached data (%s)?\nAll README files, wiki articles, and thumbnails will be deleted."
+
+msgid "Clear cache…"
+msgstr "Cache wissen"
+
+msgid "Clear screensaver thumbnail cache (%s)?\nThumbnails will be re-downloaded when viewing wallpapers."
+msgstr "Clear screensaver thumbnail cache (%s)?\nThumbnails will be re-downloaded when viewing wallpapers."
+
+msgid "Clear search & filters"
+msgstr "Zoekopdracht & filters wissen"
+
 msgid "Clear search/filters"
 msgstr "Zoekopdracht/filters wissen"
+
+msgid "Cleared README cache (%s freed)."
+msgstr "Cleared README cache (%s freed)."
+
+msgid "Cleared Wiki cache (%s freed)."
+msgstr "Cleared Wiki cache (%s freed)."
+
+msgid "Cleared all caches (%s freed, %d files)."
+msgstr "Cleared all caches (%s freed, %d files)."
+
+msgid "Cleared screensaver thumbnails (%s freed)."
+msgstr "Cleared screensaver thumbnails (%s freed)."
 
 msgid "Close"
 msgstr "Sluiten"
 
+msgid "Collection"
+msgstr "Collectie"
+
 msgid "Commit diff: %s → %s"
 msgstr "Commit-diff: %s → %s"
 
+msgid "Commits: %s \\\\xE2\\\\x86\\\\x92 %s"
+msgstr "Commits: %s \\\\xE2\\\\x86\\\\x92 %s"
+
 msgid "Commits: %s → %s"
 msgstr "Commits: %s → %s"
+
+msgid "Community"
+msgstr "Gemeenschap"
 
 msgid "Config files only"
 msgstr "Alleen configuratiebestanden"
 
 msgid "Configured ✓"
 msgstr "Geconfigureerd ✓"
+
+msgid "Confirm"
+msgstr "Bevestigen"
 
 msgid "Confirm Update"
 msgstr "Update bevestigen"
@@ -259,6 +415,9 @@ msgstr "Bevestig Alles bijwerken"
 
 msgid "Connecting to GitHub…\n\nPlease wait."
 msgstr "Verbinden met GitHub…\n\nEven geduld a.u.b."
+
+msgid "Connecting to GitHub…\\\n\\\nPlease wait."
+msgstr "Connecting to GitHub…\\\n\\\nPlease wait."
 
 msgid "Continue"
 msgstr "Doorgaan"
@@ -305,6 +464,18 @@ msgstr "Alleen standaard"
 msgid "Delete"
 msgstr "Verwijderen"
 
+msgid "Delete "
+msgstr "Verwijderen"
+
+msgid "Delete '%s' from your device?"
+msgstr "'%s' verwijderen van uw apparaat?"
+
+msgid "Delete File?"
+msgstr "Bestand verwijderen?"
+
+msgid "Delete Wallpaper?"
+msgstr "Achtergrond verwijderen?"
+
 msgid "Delete all cached README files? They will be re-downloaded on demand."
 msgstr "Alle gecachte README-bestanden verwijderen? Ze worden opnieuw gedownload wanneer nodig."
 
@@ -319,6 +490,9 @@ msgstr "Lettertype verwijderen "
 
 msgid "Delete font '%s'?"
 msgstr "Lettertype '%s' verwijderen?"
+
+msgid "Delete from Device"
+msgstr "Verwijderen van apparaat"
 
 msgid "Delete patch"
 msgstr "Patch verwijderen"
@@ -365,6 +539,27 @@ msgstr "Plugin uitschakelen"
 msgid "Disabled"
 msgstr "Uitgeschakeld"
 
+msgid "Display Options"
+msgstr "Weergaveopties"
+
+msgid "Displays a static wallpaper on sleep"
+msgstr "Toont een statische achtergrond tijdens slaapstand"
+
+msgid "Displays a static wallpaper on sleep.\nActive: %s"
+msgstr "Toont een statische achtergrond tijdens slaapstand.\nActief: %s"
+
+msgid "Done"
+msgstr "Klaar"
+
+msgid "Download & Set Active"
+msgstr "Downloaden & activeren"
+
+msgid "Download Only"
+msgstr "Alleen downloaden"
+
+msgid "Download Only (Save to Device)"
+msgstr "Alleen downloaden (opslaan op apparaat)"
+
 msgid "Download failed: "
 msgstr "Download mislukt: "
 
@@ -377,11 +572,20 @@ msgstr "Downloadopties — %s"
 msgid "Download options — %s (%s)"
 msgstr "Downloadopties — %s (%s)"
 
+msgid "Downloading "
+msgstr "Downloading..."
+
 msgid "Downloading %s%s…\nThis may take a moment."
 msgstr "%s%s downloaden…\nDit kan een moment duren."
 
+msgid "Downloading %s%s…\\\nThis may take a moment."
+msgstr "Downloading %s%s…\\\nThis may take a moment."
+
 msgid "Downloading %s…"
 msgstr "%s downloaden…"
+
+msgid "Downloading '%s'..."
+msgstr "Downloading '%s'..."
 
 msgid "Downloading patch \"%s\"…"
 msgstr "Patch \"%s\" downloaden…"
@@ -389,8 +593,20 @@ msgstr "Patch \"%s\" downloaden…"
 msgid "Downloading patch %s…"
 msgstr "Patch %s downloaden…"
 
+msgid "Downloading patch \\\\\"%s\\\\\"…"
+msgstr "Downloading patch \\\\\"%s\\\\\"…"
+
+msgid "Downloading screensaver..."
+msgstr "Schermbeveiliging downloaden..."
+
+msgid "Downloading to shuffle pool..."
+msgstr "Downloaden naar shufflepool..."
+
 msgid "Edit"
 msgstr "Bewerken"
+
+msgid "Empty (0 KB)"
+msgstr "Leeg (0 KB)"
 
 msgid "Enable"
 msgstr "Inschakelen"
@@ -412,6 +628,9 @@ msgstr "Voer pluginnummer in"
 
 msgid "Extracting and installing plugin…\nPlease wait."
 msgstr "Plugin uitpakken en installeren…\nEven geduld a.u.b."
+
+msgid "Extracting and installing plugin…\\\nPlease wait."
+msgstr "Extracting and installing plugin…\\\nPlease wait."
 
 msgid "Failed to check %s: %s"
 msgstr "Controleren van %s mislukt: %s"
@@ -439,6 +658,9 @@ msgstr "Uitschakelen van patch '%s' mislukt."
 
 msgid "Failed to download patch: %s"
 msgstr "Downloaden van patch mislukt: %s"
+
+msgid "Failed to download screensaver."
+msgstr "Downloaden van schermbeveiliging mislukt."
 
 msgid "Failed to enable patch "
 msgstr "Inschakelen van patch mislukt "
@@ -512,6 +734,9 @@ msgstr "Patches filteren & sorteren"
 msgid "Filter & Sort Plugins"
 msgstr "Plugins filteren & sorteren"
 
+msgid "Filter & Sort Screensavers"
+msgstr "Schermbeveiligingen filteren & sorteren"
+
 msgid "Filter Installed Patches"
 msgstr "Geïnstalleerde patches filteren"
 
@@ -536,6 +761,12 @@ msgstr "Filters: "
 msgid "Filters: (none)"
 msgstr "Filters: (geen)"
 
+msgid "Folder Shuffle"
+msgstr "Willekeurige mapweergave"
+
+msgid "Folder Shuffle enabled with this wallpaper!"
+msgstr "Map willekeurig ingeschakeld met deze achtergrond!"
+
 msgid "Font"
 msgstr "Lettertype"
 
@@ -553,6 +784,9 @@ msgstr "Lettertypestijl"
 
 msgid "Fonts"
 msgstr "Lettertypen"
+
+msgid "Free up storage space on your device. Cached items are re-downloaded automatically when needed."
+msgstr "Maak opslagruimte vrij op uw apparaat. Gecachte items worden automatisch opnieuw gedownload wanneer nodig."
 
 msgid "GitHub API rate limit exceeded. Add a GitHub token in Storefront settings to increase the limit (10→30 req/min)."
 msgstr "GitHub API-snelheidslimiet overschreden. Voeg een GitHub-token toe in de Storefront-instellingen om de limiet te verhogen (10→30 verzoeken/min)."
@@ -623,6 +857,9 @@ msgstr "Patch installeren vanaf GitHub"
 msgid "Install plugin from GitHub"
 msgstr "Plugin installeren van GitHub"
 
+msgid "Install to Default?"
+msgstr "Installeren op standaardlocatie?"
+
 msgid "Install to default"
 msgstr "Naar standaard installeren"
 
@@ -644,14 +881,26 @@ msgstr "Instellingen geïnstalleerde plugins"
 msgid "Installed Regular font style offline for \"%s\". Full font family queued for download when reconnected."
 msgstr "Normale lettertypestijl offline geïnstalleerd voor \"%s\". Volledige lettertypefamilie in wachtrij geplaatst voor download bij herverbinding."
 
+msgid "Installed Regular font style offline for \\\\\"%s\\\\\". Full font family queued for download when reconnected."
+msgstr "Installed Regular font style offline for \\\\\"%s\\\\\". Full font family queued for download when reconnected."
+
 msgid "Installed font \"%s\" (%d file(s))."
 msgstr "Lettertype \"%s\" geïnstalleerd (%d bestand(en))."
+
+msgid "Installed font \\\\\"%s\\\\\" (%d file(s))."
+msgstr "Installed font \\\\\"%s\\\\\" (%d file(s))."
 
 msgid "Installed full font family \"%s\" (%d file(s))."
 msgstr "Volledige lettertypefamilie \"%s\" geïnstalleerd (%d bestand(en))."
 
+msgid "Installed full font family \\\\\"%s\\\\\" (%d file(s))."
+msgstr "Installed full font family \\\\\"%s\\\\\" (%d file(s))."
+
 msgid "Installed patch \"%s\"."
 msgstr "Patch \"%s\" geïnstalleerd."
+
+msgid "Installed patch \\\\\"%s\\\\\"."
+msgstr "Installed patch \\\\\"%s\\\\\"."
 
 msgid "Installed plugin \"%s\" (version %s)."
 msgstr "Plugin \"%s\" geïnstalleerd (versie %s)."
@@ -676,6 +925,9 @@ msgstr "Ongeldige doelbestandsnaam voor patch."
 
 msgid "Invalid selection."
 msgstr "Ongeldige selectie."
+
+msgid "Invert colors (night mode / dark background)"
+msgstr "Kleuren omkeren (nachtmodus / donkere achtergrond)"
 
 msgid "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters."
 msgstr "Het is een algemeen erkende waarheid dat een alleenstaande man met een aanzienlijk vermogen behoefte moet hebben aan een echtgenote."
@@ -736,6 +988,9 @@ msgstr "Pluginpaden beheren"
 
 msgid "Manage plugin paths\n\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
 msgstr "Pluginpaden beheren\n\nEen pad verbergen beïnvloedt alleen wat Storefront hier toont/beheert. KOReader zal er nog steeds plugins van laden."
+
+msgid "Manage plugin paths\\\n\\\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
+msgstr "Manage plugin paths\\\n\\\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
 
 msgid "Match"
 msgstr "Koppelen"
@@ -836,8 +1091,17 @@ msgstr "Plugin bewerken"
 msgid "Modify Plugin: %s"
 msgstr "Plugin bewerken: %s"
 
+msgid "Most Downloaded"
+msgstr "Meest gedownload"
+
+msgid "Most Popular"
+msgstr "Meest populair"
+
 msgid "Multiple custom plugin folders are configured. Where should this plugin be installed?"
 msgstr "Er zijn meerdere aangepaste plugin-mappen geconfigureerd. Waar moet deze plugin worden geïnstalleerd?"
+
+msgid "My wallpaper collection"
+msgstr "Mijn achtergrondencollectie"
 
 msgid "Name (A-Z)"
 msgstr "Naam (A-Z)"
@@ -865,6 +1129,9 @@ msgstr "Volgende"
 
 msgid "Next >"
 msgstr "Volgende >"
+
+msgid "No Fill (Transparent)"
+msgstr "Geen opvulling (transparant)"
 
 msgid "No Lua files found in plugin directory"
 msgstr "Geen Lua-bestanden gevonden in pluginmap"
@@ -959,11 +1226,23 @@ msgstr "Geen releases gevonden voor deze repository."
 msgid "No remote version info for %s."
 msgstr "Geen externe versie-informatie voor %s."
 
+msgid "No screensavers match this filter."
+msgstr "Geen schermbeveiligingen komen overeen met dit filter."
+
 msgid "No stable releases found — uncheck filter to show all releases"
 msgstr "Geen stabiele releases gevonden — vink filter uit om alle releases te tonen"
 
 msgid "No tracked plugins to check."
 msgstr "Geen gevolgde plugins om te controleren."
+
+msgid "No wallpapers found in your screensavers folder.\n\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
+msgstr "Geen achtergronden gevonden in de screensaver-map.\n\nBlader door de Storefront-catalogus om achtergronden te downloaden!"
+
+msgid "No wallpapers found in your screensavers folder.\\\n\\\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
+msgstr "No wallpapers found in your screensavers folder.\\\n\\\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
+
+msgid "None selected"
+msgstr "Geen geselecteerd"
 
 msgid "Not matched with a repository."
 msgstr "Niet gekoppeld aan een repository."
@@ -974,11 +1253,17 @@ msgstr "Niet ingesteld"
 msgid "Notes"
 msgstr "Notities"
 
+msgid "OK"
+msgstr "OK"
+
 msgid "Offline Regular"
 msgstr "Offline Regular"
 
 msgid "Open"
 msgstr "Openen"
+
+msgid "Open Wallpaper Collection Gallery"
+msgstr "Achtergrondgalerij openen"
 
 msgid "Open details"
 msgstr "Details openen"
@@ -988,6 +1273,9 @@ msgstr "Optioneel. Verhoogt de GitHub API-snelheidslimiet. Genereer er een (klas
 
 msgid "Optional. Raises the GitHub API rate limit. Generate one (classic, 'public_repo' scope is enough) at github.com/settings/tokens, then paste it here."
 msgstr "Optioneel. Verhoogt de GitHub API-limiet. Genereer er een (klassiek, bereik 'public_repo' is voldoende) op github.com/settings/tokens en plak deze hier."
+
+msgid "Options ▾"
+msgstr "Opties ▾"
 
 msgid "Origin"
 msgstr "Herkomst"
@@ -1021,6 +1309,9 @@ msgstr "Patch "
 
 msgid "Patch %s has been %s."
 msgstr "Patch %s is %s."
+
+msgid "Patch '%s' deleted."
+msgstr "Patch '%s' verwijderd."
 
 msgid "Patch '%s' disabled."
 msgstr "Patch '%s' uitgeschakeld."
@@ -1097,6 +1388,9 @@ msgstr "Plugins"
 msgid "Plugins cached: %s (last update: %s)"
 msgstr "Plugins gecachet: %s (laatste update: %s)"
 
+msgid "Pool size: %d wallpapers in rotation"
+msgstr "Poolgrootte: %d achtergronden in rotatie"
+
 msgid "Pre-installed core KOReader plugin."
 msgstr "Voorgeïnstalleerde KOReader-kernplugin."
 
@@ -1112,14 +1406,32 @@ msgstr "README"
 msgid "README download failed: "
 msgstr "README-download mislukt: "
 
+msgid "README files & images"
+msgstr "README-bestanden & afbeeldingen"
+
+msgid "Rate Wallpaper"
+msgstr "Achtergrond beoordelen"
+
 msgid "Reading Passage Specimen"
 msgstr "Leesvoorbeeld"
+
+msgid "Reading Progress"
+msgstr "Leesvoortgang"
+
+msgid "Reading Progress / Summary"
+msgstr "Leesvoortgang / Samenvatting"
+
+msgid "Recently Added"
+msgstr "Recent toegevoegd"
 
 msgid "Refresh"
 msgstr "Vernieuwen"
 
 msgid "Refresh cache"
 msgstr "Cache verversen"
+
+msgid "Refresh catalog"
+msgstr "Catalogus vernieuwen"
 
 msgid "Refreshing catalog via Direct GitHub API…"
 msgstr "Catalogus verversen via Directe GitHub API…"
@@ -1181,6 +1493,15 @@ msgstr "Remote: (niet gecontroleerd)"
 msgid "Remove"
 msgstr "Verwijderen"
 
+msgid "Remove "
+msgstr "Verwijderen"
+
+msgid "Remove '%s' from your wallpaper collection?"
+msgstr "'%s' verwijderen uit uw achtergrondencollectie?"
+
+msgid "Remove Wallpaper?"
+msgstr "Achtergrond verwijderen?"
+
 msgid "Rename"
 msgstr "Hernoemen"
 
@@ -1235,6 +1556,30 @@ msgstr "Voorbeeldtekst"
 msgid "Save"
 msgstr "Opslaan"
 
+msgid "Screensaver"
+msgstr "Schermbeveiliging"
+
+msgid "Screensaver & Wallpapers"
+msgstr "Schermbeveiliging & Achtergronden"
+
+msgid "Screensaver Details"
+msgstr "Schermbeveiliging details"
+
+msgid "Screensaver Mode"
+msgstr "Schermbeveiligingsmodus"
+
+msgid "Screensaver Settings"
+msgstr "Schermbeveiliging-instellingen"
+
+msgid "Screensaver mode"
+msgstr "Schermbeveiligingsmodus"
+
+msgid "Screensaver thumbnails"
+msgstr "Schermbeveiliging miniaturen"
+
+msgid "Screensavers"
+msgstr "Schermbeveiligingen"
+
 msgid "Search"
 msgstr "Zoeken"
 
@@ -1244,11 +1589,23 @@ msgstr "Zoeken \"%s\""
 msgid "Search & API"
 msgstr "Zoeken & API"
 
+msgid "Search filter (\"%s\") is not applied to Updates."
+msgstr "Search filter (\"%s\") is not applied to Updates."
+
+msgid "Search filter (\\\\\"%s\\\\\") is not applied to Updates."
+msgstr "Search filter (\\\\\"%s\\\\\") is not applied to Updates."
+
 msgid "Search text"
 msgstr "Zoektekst"
 
 msgid "Search: "
 msgstr "Zoeken: "
+
+msgid "Select All"
+msgstr "Alles selecteren"
+
+msgid "Select Categories"
+msgstr "Categorieën selecteren"
 
 msgid "Select a repository patch entry to match with the chosen file."
 msgstr "Selecteer een repository-patchitem om te koppelen met het gekozen bestand."
@@ -1274,11 +1631,53 @@ msgstr "Selecteer repository"
 msgid "Set"
 msgstr "Instellen"
 
+msgid "Set Active Single"
+msgstr "Instellen als actieve achtergrond"
+
+msgid "Set Single"
+msgstr "Enkel instellen"
+
+msgid "Set as Active"
+msgstr "Als actief instellen"
+
+msgid "Set as Active Single Wallpaper"
+msgstr "Instellen als actieve enkele achtergrond"
+
+msgid "Set as active single wallpaper!"
+msgstr "Ingesteld als actieve enkele achtergrond!"
+
 msgid "Settings"
 msgstr "Instellingen"
 
 msgid "Show needs update"
 msgstr "Toon update vereist"
+
+msgid "Show reading progress banner overlay"
+msgstr "Leesvoortgangsbanner weergeven"
+
+msgid "Shows reading stats, percentage, and chapter progress"
+msgstr "Toont leesstatistieken, percentage en hoofdstukvoortgang"
+
+msgid "Shows the cover of the book currently being read"
+msgstr "Toont de omslag van het momenteel gelezen boek"
+
+msgid "Shuffle (%d)"
+msgstr "Shuffle (%d)"
+
+msgid "Shuffle Pool"
+msgstr "Shufflepool"
+
+msgid "Shuffles through all wallpapers in folder on sleep.\nPool size: %d wallpapers in rotation"
+msgstr "Wisselt tussen alle achtergronden in de map tijdens slaapstand.\nPoolgrootte: %d achtergronden in rotatie"
+
+msgid "Single"
+msgstr "Enkel"
+
+msgid "Single Wallpaper"
+msgstr "Enkele achtergrond"
+
+msgid "Solid fill for screen margins & letterboxing"
+msgstr "Effot invulling voor schermmarges"
 
 msgid "Sort"
 msgstr "Sorteren"
@@ -1288,6 +1687,9 @@ msgstr "Sorteermodus"
 
 msgid "Sort: A-Z"
 msgstr "Sorteren: A-Z"
+
+msgid "Sort: Most Liked"
+msgstr "Sorteren: Meest geliket"
 
 msgid "Sort: Name (A → Z)"
 msgstr "Sorteren: Naam (A-Z)"
@@ -1352,6 +1754,9 @@ msgstr "Storefront · Updates"
 msgid "Storefront: Open"
 msgstr "Storefront: Openen"
 
+msgid "Stretch image to fill entire screen"
+msgstr "Afbeelding schermvullend uitrekken"
+
 msgid "Style: "
 msgstr "Stijl: "
 
@@ -1391,6 +1796,24 @@ msgstr "Pa's wize fytser wol net graach op de dyk rride."
 msgid "This action cannot be undone.\n\nChanges will take effect after restart."
 msgstr "Deze actie kan niet ongedaan worden gemaakt.\n\nWijzigingen worden van kracht na herstarten."
 
+msgid "This action cannot be undone.\\\n\\\nChanges will take effect after restart."
+msgstr "This action cannot be undone.\\\n\\\nChanges will take effect after restart."
+
+msgid "This wallpaper is currently set as your active screensaver."
+msgstr "Deze achtergrond is momenteel ingesteld als uw actieve schermbeveiliging."
+
+msgid "This will delete all cached README files, wiki articles, and screensaver thumbnails (%s)."
+msgstr "Hiermee worden alle gecachte README-bestanden, wiki-artikelen en schermbeveiligingminiaturen (%s) verwijderd."
+
+msgid "This will delete cached README markdown files and downloaded images (%s)."
+msgstr "Hiermee worden gecachte README-markdownbestanden en gedownloade afbeeldingen (%s) verwijderd."
+
+msgid "This will delete cached screensaver thumbnail previews (%s)."
+msgstr "Hiermee worden gecachte schermbeveiligingminiatuurweergaven (%s) verwijderd."
+
+msgid "This will delete cached wiki articles and downloaded images (%s)."
+msgstr "Hiermee worden gecachte wiki-artikelen en gedownloade afbeeldingen (%s) verwijderd."
+
 msgid "This will take effect on next restart."
 msgstr "Dit wordt van kracht bij de volgende herstart."
 
@@ -1399,6 +1822,9 @@ msgstr "Totaal aantal commits: %d"
 
 msgid "Tracked: %d"
 msgstr "Gevolgd: %d"
+
+msgid "Transparent overlay (page content visible behind)"
+msgstr "Transparante overlay (pagina-inhoud erachter zichtbaar)"
 
 msgid "Type"
 msgstr "Type"
@@ -1481,11 +1907,20 @@ msgstr "Patch \"%s\" bijgewerkt."
 msgid "Updated patch %s."
 msgstr "Patch %s bijgewerkt."
 
+msgid "Updated patch \\\\\"%s\\\\\"."
+msgstr "Updated patch \\\\\"%s\\\\\"."
+
 msgid "Updated plugin \"%s\" to version %s."
 msgstr "Plugin \"%s\" bijgewerkt naar versie %s."
 
 msgid "Updated plugin \"%s\"."
 msgstr "Plugin \"%s\" bijgewerkt."
+
+msgid "Updated plugin \\\\\"%s\\\\\" to version %s."
+msgstr "Updated plugin \\\\\"%s\\\\\" to version %s."
+
+msgid "Updated plugin \\\\\"%s\\\\\"."
+msgstr "Updated plugin \\\\\"%s\\\\\"."
 
 msgid "Updated: %s"
 msgstr "Bijgewerkt: %s"
@@ -1514,17 +1949,59 @@ msgstr "Versies"
 msgid "View README"
 msgstr "README bekijken"
 
+msgid "View commits (%s \\\\xE2\\\\x86\\\\x92 %s)"
+msgstr "View commits (%s \\\\xE2\\\\x86\\\\x92 %s)"
+
 msgid "View commits (%s → %s)"
 msgstr "Bekijk commits (%s → %s)"
 
+msgid "Wallpaper Collection"
+msgstr "Achtergrondverzameling"
+
+msgid "Wallpaper Options"
+msgstr "Achtergrondopties"
+
+msgid "Wallpaper deleted from device."
+msgstr "Achtergrond verwijderd van apparaat."
+
+msgid "Wallpaper removed"
+msgstr "Achtergrond verwijderd"
+
+msgid "Wallpaper saved to collection!"
+msgstr "Achtergrond opgeslagen in verzameling!"
+
+msgid "Wallpaper set as active KOReader screensaver!"
+msgstr "Achtergrond ingesteld als actieve KOReader-schermbeveiliging!"
+
+msgid "Wallpaper set as active screensaver!"
+msgstr "Achtergrond ingesteld als actieve schermbeveiliging!"
+
 msgid "Warning: the selected version is older than what is currently installed. You are downgrading."
 msgstr "Waarschuwing: de geselecteerde versie is ouder dan de momenteel geïnstalleerde versie. U voert een downgrade uit."
+
+msgid "White Fill"
+msgstr "Witte opvulling"
 
 msgid "Wiki"
 msgstr "Wiki"
 
 msgid "Wiki Pages"
 msgstr "Wiki-pagina's"
+
+msgid "Wiki pages & images"
+msgstr "Wiki-pagina's & afbeeldingen"
+
+msgid "Z -> A"
+msgstr "Z -> A"
+
+msgid "Z → A"
+msgstr "Z → A"
+
+msgid "[ Loading preview... ]"
+msgstr "[ Voorbeeld laden... ]"
+
+msgid "[ Wallpaper Preview Loading... ]"
+msgstr "[ Achtergrondvoorbeeld laden... ]"
 
 msgid "[Ignored]"
 msgstr "[Genegeerd]"
@@ -1534,6 +2011,12 @@ msgstr "[concept]"
 
 msgid "[pre]"
 msgstr "[pre]"
+
+msgid "\\\\\"My dear Mr. Bennet,\\\\\" said his lady to him one day, \\\\\"have you heard that Netherfield Park is let at last?\\\\\" Mr. Bennet replied that he had not. \\\\\"But it is,\\\\\" returned she; \\\\\"for Mrs. Long has just been here, and she told me all about it.\\\\\" Mr. Bennet made no answer."
+msgstr "\\\\\"My dear Mr. Bennet,\\\\\" said his lady to him one day, \\\\\"have you heard that Netherfield Park is let at last?\\\\\" Mr. Bennet replied that he had not. \\\\\"But it is,\\\\\" returned she; \\\\\"for Mrs. Long has just been here, and she told me all about it.\\\\\" Mr. Bennet made no answer."
+
+msgid "\\\\xC2\\\\xB7"
+msgstr "\\\\xC2\\\\xB7"
 
 msgid "about_text"
 msgstr "Storefront is een ingebouwde pakketbeheerder in KOReader voor plugins, patches en lettertypen."
@@ -1760,6 +2243,9 @@ msgstr "Leesmij"
 msgid "tab_sample_text"
 msgstr "Voorbeeldtekst"
 
+msgid "tab_screensavers"
+msgstr "Achtergronden"
+
 msgid "tab_versions"
 msgstr "Versies"
 
@@ -1778,149 +2264,15 @@ msgstr "·"
 msgid "≥ %s ⭐"
 msgstr "≥ %s ⭐"
 
+msgid "★ ACTIVE"
+msgstr "★ ACTIEF"
+
+msgid "⚙ Settings"
+msgstr "⚙ Instellingen"
+
+msgid "⚙ Settings..."
+msgstr "⚙ Instellingen..."
+
 msgid "✓ Current"
 msgstr "✓ Huidige"
 
-msgid "Screensavers"
-msgstr "Schermbeveiligingen"
-
-# en-hash: 6df6c2dd7dd08e6108bf1b8dea56c527
-msgid "Screensaver Settings"
-msgstr "Schermbeveiliging-instellingen"
-
-# en-hash: dabeb2a6efa064595e4fbf43fda02f42
-msgid "Wallpaper Collection"
-msgstr "Achtergrondverzameling"
-
-# en-hash: aaaca14de025427e39ed056b29af4058
-msgid "Open Wallpaper Collection Gallery"
-msgstr "Achtergrondgalerij openen"
-
-# en-hash: 261dba00113a7f7e9754902b83293f85
-msgid "Browse Wallpapers in Storefront"
-msgstr "Achtergronden bekijken in Storefront"
-
-# en-hash: bda5dcfc5c6a544bb9dd8ede06326bff
-msgid "Active Wallpaper ✓"
-msgstr "Actieve achtergrond ✓"
-
-# en-hash: 704f03f7c5dd59a9b3ae46df8e1e46a4
-msgid "Set Active Single"
-msgstr "Instellen als actieve achtergrond"
-
-# en-hash: 2722ddcbfd20786cc8715dac74c0531a
-msgid "+ Add to Shuffle Pool"
-msgstr "+ Toevoegen aan willekeurige selectie"
-
-# en-hash: 938a7f69f98b48f241a295717988ac23
-msgid "Download & Set Active"
-msgstr "Downloaden & activeren"
-
-# en-hash: ba8ef34da8f377a1c718ff0f10e107b1
-msgid "Wallpaper set as active KOReader screensaver!"
-msgstr "Achtergrond ingesteld als actieve KOReader-schermbeveiliging!"
-
-# en-hash: f50b510e22815838c4d2d12e1d79bddf
-msgid "Added to shuffle pool & Folder Shuffle enabled!"
-msgstr "Toegevoegd aan selectie & willekeurige weergave ingeschakeld!"
-
-# en-hash: b6dea7fce89bd30f8c3d5b898849aa4b
-msgid "Wallpaper saved to collection!"
-msgstr "Achtergrond opgeslagen in verzameling!"
-
-# en-hash: c1cb41ea040ff053e2219930470897ed
-msgid "Single Wallpaper"
-msgstr "Enkele achtergrond"
-
-# en-hash: 16803106d3aa4c6852022f3da9d4c54a
-msgid "Folder Shuffle"
-msgstr "Willekeurige mapweergave"
-
-# en-hash: 03ea37a723d863ca6c1918209c5c1a6f
-msgid "Book Cover"
-msgstr "Boekomslag"
-
-# en-hash: 7f58b08556c5375e2559f267873d1218
-msgid "Reading Progress"
-msgstr "Leesvoortgang"
-
-# en-hash: 9f20e45267caff9e39ca3b9bea16db47
-msgid "Transparent overlay (page content visible behind)"
-msgstr "Transparante overlay (pagina-inhoud erachter zichtbaar)"
-
-# en-hash: bc586928ac8f7c25dabb909c67bdfa88
-msgid "Solid fill for screen margins & letterboxing"
-msgstr "Effot invulling voor schermmarges"
-
-# en-hash: 1f1b02ee24bf2ce675bc4c571ec2b586
-msgid "Show reading progress banner overlay"
-msgstr "Leesvoortgangsbanner weergeven"
-
-# en-hash: dd2d866df5da52a1aed8e63192026530
-msgid "Stretch image to fill entire screen"
-msgstr "Afbeelding schermvullend uitrekken"
-
-# en-hash: 1554833122e9bc723e16d2f1b927dc98
-msgid "Invert colors (night mode / dark background)"
-msgstr "Kleuren omkeren (nachtmodus / donkere achtergrond)"
-
-
-msgid "Screensaver Settings"
-msgstr "Schermbeveiliging-instellingen"
-
-msgid "Wallpaper Collection"
-msgstr "Achtergrondverzameling"
-
-msgid "Open Wallpaper Collection Gallery"
-msgstr "Achtergrondgalerij openen"
-
-msgid "Browse Wallpapers in Storefront"
-msgstr "Achtergronden bekijken in Storefront"
-
-msgid "Active Wallpaper ✓"
-msgstr "Actieve achtergrond ✓"
-
-msgid "Set Active Single"
-msgstr "Instellen als actieve achtergrond"
-
-msgid "+ Add to Shuffle Pool"
-msgstr "+ Toevoegen aan willekeurige selectie"
-
-msgid "Download & Set Active"
-msgstr "Downloaden & activeren"
-
-msgid "Wallpaper set as active KOReader screensaver!"
-msgstr "Achtergrond ingesteld als actieve KOReader-schermbeveiliging!"
-
-msgid "Added to shuffle pool & Folder Shuffle enabled!"
-msgstr "Toegevoegd aan selectie & willekeurige weergave ingeschakeld!"
-
-msgid "Wallpaper saved to collection!"
-msgstr "Achtergrond opgeslagen in verzameling!"
-
-msgid "Single Wallpaper"
-msgstr "Enkele achtergrond"
-
-msgid "Folder Shuffle"
-msgstr "Willekeurige mapweergave"
-
-msgid "Book Cover"
-msgstr "Boekomslag"
-
-msgid "Reading Progress"
-msgstr "Leesvoortgang"
-
-msgid "Transparent overlay (page content visible behind)"
-msgstr "Transparante overlay (pagina-inhoud erachter zichtbaar)"
-
-msgid "Solid fill for screen margins & letterboxing"
-msgstr "Effot invulling voor schermmarges"
-
-msgid "Show reading progress banner overlay"
-msgstr "Leesvoortgangsbanner weergeven"
-
-msgid "Stretch image to fill entire screen"
-msgstr "Afbeelding schermvullend uitrekken"
-
-msgid "Invert colors (night mode / dark background)"
-msgstr "Kleuren omkeren (nachtmodus / donkere achtergrond)"

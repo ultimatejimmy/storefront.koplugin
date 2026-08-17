@@ -2,7 +2,6 @@ local json = require("json")
 local logger = require("logger")
 local DataStorage = require("datastorage")
 local UIManager = require("ui/uimanager")
-local ConfirmBox = require("ui/widget/confirmbox")
 local Localization = require("localization_storefront")
 local _ = function(key, ...) return Localization:t(key, ...) end
 

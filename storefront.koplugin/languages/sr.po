@@ -8,11 +8,32 @@ msgstr ""
 msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
 msgstr "\"Dragi moj g. Benete,\" rekla mu je supruga jednog dana, \"jeste li čuli da je Nederfild Park konačno izdat?\" G. Benet je odgovorio da nije. \"Ali jeste,\" uzvratila je ona; \"jer je gđa Long upravo bila ovde i sve mi je ispričala.\" G. Benet nije odgovorio."
 
+msgid "%d Categories"
+msgstr "%d категорија"
+
+msgid "%d items"
+msgstr "%d ставки"
+
 msgid "%d patches"
 msgstr "%d закрпа"
 
 msgid "%d plugins"
 msgstr "%d плагина"
+
+msgid "%d wallpapers"
+msgstr "%d позадина"
+
+msgid "%d wallpapers stored on device"
+msgstr "%d позадина сачувано на уређају"
+
+msgid "%d wallpapers · Folder Shuffle (all in rotation)"
+msgstr "%d позадина · Насумично из фасцикле (све у ротацији)"
+
+msgid "%d wallpapers · Mode: Book Cover"
+msgstr "%d позадина · Режим: Корице књиге"
+
+msgid "%d wallpapers · Single mode active"
+msgstr "%d позадина · Активан један режим"
 
 msgid "%s and %s"
 msgstr "%s и %s"
@@ -26,11 +47,20 @@ msgstr "%s је ажуран."
 msgid "%s needs an update."
 msgstr "%s захтева ажурирање."
 
+msgid "%s · %d files"
+msgstr "%s · %d датотека"
+
+msgid "%s · 1 file"
+msgstr "%s · 1 датотека"
+
 msgid "(fork)"
 msgstr "(форк)"
 
 msgid "(showing %d of %d commits)"
 msgstr "(prikazano %d od %d izmena)"
+
+msgid "+ Add to Shuffle Pool"
+msgstr "+ Додај у насумични избор"
 
 msgid "1 / 1"
 msgstr "1 / 1"
@@ -50,14 +80,44 @@ msgstr "< Претх"
 msgid "?"
 msgstr "?"
 
+msgid "A -> Z"
+msgstr "А -> Ш"
+
+msgid "A → Z"
+msgstr "А → Ш"
+
 msgid "About"
 msgstr "О апликацији"
 
 msgid "About Storefront"
 msgstr "О Storefront-у"
 
+msgid "Active Single"
+msgstr "Активан један"
+
+msgid "Active Wallpaper ✓"
+msgstr "Активна позадина ✓"
+
+msgid "Active: %s"
+msgstr "Активан: %s"
+
+msgid "Add to Shuffle"
+msgstr "Додај у насумично"
+
+msgid "Add to Shuffle Pool (Enable Shuffle)"
+msgstr "Додај у насумични скуп (омогући насумично)"
+
+msgid "Added to shuffle pool & Folder Shuffle enabled!"
+msgstr "Додато у избор и омогућено насумично приказивање!"
+
 msgid "All"
 msgstr "Све"
+
+msgid "All Caches"
+msgstr "Све кеш меморије"
+
+msgid "All Categories"
+msgstr "Све категорије"
 
 msgid "All Types"
 msgstr "Сви типови"
@@ -116,11 +176,29 @@ msgstr "Назад"
 msgid "Beta"
 msgstr "Бета"
 
+msgid "Black Fill"
+msgstr "Црна попуна"
+
+msgid "Blank"
+msgstr "Празно"
+
+msgid "Book Cover"
+msgstr "Корице књиге"
+
+msgid "Border Fill / Background"
+msgstr "Попуна ивица / Позадина"
+
 msgid "Both owner and repository name are required."
 msgstr "Потребни су и власник и назив спремишта."
 
 msgid "Branch: %s"
 msgstr "Грана: %s"
+
+msgid "Browse Wallpapers in Storefront"
+msgstr "Прегледај позадине у Storefront-у"
+
+msgid "By "
+msgstr "By"
 
 msgid "By: %s"
 msgstr "Аутор: %s"
@@ -173,11 +251,26 @@ msgstr "Извор каталога"
 msgid "Catalog updated: %d plugins, %d patches, %d fonts."
 msgstr "Katalog ažuriran: %d priključaka, %d zakrpa, %d fontova."
 
+msgid "Categories"
+msgstr "Категорије"
+
+msgid "Category: "
+msgstr "Категорија: "
+
 msgid "Category: %s"
 msgstr "Категорија: %s"
 
+msgid "Change..."
+msgstr "Промени..."
+
+msgid "Changelog for %s\n%s \\\\xE2\\\\x86\\\\x92 %s"
+msgstr "Changelog for %s\n%s \\\\xE2\\\\x86\\\\x92 %s"
+
 msgid "Changelog for %s\n%s → %s"
 msgstr "Дневник промена за %s\n%s → %s"
+
+msgid "Changelog for %s\\\n%s \\\\xE2\\\\x86\\\\x92 %s"
+msgstr "Changelog for %s\\\n%s \\\\xE2\\\\x86\\\\x92 %s"
 
 msgid "Changelog: %s"
 msgstr "Дневник промена: %s"
@@ -227,29 +320,92 @@ msgstr "Provera ažuriranja dodataka…"
 msgid "Choose Build — %s"
 msgstr "Изаберите верзију — %s"
 
+msgid "Clean"
+msgstr "Очисти"
+
 msgid "Clear"
 msgstr "Очисти"
+
+msgid "Clear All"
+msgstr "Обриши све"
+
+msgid "Clear All Caches?"
+msgstr "Обрисати све кеш меморије?"
+
+msgid "Clear Cache"
+msgstr "Обриши кеш"
+
+msgid "Clear README Cache?"
+msgstr "Обрисати кеш за README?"
 
 msgid "Clear README cache"
 msgstr "Очисти кеш"
 
+msgid "Clear README cache (%s)?\nCached README files and images will be deleted."
+msgstr "Clear README cache (%s)?\nCached README files and images will be deleted."
+
+msgid "Clear Thumbnail Cache?"
+msgstr "Обрисати кеш за умањене приказе?"
+
+msgid "Clear Wiki Cache?"
+msgstr "Обрисати кеш за Вики?"
+
+msgid "Clear Wiki cache (%s)?\nCached wiki articles and images will be deleted."
+msgstr "Clear Wiki cache (%s)?\nCached wiki articles and images will be deleted."
+
+msgid "Clear all cached data (%s)?\nAll README files, wiki articles, and thumbnails will be deleted."
+msgstr "Clear all cached data (%s)?\nAll README files, wiki articles, and thumbnails will be deleted."
+
+msgid "Clear cache…"
+msgstr "Обриши кеш"
+
+msgid "Clear screensaver thumbnail cache (%s)?\nThumbnails will be re-downloaded when viewing wallpapers."
+msgstr "Clear screensaver thumbnail cache (%s)?\nThumbnails will be re-downloaded when viewing wallpapers."
+
+msgid "Clear search & filters"
+msgstr "Обриши претрагу и филтере"
+
 msgid "Clear search/filters"
 msgstr "Очисти претрагу/филтере"
+
+msgid "Cleared README cache (%s freed)."
+msgstr "Cleared README cache (%s freed)."
+
+msgid "Cleared Wiki cache (%s freed)."
+msgstr "Cleared Wiki cache (%s freed)."
+
+msgid "Cleared all caches (%s freed, %d files)."
+msgstr "Cleared all caches (%s freed, %d files)."
+
+msgid "Cleared screensaver thumbnails (%s freed)."
+msgstr "Cleared screensaver thumbnails (%s freed)."
 
 msgid "Close"
 msgstr "Затвори"
 
+msgid "Collection"
+msgstr "Колекција"
+
 msgid "Commit diff: %s → %s"
 msgstr "Разлика измена: %s → %s"
 
+msgid "Commits: %s \\\\xE2\\\\x86\\\\x92 %s"
+msgstr "Commits: %s \\\\xE2\\\\x86\\\\x92 %s"
+
 msgid "Commits: %s → %s"
 msgstr "Izmene: %s → %s"
+
+msgid "Community"
+msgstr "Заједница"
 
 msgid "Config files only"
 msgstr "Samo konfiguracione datoteke"
 
 msgid "Configured ✓"
 msgstr "Подешено ✓"
+
+msgid "Confirm"
+msgstr "Потврди"
 
 msgid "Confirm Update"
 msgstr "Потврди ажурирање"
@@ -259,6 +415,9 @@ msgstr "Потврди ажурирање свега"
 
 msgid "Connecting to GitHub…\n\nPlease wait."
 msgstr "Повезивање са GitHub-ом…\n\nСачекајте."
+
+msgid "Connecting to GitHub…\\\n\\\nPlease wait."
+msgstr "Connecting to GitHub…\\\n\\\nPlease wait."
 
 msgid "Continue"
 msgstr "Настави"
@@ -305,6 +464,18 @@ msgstr "Само подразумевано"
 msgid "Delete"
 msgstr "Обриши"
 
+msgid "Delete "
+msgstr "Обриши"
+
+msgid "Delete '%s' from your device?"
+msgstr "Обрисати '%s' са вашег уређаја?"
+
+msgid "Delete File?"
+msgstr "Обрисати датотеку?"
+
+msgid "Delete Wallpaper?"
+msgstr "Обрисати позадину?"
+
 msgid "Delete all cached README files? They will be re-downloaded on demand."
 msgstr "Обрисати све кеширане README датотеке? Биће поново преузете по потреби."
 
@@ -319,6 +490,9 @@ msgstr "Обриши фонт "
 
 msgid "Delete font '%s'?"
 msgstr "Избрисати фонт '%s'?"
+
+msgid "Delete from Device"
+msgstr "Обриши са уређаја"
 
 msgid "Delete patch"
 msgstr "Обриши закрпу"
@@ -365,6 +539,27 @@ msgstr "Онемогући додатак"
 msgid "Disabled"
 msgstr "Онемогућено"
 
+msgid "Display Options"
+msgstr "Опције приказа"
+
+msgid "Displays a static wallpaper on sleep"
+msgstr "Приказује статичну позадину током спавања"
+
+msgid "Displays a static wallpaper on sleep.\nActive: %s"
+msgstr "Приказује статичну позадину током спавања.\nАктиван: %s"
+
+msgid "Done"
+msgstr "Готово"
+
+msgid "Download & Set Active"
+msgstr "Преузми и активирај"
+
+msgid "Download Only"
+msgstr "Само преузимање"
+
+msgid "Download Only (Save to Device)"
+msgstr "Само преузми (сачувај на уређају)"
+
 msgid "Download failed: "
 msgstr "Преузимање није успело: "
 
@@ -377,11 +572,20 @@ msgstr "Опције преузимања — %s"
 msgid "Download options — %s (%s)"
 msgstr "Opcije preuzimanja — %s (%s)"
 
+msgid "Downloading "
+msgstr "Downloading..."
+
 msgid "Downloading %s%s…\nThis may take a moment."
 msgstr "Преузимање %s%s…\nОво може потрајати."
 
+msgid "Downloading %s%s…\\\nThis may take a moment."
+msgstr "Downloading %s%s…\\\nThis may take a moment."
+
 msgid "Downloading %s…"
 msgstr "Преузимање %s…"
+
+msgid "Downloading '%s'..."
+msgstr "Downloading '%s'..."
 
 msgid "Downloading patch \"%s\"…"
 msgstr "Preuzimanje zakrpe \"%s\"…"
@@ -389,8 +593,20 @@ msgstr "Preuzimanje zakrpe \"%s\"…"
 msgid "Downloading patch %s…"
 msgstr "Преузимање закрпе %s…"
 
+msgid "Downloading patch \\\\\"%s\\\\\"…"
+msgstr "Downloading patch \\\\\"%s\\\\\"…"
+
+msgid "Downloading screensaver..."
+msgstr "Преузимање чувара екрана..."
+
+msgid "Downloading to shuffle pool..."
+msgstr "Преузимање у скуп за насумично..."
+
 msgid "Edit"
 msgstr "Уреди"
+
+msgid "Empty (0 KB)"
+msgstr "Празно (0 KB)"
 
 msgid "Enable"
 msgstr "Омогући"
@@ -412,6 +628,9 @@ msgstr "Унесите број додатка"
 
 msgid "Extracting and installing plugin…\nPlease wait."
 msgstr "Распакивање и инсталирање додатка…\nСачекајте."
+
+msgid "Extracting and installing plugin…\\\nPlease wait."
+msgstr "Extracting and installing plugin…\\\nPlease wait."
 
 msgid "Failed to check %s: %s"
 msgstr "Провера %s није успела: %s"
@@ -439,6 +658,9 @@ msgstr "Онемогућавање закрпе '%s' није успело."
 
 msgid "Failed to download patch: %s"
 msgstr "Преузимање закрпе није успело: %s"
+
+msgid "Failed to download screensaver."
+msgstr "Неуспешно преузимање чувара екрана."
 
 msgid "Failed to enable patch "
 msgstr "Омогућавање закрпе није успело "
@@ -512,6 +734,9 @@ msgstr "Филтрирај и сортирај закрпе"
 msgid "Filter & Sort Plugins"
 msgstr "Филтрирај и сортирај плагине"
 
+msgid "Filter & Sort Screensavers"
+msgstr "Филтрирај и сортирај чуваре екрана"
+
 msgid "Filter Installed Patches"
 msgstr "Филтрирај инсталиране закрпе"
 
@@ -536,6 +761,12 @@ msgstr "Филтери: "
 msgid "Filters: (none)"
 msgstr "Филтери: (нема)"
 
+msgid "Folder Shuffle"
+msgstr "Насумично из фасцикле"
+
+msgid "Folder Shuffle enabled with this wallpaper!"
+msgstr "Насумично из фасцикле омогућено са овом позадином!"
+
 msgid "Font"
 msgstr "Font"
 
@@ -553,6 +784,9 @@ msgstr "Стил фонта"
 
 msgid "Fonts"
 msgstr "Фонтови"
+
+msgid "Free up storage space on your device. Cached items are re-downloaded automatically when needed."
+msgstr "Ослободите простор на уређају. Кеширане ставке се аутоматски поново преузимају када затребају."
 
 msgid "GitHub API rate limit exceeded. Add a GitHub token in Storefront settings to increase the limit (10→30 req/min)."
 msgstr "Prekoračeno GitHub API ograničenje. Dodajte GitHub token u podešavanjima Storefront-a za povećanje ograničenja (10→30 zahteva/min)."
@@ -623,6 +857,9 @@ msgstr "Инсталирај закрпу са GitHub-а"
 msgid "Install plugin from GitHub"
 msgstr "Инсталирај додатак са GitHub-а"
 
+msgid "Install to Default?"
+msgstr "Инсталирати на подразумевану локацију?"
+
 msgid "Install to default"
 msgstr "Инсталирај на подразумевано место"
 
@@ -644,14 +881,26 @@ msgstr "Подешавања инсталираних додатака"
 msgid "Installed Regular font style offline for \"%s\". Full font family queued for download when reconnected."
 msgstr "Instaliran običan stil fonta van mreže za \"%s\". Cela porodica fontova je na čekanju za preuzimanje po ponovnom povezivanju."
 
+msgid "Installed Regular font style offline for \\\\\"%s\\\\\". Full font family queued for download when reconnected."
+msgstr "Installed Regular font style offline for \\\\\"%s\\\\\". Full font family queued for download when reconnected."
+
 msgid "Installed font \"%s\" (%d file(s))."
 msgstr "Instaliran font \"%s\" (%d datoteka)."
+
+msgid "Installed font \\\\\"%s\\\\\" (%d file(s))."
+msgstr "Installed font \\\\\"%s\\\\\" (%d file(s))."
 
 msgid "Installed full font family \"%s\" (%d file(s))."
 msgstr "Instalirana cela porodica fontova \"%s\" (%d datoteka)."
 
+msgid "Installed full font family \\\\\"%s\\\\\" (%d file(s))."
+msgstr "Installed full font family \\\\\"%s\\\\\" (%d file(s))."
+
 msgid "Installed patch \"%s\"."
 msgstr "Instalirana zakrpa \"%s\"."
+
+msgid "Installed patch \\\\\"%s\\\\\"."
+msgstr "Installed patch \\\\\"%s\\\\\"."
 
 msgid "Installed plugin \"%s\" (version %s)."
 msgstr "Instaliran dodatak \"%s\" (verzija %s)."
@@ -676,6 +925,9 @@ msgstr "Неважеће циљно име датотеке закрпе."
 
 msgid "Invalid selection."
 msgstr "Neispravan izbor."
+
+msgid "Invert colors (night mode / dark background)"
+msgstr "Инвертуј боје (ноћни режим / тамна позадина)"
 
 msgid "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters."
 msgstr "Општеприхваћена је истина да је неожењеном човеку са лепим имањем потребна жена."
@@ -736,6 +988,9 @@ msgstr "Управљање путањама додатака"
 
 msgid "Manage plugin paths\n\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
 msgstr "Управљање путањама додатака\n\nСкривање путање утиче само на оно што Storefront овде приказује/управља. KOReader ће и даље учитавати додатке одатле."
+
+msgid "Manage plugin paths\\\n\\\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
+msgstr "Manage plugin paths\\\n\\\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
 
 msgid "Match"
 msgstr "Упари"
@@ -836,8 +1091,17 @@ msgstr "Izmeni priključak"
 msgid "Modify Plugin: %s"
 msgstr "Izmeni dodatak: %s"
 
+msgid "Most Downloaded"
+msgstr "Највише преузимано"
+
+msgid "Most Popular"
+msgstr "Најпопуларније"
+
 msgid "Multiple custom plugin folders are configured. Where should this plugin be installed?"
 msgstr "Podešeno je više prilagođenih fascikli za priključke. Gde treba instalirati ovaj priključak?"
+
+msgid "My wallpaper collection"
+msgstr "Моја колекција позадина"
 
 msgid "Name (A-Z)"
 msgstr "Назив (А-Ш)"
@@ -865,6 +1129,9 @@ msgstr "Даље"
 
 msgid "Next >"
 msgstr "Следеће >"
+
+msgid "No Fill (Transparent)"
+msgstr "Без попуне (провидно)"
 
 msgid "No Lua files found in plugin directory"
 msgstr "Нису пронађене Lua датотеке у директоријуму додатка"
@@ -959,11 +1226,23 @@ msgstr "Нису пронађена издања за ово спремиште.
 msgid "No remote version info for %s."
 msgstr "Nema informacija o udaljenoj verziji za %s."
 
+msgid "No screensavers match this filter."
+msgstr "Ниједан чувар екрана не одговара овом филтеру."
+
 msgid "No stable releases found — uncheck filter to show all releases"
 msgstr "Nisu pronađena stabilna izdanja — odčekirajte filter da prikažete sva izdanja"
 
 msgid "No tracked plugins to check."
 msgstr "Нема праћених додатака за проверу."
+
+msgid "No wallpapers found in your screensavers folder.\n\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
+msgstr "Нема позадина у фасцикли чувара екрана.\n\nПрегледајте Storefront каталог да бисте преузели позадине!"
+
+msgid "No wallpapers found in your screensavers folder.\\\n\\\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
+msgstr "No wallpapers found in your screensavers folder.\\\n\\\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
+
+msgid "None selected"
+msgstr "Ништа није изабрано"
 
 msgid "Not matched with a repository."
 msgstr "Nije povezano sa repozitorijumom."
@@ -974,11 +1253,17 @@ msgstr "Није постављено"
 msgid "Notes"
 msgstr "Белешке"
 
+msgid "OK"
+msgstr "У реду"
+
 msgid "Offline Regular"
 msgstr "Офлајн Regular"
 
 msgid "Open"
 msgstr "Отвори"
+
+msgid "Open Wallpaper Collection Gallery"
+msgstr "Отвори галерију позадина"
 
 msgid "Open details"
 msgstr "Отвори детаље"
@@ -988,6 +1273,9 @@ msgstr "Опционо. Повећава ограничавање GitHub API з�
 
 msgid "Optional. Raises the GitHub API rate limit. Generate one (classic, 'public_repo' scope is enough) at github.com/settings/tokens, then paste it here."
 msgstr "Опционо. Повећава ограничење GitHub API захтева. Генеришите токен (класичан, обим 'public_repo' је довољан) на github.com/settings/tokens и налепите га овде."
+
+msgid "Options ▾"
+msgstr "Опције ▾"
 
 msgid "Origin"
 msgstr "Порекло"
@@ -1021,6 +1309,9 @@ msgstr "Закрпа "
 
 msgid "Patch %s has been %s."
 msgstr "Закрпа %s је %s."
+
+msgid "Patch '%s' deleted."
+msgstr "Патцх '%s' је обрисан."
 
 msgid "Patch '%s' disabled."
 msgstr "Закрпа '%s' је онемогућена."
@@ -1097,6 +1388,9 @@ msgstr "Додаци"
 msgid "Plugins cached: %s (last update: %s)"
 msgstr "Кеширани додаци: %s (последње ажурирање: %s)"
 
+msgid "Pool size: %d wallpapers in rotation"
+msgstr "Величина скупа: %d позадина у ротацији"
+
 msgid "Pre-installed core KOReader plugin."
 msgstr "Преинсталирани основни KOReader прикључак."
 
@@ -1112,14 +1406,32 @@ msgstr "README"
 msgid "README download failed: "
 msgstr "Преузимање README датотеке није успело: "
 
+msgid "README files & images"
+msgstr "README датотеке и слике"
+
+msgid "Rate Wallpaper"
+msgstr "Оцени позадину"
+
 msgid "Reading Passage Specimen"
 msgstr "Узорак за читање"
+
+msgid "Reading Progress"
+msgstr "Напредак читања"
+
+msgid "Reading Progress / Summary"
+msgstr "Напредак читања / Резиме"
+
+msgid "Recently Added"
+msgstr "Недавно додато"
 
 msgid "Refresh"
 msgstr "Osveži"
 
 msgid "Refresh cache"
 msgstr "Освежи кеш"
+
+msgid "Refresh catalog"
+msgstr "Освежи каталог"
 
 msgid "Refreshing catalog via Direct GitHub API…"
 msgstr "Освежавање каталога преко Direct GitHub API…"
@@ -1181,6 +1493,15 @@ msgstr "Удаљено: (није проверено)"
 msgid "Remove"
 msgstr "Уклони"
 
+msgid "Remove "
+msgstr "Уклони"
+
+msgid "Remove '%s' from your wallpaper collection?"
+msgstr "Уклонити '%s' из ваше колекције позадина?"
+
+msgid "Remove Wallpaper?"
+msgstr "Уклонити позадину?"
+
 msgid "Rename"
 msgstr "Преименуј"
 
@@ -1235,6 +1556,30 @@ msgstr "Пример текста"
 msgid "Save"
 msgstr "Сачувај"
 
+msgid "Screensaver"
+msgstr "Чувар екрана"
+
+msgid "Screensaver & Wallpapers"
+msgstr "Чувар екрана и позадине"
+
+msgid "Screensaver Details"
+msgstr "Детаљи чувара екрана"
+
+msgid "Screensaver Mode"
+msgstr "Режим чувара екрана"
+
+msgid "Screensaver Settings"
+msgstr "Подешавања чувара екрана"
+
+msgid "Screensaver mode"
+msgstr "Режим чувара екрана"
+
+msgid "Screensaver thumbnails"
+msgstr "Умањени прикази чувара екрана"
+
+msgid "Screensavers"
+msgstr "Чувари екрана"
+
 msgid "Search"
 msgstr "Претрага"
 
@@ -1244,11 +1589,23 @@ msgstr "Pretraži \"%s\""
 msgid "Search & API"
 msgstr "Претрага и API"
 
+msgid "Search filter (\"%s\") is not applied to Updates."
+msgstr "Search filter (\"%s\") is not applied to Updates."
+
+msgid "Search filter (\\\\\"%s\\\\\") is not applied to Updates."
+msgstr "Search filter (\\\\\"%s\\\\\") is not applied to Updates."
+
 msgid "Search text"
 msgstr "Текст за претрагу"
 
 msgid "Search: "
 msgstr "Претрага: "
+
+msgid "Select All"
+msgstr "Изабери све"
+
+msgid "Select Categories"
+msgstr "Изабери категорије"
 
 msgid "Select a repository patch entry to match with the chosen file."
 msgstr "Изаберите ставку закрпе из спремишта за упаривање са изабраном датотеком."
@@ -1274,11 +1631,53 @@ msgstr "Изабери спремиште"
 msgid "Set"
 msgstr "Postavi"
 
+msgid "Set Active Single"
+msgstr "Постави као активну појединачну"
+
+msgid "Set Single"
+msgstr "Постави једно"
+
+msgid "Set as Active"
+msgstr "Постави као активно"
+
+msgid "Set as Active Single Wallpaper"
+msgstr "Постави као активну појединачну позадину"
+
+msgid "Set as active single wallpaper!"
+msgstr "Постављено као активна појединачна позадина!"
+
 msgid "Settings"
 msgstr "Подешавања"
 
 msgid "Show needs update"
 msgstr "Прикажи оне којима је потребно ажурирање"
+
+msgid "Show reading progress banner overlay"
+msgstr "Прикажи траку напретка читања"
+
+msgid "Shows reading stats, percentage, and chapter progress"
+msgstr "Приказује статистику читања, проценат и напредак поглавља"
+
+msgid "Shows the cover of the book currently being read"
+msgstr "Приказује корице књиге која се тренутно чита"
+
+msgid "Shuffle (%d)"
+msgstr "Насумично (%d)"
+
+msgid "Shuffle Pool"
+msgstr "Скуп за насумично"
+
+msgid "Shuffles through all wallpapers in folder on sleep.\nPool size: %d wallpapers in rotation"
+msgstr "Насумично мења све позадине из фасцикле током спавања.\nВеличина скупа: %d позадина у ротацији"
+
+msgid "Single"
+msgstr "Појединачно"
+
+msgid "Single Wallpaper"
+msgstr "Појединачна позадина"
+
+msgid "Solid fill for screen margins & letterboxing"
+msgstr "Пуна боја за маргине екрана"
 
 msgid "Sort"
 msgstr "Сортирање"
@@ -1288,6 +1687,9 @@ msgstr "Режим сортирања"
 
 msgid "Sort: A-Z"
 msgstr "Сортирај: А-Ш"
+
+msgid "Sort: Most Liked"
+msgstr "Сортирај: Највише свиђања"
 
 msgid "Sort: Name (A → Z)"
 msgstr "Сортирај: Назив (А-Ш)"
@@ -1352,6 +1754,9 @@ msgstr "Storefront · Ажурирања"
 msgid "Storefront: Open"
 msgstr "Продавница: Отвори"
 
+msgid "Stretch image to fill entire screen"
+msgstr "Развуци слику преко целог екрана"
+
 msgid "Style: "
 msgstr "Стил: "
 
@@ -1391,6 +1796,24 @@ msgstr "Чешаљем са жутим зубима џунглом шета фи
 msgid "This action cannot be undone.\n\nChanges will take effect after restart."
 msgstr "Ова радња се не може опозвати.\n\nИзмене ће ступити на снагу након поновног покретања."
 
+msgid "This action cannot be undone.\\\n\\\nChanges will take effect after restart."
+msgstr "This action cannot be undone.\\\n\\\nChanges will take effect after restart."
+
+msgid "This wallpaper is currently set as your active screensaver."
+msgstr "Ова позадина је тренутно постављена као ваш активни чувар екрана."
+
+msgid "This will delete all cached README files, wiki articles, and screensaver thumbnails (%s)."
+msgstr "Ово ће обрисати све кеширане README датотеке, вики чланке и умањене приказе чувара екрана (%s)."
+
+msgid "This will delete cached README markdown files and downloaded images (%s)."
+msgstr "Ово ће обрисати кеширане README датотеке и преузете слике (%s)."
+
+msgid "This will delete cached screensaver thumbnail previews (%s)."
+msgstr "Ово ће обрисати кеширане умањене приказе чувара екрана (%s)."
+
+msgid "This will delete cached wiki articles and downloaded images (%s)."
+msgstr "Ово ће обрисати кеширане вики чланке и преузете слике (%s)."
+
 msgid "This will take effect on next restart."
 msgstr "Ovo će stupiti na snagu pri sledećem ponovnom pokretanju."
 
@@ -1399,6 +1822,9 @@ msgstr "Укупно измена: %d"
 
 msgid "Tracked: %d"
 msgstr "Праћено: %d"
+
+msgid "Transparent overlay (page content visible behind)"
+msgstr "Провидна позадина (садржај странице видљив иза)"
 
 msgid "Type"
 msgstr "Тип"
@@ -1481,11 +1907,20 @@ msgstr "Ažurirana zakrpa \"%s\"."
 msgid "Updated patch %s."
 msgstr "Ažurirana zakrpa %s."
 
+msgid "Updated patch \\\\\"%s\\\\\"."
+msgstr "Updated patch \\\\\"%s\\\\\"."
+
 msgid "Updated plugin \"%s\" to version %s."
 msgstr "Ažuriran dodatak \"%s\" na verziju %s."
 
 msgid "Updated plugin \"%s\"."
 msgstr "Ažuriran dodatak \"%s\"."
+
+msgid "Updated plugin \\\\\"%s\\\\\" to version %s."
+msgstr "Updated plugin \\\\\"%s\\\\\" to version %s."
+
+msgid "Updated plugin \\\\\"%s\\\\\"."
+msgstr "Updated plugin \\\\\"%s\\\\\"."
 
 msgid "Updated: %s"
 msgstr "Ажурирано: %s"
@@ -1514,17 +1949,59 @@ msgstr "Верзије"
 msgid "View README"
 msgstr "Прикажи README"
 
+msgid "View commits (%s \\\\xE2\\\\x86\\\\x92 %s)"
+msgstr "View commits (%s \\\\xE2\\\\x86\\\\x92 %s)"
+
 msgid "View commits (%s → %s)"
 msgstr "Прикажи измене (%s → %s)"
 
+msgid "Wallpaper Collection"
+msgstr "Колекција позадина"
+
+msgid "Wallpaper Options"
+msgstr "Опције позадине"
+
+msgid "Wallpaper deleted from device."
+msgstr "Позадина је обрисана са уређаја."
+
+msgid "Wallpaper removed"
+msgstr "Позадина уклоњена"
+
+msgid "Wallpaper saved to collection!"
+msgstr "Позадина је сачувана у колекцији!"
+
+msgid "Wallpaper set as active KOReader screensaver!"
+msgstr "Позадина је постављена као активни чувар екрана!"
+
+msgid "Wallpaper set as active screensaver!"
+msgstr "Позадина постављена као активни чувар екрана!"
+
 msgid "Warning: the selected version is older than what is currently installed. You are downgrading."
 msgstr "Упозорење: изабрана верзија је старија од тренутно инсталиране. Вршите враћање на старију верзију."
+
+msgid "White Fill"
+msgstr "Бела попуна"
 
 msgid "Wiki"
 msgstr "Вики"
 
 msgid "Wiki Pages"
 msgstr "Вики странице"
+
+msgid "Wiki pages & images"
+msgstr "Вики странице и слике"
+
+msgid "Z -> A"
+msgstr "Ш -> А"
+
+msgid "Z → A"
+msgstr "Ш → А"
+
+msgid "[ Loading preview... ]"
+msgstr "[ Учитавање прегледа... ]"
+
+msgid "[ Wallpaper Preview Loading... ]"
+msgstr "[ Учитавање прегледа позадине... ]"
 
 msgid "[Ignored]"
 msgstr "[Занемарено]"
@@ -1534,6 +2011,12 @@ msgstr "[нацрт]"
 
 msgid "[pre]"
 msgstr "[pred]"
+
+msgid "\\\\\"My dear Mr. Bennet,\\\\\" said his lady to him one day, \\\\\"have you heard that Netherfield Park is let at last?\\\\\" Mr. Bennet replied that he had not. \\\\\"But it is,\\\\\" returned she; \\\\\"for Mrs. Long has just been here, and she told me all about it.\\\\\" Mr. Bennet made no answer."
+msgstr "\\\\\"My dear Mr. Bennet,\\\\\" said his lady to him one day, \\\\\"have you heard that Netherfield Park is let at last?\\\\\" Mr. Bennet replied that he had not. \\\\\"But it is,\\\\\" returned she; \\\\\"for Mrs. Long has just been here, and she told me all about it.\\\\\" Mr. Bennet made no answer."
+
+msgid "\\\\xC2\\\\xB7"
+msgstr "\\\\xC2\\\\xB7"
 
 msgid "about_text"
 msgstr "Storefront је менаџер пакета у KOReader-у за плагине, закрпе и фонтове."
@@ -1760,6 +2243,9 @@ msgstr "Pročitaj me"
 msgid "tab_sample_text"
 msgstr "Primer teksta"
 
+msgid "tab_screensavers"
+msgstr "Позадине"
+
 msgid "tab_versions"
 msgstr "Verzije"
 
@@ -1778,149 +2264,15 @@ msgstr "·"
 msgid "≥ %s ⭐"
 msgstr "≥ %s ⭐"
 
+msgid "★ ACTIVE"
+msgstr "★ АКТИВНО"
+
+msgid "⚙ Settings"
+msgstr "⚙ Подешавања"
+
+msgid "⚙ Settings..."
+msgstr "⚙ Подешавања..."
+
 msgid "✓ Current"
 msgstr "✓ Trenutno"
 
-msgid "Screensavers"
-msgstr "Чувари екрана"
-
-# en-hash: 6df6c2dd7dd08e6108bf1b8dea56c527
-msgid "Screensaver Settings"
-msgstr "Подешавања чувара екрана"
-
-# en-hash: dabeb2a6efa064595e4fbf43fda02f42
-msgid "Wallpaper Collection"
-msgstr "Колекција позадина"
-
-# en-hash: aaaca14de025427e39ed056b29af4058
-msgid "Open Wallpaper Collection Gallery"
-msgstr "Отвори галерију позадина"
-
-# en-hash: 261dba00113a7f7e9754902b83293f85
-msgid "Browse Wallpapers in Storefront"
-msgstr "Прегледај позадине у Storefront-у"
-
-# en-hash: bda5dcfc5c6a544bb9dd8ede06326bff
-msgid "Active Wallpaper ✓"
-msgstr "Активна позадина ✓"
-
-# en-hash: 704f03f7c5dd59a9b3ae46df8e1e46a4
-msgid "Set Active Single"
-msgstr "Постави као активну појединачну"
-
-# en-hash: 2722ddcbfd20786cc8715dac74c0531a
-msgid "+ Add to Shuffle Pool"
-msgstr "+ Додај у насумични избор"
-
-# en-hash: 938a7f69f98b48f241a295717988ac23
-msgid "Download & Set Active"
-msgstr "Преузми и активирај"
-
-# en-hash: ba8ef34da8f377a1c718ff0f10e107b1
-msgid "Wallpaper set as active KOReader screensaver!"
-msgstr "Позадина је постављена као активни чувар екрана!"
-
-# en-hash: f50b510e22815838c4d2d12e1d79bddf
-msgid "Added to shuffle pool & Folder Shuffle enabled!"
-msgstr "Додато у избор и омогућено насумично приказивање!"
-
-# en-hash: b6dea7fce89bd30f8c3d5b898849aa4b
-msgid "Wallpaper saved to collection!"
-msgstr "Позадина је сачувана у колекцији!"
-
-# en-hash: c1cb41ea040ff053e2219930470897ed
-msgid "Single Wallpaper"
-msgstr "Појединачна позадина"
-
-# en-hash: 16803106d3aa4c6852022f3da9d4c54a
-msgid "Folder Shuffle"
-msgstr "Насумично из фасцикле"
-
-# en-hash: 03ea37a723d863ca6c1918209c5c1a6f
-msgid "Book Cover"
-msgstr "Корице књиге"
-
-# en-hash: 7f58b08556c5375e2559f267873d1218
-msgid "Reading Progress"
-msgstr "Напредак читања"
-
-# en-hash: 9f20e45267caff9e39ca3b9bea16db47
-msgid "Transparent overlay (page content visible behind)"
-msgstr "Провидна позадина (садржај странице видљив иза)"
-
-# en-hash: bc586928ac8f7c25dabb909c67bdfa88
-msgid "Solid fill for screen margins & letterboxing"
-msgstr "Пуна боја за маргине екрана"
-
-# en-hash: 1f1b02ee24bf2ce675bc4c571ec2b586
-msgid "Show reading progress banner overlay"
-msgstr "Прикажи траку напретка читања"
-
-# en-hash: dd2d866df5da52a1aed8e63192026530
-msgid "Stretch image to fill entire screen"
-msgstr "Развуци слику преко целог екрана"
-
-# en-hash: 1554833122e9bc723e16d2f1b927dc98
-msgid "Invert colors (night mode / dark background)"
-msgstr "Инвертуј боје (ноћни режим / тамна позадина)"
-
-
-msgid "Screensaver Settings"
-msgstr "Подешавања чувара екрана"
-
-msgid "Wallpaper Collection"
-msgstr "Колекција позадина"
-
-msgid "Open Wallpaper Collection Gallery"
-msgstr "Отвори галерију позадина"
-
-msgid "Browse Wallpapers in Storefront"
-msgstr "Прегледај позадине у Storefront-у"
-
-msgid "Active Wallpaper ✓"
-msgstr "Активна позадина ✓"
-
-msgid "Set Active Single"
-msgstr "Постави као активну појединачну"
-
-msgid "+ Add to Shuffle Pool"
-msgstr "+ Додај у насумични избор"
-
-msgid "Download & Set Active"
-msgstr "Преузми и активирај"
-
-msgid "Wallpaper set as active KOReader screensaver!"
-msgstr "Позадина је постављена као активни чувар екрана!"
-
-msgid "Added to shuffle pool & Folder Shuffle enabled!"
-msgstr "Додато у избор и омогућено насумично приказивање!"
-
-msgid "Wallpaper saved to collection!"
-msgstr "Позадина је сачувана у колекцији!"
-
-msgid "Single Wallpaper"
-msgstr "Појединачна позадина"
-
-msgid "Folder Shuffle"
-msgstr "Насумично из фасцикле"
-
-msgid "Book Cover"
-msgstr "Корице књиге"
-
-msgid "Reading Progress"
-msgstr "Напредак читања"
-
-msgid "Transparent overlay (page content visible behind)"
-msgstr "Провидна позадина (садржај странице видљив иза)"
-
-msgid "Solid fill for screen margins & letterboxing"
-msgstr "Пуна боја за маргине екрана"
-
-msgid "Show reading progress banner overlay"
-msgstr "Прикажи траку напретка читања"
-
-msgid "Stretch image to fill entire screen"
-msgstr "Развуци слику преко целог екрана"
-
-msgid "Invert colors (night mode / dark background)"
-msgstr "Инвертуј боје (ноћни режим / тамна позадина)"

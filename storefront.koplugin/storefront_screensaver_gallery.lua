@@ -13,15 +13,16 @@ local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
 local Button = require("ui/widget/button")
-local ConfirmBox = require("ui/widget/confirmbox")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local Localization = require("localization_storefront")
 local _ = function(key, ...) return Localization:t(key, ...) end
 local storefront_theme = require("storefront_theme")
+local StorefrontUtils = require("storefront_utils")
 
 local StorefrontScreensaverMgr = require("storefront_screensaver_mgr")
+local Input = Device and Device.input
 
 local StorefrontScreensaverGallery = {}
 
@@ -196,26 +197,18 @@ function StorefrontScreensaverGallery.show(Storefront, on_close_callback, on_set
         local fixed_list_h = sc(395) -- Exact height for 5 item rows
 
         local function make_action_btn(label_str, bg_color, fg_color, callback)
-            local btn_text = TextWidget:new{
+            return StorefrontUtils.createButton{
                 text = label_str,
-                face = Font:getFace("cfont", 12),
+                text_font_size = 12,
                 bold = true,
-                fgcolor = fg_color or Blitbuffer.COLOR_BLACK,
-            }
-            local frame = FrameContainer:new{
-                bordersize = sc(1),
-                color = Blitbuffer.COLOR_BLACK,
+                bordersize = storefront_theme.border_btn or sc(1),
                 radius = sc(4),
-                padding = 0,
                 width = btn_col_w,
                 height = btn_h,
-                background = bg_color or Blitbuffer.COLOR_WHITE,
-                CenterContainer:new{
-                    dimen = Geom:new{ w = btn_col_w, h = btn_h },
-                    btn_text,
-                }
+                background = bg_color,
+                text_font_color = fg_color,
+                callback = callback,
             }
-            return make_tap_item(frame, callback)
         end
 
         if #items == 0 then
@@ -370,9 +363,9 @@ function StorefrontScreensaverGallery.show(Storefront, on_close_callback, on_set
                 else
                     local set_active_btn = make_action_btn(_("Set Single"), Blitbuffer.Color8(240), Blitbuffer.COLOR_BLACK, function()
                         StorefrontScreensaverMgr.setScreensaverMode("single", { file = current_item.filepath })
+                        refresh()
                         local StorefrontToast = require("storefront_toast")
                         StorefrontToast.show(_("Set as active single wallpaper!"), 2)
-                        refresh()
                     end)
                     table.insert(right_actions_vg, set_active_btn)
                 end
@@ -380,17 +373,19 @@ function StorefrontScreensaverGallery.show(Storefront, on_close_callback, on_set
                 table.insert(right_actions_vg, VerticalSpan:new{ width = sc(4) })
 
                 local delete_btn = make_action_btn(_("Remove"), Blitbuffer.COLOR_WHITE, Blitbuffer.COLOR_BLACK, function()
-                    UIManager:show(ConfirmBox:new{
+                    local StorefrontUtils = require("storefront_utils")
+                    StorefrontUtils.showConfirmDialog{
+                        title = _("Remove Wallpaper?"),
                         text = string.format(_("Remove '%s' from your wallpaper collection?"), current_item.title or current_item.filename),
                         ok_text = _("Remove"),
                         cancel_text = _("Cancel"),
                         ok_callback = function()
                             StorefrontScreensaverMgr.deleteLocalScreensaver(current_item.filepath)
+                            refresh()
                             local StorefrontToast = require("storefront_toast")
                             StorefrontToast.show(_("Wallpaper removed"), 2)
-                            refresh()
-                        end
-                    })
+                        end,
+                    }
                 end)
                 table.insert(right_actions_vg, delete_btn)
 
@@ -513,44 +508,48 @@ function StorefrontScreensaverGallery.show(Storefront, on_close_callback, on_set
             background = Blitbuffer.COLOR_DARK_GRAY,
         })
 
-        local btn_w = math.floor((dialog_w - sc(36)) / 2)
+        local btn_gap = sc(12)
+        local total_btns_w = dialog_w - sc(20)
+        local config_text = _("⚙ Settings")
+        local close_text = _("Close")
+        local btn_font_size = StorefrontUtils.calcGroupFontSize({ config_text, close_text }, total_btns_w, btn_gap, "cfont", sc(16))
+        local btn_widths = StorefrontUtils.calcProportionalBtnWidths({ config_text, close_text }, total_btns_w, btn_gap, btn_font_size, "cfont")
 
-        local config_btn = Button:new{
-            text = _("⚙ Settings"),
-            text_font_size = 15,
+        local config_btn = StorefrontUtils.createButton{
+            text = config_text,
+            text_font_size = btn_font_size,
             bold = true,
-            bordersize = sc(1),
+            bordersize = storefront_theme.border_btn or sc(1),
             radius = sc(4),
-            padding = sc(9),
-            width = btn_w,
+            width = btn_widths[1],
+            height = sc(38),
             background = Blitbuffer.COLOR_WHITE,
             text_font_color = Blitbuffer.COLOR_BLACK,
             callback = openConfig,
         }
 
-        local close_btn = Button:new{
-            text = _("Close"),
-            text_font_size = 15,
+        local close_btn = StorefrontUtils.createButton{
+            text = close_text,
+            text_font_size = btn_font_size,
             bold = true,
-            bordersize = 0,
+            bordersize = storefront_theme.border_btn or sc(1),
             radius = sc(4),
-            padding = sc(9),
-            width = btn_w,
+            width = btn_widths[2],
+            height = sc(38),
             background = Blitbuffer.COLOR_BLACK,
             text_font_color = Blitbuffer.COLOR_WHITE,
             callback = closeGallery,
         }
-        if close_btn.label_widget then close_btn.label_widget.fgcolor = Blitbuffer.COLOR_WHITE end
 
         local btn_row = FrameContainer:new{
             padding = sc(8),
             bordersize = 0,
             width = dialog_w - sc(4),
             CenterContainer:new{
-                dimen = Geom:new{ w = dialog_w - sc(20), h = math.max(config_btn:getSize().h, close_btn:getSize().h) },
+                dimen = Geom:new{ w = total_btns_w, h = sc(38) },
                 HorizontalGroup:new{
                     config_btn,
-                    HorizontalSpan:new{ width = sc(12) },
+                    HorizontalSpan:new{ width = btn_gap },
                     close_btn,
                 }
             }
@@ -567,13 +566,77 @@ function StorefrontScreensaverGallery.show(Storefront, on_close_callback, on_set
             content_vg,
         }
 
+        local key_events = {
+            Close = { { "Back" } },
+            NextPage = {
+                { "Right" },
+                { "PageDown" },
+                { "Down" },
+            },
+            PrevPage = {
+                { "Left" },
+                { "PageUp" },
+                { "Up" },
+            },
+        }
+
+        if Input and Input.group then
+            if Input.group.PgFwd then
+                table.insert(key_events.NextPage, { Input.group.PgFwd })
+            end
+            if Input.group.PgBack then
+                table.insert(key_events.PrevPage, { Input.group.PgBack })
+            end
+            if Input.group.Back then
+                table.insert(key_events.Close, { Input.group.Back })
+            end
+        end
+
+        local ges_events = {
+            Swipe = {
+                GestureRange:new{
+                    ges = "swipe",
+                    range = function() return Geom:new{ w = sw, h = sh } end,
+                }
+            }
+        }
+
         overlay = InputContainer:new{
             align = "center",
             vertical_align = "center",
             dimen = Geom:new{ w = sw, h = sh },
-            key_events = { Close = { { "Back" } } },
+            key_events = key_events,
+            ges_events = ges_events,
             card,
         }
+
+        overlay.onNextPage = function()
+            if current_page < total_pages then
+                current_page = current_page + 1
+                refresh()
+            end
+            return true
+        end
+
+        overlay.onPrevPage = function()
+            if current_page > 1 then
+                current_page = current_page - 1
+                refresh()
+            end
+            return true
+        end
+
+        overlay.onSwipe = function(self, arg, ges_ev)
+            local ev = (type(arg) == "table" and arg) or (type(ges_ev) == "table" and ges_ev)
+            local direction = ev and ev.direction
+            if direction == "left" or direction == "west" then
+                return overlay.onNextPage()
+            elseif direction == "right" or direction == "east" then
+                return overlay.onPrevPage()
+            end
+            return false
+        end
+
         overlay.onClose = function()
             overlay = nil
             if on_close_callback then

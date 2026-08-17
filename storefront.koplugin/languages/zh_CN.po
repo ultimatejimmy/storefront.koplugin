@@ -8,11 +8,32 @@ msgstr ""
 msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
 msgstr "“亲爱的班纳特先生，”一天他的太太对他说，“你听说内瑟菲尔德庄园终于租出去了吗？”班纳特先生回答说没有。“可确实租出去了，”她回答道，“朗格太太刚才来过，把这事全告诉我了。”班纳特先生没有作声。"
 
+msgid "%d Categories"
+msgstr "%d 个分类"
+
+msgid "%d items"
+msgstr "%d 项"
+
 msgid "%d patches"
 msgstr "%d 个补丁"
 
 msgid "%d plugins"
 msgstr "%d 个插件"
+
+msgid "%d wallpapers"
+msgstr "%d 张壁纸"
+
+msgid "%d wallpapers stored on device"
+msgstr "设备上已存储 %d 张壁纸"
+
+msgid "%d wallpapers · Folder Shuffle (all in rotation)"
+msgstr "%d 张壁纸 · 文件夹随机（全部轮换）"
+
+msgid "%d wallpapers · Mode: Book Cover"
+msgstr "%d 张壁纸 · 模式：书籍封面"
+
+msgid "%d wallpapers · Single mode active"
+msgstr "%d 张壁纸 · 单图模式激活"
 
 msgid "%s and %s"
 msgstr "%s 和 %s"
@@ -26,11 +47,20 @@ msgstr "%s 已是最新。"
 msgid "%s needs an update."
 msgstr "%s 需要更新。"
 
+msgid "%s · %d files"
+msgstr "%s · %d 个文件"
+
+msgid "%s · 1 file"
+msgstr "%s · 1 个文件"
+
 msgid "(fork)"
 msgstr "(fork)"
 
 msgid "(showing %d of %d commits)"
 msgstr "（显示 %d / %d 个提交）"
+
+msgid "+ Add to Shuffle Pool"
+msgstr "+ 加入随机轮播池"
 
 msgid "1 / 1"
 msgstr "1 / 1"
@@ -50,14 +80,44 @@ msgstr "< 上一页"
 msgid "?"
 msgstr "?"
 
+msgid "A -> Z"
+msgstr "A -> Z"
+
+msgid "A → Z"
+msgstr "A → Z"
+
 msgid "About"
 msgstr "关于"
 
 msgid "About Storefront"
 msgstr "关于 Storefront"
 
+msgid "Active Single"
+msgstr "当前单张"
+
+msgid "Active Wallpaper ✓"
+msgstr "当前壁纸 ✓"
+
+msgid "Active: %s"
+msgstr "当前激活：%s"
+
+msgid "Add to Shuffle"
+msgstr "加入随机轮换"
+
+msgid "Add to Shuffle Pool (Enable Shuffle)"
+msgstr "添加到随机轮换（启用随机）"
+
+msgid "Added to shuffle pool & Folder Shuffle enabled!"
+msgstr "已加入轮播池并启用文件夹随机轮播！"
+
 msgid "All"
 msgstr "全部"
+
+msgid "All Caches"
+msgstr "所有缓存"
+
+msgid "All Categories"
+msgstr "所有分类"
 
 msgid "All Types"
 msgstr "所有类型"
@@ -116,11 +176,29 @@ msgstr "返回"
 msgid "Beta"
 msgstr "测试版"
 
+msgid "Black Fill"
+msgstr "黑色填充"
+
+msgid "Blank"
+msgstr "空白"
+
+msgid "Book Cover"
+msgstr "图书封面"
+
+msgid "Border Fill / Background"
+msgstr "边缘填充 / 背景"
+
 msgid "Both owner and repository name are required."
 msgstr "所有者和仓库名称均为必填项。"
 
 msgid "Branch: %s"
 msgstr "分支：%s"
+
+msgid "Browse Wallpapers in Storefront"
+msgstr "在 Storefront 中浏览壁纸"
+
+msgid "By "
+msgstr "By"
 
 msgid "By: %s"
 msgstr "作者: %s"
@@ -173,11 +251,26 @@ msgstr "目录来源"
 msgid "Catalog updated: %d plugins, %d patches, %d fonts."
 msgstr "目录已更新：%d 个插件，%d 个补丁，%d 个字体。"
 
+msgid "Categories"
+msgstr "分类"
+
+msgid "Category: "
+msgstr "分类："
+
 msgid "Category: %s"
 msgstr "分类: %s"
 
+msgid "Change..."
+msgstr "更改..."
+
+msgid "Changelog for %s\n%s \\\\xE2\\\\x86\\\\x92 %s"
+msgstr "Changelog for %s\n%s \\\\xE2\\\\x86\\\\x92 %s"
+
 msgid "Changelog for %s\n%s → %s"
 msgstr "%s 的更新日志\n%s → %s"
+
+msgid "Changelog for %s\\\n%s \\\\xE2\\\\x86\\\\x92 %s"
+msgstr "Changelog for %s\\\n%s \\\\xE2\\\\x86\\\\x92 %s"
 
 msgid "Changelog: %s"
 msgstr "更新日志：%s"
@@ -227,29 +320,92 @@ msgstr "正在检查插件更新…"
 msgid "Choose Build — %s"
 msgstr "选择构建 — %s"
 
+msgid "Clean"
+msgstr "清理"
+
 msgid "Clear"
 msgstr "清除"
+
+msgid "Clear All"
+msgstr "全部清除"
+
+msgid "Clear All Caches?"
+msgstr "清除所有缓存？"
+
+msgid "Clear Cache"
+msgstr "清除缓存"
+
+msgid "Clear README Cache?"
+msgstr "清除 README 缓存？"
 
 msgid "Clear README cache"
 msgstr "清除 README 缓存"
 
+msgid "Clear README cache (%s)?\nCached README files and images will be deleted."
+msgstr "Clear README cache (%s)?\nCached README files and images will be deleted."
+
+msgid "Clear Thumbnail Cache?"
+msgstr "清除缩略图缓存？"
+
+msgid "Clear Wiki Cache?"
+msgstr "清除 Wiki 缓存？"
+
+msgid "Clear Wiki cache (%s)?\nCached wiki articles and images will be deleted."
+msgstr "Clear Wiki cache (%s)?\nCached wiki articles and images will be deleted."
+
+msgid "Clear all cached data (%s)?\nAll README files, wiki articles, and thumbnails will be deleted."
+msgstr "Clear all cached data (%s)?\nAll README files, wiki articles, and thumbnails will be deleted."
+
+msgid "Clear cache…"
+msgstr "清除缓存"
+
+msgid "Clear screensaver thumbnail cache (%s)?\nThumbnails will be re-downloaded when viewing wallpapers."
+msgstr "Clear screensaver thumbnail cache (%s)?\nThumbnails will be re-downloaded when viewing wallpapers."
+
+msgid "Clear search & filters"
+msgstr "清除搜索与筛选"
+
 msgid "Clear search/filters"
 msgstr "清除搜索/筛选"
+
+msgid "Cleared README cache (%s freed)."
+msgstr "Cleared README cache (%s freed)."
+
+msgid "Cleared Wiki cache (%s freed)."
+msgstr "Cleared Wiki cache (%s freed)."
+
+msgid "Cleared all caches (%s freed, %d files)."
+msgstr "Cleared all caches (%s freed, %d files)."
+
+msgid "Cleared screensaver thumbnails (%s freed)."
+msgstr "Cleared screensaver thumbnails (%s freed)."
 
 msgid "Close"
 msgstr "关闭"
 
+msgid "Collection"
+msgstr "收藏集"
+
 msgid "Commit diff: %s → %s"
 msgstr "提交差异：%s → %s"
 
+msgid "Commits: %s \\\\xE2\\\\x86\\\\x92 %s"
+msgstr "Commits: %s \\\\xE2\\\\x86\\\\x92 %s"
+
 msgid "Commits: %s → %s"
 msgstr "提交：%s → %s"
+
+msgid "Community"
+msgstr "社区"
 
 msgid "Config files only"
 msgstr "仅配置文件"
 
 msgid "Configured ✓"
 msgstr "已配置 ✓"
+
+msgid "Confirm"
+msgstr "确认"
 
 msgid "Confirm Update"
 msgstr "确认更新"
@@ -259,6 +415,9 @@ msgstr "确认全部更新"
 
 msgid "Connecting to GitHub…\n\nPlease wait."
 msgstr "正在连接至 GitHub…\n\n请稍候。"
+
+msgid "Connecting to GitHub…\\\n\\\nPlease wait."
+msgstr "Connecting to GitHub…\\\n\\\nPlease wait."
 
 msgid "Continue"
 msgstr "继续"
@@ -305,6 +464,18 @@ msgstr "仅默认"
 msgid "Delete"
 msgstr "删除"
 
+msgid "Delete "
+msgstr "删除"
+
+msgid "Delete '%s' from your device?"
+msgstr "从设备中删除 '%s'？"
+
+msgid "Delete File?"
+msgstr "删除文件？"
+
+msgid "Delete Wallpaper?"
+msgstr "删除壁纸？"
+
 msgid "Delete all cached README files? They will be re-downloaded on demand."
 msgstr "删除所有已缓存的 README 文件？需要时将重新下载。"
 
@@ -319,6 +490,9 @@ msgstr "删除字体 "
 
 msgid "Delete font '%s'?"
 msgstr "是否删除字体 '%s'？"
+
+msgid "Delete from Device"
+msgstr "从设备删除"
 
 msgid "Delete patch"
 msgstr "删除补丁"
@@ -365,6 +539,27 @@ msgstr "禁用插件"
 msgid "Disabled"
 msgstr "已禁用"
 
+msgid "Display Options"
+msgstr "显示选项"
+
+msgid "Displays a static wallpaper on sleep"
+msgstr "休眠时显示静态壁纸"
+
+msgid "Displays a static wallpaper on sleep.\nActive: %s"
+msgstr "休眠时显示静态壁纸。\n当前激活：%s"
+
+msgid "Done"
+msgstr "完成"
+
+msgid "Download & Set Active"
+msgstr "下载并应用"
+
+msgid "Download Only"
+msgstr "仅下载"
+
+msgid "Download Only (Save to Device)"
+msgstr "仅下载（保存到设备）"
+
 msgid "Download failed: "
 msgstr "下载失败："
 
@@ -377,11 +572,20 @@ msgstr "下载选项 — %s"
 msgid "Download options — %s (%s)"
 msgstr "下载选项 — %s (%s)"
 
+msgid "Downloading "
+msgstr "Downloading..."
+
 msgid "Downloading %s%s…\nThis may take a moment."
 msgstr "正在下载 %s%s…\n这可能需要一点时间。"
 
+msgid "Downloading %s%s…\\\nThis may take a moment."
+msgstr "Downloading %s%s…\\\nThis may take a moment."
+
 msgid "Downloading %s…"
 msgstr "正在下载 %s…"
+
+msgid "Downloading '%s'..."
+msgstr "Downloading '%s'..."
 
 msgid "Downloading patch \"%s\"…"
 msgstr "正在下载补丁“%s”…"
@@ -389,8 +593,20 @@ msgstr "正在下载补丁“%s”…"
 msgid "Downloading patch %s…"
 msgstr "正在下载补丁 %s…"
 
+msgid "Downloading patch \\\\\"%s\\\\\"…"
+msgstr "Downloading patch \\\\\"%s\\\\\"…"
+
+msgid "Downloading screensaver..."
+msgstr "正在下载壁纸..."
+
+msgid "Downloading to shuffle pool..."
+msgstr "正在下载至随机轮换池..."
+
 msgid "Edit"
 msgstr "编辑"
+
+msgid "Empty (0 KB)"
+msgstr "空 (0 KB)"
 
 msgid "Enable"
 msgstr "启用"
@@ -412,6 +628,9 @@ msgstr "输入插件编号"
 
 msgid "Extracting and installing plugin…\nPlease wait."
 msgstr "正在解压并安装插件…\n请稍候。"
+
+msgid "Extracting and installing plugin…\\\nPlease wait."
+msgstr "Extracting and installing plugin…\\\nPlease wait."
 
 msgid "Failed to check %s: %s"
 msgstr "检查 %s 失败：%s"
@@ -439,6 +658,9 @@ msgstr "禁用补丁 '%s' 失败。"
 
 msgid "Failed to download patch: %s"
 msgstr "下载补丁失败：%s"
+
+msgid "Failed to download screensaver."
+msgstr "壁纸下载失败。"
 
 msgid "Failed to enable patch "
 msgstr "无法启用补丁 "
@@ -512,6 +734,9 @@ msgstr "筛选与排序补丁"
 msgid "Filter & Sort Plugins"
 msgstr "筛选与排序插件"
 
+msgid "Filter & Sort Screensavers"
+msgstr "筛选与排序壁纸"
+
 msgid "Filter Installed Patches"
 msgstr "筛选已安装补丁"
 
@@ -536,6 +761,12 @@ msgstr "过滤器："
 msgid "Filters: (none)"
 msgstr "过滤器：（无）"
 
+msgid "Folder Shuffle"
+msgstr "文件夹轮播"
+
+msgid "Folder Shuffle enabled with this wallpaper!"
+msgstr "已通过此壁纸启用文件夹随机轮换！"
+
 msgid "Font"
 msgstr "字体"
 
@@ -553,6 +784,9 @@ msgstr "字体样式"
 
 msgid "Fonts"
 msgstr "字体"
+
+msgid "Free up storage space on your device. Cached items are re-downloaded automatically when needed."
+msgstr "释放设备存储空间。需要时会自动重新下载缓存的内容。"
 
 msgid "GitHub API rate limit exceeded. Add a GitHub token in Storefront settings to increase the limit (10→30 req/min)."
 msgstr "超出 GitHub API 速率限制。请在 Storefront 设置中添加 GitHub 令牌以提高限制（10→30 次请求/分钟）。"
@@ -623,6 +857,9 @@ msgstr "从 GitHub 安装补丁"
 msgid "Install plugin from GitHub"
 msgstr "从 GitHub 安装插件"
 
+msgid "Install to Default?"
+msgstr "安装到默认目录？"
+
 msgid "Install to default"
 msgstr "安装到默认目录"
 
@@ -644,14 +881,26 @@ msgstr "已安装插件设置"
 msgid "Installed Regular font style offline for \"%s\". Full font family queued for download when reconnected."
 msgstr "已离线安装“%s”的常规字形。重新连接后将排队下载全套字体族。"
 
+msgid "Installed Regular font style offline for \\\\\"%s\\\\\". Full font family queued for download when reconnected."
+msgstr "Installed Regular font style offline for \\\\\"%s\\\\\". Full font family queued for download when reconnected."
+
 msgid "Installed font \"%s\" (%d file(s))."
 msgstr "已安装字体“%s”（%d 个文件）。"
+
+msgid "Installed font \\\\\"%s\\\\\" (%d file(s))."
+msgstr "Installed font \\\\\"%s\\\\\" (%d file(s))."
 
 msgid "Installed full font family \"%s\" (%d file(s))."
 msgstr "已安装全套字体族“%s”（%d 个文件）。"
 
+msgid "Installed full font family \\\\\"%s\\\\\" (%d file(s))."
+msgstr "Installed full font family \\\\\"%s\\\\\" (%d file(s))."
+
 msgid "Installed patch \"%s\"."
 msgstr "已安装补丁“%s”。"
+
+msgid "Installed patch \\\\\"%s\\\\\"."
+msgstr "Installed patch \\\\\"%s\\\\\"."
 
 msgid "Installed plugin \"%s\" (version %s)."
 msgstr "已安装插件“%s”（版本 %s）。"
@@ -676,6 +925,9 @@ msgstr "无效的补丁目标文件名。"
 
 msgid "Invalid selection."
 msgstr "无效的选择。"
+
+msgid "Invert colors (night mode / dark background)"
+msgstr "反转颜色（夜间模式 / 深色背景）"
 
 msgid "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters."
 msgstr "凡是有钱的单身汉，总想娶位太太，这已经成了一条条公认的真理。"
@@ -736,6 +988,9 @@ msgstr "管理插件路径"
 
 msgid "Manage plugin paths\n\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
 msgstr "管理插件路径\n\n隐藏路径仅影响 Storefront 在此处的显示与管理。KOReader 仍会从中加载插件。"
+
+msgid "Manage plugin paths\\\n\\\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
+msgstr "Manage plugin paths\\\n\\\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
 
 msgid "Match"
 msgstr "匹配"
@@ -836,8 +1091,17 @@ msgstr "修改插件"
 msgid "Modify Plugin: %s"
 msgstr "修改插件：%s"
 
+msgid "Most Downloaded"
+msgstr "下载最多"
+
+msgid "Most Popular"
+msgstr "最受欢迎"
+
 msgid "Multiple custom plugin folders are configured. Where should this plugin be installed?"
 msgstr "配置了多个自定义插件文件夹。该插件应安装到何处？"
+
+msgid "My wallpaper collection"
+msgstr "我的壁纸收藏"
 
 msgid "Name (A-Z)"
 msgstr "名称 (A-Z)"
@@ -865,6 +1129,9 @@ msgstr "下一步"
 
 msgid "Next >"
 msgstr "下一页 >"
+
+msgid "No Fill (Transparent)"
+msgstr "无填充（透明）"
 
 msgid "No Lua files found in plugin directory"
 msgstr "插件目录中未找到 Lua 文件"
@@ -959,11 +1226,23 @@ msgstr "未找到此仓库的发布版本。"
 msgid "No remote version info for %s."
 msgstr "没有 %s 的远程版本信息。"
 
+msgid "No screensavers match this filter."
+msgstr "没有符合此筛选条件的壁纸。"
+
 msgid "No stable releases found — uncheck filter to show all releases"
 msgstr "未找到稳定发布版本 — 取消勾选筛选器以显示所有版本"
 
 msgid "No tracked plugins to check."
 msgstr "没有已跟踪的插件可供检查。"
+
+msgid "No wallpapers found in your screensavers folder.\n\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
+msgstr "壁纸文件夹中没有找到壁纸。\n\n请在 Storefront 壁纸商城中浏览并下载壁纸！"
+
+msgid "No wallpapers found in your screensavers folder.\\\n\\\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
+msgstr "No wallpapers found in your screensavers folder.\\\n\\\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
+
+msgid "None selected"
+msgstr "未选择"
 
 msgid "Not matched with a repository."
 msgstr "未与仓库匹配。"
@@ -974,11 +1253,17 @@ msgstr "未设置"
 msgid "Notes"
 msgstr "备注"
 
+msgid "OK"
+msgstr "确定"
+
 msgid "Offline Regular"
 msgstr "离线 Regular（常规）"
 
 msgid "Open"
 msgstr "打开"
+
+msgid "Open Wallpaper Collection Gallery"
+msgstr "打开壁纸图库"
 
 msgid "Open details"
 msgstr "打开详情"
@@ -988,6 +1273,9 @@ msgstr "可选。可提高 GitHub API 速率限制。生成一个（经典款，
 
 msgid "Optional. Raises the GitHub API rate limit. Generate one (classic, 'public_repo' scope is enough) at github.com/settings/tokens, then paste it here."
 msgstr "可选。提高 GitHub API 速率限制。请在 github.com/settings/tokens 生成一个 Token（经典 Token，勾选 'public_repo' 权限即可），然后粘贴到此处。"
+
+msgid "Options ▾"
+msgstr "选项 ▾"
 
 msgid "Origin"
 msgstr "来源"
@@ -1021,6 +1309,9 @@ msgstr "补丁 "
 
 msgid "Patch %s has been %s."
 msgstr "补丁 %s 已%s。"
+
+msgid "Patch '%s' deleted."
+msgstr "补丁 '%s' 已删除。"
 
 msgid "Patch '%s' disabled."
 msgstr "补丁 '%s' 已禁用。"
@@ -1097,6 +1388,9 @@ msgstr "插件"
 msgid "Plugins cached: %s (last update: %s)"
 msgstr "已缓存插件：%s（上次更新：%s）"
 
+msgid "Pool size: %d wallpapers in rotation"
+msgstr "轮换池容量：%d 张壁纸"
+
 msgid "Pre-installed core KOReader plugin."
 msgstr "预装的 KOReader 核心插件。"
 
@@ -1112,14 +1406,32 @@ msgstr "README"
 msgid "README download failed: "
 msgstr "README 下载失败："
 
+msgid "README files & images"
+msgstr "README 说明文档与图片"
+
+msgid "Rate Wallpaper"
+msgstr "评价壁纸"
+
 msgid "Reading Passage Specimen"
 msgstr "阅读段落范本"
+
+msgid "Reading Progress"
+msgstr "阅读进度"
+
+msgid "Reading Progress / Summary"
+msgstr "阅读进度 / 摘要"
+
+msgid "Recently Added"
+msgstr "最新添加"
 
 msgid "Refresh"
 msgstr "刷新"
 
 msgid "Refresh cache"
 msgstr "刷新缓存"
+
+msgid "Refresh catalog"
+msgstr "刷新目录"
 
 msgid "Refreshing catalog via Direct GitHub API…"
 msgstr "正在通过 GitHub API 刷新目录…"
@@ -1181,6 +1493,15 @@ msgstr "远程：（未检查）"
 msgid "Remove"
 msgstr "移除"
 
+msgid "Remove "
+msgstr "移除"
+
+msgid "Remove '%s' from your wallpaper collection?"
+msgstr "从壁纸收藏集中移除 '%s'？"
+
+msgid "Remove Wallpaper?"
+msgstr "移除壁纸？"
+
 msgid "Rename"
 msgstr "重命名"
 
@@ -1235,6 +1556,30 @@ msgstr "示例文本"
 msgid "Save"
 msgstr "保存"
 
+msgid "Screensaver"
+msgstr "壁纸 / 屏保"
+
+msgid "Screensaver & Wallpapers"
+msgstr "屏保与壁纸"
+
+msgid "Screensaver Details"
+msgstr "壁纸详情"
+
+msgid "Screensaver Mode"
+msgstr "壁纸模式"
+
+msgid "Screensaver Settings"
+msgstr "屏幕保护设置"
+
+msgid "Screensaver mode"
+msgstr "壁纸模式"
+
+msgid "Screensaver thumbnails"
+msgstr "壁纸缩略图"
+
+msgid "Screensavers"
+msgstr "屏幕保护"
+
 msgid "Search"
 msgstr "搜索"
 
@@ -1244,11 +1589,23 @@ msgstr "搜索“%s”"
 msgid "Search & API"
 msgstr "搜索与 API"
 
+msgid "Search filter (\"%s\") is not applied to Updates."
+msgstr "Search filter (\"%s\") is not applied to Updates."
+
+msgid "Search filter (\\\\\"%s\\\\\") is not applied to Updates."
+msgstr "Search filter (\\\\\"%s\\\\\") is not applied to Updates."
+
 msgid "Search text"
 msgstr "搜索文本"
 
 msgid "Search: "
 msgstr "搜索： "
+
+msgid "Select All"
+msgstr "全选"
+
+msgid "Select Categories"
+msgstr "选择分类"
 
 msgid "Select a repository patch entry to match with the chosen file."
 msgstr "选择一个仓库补丁条目与所选文件匹配。"
@@ -1274,11 +1631,53 @@ msgstr "选择仓库"
 msgid "Set"
 msgstr "设置"
 
+msgid "Set Active Single"
+msgstr "设为当前单张壁纸"
+
+msgid "Set Single"
+msgstr "设为单张"
+
+msgid "Set as Active"
+msgstr "设为当前壁纸"
+
+msgid "Set as Active Single Wallpaper"
+msgstr "设为当前单张壁纸"
+
+msgid "Set as active single wallpaper!"
+msgstr "已设为当前单张壁纸！"
+
 msgid "Settings"
 msgstr "设置"
 
 msgid "Show needs update"
 msgstr "显示需要更新"
+
+msgid "Show reading progress banner overlay"
+msgstr "显示阅读进度横幅图层"
+
+msgid "Shows reading stats, percentage, and chapter progress"
+msgstr "显示阅读统计、百分比与章节进度"
+
+msgid "Shows the cover of the book currently being read"
+msgstr "显示当前正在阅读的书籍封面"
+
+msgid "Shuffle (%d)"
+msgstr "随机轮换 (%d)"
+
+msgid "Shuffle Pool"
+msgstr "随机轮换池"
+
+msgid "Shuffles through all wallpapers in folder on sleep.\nPool size: %d wallpapers in rotation"
+msgstr "休眠时轮换显示文件夹中的所有壁纸。\n轮换池容量：%d 张壁纸"
+
+msgid "Single"
+msgstr "单张"
+
+msgid "Single Wallpaper"
+msgstr "单张壁纸"
+
+msgid "Solid fill for screen margins & letterboxing"
+msgstr "纯色填充屏幕留白与黑边"
 
 msgid "Sort"
 msgstr "排序"
@@ -1288,6 +1687,9 @@ msgstr "排序模式"
 
 msgid "Sort: A-Z"
 msgstr "排序: A-Z"
+
+msgid "Sort: Most Liked"
+msgstr "排序：获赞最多"
 
 msgid "Sort: Name (A → Z)"
 msgstr "排序: 名称 (A-Z)"
@@ -1352,6 +1754,9 @@ msgstr "商店 · 更新"
 msgid "Storefront: Open"
 msgstr "Storefront：打开"
 
+msgid "Stretch image to fill entire screen"
+msgstr "拉伸图片以铺满全屏"
+
 msgid "Style: "
 msgstr "样式： "
 
@@ -1391,6 +1796,24 @@ msgstr "天地玄黄，宇宙洪荒。日月盈昃，辰宿列张。"
 msgid "This action cannot be undone.\n\nChanges will take effect after restart."
 msgstr "此操作无法撤销。\n\n更改将在重启后生效。"
 
+msgid "This action cannot be undone.\\\n\\\nChanges will take effect after restart."
+msgstr "This action cannot be undone.\\\n\\\nChanges will take effect after restart."
+
+msgid "This wallpaper is currently set as your active screensaver."
+msgstr "此壁纸当前已设置为您的激活屏保。"
+
+msgid "This will delete all cached README files, wiki articles, and screensaver thumbnails (%s)."
+msgstr "这将删除所有已缓存的 README 文件、Wiki 文章和壁纸缩略图（%s）。"
+
+msgid "This will delete cached README markdown files and downloaded images (%s)."
+msgstr "这将删除已缓存的 README Markdown 文件和下载的图片（%s）。"
+
+msgid "This will delete cached screensaver thumbnail previews (%s)."
+msgstr "这将删除已缓存的壁纸缩略图预览（%s）。"
+
+msgid "This will delete cached wiki articles and downloaded images (%s)."
+msgstr "这将删除已缓存的 Wiki 文章和下载的图片（%s）。"
+
 msgid "This will take effect on next restart."
 msgstr "这将在下次重启时生效。"
 
@@ -1399,6 +1822,9 @@ msgstr "提交总数：%d"
 
 msgid "Tracked: %d"
 msgstr "已跟踪：%d"
+
+msgid "Transparent overlay (page content visible behind)"
+msgstr "透明图层（背景显示当前页面）"
 
 msgid "Type"
 msgstr "类型"
@@ -1481,11 +1907,20 @@ msgstr "已更新补丁“%s”。"
 msgid "Updated patch %s."
 msgstr "已更新补丁 %s。"
 
+msgid "Updated patch \\\\\"%s\\\\\"."
+msgstr "Updated patch \\\\\"%s\\\\\"."
+
 msgid "Updated plugin \"%s\" to version %s."
 msgstr "已将插件“%s”更新至版本 %s。"
 
 msgid "Updated plugin \"%s\"."
 msgstr "已更新插件“%s”。"
+
+msgid "Updated plugin \\\\\"%s\\\\\" to version %s."
+msgstr "Updated plugin \\\\\"%s\\\\\" to version %s."
+
+msgid "Updated plugin \\\\\"%s\\\\\"."
+msgstr "Updated plugin \\\\\"%s\\\\\"."
 
 msgid "Updated: %s"
 msgstr "已更新：%s"
@@ -1514,17 +1949,59 @@ msgstr "版本"
 msgid "View README"
 msgstr "查看 README"
 
+msgid "View commits (%s \\\\xE2\\\\x86\\\\x92 %s)"
+msgstr "View commits (%s \\\\xE2\\\\x86\\\\x92 %s)"
+
 msgid "View commits (%s → %s)"
 msgstr "查看提交 (%s → %s)"
 
+msgid "Wallpaper Collection"
+msgstr "壁纸收藏"
+
+msgid "Wallpaper Options"
+msgstr "壁纸选项"
+
+msgid "Wallpaper deleted from device."
+msgstr "壁纸已从设备中删除。"
+
+msgid "Wallpaper removed"
+msgstr "壁纸已移除"
+
+msgid "Wallpaper saved to collection!"
+msgstr "壁纸已保存至收藏！"
+
+msgid "Wallpaper set as active KOReader screensaver!"
+msgstr "壁纸已设为 KOReader 当前屏幕保护！"
+
+msgid "Wallpaper set as active screensaver!"
+msgstr "壁纸已设置为激活屏保！"
+
 msgid "Warning: the selected version is older than what is currently installed. You are downgrading."
 msgstr "警告：所选版本旧于当前安装的版本。您正在降级。"
+
+msgid "White Fill"
+msgstr "白色填充"
 
 msgid "Wiki"
 msgstr "Wiki"
 
 msgid "Wiki Pages"
 msgstr "Wiki 页面"
+
+msgid "Wiki pages & images"
+msgstr "Wiki 页面与图片"
+
+msgid "Z -> A"
+msgstr "Z -> A"
+
+msgid "Z → A"
+msgstr "Z → A"
+
+msgid "[ Loading preview... ]"
+msgstr "[ 正在加载预览... ]"
+
+msgid "[ Wallpaper Preview Loading... ]"
+msgstr "[ 正在加载壁纸预览... ]"
 
 msgid "[Ignored]"
 msgstr "[已忽略]"
@@ -1534,6 +2011,12 @@ msgstr "[草稿]"
 
 msgid "[pre]"
 msgstr "[预发布]"
+
+msgid "\\\\\"My dear Mr. Bennet,\\\\\" said his lady to him one day, \\\\\"have you heard that Netherfield Park is let at last?\\\\\" Mr. Bennet replied that he had not. \\\\\"But it is,\\\\\" returned she; \\\\\"for Mrs. Long has just been here, and she told me all about it.\\\\\" Mr. Bennet made no answer."
+msgstr "\\\\\"My dear Mr. Bennet,\\\\\" said his lady to him one day, \\\\\"have you heard that Netherfield Park is let at last?\\\\\" Mr. Bennet replied that he had not. \\\\\"But it is,\\\\\" returned she; \\\\\"for Mrs. Long has just been here, and she told me all about it.\\\\\" Mr. Bennet made no answer."
+
+msgid "\\\\xC2\\\\xB7"
+msgstr "\\\\xC2\\\\xB7"
 
 msgid "about_text"
 msgstr "Storefront 是 KOReader 中用于插件、补丁和字体的内置包管理器。"
@@ -1760,6 +2243,9 @@ msgstr "自述文件"
 msgid "tab_sample_text"
 msgstr "示例文本"
 
+msgid "tab_screensavers"
+msgstr "壁纸"
+
 msgid "tab_versions"
 msgstr "版本历史"
 
@@ -1778,149 +2264,15 @@ msgstr "·"
 msgid "≥ %s ⭐"
 msgstr "≥ %s ⭐"
 
+msgid "★ ACTIVE"
+msgstr "★ 当前激活"
+
+msgid "⚙ Settings"
+msgstr "⚙ 设置"
+
+msgid "⚙ Settings..."
+msgstr "⚙ 设置..."
+
 msgid "✓ Current"
 msgstr "✓ 当前版本"
 
-msgid "Screensavers"
-msgstr "屏幕保护"
-
-# en-hash: 6df6c2dd7dd08e6108bf1b8dea56c527
-msgid "Screensaver Settings"
-msgstr "屏幕保护设置"
-
-# en-hash: dabeb2a6efa064595e4fbf43fda02f42
-msgid "Wallpaper Collection"
-msgstr "壁纸收藏"
-
-# en-hash: aaaca14de025427e39ed056b29af4058
-msgid "Open Wallpaper Collection Gallery"
-msgstr "打开壁纸图库"
-
-# en-hash: 261dba00113a7f7e9754902b83293f85
-msgid "Browse Wallpapers in Storefront"
-msgstr "在 Storefront 中浏览壁纸"
-
-# en-hash: bda5dcfc5c6a544bb9dd8ede06326bff
-msgid "Active Wallpaper ✓"
-msgstr "当前壁纸 ✓"
-
-# en-hash: 704f03f7c5dd59a9b3ae46df8e1e46a4
-msgid "Set Active Single"
-msgstr "设为当前单张壁纸"
-
-# en-hash: 2722ddcbfd20786cc8715dac74c0531a
-msgid "+ Add to Shuffle Pool"
-msgstr "+ 加入随机轮播池"
-
-# en-hash: 938a7f69f98b48f241a295717988ac23
-msgid "Download & Set Active"
-msgstr "下载并应用"
-
-# en-hash: ba8ef34da8f377a1c718ff0f10e107b1
-msgid "Wallpaper set as active KOReader screensaver!"
-msgstr "壁纸已设为 KOReader 当前屏幕保护！"
-
-# en-hash: f50b510e22815838c4d2d12e1d79bddf
-msgid "Added to shuffle pool & Folder Shuffle enabled!"
-msgstr "已加入轮播池并启用文件夹随机轮播！"
-
-# en-hash: b6dea7fce89bd30f8c3d5b898849aa4b
-msgid "Wallpaper saved to collection!"
-msgstr "壁纸已保存至收藏！"
-
-# en-hash: c1cb41ea040ff053e2219930470897ed
-msgid "Single Wallpaper"
-msgstr "单张壁纸"
-
-# en-hash: 16803106d3aa4c6852022f3da9d4c54a
-msgid "Folder Shuffle"
-msgstr "文件夹轮播"
-
-# en-hash: 03ea37a723d863ca6c1918209c5c1a6f
-msgid "Book Cover"
-msgstr "图书封面"
-
-# en-hash: 7f58b08556c5375e2559f267873d1218
-msgid "Reading Progress"
-msgstr "阅读进度"
-
-# en-hash: 9f20e45267caff9e39ca3b9bea16db47
-msgid "Transparent overlay (page content visible behind)"
-msgstr "透明图层（背景显示当前页面）"
-
-# en-hash: bc586928ac8f7c25dabb909c67bdfa88
-msgid "Solid fill for screen margins & letterboxing"
-msgstr "纯色填充屏幕留白与黑边"
-
-# en-hash: 1f1b02ee24bf2ce675bc4c571ec2b586
-msgid "Show reading progress banner overlay"
-msgstr "显示阅读进度横幅图层"
-
-# en-hash: dd2d866df5da52a1aed8e63192026530
-msgid "Stretch image to fill entire screen"
-msgstr "拉伸图片以铺满全屏"
-
-# en-hash: 1554833122e9bc723e16d2f1b927dc98
-msgid "Invert colors (night mode / dark background)"
-msgstr "反转颜色（夜间模式 / 深色背景）"
-
-
-msgid "Screensaver Settings"
-msgstr "屏幕保护设置"
-
-msgid "Wallpaper Collection"
-msgstr "壁纸收藏"
-
-msgid "Open Wallpaper Collection Gallery"
-msgstr "打开壁纸图库"
-
-msgid "Browse Wallpapers in Storefront"
-msgstr "在 Storefront 中浏览壁纸"
-
-msgid "Active Wallpaper ✓"
-msgstr "当前壁纸 ✓"
-
-msgid "Set Active Single"
-msgstr "设为当前单张壁纸"
-
-msgid "+ Add to Shuffle Pool"
-msgstr "+ 加入随机轮播池"
-
-msgid "Download & Set Active"
-msgstr "下载并应用"
-
-msgid "Wallpaper set as active KOReader screensaver!"
-msgstr "壁纸已设为 KOReader 当前屏幕保护！"
-
-msgid "Added to shuffle pool & Folder Shuffle enabled!"
-msgstr "已加入轮播池并启用文件夹随机轮播！"
-
-msgid "Wallpaper saved to collection!"
-msgstr "壁纸已保存至收藏！"
-
-msgid "Single Wallpaper"
-msgstr "单张壁纸"
-
-msgid "Folder Shuffle"
-msgstr "文件夹轮播"
-
-msgid "Book Cover"
-msgstr "图书封面"
-
-msgid "Reading Progress"
-msgstr "阅读进度"
-
-msgid "Transparent overlay (page content visible behind)"
-msgstr "透明图层（背景显示当前页面）"
-
-msgid "Solid fill for screen margins & letterboxing"
-msgstr "纯色填充屏幕留白与黑边"
-
-msgid "Show reading progress banner overlay"
-msgstr "显示阅读进度横幅图层"
-
-msgid "Stretch image to fill entire screen"
-msgstr "拉伸图片以铺满全屏"
-
-msgid "Invert colors (night mode / dark background)"
-msgstr "反转颜色（夜间模式 / 深色背景）"

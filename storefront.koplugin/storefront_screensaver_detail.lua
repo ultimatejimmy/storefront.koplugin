@@ -29,6 +29,8 @@ local OverlapGroup     = require("ui/widget/overlapgroup")
 local DataStorage  = require("datastorage")
 local Localization = require("localization_storefront")
 local _ = function(key, ...) return Localization:t(key, ...) end
+local storefront_theme = require("storefront_theme")
+local StorefrontUtils = require("storefront_utils")
 
 local function getAssetPath(filename)
     local info = debug.getinfo(1, "S")
@@ -247,8 +249,6 @@ function StorefrontScreensaverDetail:init()
 
     local StorefrontScreensaversUI = require("storefront_screensavers_ui")
     local StorefrontScreensaverMgr = require("storefront_screensaver_mgr")
-    local ButtonDialog = require("ui/widget/buttondialog")
-    local ConfirmBox = require("ui/widget/confirmbox")
     local Toast = require("storefront_toast")
 
     local is_downloaded, local_filepath = StorefrontScreensaverMgr.isWallpaperDownloaded(item)
@@ -288,90 +288,136 @@ function StorefrontScreensaverDetail:init()
         end
     end
 
-    local primary_btn = Button:new{
+    local primary_btn = StorefrontUtils.createButton{
         text           = primary_text,
         text_font_size = 17,
-        text_font_color = Blitbuffer.COLOR_WHITE,
+        bold           = true,
         background     = Blitbuffer.COLOR_BLACK,
-        bordersize     = 0,
-        padding        = 0,
+        text_font_color = Blitbuffer.COLOR_WHITE,
+        bordersize     = storefront_theme.border_btn or sc(1),
         radius         = sc(4),
         width          = math.floor(btn_area_w * 0.58),
         height         = btn_h,
         show_parent    = self,
         callback       = primary_action,
     }
-    if primary_btn.label_widget then
-        primary_btn.label_widget.fgcolor = Blitbuffer.COLOR_WHITE
-    end
 
-    local options_btn = Button:new{
+    local options_btn = StorefrontUtils.createButton{
         text           = _("Options ▾"),
         text_font_size = 15,
-        bordersize     = sc(1),
-        padding        = 0,
+        bold           = true,
+        background     = Blitbuffer.COLOR_WHITE,
+        text_font_color = Blitbuffer.COLOR_BLACK,
+        bordersize     = storefront_theme.border_btn or sc(1),
         radius         = sc(4),
         width          = math.floor(btn_area_w * 0.38) - btn_gap,
         height         = btn_h,
         show_parent    = self,
         callback       = function()
-            local opt_dialog
-            local buttons_list = {}
+            local overlay
+            local card_padding = sc(14)
+            local card_border = storefront_theme.border_window or sc(2)
+            local dialog_w = math.min(sw - sc(20), sc(380))
+            local inner_w = dialog_w - (card_padding * 2) - (card_border * 2)
 
-            -- Row 1: Set Active Single / Download Single
-            table.insert(buttons_list, {
-                {
-                    text = _("Set as Active Single Wallpaper"),
-                    callback = function()
-                        UIManager:close(opt_dialog)
-                        self:onClose(function()
-                            if is_downloaded and local_filepath then
-                                StorefrontScreensaverMgr.setScreensaverMode("single", { file = local_filepath })
-                                Toast:new{ text = _("Wallpaper set as active screensaver!"), timeout = 3 }:show()
-                            else
-                                StorefrontScreensaversUI.downloadAsSingle(item)
-                            end
-                        end)
-                    end,
-                }
-            })
+            local title_label = TextBoxWidget:new{
+                text = item.title or item.name or _("Wallpaper Options"),
+                face = Font:getFace("NotoSerif-Regular.ttf", storefront_theme.title_font_size or 22),
+                bold = true,
+                fgcolor = Blitbuffer.COLOR_BLACK,
+                width = inner_w,
+                alignment = "center",
+            }
 
-            -- Row 2: Add to Shuffle Pool
-            table.insert(buttons_list, {
-                {
-                    text = _("Add to Shuffle Pool (Enable Shuffle)"),
-                    callback = function()
-                        UIManager:close(opt_dialog)
-                        self:onClose(function()
-                            if is_downloaded then
-                                StorefrontScreensaverMgr.setScreensaverMode("shuffle")
-                                Toast:new{ text = _("Folder Shuffle enabled with this wallpaper!"), timeout = 3 }:show()
-                            else
-                                StorefrontScreensaversUI.downloadToShufflePool(item)
-                            end
-                        end)
-                    end,
-                }
-            })
+            local row3_gap = sc(10)
+            local row3_texts = not is_downloaded and { _("Download Only"), _("⚙ Settings") } or { _("Delete"), _("⚙ Settings") }
+            local all_modal_texts = { _("Set as Active"), _("Add to Shuffle"), _("Cancel"), row3_texts[1], row3_texts[2] }
 
-            -- Row 3: Download Only / Delete
-            local row3 = {}
+            local modal_font_size = StorefrontUtils.calcGroupFontSize(all_modal_texts, inner_w, 0, "cfont", sc(16))
+            local row3_max_sz = StorefrontUtils.calcGroupFontSize(row3_texts, inner_w, row3_gap, "cfont", sc(16))
+            modal_font_size = math.min(modal_font_size, row3_max_sz)
+            local row3_widths = StorefrontUtils.calcProportionalBtnWidths(row3_texts, inner_w, row3_gap, modal_font_size, "cfont")
+
+            local single_btn = StorefrontUtils.createButton{
+                text = _("Set as Active"),
+                text_font_size = modal_font_size,
+                bold = true,
+                bordersize = storefront_theme.border_btn or sc(1),
+                radius = storefront_theme.radius_btn or sc(4),
+                width = inner_w,
+                height = sc(40),
+                background = Blitbuffer.COLOR_WHITE,
+                text_font_color = Blitbuffer.COLOR_BLACK,
+                callback = function()
+                    UIManager:close(overlay, "ui")
+                    self:onClose(function()
+                        if is_downloaded and local_filepath then
+                            StorefrontScreensaverMgr.setScreensaverMode("single", { file = local_filepath })
+                            Toast:new{ text = _("Wallpaper set as active screensaver!"), timeout = 3 }:show()
+                        else
+                            StorefrontScreensaversUI.downloadAsSingle(item)
+                        end
+                    end)
+                end,
+            }
+
+            local shuffle_btn = StorefrontUtils.createButton{
+                text = _("Add to Shuffle"),
+                text_font_size = modal_font_size,
+                bold = true,
+                bordersize = storefront_theme.border_btn or sc(1),
+                radius = storefront_theme.radius_btn or sc(4),
+                width = inner_w,
+                height = sc(40),
+                background = Blitbuffer.COLOR_WHITE,
+                text_font_color = Blitbuffer.COLOR_BLACK,
+                callback = function()
+                    UIManager:close(overlay, "ui")
+                    self:onClose(function()
+                        if is_downloaded then
+                            StorefrontScreensaverMgr.setScreensaverMode("shuffle")
+                            Toast:new{ text = _("Folder Shuffle enabled with this wallpaper!"), timeout = 3 }:show()
+                        else
+                            StorefrontScreensaversUI.downloadToShufflePool(item)
+                        end
+                    end)
+                end,
+            }
+
+            local row3_left_btn
             if not is_downloaded then
-                table.insert(row3, {
-                    text = _("Download Only (Save to Device)"),
+                row3_left_btn = StorefrontUtils.createButton{
+                    text = row3_texts[1],
+                    text_font_size = modal_font_size,
+                    bold = true,
+                    bordersize = storefront_theme.border_btn or sc(1),
+                    radius = storefront_theme.radius_btn or sc(4),
+                    width = row3_widths[1],
+                    height = sc(40),
+                    background = Blitbuffer.COLOR_WHITE,
+                    text_font_color = Blitbuffer.COLOR_BLACK,
                     callback = function()
-                        UIManager:close(opt_dialog)
+                        UIManager:close(overlay, "ui")
                         self:onClose(function()
                             StorefrontScreensaversUI.downloadOnly(item)
                         end)
                     end,
-                })
+                }
             else
-                table.insert(row3, {
-                    text = _("Delete from Device"),
+                row3_left_btn = StorefrontUtils.createButton{
+                    text = row3_texts[1],
+                    text_font_size = modal_font_size,
+                    bold = true,
+                    bordersize = storefront_theme.border_btn or sc(1),
+                    radius = storefront_theme.radius_btn or sc(4),
+                    width = row3_widths[1],
+                    height = sc(40),
+                    background = Blitbuffer.COLOR_WHITE,
+                    text_font_color = Blitbuffer.COLOR_BLACK,
                     callback = function()
-                        UIManager:close(opt_dialog)
-                        UIManager:show(ConfirmBox:new{
+                        UIManager:close(overlay, "ui")
+                        StorefrontUtils.showConfirmDialog{
+                            title = _("Delete Wallpaper?"),
                             text = string.format(_("Delete '%s' from your device?"), item.title or item.id),
                             ok_text = _("Delete"),
                             cancel_text = _("Cancel"),
@@ -386,36 +432,103 @@ function StorefrontScreensaverDetail:init()
                                 end
                                 Toast:new{ text = _("Wallpaper deleted from device."), timeout = 2 }:show()
                                 self:onClose()
-                            end
-                        })
+                            end,
+                        }
                     end,
-                })
+                }
             end
-            table.insert(row3, {
-                text = _("⚙ Settings..."),
+
+            local settings_btn = StorefrontUtils.createButton{
+                text = row3_texts[2],
+                text_font_size = modal_font_size,
+                bold = true,
+                bordersize = storefront_theme.border_btn or sc(1),
+                radius = storefront_theme.radius_btn or sc(4),
+                width = row3_widths[2],
+                height = sc(40),
+                background = Blitbuffer.COLOR_WHITE,
+                text_font_color = Blitbuffer.COLOR_BLACK,
                 callback = function()
-                    UIManager:close(opt_dialog)
+                    UIManager:close(overlay, "ui")
                     local StorefrontScreensaverConfig = require("storefront_screensaver_config")
                     StorefrontScreensaverConfig.show(self.parent)
                 end,
-            })
-            table.insert(buttons_list, row3)
-
-            -- Row 4: Cancel
-            table.insert(buttons_list, {
-                {
-                    text = _("Cancel"),
-                    callback = function()
-                        UIManager:close(opt_dialog)
-                    end,
-                }
-            })
-
-            opt_dialog = ButtonDialog:new{
-                title = item.title or item.name or _("Wallpaper Options"),
-                buttons = buttons_list,
             }
-            UIManager:show(opt_dialog)
+
+            local row3_hg = HorizontalGroup:new{
+                align = "center",
+                row3_left_btn,
+                HorizontalSpan:new{ width = row3_gap },
+                settings_btn,
+            }
+
+            local cancel_btn = StorefrontUtils.createButton{
+                text = _("Cancel"),
+                text_font_size = modal_font_size,
+                bold = true,
+                bordersize = storefront_theme.border_btn or sc(1),
+                radius = storefront_theme.radius_btn or sc(4),
+                width = inner_w,
+                height = sc(40),
+                background = Blitbuffer.COLOR_WHITE,
+                text_font_color = Blitbuffer.COLOR_BLACK,
+                callback = function()
+                    UIManager:close(overlay, "ui")
+                end,
+            }
+
+            local content_items = {
+                title_label,
+                VerticalSpan:new{ width = sc(10) },
+                LineWidget:new{
+                    dimen = Geom:new{ w = inner_w, h = sc(1) },
+                    background = Blitbuffer.COLOR_BLACK,
+                },
+                VerticalSpan:new{ width = sc(14) },
+                single_btn,
+                VerticalSpan:new{ width = sc(10) },
+                shuffle_btn,
+                VerticalSpan:new{ width = sc(10) },
+                row3_hg,
+                VerticalSpan:new{ width = sc(14) },
+                LineWidget:new{
+                    dimen = Geom:new{ w = inner_w, h = sc(1) },
+                    background = Blitbuffer.COLOR_DARK_GRAY,
+                },
+                VerticalSpan:new{ width = sc(12) },
+                cancel_btn,
+            }
+
+            local content_vg = VerticalGroup:new{
+                align = "center",
+                unpack(content_items)
+            }
+
+            local card = FrameContainer:new{
+                bordersize = card_border,
+                radius = storefront_theme.radius_window or 0,
+                color = Blitbuffer.COLOR_BLACK,
+                padding = card_padding,
+                background = storefront_theme.color_bg or Blitbuffer.COLOR_WHITE,
+                content_vg,
+            }
+
+            overlay = InputContainer:new{
+                align = "center",
+                vertical_align = "center",
+                dimen = Geom:new{ w = sw, h = sh },
+                key_events = {
+                    Close = { { "Back" } }
+                },
+                card,
+            }
+
+            overlay.onClose = function()
+                UIManager:close(overlay, "ui")
+                return true
+            end
+
+            UIManager:show(overlay, "ui")
         end,
     }
 

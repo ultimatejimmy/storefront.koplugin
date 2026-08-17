@@ -18,6 +18,7 @@ LANG_NAMES = {
     'id': 'Indonesian',
     'it': 'Italian',
     'ja': 'Japanese',
+    'ko': 'Korean',
     'nl': 'Dutch',
     'pl': 'Polish',
     'pt_br': 'Portuguese (Brazil)',
@@ -170,8 +171,8 @@ def save_po(file_path, lang_name, lang_code, entries):
         for key in sorted(entries.keys()):
             if not key: continue
             val = entries[key]
-            escaped_key = key.replace('\n', '\\n').replace('"', '\\"')
-            escaped_val = val.replace('\n', '\\n').replace('"', '\\"')
+            escaped_key = sync_translations.encode_po_string(key)
+            escaped_val = sync_translations.encode_po_string(val)
             f.write(f'msgid "{escaped_key}"\nmsgstr "{escaped_val}"\n\n')
 
 def run_audit():

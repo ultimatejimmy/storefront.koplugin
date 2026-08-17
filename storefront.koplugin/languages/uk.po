@@ -8,11 +8,32 @@ msgstr ""
 msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
 msgstr "\"Дорогий мій містере Беннет,\" — мовила якось його дружина, \"чи чули ви, що Незерфілд-парк нарешті здано?\" Містер Беннет відповів, що ні. \"Але це так,\" — вела далі вона, \"бо місіс Лонг тільки-но була тут і все мені розповіла.\" Містер Беннет нічого не відповів."
 
+msgid "%d Categories"
+msgstr "%d категорій"
+
+msgid "%d items"
+msgstr "%d елементів"
+
 msgid "%d patches"
 msgstr "%d патчів"
 
 msgid "%d plugins"
 msgstr "%d плагінів"
+
+msgid "%d wallpapers"
+msgstr "%d шпалер"
+
+msgid "%d wallpapers stored on device"
+msgstr "%d шпалер збережено на пристрої"
+
+msgid "%d wallpapers · Folder Shuffle (all in rotation)"
+msgstr "%d шпалер · Випадково з папки (усі в ротації)"
+
+msgid "%d wallpapers · Mode: Book Cover"
+msgstr "%d шпалер · Режим: Обкладинка книги"
+
+msgid "%d wallpapers · Single mode active"
+msgstr "%d шпалер · Одиночний режим активний"
 
 msgid "%s and %s"
 msgstr "%s та %s"
@@ -26,11 +47,20 @@ msgstr "%s має найновішу версію."
 msgid "%s needs an update."
 msgstr "%s потребує оновлення."
 
+msgid "%s · %d files"
+msgstr "%s · %d файлів"
+
+msgid "%s · 1 file"
+msgstr "%s · 1 файл"
+
 msgid "(fork)"
 msgstr "(форк)"
 
 msgid "(showing %d of %d commits)"
 msgstr "(відображається %d з %d комітів)"
+
+msgid "+ Add to Shuffle Pool"
+msgstr "+ Додати до випадкового показу"
 
 msgid "1 / 1"
 msgstr "1 / 1"
@@ -50,14 +80,44 @@ msgstr "< Назад"
 msgid "?"
 msgstr "?"
 
+msgid "A -> Z"
+msgstr "А -> Я"
+
+msgid "A → Z"
+msgstr "А → Я"
+
 msgid "About"
 msgstr "Про програму"
 
 msgid "About Storefront"
 msgstr "Про Storefront"
 
+msgid "Active Single"
+msgstr "Активний одиночний"
+
+msgid "Active Wallpaper ✓"
+msgstr "Активні шпалери ✓"
+
+msgid "Active: %s"
+msgstr "Активно: %s"
+
+msgid "Add to Shuffle"
+msgstr "Додати до ротації"
+
+msgid "Add to Shuffle Pool (Enable Shuffle)"
+msgstr "Додати до ротації (увімкнути ротацію)"
+
+msgid "Added to shuffle pool & Folder Shuffle enabled!"
+msgstr "Додано до списку та увімкнено випадковий показ!"
+
 msgid "All"
 msgstr "Усі"
+
+msgid "All Caches"
+msgstr "Усі кеші"
+
+msgid "All Categories"
+msgstr "Усі категорії"
 
 msgid "All Types"
 msgstr "Усі типи"
@@ -116,11 +176,29 @@ msgstr "Назад"
 msgid "Beta"
 msgstr "Бета"
 
+msgid "Black Fill"
+msgstr "Чорна заливка"
+
+msgid "Blank"
+msgstr "Порожній"
+
+msgid "Book Cover"
+msgstr "Обкладинка книги"
+
+msgid "Border Fill / Background"
+msgstr "Заливка меж / Фон"
+
 msgid "Both owner and repository name are required."
 msgstr "Потрібно вказати як власника, так і назву репозиторію."
 
 msgid "Branch: %s"
 msgstr "Гілка: %s"
+
+msgid "Browse Wallpapers in Storefront"
+msgstr "Переглянути шпалери у Storefront"
+
+msgid "By "
+msgstr "By"
 
 msgid "By: %s"
 msgstr "Автор: %s"
@@ -173,11 +251,26 @@ msgstr "Джерело каталогу"
 msgid "Catalog updated: %d plugins, %d patches, %d fonts."
 msgstr "Каталог оновлено: плагінів — %d, патчів — %d, шрифтів — %d."
 
+msgid "Categories"
+msgstr "Категорії"
+
+msgid "Category: "
+msgstr "Категорія: "
+
 msgid "Category: %s"
 msgstr "Категорія: %s"
 
+msgid "Change..."
+msgstr "Змінити..."
+
+msgid "Changelog for %s\n%s \\\\xE2\\\\x86\\\\x92 %s"
+msgstr "Changelog for %s\n%s \\\\xE2\\\\x86\\\\x92 %s"
+
 msgid "Changelog for %s\n%s → %s"
 msgstr "Журнал змін для %s\n%s → %s"
+
+msgid "Changelog for %s\\\n%s \\\\xE2\\\\x86\\\\x92 %s"
+msgstr "Changelog for %s\\\n%s \\\\xE2\\\\x86\\\\x92 %s"
 
 msgid "Changelog: %s"
 msgstr "Журнал змін: %s"
@@ -227,29 +320,92 @@ msgstr "Перевірка оновлень плагіна…"
 msgid "Choose Build — %s"
 msgstr "Вибрати збірку — %s"
 
+msgid "Clean"
+msgstr "Очистити"
+
 msgid "Clear"
 msgstr "Очистити"
+
+msgid "Clear All"
+msgstr "Очистити все"
+
+msgid "Clear All Caches?"
+msgstr "Очистити всі кеші?"
+
+msgid "Clear Cache"
+msgstr "Очистити кеш"
+
+msgid "Clear README Cache?"
+msgstr "Очистити кеш README?"
 
 msgid "Clear README cache"
 msgstr "Очистити кеш README"
 
+msgid "Clear README cache (%s)?\nCached README files and images will be deleted."
+msgstr "Clear README cache (%s)?\nCached README files and images will be deleted."
+
+msgid "Clear Thumbnail Cache?"
+msgstr "Очистити кеш мініатюр?"
+
+msgid "Clear Wiki Cache?"
+msgstr "Очистити кеш Wiki?"
+
+msgid "Clear Wiki cache (%s)?\nCached wiki articles and images will be deleted."
+msgstr "Clear Wiki cache (%s)?\nCached wiki articles and images will be deleted."
+
+msgid "Clear all cached data (%s)?\nAll README files, wiki articles, and thumbnails will be deleted."
+msgstr "Clear all cached data (%s)?\nAll README files, wiki articles, and thumbnails will be deleted."
+
+msgid "Clear cache…"
+msgstr "Очистити кеш"
+
+msgid "Clear screensaver thumbnail cache (%s)?\nThumbnails will be re-downloaded when viewing wallpapers."
+msgstr "Clear screensaver thumbnail cache (%s)?\nThumbnails will be re-downloaded when viewing wallpapers."
+
+msgid "Clear search & filters"
+msgstr "Скинути пошук і фільтри"
+
 msgid "Clear search/filters"
 msgstr "Очистити пошук/фільтри"
+
+msgid "Cleared README cache (%s freed)."
+msgstr "Cleared README cache (%s freed)."
+
+msgid "Cleared Wiki cache (%s freed)."
+msgstr "Cleared Wiki cache (%s freed)."
+
+msgid "Cleared all caches (%s freed, %d files)."
+msgstr "Cleared all caches (%s freed, %d files)."
+
+msgid "Cleared screensaver thumbnails (%s freed)."
+msgstr "Cleared screensaver thumbnails (%s freed)."
 
 msgid "Close"
 msgstr "Закрити"
 
+msgid "Collection"
+msgstr "Колекція"
+
 msgid "Commit diff: %s → %s"
 msgstr "Різниця комітів: %s → %s"
 
+msgid "Commits: %s \\\\xE2\\\\x86\\\\x92 %s"
+msgstr "Commits: %s \\\\xE2\\\\x86\\\\x92 %s"
+
 msgid "Commits: %s → %s"
 msgstr "Коміти: %s → %s"
+
+msgid "Community"
+msgstr "Спільнота"
 
 msgid "Config files only"
 msgstr "Лише файли конфігурації"
 
 msgid "Configured ✓"
 msgstr "Налаштовано ✓"
+
+msgid "Confirm"
+msgstr "Підтвердити"
 
 msgid "Confirm Update"
 msgstr "Підтвердити оновлення"
@@ -259,6 +415,9 @@ msgstr "Підтвердити оновлення всього"
 
 msgid "Connecting to GitHub…\n\nPlease wait."
 msgstr "З'єднання з GitHub…\n\nБудь ласка, зачекайте."
+
+msgid "Connecting to GitHub…\\\n\\\nPlease wait."
+msgstr "Connecting to GitHub…\\\n\\\nPlease wait."
 
 msgid "Continue"
 msgstr "Продовжити"
@@ -305,6 +464,18 @@ msgstr "Лише стандартні"
 msgid "Delete"
 msgstr "Видалити"
 
+msgid "Delete "
+msgstr "Видалити"
+
+msgid "Delete '%s' from your device?"
+msgstr "Видалити '%s' з пристрою?"
+
+msgid "Delete File?"
+msgstr "Видалити файл?"
+
+msgid "Delete Wallpaper?"
+msgstr "Видалити шпалеру?"
+
 msgid "Delete all cached README files? They will be re-downloaded on demand."
 msgstr "Видалити всі кешовані файли README? Вони будуть повторно завантажені за потреби."
 
@@ -319,6 +490,9 @@ msgstr "Видалити шрифт "
 
 msgid "Delete font '%s'?"
 msgstr "Видалити шрифт '%s'?"
+
+msgid "Delete from Device"
+msgstr "Видалити з пристрою"
 
 msgid "Delete patch"
 msgstr "Видалити патч"
@@ -365,6 +539,27 @@ msgstr "Вимкнути плагін"
 msgid "Disabled"
 msgstr "Вимкнено"
 
+msgid "Display Options"
+msgstr "Параметри відображення"
+
+msgid "Displays a static wallpaper on sleep"
+msgstr "Показує статичні шпалери в сплячому режимі"
+
+msgid "Displays a static wallpaper on sleep.\nActive: %s"
+msgstr "Показує статичні шпалери в сплячому режимі.\nАктивно: %s"
+
+msgid "Done"
+msgstr "Готово"
+
+msgid "Download & Set Active"
+msgstr "Завантажити та застосувати"
+
+msgid "Download Only"
+msgstr "Тільки завантаження"
+
+msgid "Download Only (Save to Device)"
+msgstr "Тільки завантажити (зберегти на пристрої)"
+
 msgid "Download failed: "
 msgstr "Помилка завантаження: "
 
@@ -377,11 +572,20 @@ msgstr "Параметри завантаження — %s"
 msgid "Download options — %s (%s)"
 msgstr "Параметри завантаження — %s (%s)"
 
+msgid "Downloading "
+msgstr "Downloading..."
+
 msgid "Downloading %s%s…\nThis may take a moment."
 msgstr "Завантаження %s%s…\nЦе може зайняти деякий час."
 
+msgid "Downloading %s%s…\\\nThis may take a moment."
+msgstr "Downloading %s%s…\\\nThis may take a moment."
+
 msgid "Downloading %s…"
 msgstr "Завантаження %s…"
+
+msgid "Downloading '%s'..."
+msgstr "Downloading '%s'..."
 
 msgid "Downloading patch \"%s\"…"
 msgstr "Завантаження патча \"%s\"…"
@@ -389,8 +593,20 @@ msgstr "Завантаження патча \"%s\"…"
 msgid "Downloading patch %s…"
 msgstr "Завантаження патча %s…"
 
+msgid "Downloading patch \\\\\"%s\\\\\"…"
+msgstr "Downloading patch \\\\\"%s\\\\\"…"
+
+msgid "Downloading screensaver..."
+msgstr "Завантаження заставки..."
+
+msgid "Downloading to shuffle pool..."
+msgstr "Завантаження до ротації..."
+
 msgid "Edit"
 msgstr "Редагувати"
+
+msgid "Empty (0 KB)"
+msgstr "Порожньо (0 КБ)"
 
 msgid "Enable"
 msgstr "Увімкнути"
@@ -412,6 +628,9 @@ msgstr "Введіть номер плагіна"
 
 msgid "Extracting and installing plugin…\nPlease wait."
 msgstr "Розпакування та встановлення плагіна…\nБудь ласка, зачекайте."
+
+msgid "Extracting and installing plugin…\\\nPlease wait."
+msgstr "Extracting and installing plugin…\\\nPlease wait."
 
 msgid "Failed to check %s: %s"
 msgstr "Не вдалося перевірити %s: %s"
@@ -439,6 +658,9 @@ msgstr "Не вдалося вимкнути патч '%s'."
 
 msgid "Failed to download patch: %s"
 msgstr "Не вдалося завантажити патч: %s"
+
+msgid "Failed to download screensaver."
+msgstr "Не вдалося завантажити заставку."
 
 msgid "Failed to enable patch "
 msgstr "Не вдалося увімкнути патч "
@@ -512,6 +734,9 @@ msgstr "Фільтр і сортування патчів"
 msgid "Filter & Sort Plugins"
 msgstr "Фільтр і сортування плагінів"
 
+msgid "Filter & Sort Screensavers"
+msgstr "Фільтр та сортування заставок"
+
 msgid "Filter Installed Patches"
 msgstr "Фільтр встановлених патчів"
 
@@ -536,6 +761,12 @@ msgstr "Фільтри: "
 msgid "Filters: (none)"
 msgstr "Фільтри: (немає)"
 
+msgid "Folder Shuffle"
+msgstr "Випадкові з папки"
+
+msgid "Folder Shuffle enabled with this wallpaper!"
+msgstr "Випадковий вибір з папки увімкнено з цими шпалерами!"
+
 msgid "Font"
 msgstr "Шрифт"
 
@@ -553,6 +784,9 @@ msgstr "Стиль шрифту"
 
 msgid "Fonts"
 msgstr "Шрифти"
+
+msgid "Free up storage space on your device. Cached items are re-downloaded automatically when needed."
+msgstr "Звільніть місце на пристрої. Кешовані елементи автоматично завантажуються заново за потреби."
 
 msgid "GitHub API rate limit exceeded. Add a GitHub token in Storefront settings to increase the limit (10→30 req/min)."
 msgstr "Перевищено ліміт запитів GitHub API. Додайте токен GitHub у налаштуваннях Storefront, щоб збільшити ліміт (10→30 зап/хв)."
@@ -623,6 +857,9 @@ msgstr "Встановити патч з GitHub"
 msgid "Install plugin from GitHub"
 msgstr "Встановити плагін з GitHub"
 
+msgid "Install to Default?"
+msgstr "Встановити за замовчуванням?"
+
 msgid "Install to default"
 msgstr "Встановити за замовчуванням"
 
@@ -644,14 +881,26 @@ msgstr "Налаштування встановлених плагінів"
 msgid "Installed Regular font style offline for \"%s\". Full font family queued for download when reconnected."
 msgstr "Встановлено звичайне накреслення шрифту офлайн для \"%s\". Повну гарнітуру додано в чергу завантаження після відновлення підключення."
 
+msgid "Installed Regular font style offline for \\\\\"%s\\\\\". Full font family queued for download when reconnected."
+msgstr "Installed Regular font style offline for \\\\\"%s\\\\\". Full font family queued for download when reconnected."
+
 msgid "Installed font \"%s\" (%d file(s))."
 msgstr "Встановлено шрифт \"%s\" (%d файл(-ів))."
+
+msgid "Installed font \\\\\"%s\\\\\" (%d file(s))."
+msgstr "Installed font \\\\\"%s\\\\\" (%d file(s))."
 
 msgid "Installed full font family \"%s\" (%d file(s))."
 msgstr "Встановлено повну гарнітуру \"%s\" (%d файл(-ів))."
 
+msgid "Installed full font family \\\\\"%s\\\\\" (%d file(s))."
+msgstr "Installed full font family \\\\\"%s\\\\\" (%d file(s))."
+
 msgid "Installed patch \"%s\"."
 msgstr "Встановлено патч \"%s\"."
+
+msgid "Installed patch \\\\\"%s\\\\\"."
+msgstr "Installed patch \\\\\"%s\\\\\"."
 
 msgid "Installed plugin \"%s\" (version %s)."
 msgstr "Встановлено плагін \"%s\" (версія %s)."
@@ -676,6 +925,9 @@ msgstr "Недійсна назва цільового файлу патча."
 
 msgid "Invalid selection."
 msgstr "Недійсний вибір."
+
+msgid "Invert colors (night mode / dark background)"
+msgstr "Інвертувати кольори (нічний режим / темне тло)"
 
 msgid "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters."
 msgstr "Загальновизнаною істиною є те, що неодруженому чоловіку з хорошим статком неодмінно потрібна дружина."
@@ -736,6 +988,9 @@ msgstr "Управління шляхами плагінів"
 
 msgid "Manage plugin paths\n\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
 msgstr "Керування шляхами плагінів\n\nПриховування шляху впливає лише на те, що відображає/керує Storefront. KOReader все одно завантажуватиме з нього плагіни."
+
+msgid "Manage plugin paths\\\n\\\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
+msgstr "Manage plugin paths\\\n\\\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
 
 msgid "Match"
 msgstr "Зв'язати"
@@ -836,8 +1091,17 @@ msgstr "Змінити плагін"
 msgid "Modify Plugin: %s"
 msgstr "Змінити плагін: %s"
 
+msgid "Most Downloaded"
+msgstr "Найбільше завантажень"
+
+msgid "Most Popular"
+msgstr "Найпопулярніші"
+
 msgid "Multiple custom plugin folders are configured. Where should this plugin be installed?"
 msgstr "Налаштовано декілька власних папок для плагінів. Куди встановити цей плагін?"
+
+msgid "My wallpaper collection"
+msgstr "Моя колекція шпалер"
 
 msgid "Name (A-Z)"
 msgstr "Назва (А-Я)"
@@ -865,6 +1129,9 @@ msgstr "Далі"
 
 msgid "Next >"
 msgstr "Далі >"
+
+msgid "No Fill (Transparent)"
+msgstr "Без заливки (прозоро)"
 
 msgid "No Lua files found in plugin directory"
 msgstr "У каталозі плагіна не знайдено файлів Lua"
@@ -959,11 +1226,23 @@ msgstr "Для цього репозиторію не знайдено випу�
 msgid "No remote version info for %s."
 msgstr "Немає інформації про віддалену версію для %s."
 
+msgid "No screensavers match this filter."
+msgstr "Немає заставок, що відповідають цьому фільтру."
+
 msgid "No stable releases found — uncheck filter to show all releases"
 msgstr "Стабільних випусків не знайдено — зніміть фільтр, щоб показати всі випуски"
 
 msgid "No tracked plugins to check."
 msgstr "Немає відстежуваних плагінів для перевірки."
+
+msgid "No wallpapers found in your screensavers folder.\n\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
+msgstr "У папці заставок не знайдено шпалер.\n\nПерегляньте каталог Storefront, щоб завантажити шпалери!"
+
+msgid "No wallpapers found in your screensavers folder.\\\n\\\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
+msgstr "No wallpapers found in your screensavers folder.\\\n\\\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
+
+msgid "None selected"
+msgstr "Нічого не вибрано"
 
 msgid "Not matched with a repository."
 msgstr "Не зіставлено з репозиторієм."
@@ -974,11 +1253,17 @@ msgstr "Не вказано"
 msgid "Notes"
 msgstr "Нотатки"
 
+msgid "OK"
+msgstr "ОК"
+
 msgid "Offline Regular"
 msgstr "Офлайн звичайний"
 
 msgid "Open"
 msgstr "Відкрити"
+
+msgid "Open Wallpaper Collection Gallery"
+msgstr "Відкрити галерею шпалер"
 
 msgid "Open details"
 msgstr "Деталі"
@@ -988,6 +1273,9 @@ msgstr "Необов'язково. Збільшує ліміт запитів Gi
 
 msgid "Optional. Raises the GitHub API rate limit. Generate one (classic, 'public_repo' scope is enough) at github.com/settings/tokens, then paste it here."
 msgstr "Необов'язково. Збільшує ліміт запитів GitHub API. Згенеруйте токен (classic, достатньо області 'public_repo') на github.com/settings/tokens, а потім вставте його сюди."
+
+msgid "Options ▾"
+msgstr "Опції ▾"
 
 msgid "Origin"
 msgstr "Походження"
@@ -1021,6 +1309,9 @@ msgstr "Патч "
 
 msgid "Patch %s has been %s."
 msgstr "Патч %s було %s."
+
+msgid "Patch '%s' deleted."
+msgstr "Патч '%s' видалено."
 
 msgid "Patch '%s' disabled."
 msgstr "Патч '%s' вимкнено."
@@ -1097,6 +1388,9 @@ msgstr "Плагіни"
 msgid "Plugins cached: %s (last update: %s)"
 msgstr "Плагінів у кеші: %s (останнє оновлення: %s)"
 
+msgid "Pool size: %d wallpapers in rotation"
+msgstr "Розмір ротації: %d шпалер"
+
 msgid "Pre-installed core KOReader plugin."
 msgstr "Попередньо встановлений базовий плагін KOReader."
 
@@ -1112,14 +1406,32 @@ msgstr "README"
 msgid "README download failed: "
 msgstr "Помилка завантаження README: "
 
+msgid "README files & images"
+msgstr "Файли README та зображення"
+
+msgid "Rate Wallpaper"
+msgstr "Оцінити шпалери"
+
 msgid "Reading Passage Specimen"
 msgstr "Зразок тексту"
+
+msgid "Reading Progress"
+msgstr "Прогрес читання"
+
+msgid "Reading Progress / Summary"
+msgstr "Прогрес читання / Підсумок"
+
+msgid "Recently Added"
+msgstr "Нещодавно додані"
 
 msgid "Refresh"
 msgstr "Оновити"
 
 msgid "Refresh cache"
 msgstr "Оновити кеш"
+
+msgid "Refresh catalog"
+msgstr "Оновити каталог"
 
 msgid "Refreshing catalog via Direct GitHub API…"
 msgstr "Оновлення каталогу через прямий API GitHub…"
@@ -1181,6 +1493,15 @@ msgstr "На сервері: (не перевірялося)"
 msgid "Remove"
 msgstr "Видалити"
 
+msgid "Remove "
+msgstr "Видалити"
+
+msgid "Remove '%s' from your wallpaper collection?"
+msgstr "Видалити '%s' з вашої колекції шпалер?"
+
+msgid "Remove Wallpaper?"
+msgstr "Видалити шпалеру?"
+
 msgid "Rename"
 msgstr "Перейменувати"
 
@@ -1235,6 +1556,30 @@ msgstr "Зразок тексту"
 msgid "Save"
 msgstr "Зберегти"
 
+msgid "Screensaver"
+msgstr "Заставка"
+
+msgid "Screensaver & Wallpapers"
+msgstr "Заставки та шпалери"
+
+msgid "Screensaver Details"
+msgstr "Деталі заставки"
+
+msgid "Screensaver Mode"
+msgstr "Режим заставки"
+
+msgid "Screensaver Settings"
+msgstr "Налаштування заставки"
+
+msgid "Screensaver mode"
+msgstr "Режим заставки"
+
+msgid "Screensaver thumbnails"
+msgstr "Мініатюри заставок"
+
+msgid "Screensavers"
+msgstr "Заставки"
+
 msgid "Search"
 msgstr "Пошук"
 
@@ -1244,11 +1589,23 @@ msgstr "Шукати \"%s\""
 msgid "Search & API"
 msgstr "Пошук та API"
 
+msgid "Search filter (\"%s\") is not applied to Updates."
+msgstr "Search filter (\"%s\") is not applied to Updates."
+
+msgid "Search filter (\\\\\"%s\\\\\") is not applied to Updates."
+msgstr "Search filter (\\\\\"%s\\\\\") is not applied to Updates."
+
 msgid "Search text"
 msgstr "Текст для пошуку"
 
 msgid "Search: "
 msgstr "Пошук: "
+
+msgid "Select All"
+msgstr "Вибрати все"
+
+msgid "Select Categories"
+msgstr "Вибрати категорії"
 
 msgid "Select a repository patch entry to match with the chosen file."
 msgstr "Виберіть патч з репозиторію для зв'язування з вибраним файлом."
@@ -1274,11 +1631,53 @@ msgstr "Виберіть репозиторій"
 msgid "Set"
 msgstr "Встановити"
 
+msgid "Set Active Single"
+msgstr "Встановити як єдину заставку"
+
+msgid "Set Single"
+msgstr "Встановити одиночний"
+
+msgid "Set as Active"
+msgstr "Зробити активним"
+
+msgid "Set as Active Single Wallpaper"
+msgstr "Встановити як активні одиночні шпалери"
+
+msgid "Set as active single wallpaper!"
+msgstr "Встановлено як активні одиночні шпалери!"
+
 msgid "Settings"
 msgstr "Налаштування"
 
 msgid "Show needs update"
 msgstr "Показувати ті, що потребують оновлення"
+
+msgid "Show reading progress banner overlay"
+msgstr "Показувати банер прогресу читання"
+
+msgid "Shows reading stats, percentage, and chapter progress"
+msgstr "Показує статистику читання, відсоток та прогрес розділу"
+
+msgid "Shows the cover of the book currently being read"
+msgstr "Показує обкладинку книги, яку зараз читають"
+
+msgid "Shuffle (%d)"
+msgstr "Ротація (%d)"
+
+msgid "Shuffle Pool"
+msgstr "Пул ротації"
+
+msgid "Shuffles through all wallpapers in folder on sleep.\nPool size: %d wallpapers in rotation"
+msgstr "Випадково змінює всі шпалери з папки у сплячому режимі.\nРозмір ротації: %d шпалер"
+
+msgid "Single"
+msgstr "Одиночний"
+
+msgid "Single Wallpaper"
+msgstr "Окремі шпалери"
+
+msgid "Solid fill for screen margins & letterboxing"
+msgstr "Суцільне заповнення полів екрана"
 
 msgid "Sort"
 msgstr "Сортування"
@@ -1288,6 +1687,9 @@ msgstr "Режим сортування"
 
 msgid "Sort: A-Z"
 msgstr "Сорт: А-Я"
+
+msgid "Sort: Most Liked"
+msgstr "Сортування: За лайками"
 
 msgid "Sort: Name (A → Z)"
 msgstr "Сорт: Назва (А-Я)"
@@ -1352,6 +1754,9 @@ msgstr "Storefront · Оновлення"
 msgid "Storefront: Open"
 msgstr "Магазин: Відкрити"
 
+msgid "Stretch image to fill entire screen"
+msgstr "Розтягнути зображення на весь екран"
+
 msgid "Style: "
 msgstr "Стиль: "
 
@@ -1391,6 +1796,24 @@ msgstr "Чуєш їх, доцю, гадюченят малюсіньких, що
 msgid "This action cannot be undone.\n\nChanges will take effect after restart."
 msgstr "Цю дію не можна скасувати.\n\nЗміни набудуть чинності після перезапуску."
 
+msgid "This action cannot be undone.\\\n\\\nChanges will take effect after restart."
+msgstr "This action cannot be undone.\\\n\\\nChanges will take effect after restart."
+
+msgid "This wallpaper is currently set as your active screensaver."
+msgstr "Ці шпалери наразі встановлені як активна заставка."
+
+msgid "This will delete all cached README files, wiki articles, and screensaver thumbnails (%s)."
+msgstr "Це видалить усі кешовані файли README, статті вікі та мініатюри заставок (%s)."
+
+msgid "This will delete cached README markdown files and downloaded images (%s)."
+msgstr "Це видалить кешовані файли README та завантажені зображення (%s)."
+
+msgid "This will delete cached screensaver thumbnail previews (%s)."
+msgstr "Це видалить кешовані мініатюри заставок (%s)."
+
+msgid "This will delete cached wiki articles and downloaded images (%s)."
+msgstr "Це видалить кешовані статті вікі та завантажені зображення (%s)."
+
 msgid "This will take effect on next restart."
 msgstr "Зміни набудуть чинності після наступного перезапуску."
 
@@ -1399,6 +1822,9 @@ msgstr "Всього комітів: %d"
 
 msgid "Tracked: %d"
 msgstr "Відстежується: %d"
+
+msgid "Transparent overlay (page content visible behind)"
+msgstr "Прозорий шар (сторінку видно позаду)"
 
 msgid "Type"
 msgstr "Тип"
@@ -1481,11 +1907,20 @@ msgstr "Оновлено патч \"%s\"."
 msgid "Updated patch %s."
 msgstr "Оновлено патч %s."
 
+msgid "Updated patch \\\\\"%s\\\\\"."
+msgstr "Updated patch \\\\\"%s\\\\\"."
+
 msgid "Updated plugin \"%s\" to version %s."
 msgstr "Оновлено плагін \"%s\" до версії %s."
 
 msgid "Updated plugin \"%s\"."
 msgstr "Оновлено плагін \"%s\"."
+
+msgid "Updated plugin \\\\\"%s\\\\\" to version %s."
+msgstr "Updated plugin \\\\\"%s\\\\\" to version %s."
+
+msgid "Updated plugin \\\\\"%s\\\\\"."
+msgstr "Updated plugin \\\\\"%s\\\\\"."
 
 msgid "Updated: %s"
 msgstr "Оновлено: %s"
@@ -1514,17 +1949,59 @@ msgstr "Версії"
 msgid "View README"
 msgstr "Переглянути README"
 
+msgid "View commits (%s \\\\xE2\\\\x86\\\\x92 %s)"
+msgstr "View commits (%s \\\\xE2\\\\x86\\\\x92 %s)"
+
 msgid "View commits (%s → %s)"
 msgstr "Переглянути коміти (%s → %s)"
 
+msgid "Wallpaper Collection"
+msgstr "Колекція шпалер"
+
+msgid "Wallpaper Options"
+msgstr "Параметри шпалер"
+
+msgid "Wallpaper deleted from device."
+msgstr "Шпалеру видалено з пристрою."
+
+msgid "Wallpaper removed"
+msgstr "Шпалеру видалено"
+
+msgid "Wallpaper saved to collection!"
+msgstr "Шпалери збережено в колекції!"
+
+msgid "Wallpaper set as active KOReader screensaver!"
+msgstr "Шпалери встановлено як заставку KOReader!"
+
+msgid "Wallpaper set as active screensaver!"
+msgstr "Шпалеру встановлено як активну заставку!"
+
 msgid "Warning: the selected version is older than what is currently installed. You are downgrading."
 msgstr "Увага: вибрана версія старіша за встановлену. Ви здійснюєте пониження версії."
+
+msgid "White Fill"
+msgstr "Біла заливка"
 
 msgid "Wiki"
 msgstr "Wiki"
 
 msgid "Wiki Pages"
 msgstr "Сторінки Wiki"
+
+msgid "Wiki pages & images"
+msgstr "Сторінки вікі та зображення"
+
+msgid "Z -> A"
+msgstr "Я -> А"
+
+msgid "Z → A"
+msgstr "Я → А"
+
+msgid "[ Loading preview... ]"
+msgstr "[ Завантаження перегляду... ]"
+
+msgid "[ Wallpaper Preview Loading... ]"
+msgstr "[ Завантаження перегляду шпалер... ]"
 
 msgid "[Ignored]"
 msgstr "[Ігноровано]"
@@ -1534,6 +2011,12 @@ msgstr "[чернетка]"
 
 msgid "[pre]"
 msgstr "[pre]"
+
+msgid "\\\\\"My dear Mr. Bennet,\\\\\" said his lady to him one day, \\\\\"have you heard that Netherfield Park is let at last?\\\\\" Mr. Bennet replied that he had not. \\\\\"But it is,\\\\\" returned she; \\\\\"for Mrs. Long has just been here, and she told me all about it.\\\\\" Mr. Bennet made no answer."
+msgstr "\\\\\"My dear Mr. Bennet,\\\\\" said his lady to him one day, \\\\\"have you heard that Netherfield Park is let at last?\\\\\" Mr. Bennet replied that he had not. \\\\\"But it is,\\\\\" returned she; \\\\\"for Mrs. Long has just been here, and she told me all about it.\\\\\" Mr. Bennet made no answer."
+
+msgid "\\\\xC2\\\\xB7"
+msgstr "\\\\xC2\\\\xB7"
 
 msgid "about_text"
 msgstr "Storefront — це менеджер пакетів у KOReader для плагінів, патчів та шрифтів."
@@ -1760,6 +2243,9 @@ msgstr "tab_readme"
 msgid "tab_sample_text"
 msgstr "tab_sample_text"
 
+msgid "tab_screensavers"
+msgstr "Шпалери"
+
 msgid "tab_versions"
 msgstr "tab_versions"
 
@@ -1778,149 +2264,15 @@ msgstr "·"
 msgid "≥ %s ⭐"
 msgstr "≥ %s ⭐"
 
+msgid "★ ACTIVE"
+msgstr "★ АКТИВНО"
+
+msgid "⚙ Settings"
+msgstr "⚙ Налаштування"
+
+msgid "⚙ Settings..."
+msgstr "⚙ Налаштування..."
+
 msgid "✓ Current"
 msgstr "✓ Поточний"
 
-msgid "Screensavers"
-msgstr "Заставки"
-
-# en-hash: 6df6c2dd7dd08e6108bf1b8dea56c527
-msgid "Screensaver Settings"
-msgstr "Налаштування заставки"
-
-# en-hash: dabeb2a6efa064595e4fbf43fda02f42
-msgid "Wallpaper Collection"
-msgstr "Колекція шпалер"
-
-# en-hash: aaaca14de025427e39ed056b29af4058
-msgid "Open Wallpaper Collection Gallery"
-msgstr "Відкрити галерею шпалер"
-
-# en-hash: 261dba00113a7f7e9754902b83293f85
-msgid "Browse Wallpapers in Storefront"
-msgstr "Переглянути шпалери у Storefront"
-
-# en-hash: bda5dcfc5c6a544bb9dd8ede06326bff
-msgid "Active Wallpaper ✓"
-msgstr "Активні шпалери ✓"
-
-# en-hash: 704f03f7c5dd59a9b3ae46df8e1e46a4
-msgid "Set Active Single"
-msgstr "Встановити як єдину заставку"
-
-# en-hash: 2722ddcbfd20786cc8715dac74c0531a
-msgid "+ Add to Shuffle Pool"
-msgstr "+ Додати до випадкового показу"
-
-# en-hash: 938a7f69f98b48f241a295717988ac23
-msgid "Download & Set Active"
-msgstr "Завантажити та застосувати"
-
-# en-hash: ba8ef34da8f377a1c718ff0f10e107b1
-msgid "Wallpaper set as active KOReader screensaver!"
-msgstr "Шпалери встановлено як заставку KOReader!"
-
-# en-hash: f50b510e22815838c4d2d12e1d79bddf
-msgid "Added to shuffle pool & Folder Shuffle enabled!"
-msgstr "Додано до списку та увімкнено випадковий показ!"
-
-# en-hash: b6dea7fce89bd30f8c3d5b898849aa4b
-msgid "Wallpaper saved to collection!"
-msgstr "Шпалери збережено в колекції!"
-
-# en-hash: c1cb41ea040ff053e2219930470897ed
-msgid "Single Wallpaper"
-msgstr "Окремі шпалери"
-
-# en-hash: 16803106d3aa4c6852022f3da9d4c54a
-msgid "Folder Shuffle"
-msgstr "Випадкові з папки"
-
-# en-hash: 03ea37a723d863ca6c1918209c5c1a6f
-msgid "Book Cover"
-msgstr "Обкладинка книги"
-
-# en-hash: 7f58b08556c5375e2559f267873d1218
-msgid "Reading Progress"
-msgstr "Прогрес читання"
-
-# en-hash: 9f20e45267caff9e39ca3b9bea16db47
-msgid "Transparent overlay (page content visible behind)"
-msgstr "Прозорий шар (сторінку видно позаду)"
-
-# en-hash: bc586928ac8f7c25dabb909c67bdfa88
-msgid "Solid fill for screen margins & letterboxing"
-msgstr "Суцільне заповнення полів екрана"
-
-# en-hash: 1f1b02ee24bf2ce675bc4c571ec2b586
-msgid "Show reading progress banner overlay"
-msgstr "Показувати банер прогресу читання"
-
-# en-hash: dd2d866df5da52a1aed8e63192026530
-msgid "Stretch image to fill entire screen"
-msgstr "Розтягнути зображення на весь екран"
-
-# en-hash: 1554833122e9bc723e16d2f1b927dc98
-msgid "Invert colors (night mode / dark background)"
-msgstr "Інвертувати кольори (нічний режим / темне тло)"
-
-
-msgid "Screensaver Settings"
-msgstr "Налаштування заставки"
-
-msgid "Wallpaper Collection"
-msgstr "Колекція шпалер"
-
-msgid "Open Wallpaper Collection Gallery"
-msgstr "Відкрити галерею шпалер"
-
-msgid "Browse Wallpapers in Storefront"
-msgstr "Переглянути шпалери у Storefront"
-
-msgid "Active Wallpaper ✓"
-msgstr "Активні шпалери ✓"
-
-msgid "Set Active Single"
-msgstr "Встановити як єдину заставку"
-
-msgid "+ Add to Shuffle Pool"
-msgstr "+ Додати до випадкового показу"
-
-msgid "Download & Set Active"
-msgstr "Завантажити та застосувати"
-
-msgid "Wallpaper set as active KOReader screensaver!"
-msgstr "Шпалери встановлено як заставку KOReader!"
-
-msgid "Added to shuffle pool & Folder Shuffle enabled!"
-msgstr "Додано до списку та увімкнено випадковий показ!"
-
-msgid "Wallpaper saved to collection!"
-msgstr "Шпалери збережено в колекції!"
-
-msgid "Single Wallpaper"
-msgstr "Окремі шпалери"
-
-msgid "Folder Shuffle"
-msgstr "Випадкові з папки"
-
-msgid "Book Cover"
-msgstr "Обкладинка книги"
-
-msgid "Reading Progress"
-msgstr "Прогрес читання"
-
-msgid "Transparent overlay (page content visible behind)"
-msgstr "Прозорий шар (сторінку видно позаду)"
-
-msgid "Solid fill for screen margins & letterboxing"
-msgstr "Суцільне заповнення полів екрана"
-
-msgid "Show reading progress banner overlay"
-msgstr "Показувати банер прогресу читання"
-
-msgid "Stretch image to fill entire screen"
-msgstr "Розтягнути зображення на весь екран"
-
-msgid "Invert colors (night mode / dark background)"
-msgstr "Інвертувати кольори (нічний режим / темне тло)"

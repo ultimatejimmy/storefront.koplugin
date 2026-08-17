@@ -20,12 +20,12 @@ Always reference design tokens from `storefront_theme` and `Screen:scaleBySize(v
 | `color_label_dim` | `Blitbuffer.Color8(40)` | High-contrast secondary text labels and subtitles (E-ink sharp) |
 | `border_line_h` | `sc(1)` | Divider line thickness (`LineWidget`) |
 | `border_window` | `sc(2)` | Card window border thickness |
-| `border_btn` | `sc(2)` | Selected option / button border thickness |
-| `radius_window` | `sc(12)` | Rounded corner radius for modals & cards |
-| `radius_btn` | `sc(18)` | Pill/button corner radius |
+| `border_btn` | `sc(1)` | Standard action button border thickness |
+| `radius_window` | `0` | Clean sharp corner radius for modals & cards |
+| `radius_btn` | `sc(4)` | Pill/button corner radius |
 | `gap` | `sc(8)` | Standard vertical/horizontal spacing |
 | `face_label_size` | `18` | Standard body / setting row font size (`cfont`) |
-| `title_font_size` | `22` | Modal card header title font size (`cfont`) |
+| `title_font_size` | `22` | Modal card header title font size (`NotoSerif-Regular.ttf` or `cfont`) |
 | `subtext_font_size` | `16` | Secondary values, status indicators, and subtitles |
 | `section_header_font_size` | `16` | Category / section header font size (`cfont`, bold) |
 
@@ -48,17 +48,17 @@ To guarantee high legibility across E-ink devices (e.g. Kindle, Kobo, Onyx Boox)
 
 ---
 
-## 2. Modal Card Layout
+## 2. Modal Dialog & Card Architecture
 
-Storefront uses a clean, single-border modal card container (`bordersize = sc(2)`) with rounded corners (`radius = sc(12)`):
+All dialog boxes and cards in Storefront follow a unified container structure:
 
 ```lua
 local card = FrameContainer:new{
-    padding = 0,
-    radius = storefront_theme.radius_window, -- sc(12)
-    bordersize = storefront_theme.border_window, -- sc(2)
+    padding = 0, -- (or card_padding = sc(12)-sc(14) for confirmation modals)
+    radius = storefront_theme.radius_window or 0,
+    bordersize = storefront_theme.border_window or sc(2),
     color = Blitbuffer.COLOR_BLACK,
-    background = storefront_theme.color_bg,
+    background = storefront_theme.color_bg or Blitbuffer.COLOR_WHITE,
     width = dialog_w,
     content_vg
 }
@@ -72,20 +72,87 @@ local overlay = InputContainer:new{
     },
     card
 }
+
+overlay.onClose = function()
+    UIManager:close(overlay, "ui")
+    if on_close_callback then on_close_callback() end
+    return true
+end
+
+UIManager:show(overlay, "ui")
 ```
 
-### 2.1 Setting Rows Right-Alignment Math
+### 2.1 Dialog Header Standard
+- Title label uses `NotoSerif-Regular.ttf` or `cfont` with `title_font_size` (22pt), bold, `COLOR_BLACK`.
+- Full-width divider line underneath: `LineWidget:new{ dimen = Geom:new{ w = dialog_w - sc(4), h = sc(1) }, background = Blitbuffer.COLOR_BLACK }`.
 
-In settings cards where rows have left labels and optional right-aligned values/widgets (e.g., version tags, status indicators, timestamps):
-- **Never hardcode fixed left label widths** (such as `dialog_w - sc(150)`), as long right-side strings will exceed card bounds and overflow off the right edge.
+### 2.2 Setting Rows Right-Alignment Math
+In settings cards and list dialogs where rows have left labels and optional right-aligned values/widgets:
+- **Never hardcode fixed left label widths** (such as `dialog_w - sc(150)`).
 - **Dynamic Right Alignment**: Measure available width `avail_w = dialog_w - (frame_padding * 2) - sc(4)` and right widget width `right_w = right_widget:getSize().w`.
-- **Label Constraint**: Limit left text width to `max_left_w = avail_w - icon_w - right_w - sc(8)` so text wraps cleanly if localized or long.
-- **Dynamic Spacer**: Insert a flexible `HorizontalSpan` with width `spacer_w = avail_w - icon_w - left_used_w - right_w` between the left label and right widget.
-- **Result**: All right-side values align vertically to the exact same right padding line with zero border overflow.
+- **Label Constraint**: Limit left text width to `max_left_w = avail_w - icon_w - right_w - sc(8)`.
+- **Dynamic Spacer**: Insert a flexible `HorizontalSpan` with width `spacer_w = avail_w - icon_w - left_used_w - right_w`.
 
 ---
 
-## 3. Option Picker / Radio Button Groups
+## 3. Button Styles & Visual Hierarchy
+
+Dialog action buttons must follow a clear primary vs. secondary visual hierarchy. Use the unified `StorefrontUtils.createButton(opts)` helper to ensure perfect 4-sided high-contrast borders and touch event handling across all KOReader devices.
+
+### 3.1 Primary Action Buttons (Confirm / Delete / Apply / Update All / Restart now)
+- **Background**: `Blitbuffer.COLOR_BLACK`
+- **Text Color**: `Blitbuffer.COLOR_WHITE`
+- **Typography**: `Font:getFace("cfont", ui_font_size)`, `bold = true`
+- **Border**: `bordersize = storefront_theme.border_btn or sc(1)`, `color = Blitbuffer.COLOR_BLACK`
+- **Radius**: `storefront_theme.radius_btn or sc(4)`
+
+```lua
+local StorefrontUtils = require("storefront_utils")
+local primary_btn = StorefrontUtils.createButton{
+    text = _("Apply"),
+    face = Font:getFace("cfont", 18),
+    bold = true,
+    bordersize = storefront_theme.border_btn or sc(1),
+    radius = storefront_theme.radius_btn or sc(4),
+    width = btn_w,
+    height = sc(38),
+    background = Blitbuffer.COLOR_BLACK,
+    text_font_color = Blitbuffer.COLOR_WHITE,
+    callback = on_apply,
+}
+```
+
+### 3.2 Secondary Action Buttons (Cancel / Settings / Back / Close / Restart later)
+- **Background**: `Blitbuffer.COLOR_WHITE`
+- **Text Color**: `Blitbuffer.COLOR_BLACK`
+- **Typography**: `Font:getFace("cfont", ui_font_size)`, `bold = true`
+- **Border**: `bordersize = storefront_theme.border_btn or sc(1)`, `color = Blitbuffer.COLOR_BLACK`
+- **Radius**: `storefront_theme.radius_btn or sc(4)`
+
+```lua
+local StorefrontUtils = require("storefront_utils")
+local cancel_btn = StorefrontUtils.createButton{
+    text = _("Cancel"),
+    face = Font:getFace("cfont", 18),
+    bold = true,
+    bordersize = storefront_theme.border_btn or sc(1),
+    radius = storefront_theme.radius_btn or sc(4),
+    width = btn_w,
+    height = sc(38),
+    background = Blitbuffer.COLOR_WHITE,
+    text_font_color = Blitbuffer.COLOR_BLACK,
+    callback = on_cancel,
+}
+```
+
+### 3.3 Multi-Button Action Rows
+When placing buttons side-by-side:
+- Use `HorizontalGroup` with `align = "center"`.
+- Split width equally: `btn_w = math.floor((inner_w - btn_gap) / 2)` with `HorizontalSpan:new{ width = btn_gap }` (`btn_gap = sc(8)` to `sc(12)`).
+
+---
+
+## 4. Option Picker / Radio Button Groups
 
 Radio button groups and single-select pickers use structured horizontal rows with visual selection indicators:
 
@@ -126,29 +193,11 @@ end
 
 ---
 
-## 4. Multi-Button Bottom Action Rows
-
-When laying out bottom action buttons (e.g., "About" and "Close" or "Save" and "Cancel"):
-- Position buttons side-by-side using `HorizontalGroup`.
-- Distribute width equally as `(dialog_w - sc(40)) / 2` per button.
-- Insert a horizontal spacer `HorizontalSpan:new{ width = sc(8) }` between buttons.
-- Use explicit button height `sc(42)` and radius `sc(8)`.
-
-```lua
-local btn_row = HorizontalGroup:new{
-    align = "center",
-    about_btn,
-    HorizontalSpan:new{ width = sc(8) },
-    close_btn,
-}
-```
-
----
-
-## 5. Overlay Dismissal Behavior
+## 5. Overlay Dismissal Behavior & Toast Stacking
 
 - Modals and settings cards should require deliberate actions to close (clicking an explicit "Close" / "Back" button or pressing the hardware Back key).
 - Avoid full-screen `Tap` event catchers on modal background overlays, preventing accidental background taps from misfiring onto underlying e-ink hit targets.
+- **Toast Stacking Order**: When an action in a modal refreshes the dialog (e.g. removing an item or setting a wallpaper), ALWAYS call `refresh()` FIRST to rebuild the dialog overlay, and THEN call `Toast.show(...)`. Calling `Toast.show(...)` before `refresh()` will place the toast behind the newly shown dialog overlay.
 
 ---
 

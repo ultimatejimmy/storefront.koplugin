@@ -488,26 +488,38 @@ function Storefront:showConfirmDialog(opts)
     }
 
     local btn_gap = sc(12)
-    local btn_w = math.floor((inner_w - btn_gap) / 2)
+    local StorefrontUtils = require("storefront_utils")
+    local cancel_text = opts.cancel_text or _("Cancel")
+    local ok_text = opts.ok_text or _("Update All")
+    local btn_font_size = StorefrontUtils.calcGroupFontSize({ cancel_text, ok_text }, inner_w, btn_gap, "cfont", sc(16))
+    local btn_widths = StorefrontUtils.calcProportionalBtnWidths({ cancel_text, ok_text }, inner_w, btn_gap, btn_font_size, "cfont")
 
-    local cancel_btn = Button:new{
-        text = opts.cancel_text or _("Cancel"),
-        bordersize = sc(1),
-        radius = storefront_theme.radius_btn or sc(18),
-        padding = sc(10),
-        width = btn_w,
+    local cancel_btn = StorefrontUtils.createButton{
+        text = cancel_text,
+        text_font_size = btn_font_size,
+        bold = true,
+        bordersize = storefront_theme.border_btn or sc(1),
+        radius = storefront_theme.radius_btn or sc(4),
+        width = btn_widths[1],
+        height = sc(38),
+        background = Blitbuffer.COLOR_WHITE,
+        text_font_color = Blitbuffer.COLOR_BLACK,
         callback = function()
             if overlay then UIManager:close(overlay, "ui") end
             if opts.cancel_callback then opts.cancel_callback() end
         end,
     }
 
-    local ok_btn = Button:new{
-        text = opts.ok_text or _("Update All"),
-        bordersize = sc(1),
-        radius = storefront_theme.radius_btn or sc(18),
-        padding = sc(10),
-        width = inner_w - btn_gap - btn_w,
+    local ok_btn = StorefrontUtils.createButton{
+        text = ok_text,
+        text_font_size = btn_font_size,
+        bold = true,
+        bordersize = storefront_theme.border_btn or sc(1),
+        radius = storefront_theme.radius_btn or sc(4),
+        width = btn_widths[2],
+        height = sc(38),
+        background = Blitbuffer.COLOR_BLACK,
+        text_font_color = Blitbuffer.COLOR_WHITE,
         callback = function()
             if overlay then UIManager:close(overlay, "ui") end
             if opts.ok_callback then opts.ok_callback() end
@@ -547,14 +559,13 @@ function Storefront:showConfirmDialog(opts)
     }
 
     overlay = InputContainer:new{
+        align = "center",
+        vertical_align = "center",
         dimen = Geom:new{ w = sw, h = sh },
         key_events = {
             Close = { { "Back" } }
         },
-        CenterContainer:new{
-            dimen = Geom:new{ w = sw, h = sh },
-            card,
-        },
+        card,
     }
 
     cancel_btn.show_parent = overlay
@@ -562,6 +573,7 @@ function Storefront:showConfirmDialog(opts)
 
     overlay.onClose = function()
         UIManager:close(overlay, "ui")
+        if opts.cancel_callback then opts.cancel_callback() end
         return true
     end
 
@@ -4281,7 +4293,8 @@ function Storefront:showPluginFileActionDialog(plugin, filepath, filename, filte
             background = Blitbuffer.COLOR_WHITE,
             callback = function()
                 UIManager:close(dialog)
-                UIManager:show(ConfirmBox:new{
+                self:showConfirmDialog{
+                    title = _("Delete File?"),
                     text = string.format(_("Delete file '%s'?\n\nThis cannot be undone."), filename),
                     ok_text = _("Delete"),
                     cancel_text = _("Cancel"),
@@ -4300,7 +4313,7 @@ function Storefront:showPluginFileActionDialog(plugin, filepath, filename, filte
                             })
                         end
                     end,
-                })
+                }
             end,
         },
     })
@@ -8912,8 +8925,8 @@ end
 -- "View README" actions. The cached files are regenerated on demand the next
 -- time a README is opened, so deletion is non-destructive.
 function Storefront:clearCachedReadmeFiles()
-    local confirm
-    confirm = ConfirmBox:new{
+    self:showConfirmDialog{
+        title = _("Clear README Cache?"),
         text = _("Delete all cached README files? They will be re-downloaded on demand."),
         ok_text = _("Delete"),
         cancel_text = _("Cancel"),
@@ -8932,7 +8945,6 @@ function Storefront:clearCachedReadmeFiles()
             UIManager:show(InfoMessage:new{ text = msg, timeout = 4 })
         end,
     }
-    UIManager:show(confirm)
 end
 
 function Storefront:promptInstallPluginFromURL()
@@ -9734,19 +9746,18 @@ function Storefront:resolveNewInstallDestination(callback, on_cancel)
         PluginPaths.resolveInstallDestination(config_override, remembered_path, hidden_paths)
 
     if all_hidden then
-        local warn_dialog
-        warn_dialog = ConfirmBox:new{
+        self:showConfirmDialog{
+            title = _("Install to Default?"),
             text = _("All of your custom plugin folders are currently hidden (see Manage plugin paths). Install to the default plugin folder anyway?"),
             ok_text = _("Install to default"),
+            cancel_text = _("Cancel"),
             ok_callback = function()
                 callback(PluginPaths.getDefaultPluginsRoot())
             end,
-            cancel_text = _("Cancel"),
             cancel_callback = function()
                 on_cancel()
             end,
         }
-        UIManager:show(warn_dialog)
         return
     end
 

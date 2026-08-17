@@ -98,6 +98,12 @@ msgstr "Active Single"
 msgid "Active Wallpaper ✓"
 msgstr "Active Wallpaper ✓"
 
+msgid "Active: %s"
+msgstr "Active: %s"
+
+msgid "Add to Shuffle"
+msgstr "Add to Shuffle"
+
 msgid "Add to Shuffle Pool (Enable Shuffle)"
 msgstr "Add to Shuffle Pool (Enable Shuffle)"
 
@@ -257,14 +263,14 @@ msgstr "Category: %s"
 msgid "Change..."
 msgstr "Change..."
 
-msgid "Changelog for %s\n%s \\xE2\\x86\\x92 %s"
-msgstr "Changelog for %s\n%s \\xE2\\x86\\x92 %s"
+msgid "Changelog for %s\n%s \\\\xE2\\\\x86\\\\x92 %s"
+msgstr "Changelog for %s\n%s \\\\xE2\\\\x86\\\\x92 %s"
 
 msgid "Changelog for %s\n%s → %s"
 msgstr "Changelog for %s\n%s → %s"
 
-msgid "Changelog for %s\\n%s \\xE2\\x86\\x92 %s"
-msgstr "Changelog for %s\\n%s \\xE2\\x86\\x92 %s"
+msgid "Changelog for %s\\\n%s \\\\xE2\\\\x86\\\\x92 %s"
+msgstr "Changelog for %s\\\n%s \\\\xE2\\\\x86\\\\x92 %s"
 
 msgid "Changelog: %s"
 msgstr "Changelog: %s"
@@ -323,26 +329,38 @@ msgstr "Clear"
 msgid "Clear All"
 msgstr "Clear All"
 
+msgid "Clear All Caches?"
+msgstr "Clear All Caches?"
+
 msgid "Clear Cache"
 msgstr "Clear Cache"
+
+msgid "Clear README Cache?"
+msgstr "Clear README Cache?"
 
 msgid "Clear README cache"
 msgstr "Clear README cache"
 
-msgid "Clear README cache (%s)?\\nCached README files and images will be deleted."
-msgstr "Clear README cache (%s)?\\nCached README files and images will be deleted."
+msgid "Clear README cache (%s)?\nCached README files and images will be deleted."
+msgstr "Clear README cache (%s)?\nCached README files and images will be deleted."
 
-msgid "Clear Wiki cache (%s)?\\nCached wiki articles and images will be deleted."
-msgstr "Clear Wiki cache (%s)?\\nCached wiki articles and images will be deleted."
+msgid "Clear Thumbnail Cache?"
+msgstr "Clear Thumbnail Cache?"
 
-msgid "Clear all cached data (%s)?\\nAll README files, wiki articles, and thumbnails will be deleted."
-msgstr "Clear all cached data (%s)?\\nAll README files, wiki articles, and thumbnails will be deleted."
+msgid "Clear Wiki Cache?"
+msgstr "Clear Wiki Cache?"
+
+msgid "Clear Wiki cache (%s)?\nCached wiki articles and images will be deleted."
+msgstr "Clear Wiki cache (%s)?\nCached wiki articles and images will be deleted."
+
+msgid "Clear all cached data (%s)?\nAll README files, wiki articles, and thumbnails will be deleted."
+msgstr "Clear all cached data (%s)?\nAll README files, wiki articles, and thumbnails will be deleted."
 
 msgid "Clear cache…"
 msgstr "Clear cache…"
 
-msgid "Clear screensaver thumbnail cache (%s)?\\nThumbnails will be re-downloaded when viewing wallpapers."
-msgstr "Clear screensaver thumbnail cache (%s)?\\nThumbnails will be re-downloaded when viewing wallpapers."
+msgid "Clear screensaver thumbnail cache (%s)?\nThumbnails will be re-downloaded when viewing wallpapers."
+msgstr "Clear screensaver thumbnail cache (%s)?\nThumbnails will be re-downloaded when viewing wallpapers."
 
 msgid "Clear search & filters"
 msgstr "Clear search & filters"
@@ -371,8 +389,8 @@ msgstr "Collection"
 msgid "Commit diff: %s → %s"
 msgstr "Commit diff: %s → %s"
 
-msgid "Commits: %s \\xE2\\x86\\x92 %s"
-msgstr "Commits: %s \\xE2\\x86\\x92 %s"
+msgid "Commits: %s \\\\xE2\\\\x86\\\\x92 %s"
+msgstr "Commits: %s \\\\xE2\\\\x86\\\\x92 %s"
 
 msgid "Commits: %s → %s"
 msgstr "Commits: %s → %s"
@@ -386,6 +404,9 @@ msgstr "Config files only"
 msgid "Configured ✓"
 msgstr "Configured ✓"
 
+msgid "Confirm"
+msgstr "Confirm"
+
 msgid "Confirm Update"
 msgstr "Confirm Update"
 
@@ -395,8 +416,8 @@ msgstr "Confirm Update All"
 msgid "Connecting to GitHub…\n\nPlease wait."
 msgstr "Connecting to GitHub…\n\nPlease wait."
 
-msgid "Connecting to GitHub…\\n\\nPlease wait."
-msgstr "Connecting to GitHub…\\n\\nPlease wait."
+msgid "Connecting to GitHub…\\\n\\\nPlease wait."
+msgstr "Connecting to GitHub…\\\n\\\nPlease wait."
 
 msgid "Continue"
 msgstr "Continue"
@@ -445,6 +466,15 @@ msgstr "Delete"
 
 msgid "Delete "
 msgstr "Delete "
+
+msgid "Delete '%s' from your device?"
+msgstr "Delete '%s' from your device?"
+
+msgid "Delete File?"
+msgstr "Delete File?"
+
+msgid "Delete Wallpaper?"
+msgstr "Delete Wallpaper?"
 
 msgid "Delete all cached README files? They will be re-downloaded on demand."
 msgstr "Delete all cached README files? They will be re-downloaded on demand."
@@ -512,14 +542,20 @@ msgstr "Disabled"
 msgid "Display Options"
 msgstr "Display Options"
 
-msgid "Displays a static wallpaper on sleep.\\nActive: %s"
-msgstr "Displays a static wallpaper on sleep.\\nActive: %s"
+msgid "Displays a static wallpaper on sleep"
+msgstr "Displays a static wallpaper on sleep"
+
+msgid "Displays a static wallpaper on sleep.\nActive: %s"
+msgstr "Displays a static wallpaper on sleep.\nActive: %s"
 
 msgid "Done"
 msgstr "Done"
 
 msgid "Download & Set Active"
 msgstr "Download & Set Active"
+
+msgid "Download Only"
+msgstr "Download Only"
 
 msgid "Download Only (Save to Device)"
 msgstr "Download Only (Save to Device)"
@@ -542,11 +578,14 @@ msgstr "Downloading "
 msgid "Downloading %s%s…\nThis may take a moment."
 msgstr "Downloading %s%s…\nThis may take a moment."
 
-msgid "Downloading %s%s…\\nThis may take a moment."
-msgstr "Downloading %s%s…\\nThis may take a moment."
+msgid "Downloading %s%s…\\\nThis may take a moment."
+msgstr "Downloading %s%s…\\\nThis may take a moment."
 
 msgid "Downloading %s…"
 msgstr "Downloading %s…"
+
+msgid "Downloading '%s'..."
+msgstr "Downloading '%s'..."
 
 msgid "Downloading patch \"%s\"…"
 msgstr "Downloading patch \"%s\"…"
@@ -554,8 +593,8 @@ msgstr "Downloading patch \"%s\"…"
 msgid "Downloading patch %s…"
 msgstr "Downloading patch %s…"
 
-msgid "Downloading patch \\\"%s\\\"…"
-msgstr "Downloading patch \\\"%s\\\"…"
+msgid "Downloading patch \\\\\"%s\\\\\"…"
+msgstr "Downloading patch \\\\\"%s\\\\\"…"
 
 msgid "Downloading screensaver..."
 msgstr "Downloading screensaver..."
@@ -590,8 +629,8 @@ msgstr "Enter plugin number"
 msgid "Extracting and installing plugin…\nPlease wait."
 msgstr "Extracting and installing plugin…\nPlease wait."
 
-msgid "Extracting and installing plugin…\\nPlease wait."
-msgstr "Extracting and installing plugin…\\nPlease wait."
+msgid "Extracting and installing plugin…\\\nPlease wait."
+msgstr "Extracting and installing plugin…\\\nPlease wait."
 
 msgid "Failed to check %s: %s"
 msgstr "Failed to check %s: %s"
@@ -818,6 +857,9 @@ msgstr "Install patch from GitHub"
 msgid "Install plugin from GitHub"
 msgstr "Install plugin from GitHub"
 
+msgid "Install to Default?"
+msgstr "Install to Default?"
+
 msgid "Install to default"
 msgstr "Install to default"
 
@@ -839,26 +881,26 @@ msgstr "Installed Plugins Settings"
 msgid "Installed Regular font style offline for \"%s\". Full font family queued for download when reconnected."
 msgstr "Installed Regular font style offline for \"%s\". Full font family queued for download when reconnected."
 
-msgid "Installed Regular font style offline for \\\"%s\\\". Full font family queued for download when reconnected."
-msgstr "Installed Regular font style offline for \\\"%s\\\". Full font family queued for download when reconnected."
+msgid "Installed Regular font style offline for \\\\\"%s\\\\\". Full font family queued for download when reconnected."
+msgstr "Installed Regular font style offline for \\\\\"%s\\\\\". Full font family queued for download when reconnected."
 
 msgid "Installed font \"%s\" (%d file(s))."
 msgstr "Installed font \"%s\" (%d file(s))."
 
-msgid "Installed font \\\"%s\\\" (%d file(s))."
-msgstr "Installed font \\\"%s\\\" (%d file(s))."
+msgid "Installed font \\\\\"%s\\\\\" (%d file(s))."
+msgstr "Installed font \\\\\"%s\\\\\" (%d file(s))."
 
 msgid "Installed full font family \"%s\" (%d file(s))."
 msgstr "Installed full font family \"%s\" (%d file(s))."
 
-msgid "Installed full font family \\\"%s\\\" (%d file(s))."
-msgstr "Installed full font family \\\"%s\\\" (%d file(s))."
+msgid "Installed full font family \\\\\"%s\\\\\" (%d file(s))."
+msgstr "Installed full font family \\\\\"%s\\\\\" (%d file(s))."
 
 msgid "Installed patch \"%s\"."
 msgstr "Installed patch \"%s\"."
 
-msgid "Installed patch \\\"%s\\\"."
-msgstr "Installed patch \\\"%s\\\"."
+msgid "Installed patch \\\\\"%s\\\\\"."
+msgstr "Installed patch \\\\\"%s\\\\\"."
 
 msgid "Installed plugin \"%s\" (version %s)."
 msgstr "Installed plugin \"%s\" (version %s)."
@@ -947,8 +989,8 @@ msgstr "Manage plugin paths"
 msgid "Manage plugin paths\n\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
 msgstr "Manage plugin paths\n\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
 
-msgid "Manage plugin paths\\n\\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
-msgstr "Manage plugin paths\\n\\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
+msgid "Manage plugin paths\\\n\\\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
+msgstr "Manage plugin paths\\\n\\\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
 
 msgid "Match"
 msgstr "Match"
@@ -1048,6 +1090,9 @@ msgstr "Modify Plugin"
 
 msgid "Modify Plugin: %s"
 msgstr "Modify Plugin: %s"
+
+msgid "Most Downloaded"
+msgstr "Most Downloaded"
 
 msgid "Most Popular"
 msgstr "Most Popular"
@@ -1190,8 +1235,11 @@ msgstr "No stable releases found — uncheck filter to show all releases"
 msgid "No tracked plugins to check."
 msgstr "No tracked plugins to check."
 
-msgid "No wallpapers found in your screensavers folder.\\n\\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
-msgstr "No wallpapers found in your screensavers folder.\\n\\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
+msgid "No wallpapers found in your screensavers folder.\n\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
+msgstr "No wallpapers found in your screensavers folder.\n\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
+
+msgid "No wallpapers found in your screensavers folder.\\\n\\\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
+msgstr "No wallpapers found in your screensavers folder.\\\n\\\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
 
 msgid "None selected"
 msgstr "None selected"
@@ -1204,6 +1252,9 @@ msgstr "Not set"
 
 msgid "Notes"
 msgstr "Notes"
+
+msgid "OK"
+msgstr "OK"
 
 msgid "Offline Regular"
 msgstr "Offline Regular"
@@ -1258,6 +1309,9 @@ msgstr "Patch "
 
 msgid "Patch %s has been %s."
 msgstr "Patch %s has been %s."
+
+msgid "Patch '%s' deleted."
+msgstr "Patch '%s' deleted."
 
 msgid "Patch '%s' disabled."
 msgstr "Patch '%s' disabled."
@@ -1334,6 +1388,9 @@ msgstr "Plugins"
 msgid "Plugins cached: %s (last update: %s)"
 msgstr "Plugins cached: %s (last update: %s)"
 
+msgid "Pool size: %d wallpapers in rotation"
+msgstr "Pool size: %d wallpapers in rotation"
+
 msgid "Pre-installed core KOReader plugin."
 msgstr "Pre-installed core KOReader plugin."
 
@@ -1363,6 +1420,9 @@ msgstr "Reading Progress"
 
 msgid "Reading Progress / Summary"
 msgstr "Reading Progress / Summary"
+
+msgid "Recently Added"
+msgstr "Recently Added"
 
 msgid "Refresh"
 msgstr "Refresh"
@@ -1435,6 +1495,12 @@ msgstr "Remove"
 
 msgid "Remove "
 msgstr "Remove "
+
+msgid "Remove '%s' from your wallpaper collection?"
+msgstr "Remove '%s' from your wallpaper collection?"
+
+msgid "Remove Wallpaper?"
+msgstr "Remove Wallpaper?"
 
 msgid "Rename"
 msgstr "Rename"
@@ -1526,8 +1592,8 @@ msgstr "Search & API"
 msgid "Search filter (\"%s\") is not applied to Updates."
 msgstr "Search filter (\"%s\") is not applied to Updates."
 
-msgid "Search filter (\\\"%s\\\") is not applied to Updates."
-msgstr "Search filter (\\\"%s\\\") is not applied to Updates."
+msgid "Search filter (\\\\\"%s\\\\\") is not applied to Updates."
+msgstr "Search filter (\\\\\"%s\\\\\") is not applied to Updates."
 
 msgid "Search text"
 msgstr "Search text"
@@ -1571,6 +1637,9 @@ msgstr "Set Active Single"
 msgid "Set Single"
 msgstr "Set Single"
 
+msgid "Set as Active"
+msgstr "Set as Active"
+
 msgid "Set as Active Single Wallpaper"
 msgstr "Set as Active Single Wallpaper"
 
@@ -1598,8 +1667,8 @@ msgstr "Shuffle (%d)"
 msgid "Shuffle Pool"
 msgstr "Shuffle Pool"
 
-msgid "Shuffles through all wallpapers in folder on sleep.\\nPool size: %d wallpapers in rotation"
-msgstr "Shuffles through all wallpapers in folder on sleep.\\nPool size: %d wallpapers in rotation"
+msgid "Shuffles through all wallpapers in folder on sleep.\nPool size: %d wallpapers in rotation"
+msgstr "Shuffles through all wallpapers in folder on sleep.\nPool size: %d wallpapers in rotation"
 
 msgid "Single"
 msgstr "Single"
@@ -1727,11 +1796,23 @@ msgstr "The quick brown fox jumps over the lazy dog."
 msgid "This action cannot be undone.\n\nChanges will take effect after restart."
 msgstr "This action cannot be undone.\n\nChanges will take effect after restart."
 
-msgid "This action cannot be undone.\\n\\nChanges will take effect after restart."
-msgstr "This action cannot be undone.\\n\\nChanges will take effect after restart."
+msgid "This action cannot be undone.\\\n\\\nChanges will take effect after restart."
+msgstr "This action cannot be undone.\\\n\\\nChanges will take effect after restart."
 
 msgid "This wallpaper is currently set as your active screensaver."
 msgstr "This wallpaper is currently set as your active screensaver."
+
+msgid "This will delete all cached README files, wiki articles, and screensaver thumbnails (%s)."
+msgstr "This will delete all cached README files, wiki articles, and screensaver thumbnails (%s)."
+
+msgid "This will delete cached README markdown files and downloaded images (%s)."
+msgstr "This will delete cached README markdown files and downloaded images (%s)."
+
+msgid "This will delete cached screensaver thumbnail previews (%s)."
+msgstr "This will delete cached screensaver thumbnail previews (%s)."
+
+msgid "This will delete cached wiki articles and downloaded images (%s)."
+msgstr "This will delete cached wiki articles and downloaded images (%s)."
 
 msgid "This will take effect on next restart."
 msgstr "This will take effect on next restart."
@@ -1826,8 +1907,8 @@ msgstr "Updated patch \"%s\"."
 msgid "Updated patch %s."
 msgstr "Updated patch %s."
 
-msgid "Updated patch \\\"%s\\\"."
-msgstr "Updated patch \\\"%s\\\"."
+msgid "Updated patch \\\\\"%s\\\\\"."
+msgstr "Updated patch \\\\\"%s\\\\\"."
 
 msgid "Updated plugin \"%s\" to version %s."
 msgstr "Updated plugin \"%s\" to version %s."
@@ -1835,11 +1916,11 @@ msgstr "Updated plugin \"%s\" to version %s."
 msgid "Updated plugin \"%s\"."
 msgstr "Updated plugin \"%s\"."
 
-msgid "Updated plugin \\\"%s\\\" to version %s."
-msgstr "Updated plugin \\\"%s\\\" to version %s."
+msgid "Updated plugin \\\\\"%s\\\\\" to version %s."
+msgstr "Updated plugin \\\\\"%s\\\\\" to version %s."
 
-msgid "Updated plugin \\\"%s\\\"."
-msgstr "Updated plugin \\\"%s\\\"."
+msgid "Updated plugin \\\\\"%s\\\\\"."
+msgstr "Updated plugin \\\\\"%s\\\\\"."
 
 msgid "Updated: %s"
 msgstr "Updated: %s"
@@ -1868,8 +1949,8 @@ msgstr "Versions"
 msgid "View README"
 msgstr "View README"
 
-msgid "View commits (%s \\xE2\\x86\\x92 %s)"
-msgstr "View commits (%s \\xE2\\x86\\x92 %s)"
+msgid "View commits (%s \\\\xE2\\\\x86\\\\x92 %s)"
+msgstr "View commits (%s \\\\xE2\\\\x86\\\\x92 %s)"
 
 msgid "View commits (%s → %s)"
 msgstr "View commits (%s → %s)"
@@ -1879,6 +1960,9 @@ msgstr "Wallpaper Collection"
 
 msgid "Wallpaper Options"
 msgstr "Wallpaper Options"
+
+msgid "Wallpaper deleted from device."
+msgstr "Wallpaper deleted from device."
 
 msgid "Wallpaper removed"
 msgstr "Wallpaper removed"
@@ -1928,11 +2012,11 @@ msgstr "[draft]"
 msgid "[pre]"
 msgstr "[pre]"
 
-msgid "\\\"My dear Mr. Bennet,\\\" said his lady to him one day, \\\"have you heard that Netherfield Park is let at last?\\\" Mr. Bennet replied that he had not. \\\"But it is,\\\" returned she; \\\"for Mrs. Long has just been here, and she told me all about it.\\\" Mr. Bennet made no answer."
-msgstr "\\\"My dear Mr. Bennet,\\\" said his lady to him one day, \\\"have you heard that Netherfield Park is let at last?\\\" Mr. Bennet replied that he had not. \\\"But it is,\\\" returned she; \\\"for Mrs. Long has just been here, and she told me all about it.\\\" Mr. Bennet made no answer."
+msgid "\\\\\"My dear Mr. Bennet,\\\\\" said his lady to him one day, \\\\\"have you heard that Netherfield Park is let at last?\\\\\" Mr. Bennet replied that he had not. \\\\\"But it is,\\\\\" returned she; \\\\\"for Mrs. Long has just been here, and she told me all about it.\\\\\" Mr. Bennet made no answer."
+msgstr "\\\\\"My dear Mr. Bennet,\\\\\" said his lady to him one day, \\\\\"have you heard that Netherfield Park is let at last?\\\\\" Mr. Bennet replied that he had not. \\\\\"But it is,\\\\\" returned she; \\\\\"for Mrs. Long has just been here, and she told me all about it.\\\\\" Mr. Bennet made no answer."
 
-msgid "\\xC2\\xB7"
-msgstr "\\xC2\\xB7"
+msgid "\\\\xC2\\\\xB7"
+msgstr "\\\\xC2\\\\xB7"
 
 msgid "about_text"
 msgstr "Storefront is an in-app package manager for KOReader plugins, patches, and fonts."

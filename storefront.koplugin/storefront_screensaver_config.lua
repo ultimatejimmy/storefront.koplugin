@@ -399,15 +399,17 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
             background = Blitbuffer.COLOR_DARK_GRAY,
         })
 
-        local close_btn = Button:new{
+        local StorefrontUtils = require("storefront_utils")
+        local close_btn = StorefrontUtils.createButton{
             text = _("Close"),
             text_font_size = 16,
             bold = true,
-            bordersize = 0,
+            bordersize = storefront_theme.border_btn or sc(1),
             radius = sc(4),
-            padding = sc(8),
             width = dialog_w - sc(20),
+            height = sc(38),
             background = Blitbuffer.COLOR_WHITE,
+            text_font_color = Blitbuffer.COLOR_BLACK,
             callback = closeConfig,
         }
 
@@ -416,7 +418,7 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
             bordersize = 0,
             width = dialog_w - sc(4),
             CenterContainer:new{
-                dimen = Geom:new{ w = dialog_w - sc(20), h = close_btn:getSize().h },
+                dimen = Geom:new{ w = dialog_w - sc(20), h = sc(38) },
                 close_btn,
             }
         })

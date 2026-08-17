@@ -51,98 +51,14 @@ local function formatStats(stats)
 end
 
 local function showCustomConfirm(title_text, body_text, ok_button_text, on_ok)
-    local sw = Device.screen:getWidth()
-    local sh = Device.screen:getHeight()
-    local card_padding = sc(14)
-    local card_border = storefront_theme.border_window or sc(2)
-    local dialog_w = math.min(sw - sc(20), sc(360))
-    local inner_w = dialog_w - (card_padding * 2) - (card_border * 2)
-
-    local ui_font_size = storefront_theme.face_label_size or 18
-    local title_font_size = storefront_theme.title_font_size or 22
-
-    local confirm_overlay
-
-    local title_label = TextBoxWidget:new{
-        text = title_text,
-        face = Font:getFace("NotoSerif-Regular.ttf", title_font_size),
-        bold = true,
-        fgcolor = Blitbuffer.COLOR_BLACK,
-        width = inner_w,
-        alignment = "center",
-    }
-
-    local body_widget = TextBoxWidget:new{
+    local StorefrontUtils = require("storefront_utils")
+    return StorefrontUtils.showConfirmDialog{
+        title = title_text,
         text = body_text,
-        face = Font:getFace("NotoSerif-Regular.ttf", ui_font_size),
-        fgcolor = Blitbuffer.COLOR_BLACK,
-        width = inner_w,
-        alignment = "center",
+        ok_text = ok_button_text or _("Clear"),
+        cancel_text = _("Cancel"),
+        ok_callback = on_ok,
     }
-
-    local btn_gap = sc(12)
-    local btn_w = math.floor((inner_w - btn_gap) / 2)
-
-    local cancel_btn = Button:new{
-        text = _("Cancel"),
-        face = Font:getFace("cfont", ui_font_size),
-        bordersize = sc(1),
-        radius = storefront_theme.radius_btn or sc(18),
-        padding = sc(8),
-        width = btn_w,
-        callback = function()
-            if confirm_overlay then
-                UIManager:close(confirm_overlay, "ui")
-            end
-        end,
-    }
-
-    local ok_btn = Button:new{
-        text = ok_button_text or _("Clear"),
-        face = Font:getFace("cfont", ui_font_size),
-        bold = true,
-        bordersize = sc(1),
-        radius = storefront_theme.radius_btn or sc(18),
-        padding = sc(8),
-        width = btn_w,
-        callback = function()
-            if confirm_overlay then
-                UIManager:close(confirm_overlay, "ui")
-            end
-            if on_ok then
-                on_ok()
-            end
-        end,
-    }
-
-    local buttons_hg = HorizontalGroup:new{
-        cancel_btn,
-        HorizontalSpan:new{ width = btn_gap },
-        ok_btn,
-    }
-
-    local content_vg = VerticalGroup:new{
-        align = "center",
-        title_label,
-        VerticalSpan:new{ width = sc(12) },
-        body_widget,
-        VerticalSpan:new{ width = sc(16) },
-        buttons_hg,
-    }
-
-    local card = FrameContainer:new{
-        bordersize = card_border,
-        padding = card_padding,
-        background = storefront_theme.color_bg or Blitbuffer.COLOR_WHITE,
-        content_vg,
-    }
-
-    confirm_overlay = CenterContainer:new{
-        dimen = Geom:new{ x = 0, y = 0, w = sw, h = sh },
-        card,
-    }
-
-    UIManager:show(confirm_overlay, "ui")
 end
 
 function StorefrontClearCacheDialog.show(Storefront, on_close_callback)
@@ -151,7 +67,7 @@ function StorefrontClearCacheDialog.show(Storefront, on_close_callback)
     local dialog_w = math.min(sw - sc(20), sc(400))
 
     local ui_font_size = storefront_theme.face_label_size or 18
-    local subtext_font_size = storefront_theme.subtext_font_size or 14
+    local subtext_font_size = storefront_theme.subtext_font_size or 16
     local title_font_size = storefront_theme.title_font_size or 22
 
     local overlay
@@ -425,39 +341,57 @@ function StorefrontClearCacheDialog.show(Storefront, on_close_callback)
         })
 
         -- Close Button at bottom
-        local close_btn = Button:new{
+        local StorefrontUtils = require("storefront_utils")
+        local close_btn = StorefrontUtils.createButton{
             text = _("Close"),
-            face = Font:getFace("cfont", ui_font_size),
+            text_font_size = ui_font_size,
             bold = true,
-            bordersize = 0,
-            width = dialog_w - sc(4),
+            bordersize = storefront_theme.border_btn or sc(1),
+            radius = storefront_theme.radius_btn or sc(4),
+            width = dialog_w - sc(20),
+            height = sc(38),
+            background = Blitbuffer.COLOR_WHITE,
+            text_font_color = Blitbuffer.COLOR_BLACK,
             callback = function()
                 closeDialog()
             end,
         }
         table.insert(content_vg, FrameContainer:new{
-            padding = sc(10),
+            padding = sc(8),
             bordersize = 0,
             width = dialog_w - sc(4),
-            close_btn,
+            CenterContainer:new{
+                dimen = Geom:new{ w = dialog_w - sc(20), h = sc(38) },
+                close_btn,
+            }
         })
 
         local card_frame = FrameContainer:new{
-            bordersize = sc(2),
-            background = Blitbuffer.COLOR_WHITE,
             padding = 0,
+            radius = storefront_theme.radius_window or 0,
+            bordersize = storefront_theme.border_window or sc(2),
+            color = Blitbuffer.COLOR_BLACK,
+            background = storefront_theme.color_bg or Blitbuffer.COLOR_WHITE,
+            width = dialog_w,
             content_vg,
         }
 
-        overlay = CenterContainer:new{
-            dimen = Geom:new{ x = 0, y = 0, w = sw, h = sh },
+        overlay = InputContainer:new{
+            align = "center",
+            vertical_align = "center",
+            dimen = Geom:new{ w = sw, h = sh },
+            key_events = {
+                Close = { { "Back" } }
+            },
             card_frame,
         }
 
         overlay.onClose = function()
+            overlay = nil
             if on_close_callback then
                 on_close_callback()
             end
+            return true
         end
 
         UIManager:show(overlay, "ui")

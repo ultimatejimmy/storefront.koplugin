@@ -414,11 +414,11 @@ end
                             callback = function()
                                 GitHubClient.setToken(token_dialog:getInputText())
                                 UIManager:close(token_dialog)
+                                refresh()
                                 UIManager:show(InfoMessage:new{
                                     text = _("GitHub token saved."),
                                     timeout = 2,
                                 })
-                                refresh()
                             end,
                         },
                     },
