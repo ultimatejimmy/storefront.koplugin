@@ -1,6 +1,6 @@
 # Storefront Plugin for KOReader
 ![Platform](https://img.shields.io/badge/platform-KOReader-green.svg)
-![License](https://img.shields.io/badge/license-MIT-yellow.svg)
+![License](https://img.shields.io/badge/license-GPL_3.0-yellow.svg)
 ![Status](https://img.shields.io/badge/status-active-brightgreen.svg)
 ![liberapay](https://img.shields.io/liberapay/patrons/ultimatejimmy.svg?logo=liberapay) 
 
