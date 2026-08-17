@@ -397,11 +397,8 @@ function StorefrontScreensavers.createCoverImageWidget(file_path, target_w, targ
 
     if not file_path or not target_w or not target_h then return nil end
 
-    local req_w = math.max(math.floor(target_w * 2), 160)
-    local req_h = math.max(math.floor(target_h * 2), 200)
-
     local ok, orig_bb = pcall(function()
-        return RenderImage:renderImageFile(file_path, false, req_w, req_h)
+        return RenderImage:renderImageFile(file_path, false)
     end)
 
     if not ok or not orig_bb then

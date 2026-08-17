@@ -7567,38 +7567,37 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
     -- ---- Widget helpers ---------------------------------------------------
     local sc       = function(val) return Device.screen:scaleBySize(val) end
     local sw       = Device.screen:getWidth()
-    local sh       = Device.screen:getHeight()
-    local cols     = 3
     local gap      = sc(10)
     local card_pad = sc(5)
     local usable_w = available_list_width or (sw - sc(24))
-    local card_w   = math.floor((usable_w - gap * (cols - 1)) / cols)
-    local inner_w  = card_w - (card_pad * 2)
 
     -- Accurate card overhead: padding (top+bottom), card border (top+bottom), image border (top+bottom), vertical spans, title text, and meta text
     local card_overhead = (card_pad * 2) + sc(46)
 
-    -- Determine rows: always at least 2 rows of 3; 3 rows of 3 on taller screens
+    -- Determine rows: always at least 2 rows; 3 rows on taller screens
     local usable_h = available_list_height or (sh - sc(210))
     local target_rows = 2
     local available_for_3 = usable_h - (gap * 2) - sc(16)
     local max_card_h_3 = math.floor(available_for_3 / 3)
     local inner_img_h_3 = max_card_h_3 - card_overhead
-    if usable_h >= sc(680) and inner_img_h_3 >= math.floor(inner_w * 1.05) then
+    if usable_h >= sc(680) and inner_img_h_3 >= sc(140) then
         target_rows = 3
     end
 
     local rows_per_page = target_rows
-    local page_size = rows_per_page * cols
-
-    -- Calculate card_h and img_h so exactly target_rows fit in usable_h with clean margins
     local available_for_cards = usable_h - (gap * (target_rows - 1)) - sc(16)
-    local max_card_h = math.floor(available_for_cards / target_rows)
-    local ideal_img_h = math.floor(inner_w * 4 / 3)
-    local ideal_card_h = ideal_img_h + card_overhead
-
-    local card_h = math.min(ideal_card_h, max_card_h)
+    local card_h = math.floor(available_for_cards / target_rows)
     local img_h  = math.max(sc(60), card_h - card_overhead)
+
+    -- Calculate columns based on natural 3:4 portrait image aspect ratio scaled from height
+    local ideal_img_w = math.floor(img_h * 3 / 4)
+    local ideal_card_w = ideal_img_w + (card_pad * 2)
+    local candidate_cols = math.floor((usable_w + gap) / (ideal_card_w + gap))
+    local cols = math.max(3, math.min(6, candidate_cols))
+
+    local card_w   = math.floor((usable_w - gap * (cols - 1)) / cols)
+    local inner_w  = card_w - (card_pad * 2)
+    local page_size = rows_per_page * cols
 
     -- ---- Filter & sort the catalog ----------------------------------------
     self:ensureBrowserState()

@@ -55,8 +55,53 @@ function StorefrontSettingsCard.show(Storefront)
             UIManager:close(overlay, "ui")
         end
 
-        local function span()
-            return VerticalSpan:new{ width = storefront_theme.gap }
+        local available_h = sh - sc(24)
+        local title_font_size
+        local header_font_size
+        local ui_font_size
+        local subtext_font_size
+        local row_pad_v
+        local row_pad_h = sc(10)
+        local header_pad_v
+        local title_pad_v
+        local close_h
+
+        if available_h >= sc(650) then
+            title_font_size = 20
+            header_font_size = 14
+            ui_font_size = 16
+            subtext_font_size = 14
+            row_pad_v = sc(6)
+            header_pad_v = sc(4)
+            title_pad_v = sc(8)
+            close_h = sc(36)
+        elseif available_h >= sc(520) then
+            title_font_size = 18
+            header_font_size = 13
+            ui_font_size = 14
+            subtext_font_size = 13
+            row_pad_v = sc(4)
+            header_pad_v = sc(3)
+            title_pad_v = sc(6)
+            close_h = sc(32)
+        elseif available_h >= sc(440) then
+            title_font_size = 16
+            header_font_size = 11
+            ui_font_size = 13
+            subtext_font_size = 12
+            row_pad_v = sc(2)
+            header_pad_v = sc(2)
+            title_pad_v = sc(4)
+            close_h = sc(28)
+        else
+            title_font_size = 14
+            header_font_size = 10
+            ui_font_size = 11
+            subtext_font_size = 10
+            row_pad_v = sc(1)
+            header_pad_v = sc(1)
+            title_pad_v = sc(3)
+            close_h = sc(24)
         end
 
         -- Title Widget
@@ -68,7 +113,8 @@ function StorefrontSettingsCard.show(Storefront)
         }
 
         local title_container = FrameContainer:new{
-            padding = sc(10),
+            padding_v = title_pad_v,
+            padding_h = sc(10),
             bordersize = 0,
             title_label,
         }
@@ -93,10 +139,11 @@ function StorefrontSettingsCard.show(Storefront)
                 if type(icon_arg) == "table" then
                     icon_widget = icon_arg
                 elseif type(icon_arg) == "string" and icon_arg:match("%.svg$") then
+                    local icon_sz = math.min(sc(20), math.max(sc(14), ui_font_size + sc(2)))
                     icon_widget = ImageWidget:new{
                         file = getAssetPath(icon_arg),
-                        width = sc(20),
-                        height = sc(20),
+                        width = icon_sz,
+                        height = icon_sz,
                         scale_factor = 0,
                         is_icon = true,
                         alpha = true,
@@ -109,7 +156,7 @@ function StorefrontSettingsCard.show(Storefront)
                     }
                 end
                 if icon_widget then
-                    icon_w = (icon_widget.getSize and icon_widget:getSize().w) or sc(20)
+                    icon_w = (icon_widget.getSize and icon_widget:getSize().w) or sc(18)
                     icon_w = icon_w + sc(8)
                     table.insert(row_elements, icon_widget)
                     table.insert(row_elements, HorizontalSpan:new{ width = sc(8) })
@@ -117,8 +164,7 @@ function StorefrontSettingsCard.show(Storefront)
             end
 
             -- Measure right widget and available row width
-            local frame_padding = sc(10)
-            local avail_w = dialog_w - (frame_padding * 2) - sc(4)
+            local avail_w = dialog_w - (row_pad_h * 2) - sc(4)
             local right_w = 0
             if right_widget then
                 right_w = (right_widget.getSize and right_widget:getSize().w) or sc(60)
@@ -156,7 +202,8 @@ function StorefrontSettingsCard.show(Storefront)
 
             local frame = FrameContainer:new{
                 bordersize = 0,
-                padding = frame_padding,
+                padding_v = row_pad_v,
+                padding_h = row_pad_h,
                 width = dialog_w - sc(4),
                 row_content,
             }
@@ -166,22 +213,12 @@ function StorefrontSettingsCard.show(Storefront)
             end
 
             local item = InputContainer:new{ frame }
-            local row_size = frame:getSize() or { w = dialog_w - sc(4), h = 0 }
             item.ges_events = {
                 Tap = {
                     GestureRange:new{
                         ges = "tap",
                         range = function()
-                            local dim = item.dimen
-                            if not dim then
-                                return Geom:new{ x = -1, y = -1, w = 1, h = 1 }
-                            end
-                            return Geom:new{
-                                x = dim.x or 0,
-                                y = dim.y or 0,
-                                w = row_size.w or (dialog_w - sc(4)),
-                                h = row_size.h or 0,
-                            }
+                            return item.dimen or frame:getSize()
                         end
                     }
                 }
@@ -198,13 +235,13 @@ function StorefrontSettingsCard.show(Storefront)
         local function create_section_header(title)
             local label = TextWidget:new{
                 text = title:upper(),
-                face = Font:getFace("cfont", storefront_theme.section_header_font_size or 16),
+                face = Font:getFace("cfont", header_font_size),
                 bold = true,
                 fgcolor = Blitbuffer.COLOR_BLACK,
             }
             return FrameContainer:new{
-                padding = sc(5),
-                padding_left = sc(8),
+                padding_v = header_pad_v,
+                padding_h = sc(8),
                 bordersize = 0,
                 width = dialog_w - sc(4),
                 background = Blitbuffer.COLOR_LIGHT_GRAY,
@@ -220,7 +257,7 @@ function StorefrontSettingsCard.show(Storefront)
         local catalog_mode_label = (catalog_mode == "static") and _("Storefront") or _("Direct GitHub API")
         local catalog_widget = TextWidget:new{
             text = catalog_mode_label,
-            face = Font:getFace("cfont", storefront_theme.subtext_font_size or 16),
+            face = Font:getFace("cfont", subtext_font_size),
             fgcolor = storefront_theme.color_label_dim,
         }
         table.insert(content_vg, create_setting_row(nil, _("Catalog source"), catalog_widget, function()
@@ -317,7 +354,7 @@ end
             or (ts and ts > 0 and formatDateTime(ts) or _("Never"))
         local meta_widget = TextWidget:new{
             text = meta_text,
-            face = Font:getFace("cfont", storefront_theme.subtext_font_size or 16),
+            face = Font:getFace("cfont", subtext_font_size),
             fgcolor = storefront_theme.color_label_dim,
         }
         table.insert(content_vg, create_setting_row("rotate-cw.svg", _("Refresh catalog"), meta_widget, function()
@@ -346,7 +383,7 @@ end
         -- Clear Cache Row
         local cache_arrow_widget = TextWidget:new{
             text = "›",
-            face = Font:getFace("cfont", storefront_theme.subtext_font_size or 16),
+            face = Font:getFace("cfont", subtext_font_size),
             fgcolor = storefront_theme.color_label_dim,
         }
         table.insert(content_vg, create_setting_row(nil, _("Clear cache…"), cache_arrow_widget, function()
@@ -381,7 +418,7 @@ end
         local token_status_text = github_configured and _("Configured ✓") or _("Not set")
         local token_widget = TextWidget:new{
             text = token_status_text,
-            face = Font:getFace("cfont", storefront_theme.subtext_font_size or 16),
+            face = Font:getFace("cfont", subtext_font_size),
             fgcolor = storefront_theme.color_label_dim,
         }
         table.insert(content_vg, create_setting_row(nil, _("GitHub token"), token_widget, function()
@@ -449,7 +486,7 @@ end
 
         local mode_widget = TextWidget:new{
             text = mode_display_str,
-            face = Font:getFace("cfont", storefront_theme.subtext_font_size or 16),
+            face = Font:getFace("cfont", subtext_font_size),
             fgcolor = storefront_theme.color_label_dim,
             max_width = sc(140),
         }
@@ -464,7 +501,7 @@ end
 
         local count_widget = TextWidget:new{
             text = string.format(_("%d wallpapers"), #ss_local),
-            face = Font:getFace("cfont", storefront_theme.subtext_font_size or 16),
+            face = Font:getFace("cfont", subtext_font_size),
             fgcolor = storefront_theme.color_label_dim,
         }
 
@@ -485,7 +522,7 @@ end
         local version_str = StorefrontAboutDialog.getVersion()
         local ver_widget = TextWidget:new{
             text = string.format("v%s", version_str),
-            face = Font:getFace("cfont", storefront_theme.subtext_font_size or 16),
+            face = Font:getFace("cfont", subtext_font_size),
             fgcolor = storefront_theme.color_label_dim,
         }
         table.insert(content_vg, create_setting_row(nil, _("About Storefront"), ver_widget, function()
@@ -499,7 +536,7 @@ end
         local ch_label = (current_ch == "beta") and _("Beta") or _("Stable")
         local ch_widget = TextWidget:new{
             text = ch_label,
-            face = Font:getFace("cfont", storefront_theme.subtext_font_size or 16),
+            face = Font:getFace("cfont", subtext_font_size),
             fgcolor = storefront_theme.color_label_dim,
         }
         table.insert(content_vg, create_setting_row(nil, _("Update channel"), ch_widget, function()
@@ -515,49 +552,31 @@ end
             background = Blitbuffer.COLOR_DARK_GRAY,
         })
 
-        -- 4. Close Button Row
-        local close_text_widget = TextWidget:new{
+        -- Close Button Row
+        local StorefrontUtils = require("storefront_utils")
+        local close_btn = StorefrontUtils.createButton{
             text = _("Close"),
-            face = Font:getFace("cfont", ui_font_size),
+            text_font_size = ui_font_size,
             bold = true,
-            fgcolor = Blitbuffer.COLOR_BLACK,
+            bordersize = storefront_theme.border_btn or sc(1),
+            radius = storefront_theme.radius_btn or sc(4),
+            width = dialog_w - sc(20),
+            height = close_h,
+            background = Blitbuffer.COLOR_WHITE,
+            text_font_color = Blitbuffer.COLOR_BLACK,
+            callback = function()
+                UIManager:close(overlay, "ui")
+            end,
         }
-        local close_row_content = HorizontalGroup:new{
-            HorizontalSpan:new{ width = (dialog_w - close_text_widget:getSize().w) / 2 - sc(10) },
-            close_text_widget,
-        }
-        local close_frame = FrameContainer:new{
+        table.insert(content_vg, FrameContainer:new{
+            padding = sc(4),
             bordersize = 0,
-            padding = sc(10),
             width = dialog_w - sc(4),
-            close_row_content,
-        }
-        local close_btn = InputContainer:new{ close_frame }
-        local close_size = close_frame:getSize() or { w = dialog_w - sc(4), h = 0 }
-        close_btn.ges_events = {
-            Tap = {
-                GestureRange:new{
-                    ges = "tap",
-                    range = function()
-                        local dim = close_btn.dimen
-                        if not dim then
-                            return Geom:new{ x = -1, y = -1, w = 1, h = 1 }
-                        end
-                        return Geom:new{
-                            x = dim.x or 0,
-                            y = dim.y or 0,
-                            w = close_size.w or (dialog_w - sc(4)),
-                            h = close_size.h or 0,
-                        }
-                    end
-                }
+            CenterContainer:new{
+                dimen = Geom:new{ w = dialog_w - sc(20), h = close_h },
+                close_btn,
             }
-        }
-        close_btn.onTap = function()
-            UIManager:close(overlay, "ui")
-            return true
-        end
-        table.insert(content_vg, close_btn)
+        })
 
         -- Build modal frame
         local card = FrameContainer:new{
