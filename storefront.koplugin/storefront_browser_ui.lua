@@ -138,7 +138,7 @@ function StorefrontBrowserDialog:buildTabBar()
     }
 
     local num_tabs = #tabs
-    local tab_gap = sc(22)
+    local tab_gap = sc(6)
 
     local font_size = 18
     local font_face = Font:getFace("smallinfofont", font_size)
@@ -221,8 +221,17 @@ function StorefrontBrowserDialog:buildTabBar()
             underline,
         }
 
-        local tab_btn = InputContainer:new{
+        local tab_frame = FrameContainer:new{
+            padding_top = sc(4),
+            padding_bottom = sc(4),
+            padding_left = (i == 1) and sc(10) or sc(8),
+            padding_right = sc(8),
+            bordersize = 0,
             tab_group,
+        }
+
+        local tab_btn = InputContainer:new{
+            tab_frame,
         }
         tab_btn.ges_events = {
             Tap = {
@@ -230,11 +239,20 @@ function StorefrontBrowserDialog:buildTabBar()
                     ges = "tap",
                     range = function()
                         local dim = tab_btn.dimen or { x = 0, y = 0, w = 0, h = 0 }
+                        local x = dim.x or 0
+                        local y = dim.y or 0
+                        local w = dim.w or 0
+                        local h = dim.h or 0
+                        if i == 1 then
+                            -- Extend first tab hit area all the way to the left bezel
+                            w = w + x
+                            x = 0
+                        end
                         return Geom:new{
-                            x = dim.x or 0,
-                            y = dim.y or 0,
-                            w = dim.w or 0,
-                            h = dim.h or 0
+                            x = x,
+                            y = y,
+                            w = w,
+                            h = h,
                         }
                     end,
                 }
