@@ -7334,10 +7334,29 @@ function Storefront:buildInstalledEntries(available_list_height)
                     kind = "screensaver",
                     filepath = ss_item.filepath,
                     callback = function()
-                        local StorefrontScreensaverGallery = require("storefront_screensaver_gallery")
-                        StorefrontScreensaverGallery.show(self, function()
-                            self:reopenBrowser()
-                        end)
+                        local detail_entry = ss_item
+                        local StorefrontScreensaversUI = require("storefront_screensavers_ui")
+                        if StorefrontScreensaversUI and StorefrontScreensaversUI.getCachedCatalog then
+                            local cat = StorefrontScreensaversUI.getCachedCatalog()
+                            if type(cat) == "table" then
+                                for _, cat_entry in ipairs(cat) do
+                                    if (ss_item.id and cat_entry.id == ss_item.id) or
+                                       (cat_entry.filename and cat_entry.filename == ss_item.filename) or
+                                       (ss_item.filepath and cat_entry.filename and ss_item.filepath:find(cat_entry.filename, 1, true)) then
+                                        detail_entry = cat_entry
+                                        break
+                                    end
+                                end
+                            end
+                        end
+                        local ok_det, StorefrontScreensaverDetail = pcall(require, "storefront_screensaver_detail")
+                        if ok_det and StorefrontScreensaverDetail then
+                            local detail = StorefrontScreensaverDetail:new{
+                                item   = detail_entry,
+                                parent = self,
+                            }
+                            detail:show()
+                        end
                     end,
                 })
             end
