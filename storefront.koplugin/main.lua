@@ -7923,8 +7923,9 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
                     end)
                     if ok_cov and res_cov then
                         card._img_widget[1] = res_cov
-                        -- Perform localized partial repaint restricted to just this card box
-                        UIManager:setDirty(card._img_widget, "ui")
+                        if self_ref.browser_menu then
+                            UIManager:setDirty(self_ref.browser_menu, "ui")
+                        end
                     else
                         pcall(os.remove, thumb_path)
                     end
