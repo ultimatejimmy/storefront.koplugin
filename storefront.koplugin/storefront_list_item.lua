@@ -23,7 +23,11 @@ local Localization = require("localization_storefront")
 local _ = function(key, ...) return Localization:t(key, ...) end
 local DataStorage = require("datastorage")
 
+local _asset_path_cache = {}
 local function getAssetPath(filename)
+    if _asset_path_cache[filename] then
+        return _asset_path_cache[filename]
+    end
     local info = debug.getinfo(1, "S")
     local dir = info.source:match("^@(.*[/\\])") or ""
     local rel_path = dir .. "assets/" .. filename
@@ -37,9 +41,11 @@ local function getAssetPath(filename)
     if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
     for _, p in ipairs(paths_to_try) do
         if ok_lfs and lfs and lfs.attributes and lfs.attributes(p, "mode") == "file" then
+            _asset_path_cache[filename] = p
             return p
         end
     end
+    _asset_path_cache[filename] = rel_path
     return rel_path
 end
 
@@ -49,6 +55,8 @@ local function ensureBundledFontsRegistered()
     -- into KOReader's global FontList, which would cause them to appear in the
     -- reader's Book Font selection menu even when not installed by the user.
 end
+
+local _font_face_path_cache = {}
 
 local function resolveFontItemFace(e, size)
     size = size or 22
@@ -61,103 +69,114 @@ local function resolveFontItemFace(e, size)
     local font_family = e.font_family or e.font_name or e.name or ""
     local font_file = e.font_file or ""
 
-    local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
-    if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
-    local ok_ffi, ffiutil = pcall(require, "ffi/util")
-    local ok_ds, DataStorage = pcall(require, "datastorage")
-    local util_mod = require("util")
-    local data_dir = (ok_ds and DataStorage and DataStorage.getDataDir) and DataStorage:getDataDir() or ""
+    local font_cache_key = font_folder .. "|" .. font_family .. "|" .. font_file
+    local loaded_font_path = _font_face_path_cache[font_cache_key]
 
-    local info = debug.getinfo(1, "S")
-    local script_dir = info and info.source and info.source:match("^@(.*[/\\])") or ""
-    if script_dir:sub(-1) == "/" or script_dir:sub(-1) == "\\" then
-        script_dir = script_dir:sub(1, -2)
-    end
+    if loaded_font_path == nil then
+        local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
+        if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
+        local ok_ffi, ffiutil = pcall(require, "ffi/util")
+        local ok_ds, DataStorage = pcall(require, "datastorage")
+        local util_mod = require("util")
+        local data_dir = (ok_ds and DataStorage and DataStorage.getDataDir) and DataStorage:getDataDir() or ""
 
-    local folder_candidates = {}
-    if font_folder ~= "" then table.insert(folder_candidates, font_folder) end
-    if font_family ~= "" and font_family ~= font_folder then table.insert(folder_candidates, font_family) end
-    if e.name and e.name ~= font_folder and e.name ~= font_family then table.insert(folder_candidates, e.name) end
-
-    local search_dirs = {}
-    for _, f_name in ipairs(folder_candidates) do
-        if script_dir ~= "" then
-            table.insert(search_dirs, script_dir .. "/assets/bundled_fonts/" .. f_name)
-            table.insert(search_dirs, script_dir .. "/assets/fonts/" .. f_name)
-            table.insert(search_dirs, script_dir .. "/../assets/bundled_fonts/" .. f_name)
-            table.insert(search_dirs, script_dir .. "/../assets/fonts/" .. f_name)
+        local info = debug.getinfo(1, "S")
+        local script_dir = info and info.source and info.source:match("^@(.*[/\\])") or ""
+        if script_dir:sub(-1) == "/" or script_dir:sub(-1) == "\\" then
+            script_dir = script_dir:sub(1, -2)
         end
-        table.insert(search_dirs, "assets/bundled_fonts/" .. f_name)
-        table.insert(search_dirs, "assets/fonts/" .. f_name)
-        table.insert(search_dirs, "plugins/storefront.koplugin/assets/bundled_fonts/" .. f_name)
-        table.insert(search_dirs, "plugins/storefront.koplugin/assets/fonts/" .. f_name)
-        if data_dir ~= "" then
-            table.insert(search_dirs, data_dir .. "/fonts/" .. f_name)
-            table.insert(search_dirs, data_dir .. "/plugins/storefront.koplugin/assets/bundled_fonts/" .. f_name)
-            table.insert(search_dirs, data_dir .. "/plugins/storefront.koplugin/assets/fonts/" .. f_name)
-            table.insert(search_dirs, data_dir .. "/plugins/storefront.koplugin/storefront.koplugin/assets/bundled_fonts/" .. f_name)
-            table.insert(search_dirs, data_dir .. "/plugins/storefront.koplugin/storefront.koplugin/assets/fonts/" .. f_name)
+
+        local folder_candidates = {}
+        if font_folder ~= "" then table.insert(folder_candidates, font_folder) end
+        if font_family ~= "" and font_family ~= font_folder then table.insert(folder_candidates, font_family) end
+        if e.name and e.name ~= font_folder and e.name ~= font_family then table.insert(folder_candidates, e.name) end
+
+        local search_dirs = {}
+        for _, f_name in ipairs(folder_candidates) do
+            if script_dir ~= "" then
+                table.insert(search_dirs, script_dir .. "/assets/bundled_fonts/" .. f_name)
+                table.insert(search_dirs, script_dir .. "/assets/fonts/" .. f_name)
+                table.insert(search_dirs, script_dir .. "/../assets/bundled_fonts/" .. f_name)
+                table.insert(search_dirs, script_dir .. "/../assets/fonts/" .. f_name)
+            end
+            table.insert(search_dirs, "assets/bundled_fonts/" .. f_name)
+            table.insert(search_dirs, "assets/fonts/" .. f_name)
+            table.insert(search_dirs, "plugins/storefront.koplugin/assets/bundled_fonts/" .. f_name)
+            table.insert(search_dirs, "plugins/storefront.koplugin/assets/fonts/" .. f_name)
+            if data_dir ~= "" then
+                table.insert(search_dirs, data_dir .. "/fonts/" .. f_name)
+                table.insert(search_dirs, data_dir .. "/plugins/storefront.koplugin/assets/bundled_fonts/" .. f_name)
+                table.insert(search_dirs, data_dir .. "/plugins/storefront.koplugin/assets/fonts/" .. f_name)
+                table.insert(search_dirs, data_dir .. "/plugins/storefront.koplugin/storefront.koplugin/assets/bundled_fonts/" .. f_name)
+                table.insert(search_dirs, data_dir .. "/plugins/storefront.koplugin/storefront.koplugin/assets/fonts/" .. f_name)
+            end
         end
-    end
 
-    local loaded_font_path = nil
-
-    for _, dir_path in ipairs(search_dirs) do
-        local rp = (ffiutil and ffiutil.realpath) and ffiutil.realpath(dir_path) or dir_path
-        if rp and ok_lfs and lfs and lfs.attributes and lfs.attributes(rp, "mode") == "directory" then
-            if font_file ~= "" then
-                local exact_p = rp .. "/" .. font_file
-                if lfs.attributes(exact_p, "mode") == "file" then
-                    loaded_font_path = exact_p
-                    break
+        for _, dir_path in ipairs(search_dirs) do
+            local rp = (ffiutil and ffiutil.realpath) and ffiutil.realpath(dir_path) or dir_path
+            if rp and ok_lfs and lfs and lfs.attributes and lfs.attributes(rp, "mode") == "directory" then
+                if font_file ~= "" then
+                    local exact_p = rp .. "/" .. font_file
+                    if lfs.attributes(exact_p, "mode") == "file" then
+                        loaded_font_path = exact_p
+                        break
+                    end
+                    local exact_asset = rp .. "/" .. font_file .. ".asset"
+                    if lfs.attributes(exact_asset, "mode") == "file" then
+                        loaded_font_path = exact_asset
+                        break
+                    end
                 end
-                local exact_asset = rp .. "/" .. font_file .. ".asset"
-                if lfs.attributes(exact_asset, "mode") == "file" then
-                    loaded_font_path = exact_asset
+
+                local fallback_path = nil
+                for file in lfs.dir(rp) do
+                    if file ~= "." and file ~= ".." and (file:match("%.ttf$") or file:match("%.otf$") or file:match("%.ttf%.asset$") or file:match("%.otf%.asset$")) then
+                        local lfile = file:lower()
+                        local full_file_p = rp .. "/" .. file
+                        if lfile:find("regular") then
+                            loaded_font_path = full_file_p
+                            break
+                        elseif not lfile:find("italic") and not lfile:find("bold") and not lfile:find("oblique") then
+                            fallback_path = full_file_p
+                        elseif not fallback_path then
+                            fallback_path = full_file_p
+                        end
+                    end
+                end
+
+                if loaded_font_path then break end
+                if fallback_path then
+                    loaded_font_path = fallback_path
                     break
                 end
             end
+        end
 
-            local fallback_path = nil
-            for file in lfs.dir(rp) do
-                if file ~= "." and file ~= ".." and (file:match("%.ttf$") or file:match("%.otf$") or file:match("%.ttf%.asset$") or file:match("%.otf%.asset$")) then
-                    local lfile = file:lower()
-                    local full_file_p = rp .. "/" .. file
-                    if lfile:find("regular") then
-                        loaded_font_path = full_file_p
-                        break
-                    elseif not lfile:find("italic") and not lfile:find("bold") and not lfile:find("oblique") then
-                        fallback_path = full_file_p
-                    elseif not fallback_path then
-                        fallback_path = full_file_p
+        _font_face_path_cache[font_cache_key] = loaded_font_path or false
+    elseif loaded_font_path == false then
+        loaded_font_path = nil
+    end
+
+    if loaded_font_path then
+        local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
+        if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
+        if ok_lfs and lfs and lfs.attributes and lfs.attributes(loaded_font_path, "mode") == "file" then
+            local ok_fl, FontList = pcall(require, "fontlist")
+            if ok_fl and FontList and FontList.getFontList then
+                local fl = FontList:getFontList()
+                if fl then
+                    local found = false
+                    for _, p in ipairs(fl) do
+                        if p == loaded_font_path then found = true; break end
+                    end
+                    if not found then
+                        table.insert(fl, loaded_font_path)
                     end
                 end
             end
-
-            if loaded_font_path then break end
-            if fallback_path then
-                loaded_font_path = fallback_path
-                break
-            end
+            local ok, f = pcall(Font.getFace, Font, loaded_font_path, size)
+            if ok and f then face = f end
         end
-    end
-
-    if loaded_font_path and ok_lfs and lfs and lfs.attributes and lfs.attributes(loaded_font_path, "mode") == "file" then
-        local ok_fl, FontList = pcall(require, "fontlist")
-        if ok_fl and FontList and FontList.getFontList then
-            local fl = FontList:getFontList()
-            if fl then
-                local found = false
-                for _, p in ipairs(fl) do
-                    if p == loaded_font_path then found = true; break end
-                end
-                if not found then
-                    table.insert(fl, loaded_font_path)
-                end
-            end
-        end
-        local ok, f = pcall(Font.getFace, Font, loaded_font_path, size)
-        if ok and f then face = f end
     end
 
     if not face and font_file ~= "" then

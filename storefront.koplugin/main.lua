@@ -6160,7 +6160,7 @@ function Storefront:loadBrowserStateFromSettings()
     }
 end
 
-function Storefront:saveBrowserState()
+function Storefront:saveBrowserState(skip_flush)
     if not self.browser_state then
         return
     end
@@ -6184,7 +6184,9 @@ function Storefront:saveBrowserState()
     local ok, encoded = pcall(json.encode, state)
     if ok then
         StorefrontSettings:saveSetting(BROWSER_STATE_KEY, encoded)
-        StorefrontSettings:flush()
+        if not skip_flush then
+            StorefrontSettings:flush()
+        end
     end
 end
 
@@ -6696,26 +6698,30 @@ local function getRepoVersionOrDate(repo, installed_lookup)
     return (ts and type(ts) == "string") and ts:sub(1, 10) or ""
 end
 
-function Storefront:makeRepoMenuItem(repo, installed_lookup)
+function Storefront:makeRepoMenuItem(repo, installed_lookup, installed_fonts_map)
     local is_installed = false
     local kind = repo.kind or (self.browser_state and self.browser_state.kind)
     if kind == "font" then
         local font_name = repo.name or repo.font_family or repo.full_name or ""
         local clean_name = font_name:lower():gsub("[%s%-_]+", "")
-        local installed_fonts = InstallStore.listFonts() or {}
-        for k, v in pairs(installed_fonts) do
-            if k:lower():gsub("[%s%-_]+", "") == clean_name then
-                is_installed = true
-                break
-            end
-        end
-        if not is_installed and font_name ~= "" then
-            local ok_ds, DataStorage = pcall(require, "datastorage")
-            local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
-            if ok_ds and DataStorage and ok_lfs and lfs and lfs.attributes then
-                local fonts_dir = DataStorage:getDataDir() .. "/fonts/" .. font_name
-                if lfs.attributes(fonts_dir, "mode") == "directory" then
+        if installed_fonts_map then
+            is_installed = installed_fonts_map[clean_name] == true or installed_fonts_map[font_name] == true or installed_fonts_map[font_name:lower()] == true
+        else
+            local installed_fonts = InstallStore.listFonts() or {}
+            for k, v in pairs(installed_fonts) do
+                if k:lower():gsub("[%s%-_]+", "") == clean_name then
                     is_installed = true
+                    break
+                end
+            end
+            if not is_installed and font_name ~= "" then
+                local ok_ds, DataStorage = pcall(require, "datastorage")
+                local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
+                if ok_ds and DataStorage and ok_lfs and lfs and lfs.attributes then
+                    local fonts_dir = DataStorage:getDataDir() .. "/fonts/" .. font_name
+                    if lfs.attributes(fonts_dir, "mode") == "directory" then
+                        is_installed = true
+                    end
                 end
             end
         end
@@ -6959,31 +6965,37 @@ function Storefront:paginateEntries(items, tab_name, available_list_height)
     local pages = {}
     local current_page = {}
     local current_h = 0
+    local cached_standard_h = nil
 
     for i, entry in ipairs(items) do
-        local item_h
-        if entry.is_entry then
-            if not entry._measured_h then
-                local sample_widget = StorefrontListItem:new{
-                    entry = entry,
-                    width = item_w,
+        local item_h = entry._measured_h
+        if not item_h then
+            if entry.is_entry then
+                if not cached_standard_h then
+                    local sample_widget = StorefrontListItem:new{
+                        entry = entry,
+                        width = item_w,
+                    }
+                    cached_standard_h = sample_widget:getSize().h
+                end
+                item_h = cached_standard_h
+                entry._measured_h = item_h
+            elseif entry.is_clear_button then
+                item_h = Device.screen:scaleBySize(36)
+                entry._measured_h = item_h
+            else
+                local face = Font:getFace("smallinfofont")
+                local text_box = TextBoxWidget:new{
+                    text = entry.text or "",
+                    width = item_w - 2 * pad,
+                    face = face,
+                    alignment = "left",
+                    justified = false,
+                    height_adjust = true,
                 }
-                entry._measured_h = sample_widget:getSize().h
+                item_h = text_box:getSize().h + 2 * pad
+                entry._measured_h = item_h
             end
-            item_h = entry._measured_h
-        elseif entry.is_clear_button then
-            item_h = Device.screen:scaleBySize(36)
-        else
-            local face = Font:getFace("smallinfofont")
-            local text_box = TextBoxWidget:new{
-                text = entry.text or "",
-                width = item_w - 2 * pad,
-                face = face,
-                alignment = "left",
-                justified = false,
-                height_adjust = true,
-            }
-            item_h = text_box:getSize().h + 2 * pad
         end
 
         local slot_h = (item_h and item_h > 0 and item_h or Device.screen:scaleBySize(60)) + thin
@@ -7609,173 +7621,196 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
     local search_terms = extractSearchTerms(raw_search)
     local owner_term   = normalizedLower(raw_owner)
 
-    local filtered = {}
-    for cat_idx, entry in ipairs(catalog) do
-        entry._catalog_index = entry._catalog_index or cat_idx
-        local pass = true
-        -- 1. Category filter
-        if type(ss_cats) == "table" and next(ss_cats) and not ss_cats["all"] then
-            local mapped_cats = StorefrontUtils.getMappedScreensaverCategories(entry.category)
-            local match_found = false
-            for _, mc in ipairs(mapped_cats) do
-                if ss_cats[mc:lower()] then
-                    match_found = true
-                    break
-                end
-            end
-            if not match_found then pass = false end
-        elseif ss_cat ~= "" and ss_cat ~= "all" then
-            local mapped_cats = StorefrontUtils.getMappedScreensaverCategories(entry.category)
-            local match_found = false
-            for _, mc in ipairs(mapped_cats) do
-                if mc:lower() == ss_cat then
-                    match_found = true
-                    break
-                end
-            end
-            if not match_found then pass = false end
+    local cats_key = ""
+    if type(ss_cats) == "table" then
+        local cat_keys = {}
+        for k, v in pairs(ss_cats) do
+            if v then table.insert(cat_keys, k) end
         end
+        table.sort(cat_keys)
+        cats_key = table.concat(cat_keys, ",")
+    end
+    local ss_cache_key = string.format("%s|%s|%s|%s|%s|%d",
+        tostring(ss_cat), cats_key, tostring(ss_sort),
+        tostring(raw_search), tostring(raw_owner), #catalog)
 
-        -- 2. Main search bar: matches titles and tags
-        if pass and search_terms then
-            local title_val = normalizedLower(entry.title or entry.name or "")
-            local tag_haystacks = {}
-            if type(entry.tags) == "table" then
-                for _, tag in ipairs(entry.tags) do
-                    local t_norm = normalizedLower(tag)
-                    if t_norm ~= "" then
-                        table.insert(tag_haystacks, t_norm)
+    local filtered
+    if self._filtered_screensavers_cache and self._filtered_screensavers_cache.key == ss_cache_key then
+        filtered = self._filtered_screensavers_cache.filtered
+    else
+        filtered = {}
+        for cat_idx, entry in ipairs(catalog) do
+            entry._catalog_index = entry._catalog_index or cat_idx
+            local pass = true
+            -- 1. Category filter
+            if type(ss_cats) == "table" and next(ss_cats) and not ss_cats["all"] then
+                local mapped_cats = StorefrontUtils.getMappedScreensaverCategories(entry.category)
+                local match_found = false
+                for _, mc in ipairs(mapped_cats) do
+                    if ss_cats[mc:lower()] then
+                        match_found = true
+                        break
                     end
                 end
-            elseif type(entry.tags) == "string" and entry.tags ~= "" then
-                for tag in entry.tags:gmatch("[^,]+") do
-                    local t_norm = normalizedLower(tag)
-                    if t_norm ~= "" then
-                        table.insert(tag_haystacks, t_norm)
+                if not match_found then pass = false end
+            elseif ss_cat ~= "" and ss_cat ~= "all" then
+                local mapped_cats = StorefrontUtils.getMappedScreensaverCategories(entry.category)
+                local match_found = false
+                for _, mc in ipairs(mapped_cats) do
+                    if mc:lower() == ss_cat then
+                        match_found = true
+                        break
                     end
                 end
+                if not match_found then pass = false end
             end
 
-            for _, term in ipairs(search_terms) do
-                local term_match = false
-                if title_val:find(term, 1, true) then
-                    term_match = true
-                else
-                    for _, tag_val in ipairs(tag_haystacks) do
-                        if tag_val:find(term, 1, true) then
-                            term_match = true
-                            break
+            -- 2. Main search bar: matches titles and tags
+            if pass and search_terms then
+                local title_val = normalizedLower(entry.title or entry.name or "")
+                local tag_haystacks = {}
+                if type(entry.tags) == "table" then
+                    for _, tag in ipairs(entry.tags) do
+                        local t_norm = normalizedLower(tag)
+                        if t_norm ~= "" then
+                            table.insert(tag_haystacks, t_norm)
+                        end
+                    end
+                elseif type(entry.tags) == "string" and entry.tags ~= "" then
+                    for tag in entry.tags:gmatch("[^,]+") do
+                        local t_norm = normalizedLower(tag)
+                        if t_norm ~= "" then
+                            table.insert(tag_haystacks, t_norm)
                         end
                     end
                 end
-                if not term_match then
-                    pass = false
-                    break
+
+                for _, term in ipairs(search_terms) do
+                    local term_match = false
+                    if title_val:find(term, 1, true) then
+                        term_match = true
+                    else
+                        for _, tag_val in ipairs(tag_haystacks) do
+                            if tag_val:find(term, 1, true) then
+                                term_match = true
+                                break
+                            end
+                        end
+                    end
+                    if not term_match then
+                        pass = false
+                        break
+                    end
                 end
             end
-        end
 
-        -- 3. Owner bar: matches submitter / author / attribution
-        if pass and owner_term ~= "" then
-            local owner_match = false
-            local author_val = normalizedLower(entry.author)
-            local submitter_val = normalizedLower(entry.submitter)
-            local attribution_val = normalizedLower(entry.attribution)
+            -- 3. Owner bar: matches submitter / author / attribution
+            if pass and owner_term ~= "" then
+                local owner_match = false
+                local author_val = normalizedLower(entry.author)
+                local submitter_val = normalizedLower(entry.submitter)
+                local attribution_val = normalizedLower(entry.attribution)
 
-            if (author_val ~= "" and author_val:find(owner_term, 1, true)) or
-               (submitter_val ~= "" and submitter_val:find(owner_term, 1, true)) or
-               (attribution_val ~= "" and attribution_val:find(owner_term, 1, true)) then
-                owner_match = true
+                if (author_val ~= "" and author_val:find(owner_term, 1, true)) or
+                   (submitter_val ~= "" and submitter_val:find(owner_term, 1, true)) or
+                   (attribution_val ~= "" and attribution_val:find(owner_term, 1, true)) then
+                    owner_match = true
+                end
+
+                if not owner_match then
+                    pass = false
+                end
             end
 
-            if not owner_match then
-                pass = false
-            end
+            if pass then table.insert(filtered, entry) end
         end
 
-        if pass then table.insert(filtered, entry) end
-    end
-
-    if ss_sort == "popular" then
-        local scores = {}
-        local dl_scores = {}
-        if ok_ratings and StorefrontRatings and StorefrontRatings.getRating then
+        if ss_sort == "popular" then
+            local scores = {}
+            local dl_scores = {}
+            if ok_ratings and StorefrontRatings and StorefrontRatings.getRating then
+                for _, entry in ipairs(filtered) do
+                    local live_r = StorefrontRatings.getRating(entry)
+                    scores[entry] = (live_r and (live_r.up - live_r.down)) or entry.likes or 0
+                    dl_scores[entry] = (live_r and live_r.downloads) or entry.downloads or entry.download_count or entry.downloads_count or entry.installs or 0
+                end
+            else
+                for _, entry in ipairs(filtered) do
+                    scores[entry] = entry.likes or 0
+                    dl_scores[entry] = entry.downloads or entry.download_count or entry.downloads_count or entry.installs or 0
+                end
+            end
+            table.sort(filtered, function(a, b)
+                local sa = scores[a] or 0
+                local sb = scores[b] or 0
+                if sa ~= sb then return sa > sb end
+                local dla = dl_scores[a] or 0
+                local dlb = dl_scores[b] or 0
+                if dla ~= dlb then return dla > dlb end
+                local ca = a._catalog_index or 0
+                local cb = b._catalog_index or 0
+                if ca ~= cb then return ca > cb end
+                return (a.title or a.name or "") < (b.title or b.name or "")
+            end)
+        elseif ss_sort == "downloads" then
+            local dl_scores = {}
+            local scores = {}
+            if ok_ratings and StorefrontRatings and StorefrontRatings.getRating then
+                for _, entry in ipairs(filtered) do
+                    local live_r = StorefrontRatings.getRating(entry)
+                    dl_scores[entry] = (live_r and live_r.downloads) or entry.downloads or entry.download_count or entry.downloads_count or entry.installs or 0
+                    scores[entry] = (live_r and (live_r.up - live_r.down)) or entry.likes or 0
+                end
+            else
+                for _, entry in ipairs(filtered) do
+                    dl_scores[entry] = entry.downloads or entry.download_count or entry.downloads_count or entry.installs or 0
+                    scores[entry] = entry.likes or 0
+                end
+            end
+            table.sort(filtered, function(a, b)
+                local dla = dl_scores[a] or 0
+                local dlb = dl_scores[b] or 0
+                if dla ~= dlb then return dla > dlb end
+                local sa = scores[a] or 0
+                local sb = scores[b] or 0
+                if sa ~= sb then return sa > sb end
+                local ca = a._catalog_index or 0
+                local cb = b._catalog_index or 0
+                if ca ~= cb then return ca > cb end
+                return (a.title or a.name or "") < (b.title or b.name or "")
+            end)
+        elseif ss_sort == "recent" or ss_sort == "newest" then
+            table.sort(filtered, function(a, b)
+                local da = a.dateAdded or a.date_added or a.added or a.created_at
+                local db = b.dateAdded or b.date_added or b.added or b.created_at
+                if da and db and da ~= db then return da > db end
+                local ca = a._catalog_index or 0
+                local cb = b._catalog_index or 0
+                if ca ~= cb then return ca > cb end
+                return (a.title or a.name or "") < (b.title or b.name or "")
+            end)
+        elseif ss_sort == "az" then
+            local titles = {}
             for _, entry in ipairs(filtered) do
-                local live_r = StorefrontRatings.getRating(entry)
-                scores[entry] = (live_r and (live_r.up - live_r.down)) or entry.likes or 0
-                dl_scores[entry] = (live_r and live_r.downloads) or entry.downloads or entry.download_count or entry.downloads_count or entry.installs or 0
+                titles[entry] = (entry.title or entry.name or ""):lower()
             end
-        else
+            table.sort(filtered, function(a, b)
+                return (titles[a] or "") < (titles[b] or "")
+            end)
+        elseif ss_sort == "za" then
+            local titles = {}
             for _, entry in ipairs(filtered) do
-                scores[entry] = entry.likes or 0
-                dl_scores[entry] = entry.downloads or entry.download_count or entry.downloads_count or entry.installs or 0
+                titles[entry] = (entry.title or entry.name or ""):lower()
             end
+            table.sort(filtered, function(a, b)
+                return (titles[a] or "") > (titles[b] or "")
+            end)
         end
-        table.sort(filtered, function(a, b)
-            local sa = scores[a] or 0
-            local sb = scores[b] or 0
-            if sa ~= sb then return sa > sb end
-            local dla = dl_scores[a] or 0
-            local dlb = dl_scores[b] or 0
-            if dla ~= dlb then return dla > dlb end
-            local ca = a._catalog_index or 0
-            local cb = b._catalog_index or 0
-            if ca ~= cb then return ca > cb end
-            return (a.title or a.name or "") < (b.title or b.name or "")
-        end)
-    elseif ss_sort == "downloads" then
-        local dl_scores = {}
-        local scores = {}
-        if ok_ratings and StorefrontRatings and StorefrontRatings.getRating then
-            for _, entry in ipairs(filtered) do
-                local live_r = StorefrontRatings.getRating(entry)
-                dl_scores[entry] = (live_r and live_r.downloads) or entry.downloads or entry.download_count or entry.downloads_count or entry.installs or 0
-                scores[entry] = (live_r and (live_r.up - live_r.down)) or entry.likes or 0
-            end
-        else
-            for _, entry in ipairs(filtered) do
-                dl_scores[entry] = entry.downloads or entry.download_count or entry.downloads_count or entry.installs or 0
-                scores[entry] = entry.likes or 0
-            end
-        end
-        table.sort(filtered, function(a, b)
-            local dla = dl_scores[a] or 0
-            local dlb = dl_scores[b] or 0
-            if dla ~= dlb then return dla > dlb end
-            local sa = scores[a] or 0
-            local sb = scores[b] or 0
-            if sa ~= sb then return sa > sb end
-            local ca = a._catalog_index or 0
-            local cb = b._catalog_index or 0
-            if ca ~= cb then return ca > cb end
-            return (a.title or a.name or "") < (b.title or b.name or "")
-        end)
-    elseif ss_sort == "recent" or ss_sort == "newest" then
-        table.sort(filtered, function(a, b)
-            local da = a.dateAdded or a.date_added or a.added or a.created_at
-            local db = b.dateAdded or b.date_added or b.added or b.created_at
-            if da and db and da ~= db then return da > db end
-            local ca = a._catalog_index or 0
-            local cb = b._catalog_index or 0
-            if ca ~= cb then return ca > cb end
-            return (a.title or a.name or "") < (b.title or b.name or "")
-        end)
-    elseif ss_sort == "az" then
-        local titles = {}
-        for _, entry in ipairs(filtered) do
-            titles[entry] = (entry.title or entry.name or ""):lower()
-        end
-        table.sort(filtered, function(a, b)
-            return (titles[a] or "") < (titles[b] or "")
-        end)
-    elseif ss_sort == "za" then
-        local titles = {}
-        for _, entry in ipairs(filtered) do
-            titles[entry] = (entry.title or entry.name or ""):lower()
-        end
-        table.sort(filtered, function(a, b)
-            return (titles[a] or "") > (titles[b] or "")
-        end)
+
+        self._filtered_screensavers_cache = {
+            key = ss_cache_key,
+            filtered = filtered,
+        }
     end
 
     local total_pages  = math.max(1, math.ceil(#filtered / page_size))
@@ -7807,6 +7842,7 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
 
     local self_ref = self
     local missing_cards = {}
+    local _ss_local_asset_cache = {}
 
     local function makeCard(entry)
         -- Thumbnail image (or grey placeholder)
@@ -7865,17 +7901,23 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
         }
 
         local getAssetPath = function(filename)
+            if _ss_local_asset_cache[filename] then
+                return _ss_local_asset_cache[filename]
+            end
             local info = debug.getinfo(1, "S")
             local dir = info.source:match("^@(.*[/\\])") or ""
             local p1 = dir .. "assets/" .. filename
             local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
             if ok_lfs and lfs and lfs.attributes and lfs.attributes(p1, "mode") == "file" then
+                _ss_local_asset_cache[filename] = p1
                 return p1
             end
             local p2 = dir .. "../assets/" .. filename
             if ok_lfs and lfs and lfs.attributes and lfs.attributes(p2, "mode") == "file" then
+                _ss_local_asset_cache[filename] = p2
                 return p2
             end
+            _ss_local_asset_cache[filename] = p1
             return p1
         end
 
@@ -8202,6 +8244,31 @@ function Storefront:buildBrowserEntries(available_list_height, available_list_wi
         installed_lookup = self:getInstalledLookup()
     end
 
+    local installed_fonts_map
+    if kind == "font" then
+        installed_fonts_map = {}
+        local installed_fonts = InstallStore.listFonts() or {}
+        for k, v in pairs(installed_fonts) do
+            installed_fonts_map[k:lower():gsub("[%s%-_]+", "")] = true
+            installed_fonts_map[k] = true
+            installed_fonts_map[k:lower()] = true
+        end
+        local ok_ds, DataStorage = pcall(require, "datastorage")
+        local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
+        if ok_ds and DataStorage and ok_lfs and lfs and lfs.dir then
+            local fonts_root = DataStorage:getDataDir() .. "/fonts"
+            if lfs.attributes and lfs.attributes(fonts_root, "mode") == "directory" then
+                for folder in lfs.dir(fonts_root) do
+                    if folder ~= "." and folder ~= ".." then
+                        installed_fonts_map[folder:lower():gsub("[%s%-_]+", "")] = true
+                        installed_fonts_map[folder] = true
+                        installed_fonts_map[folder:lower()] = true
+                    end
+                end
+            end
+        end
+    end
+
     if display_total == 0 then
         local empty_text = kind == "patch" and _("No patches found in matching repositories.") or _("No entries match current filters.")
         local active_summary_parts = {}
@@ -8242,7 +8309,7 @@ function Storefront:buildBrowserEntries(available_list_height, available_list_wi
             end
         else
             for i = 1, display_total do
-                table.insert(items, self:makeRepoMenuItem(filtered[i], installed_lookup))
+                table.insert(items, self:makeRepoMenuItem(filtered[i], installed_lookup, installed_fonts_map))
             end
         end
     end
@@ -8351,7 +8418,7 @@ function Storefront:browserSwitchTab(tab_name)
     self.browser_state.page = 1
     self.browser_state.scroll_offset = nil
     self:resetFiltersForRefresh()
-    self:saveBrowserState()
+    self:saveBrowserState(true)
     self:resetBrowserScrollState()
     self:closeBrowserMenu()
     self:showBrowser()
@@ -8422,6 +8489,7 @@ function Storefront:softRefreshCurrentBrowserView()
     self._merged_updates_cache = nil
     self._repo_descriptors_cache = nil
     self._filtered_descriptors_cache = nil
+    self._filtered_screensavers_cache = nil
     self._cached_updates_count = nil
     self._cached_updates_gen = nil
 
@@ -8854,7 +8922,7 @@ function Storefront:showBrowser(kind)
             self.browser_state.kind = (tab_name == "Patches" and "patch") or (tab_name == "Fonts" and "font") or "plugin"
             self.browser_state.page = 1
             self.browser_state.scroll_offset = nil
-            self:saveBrowserState()
+            self:saveBrowserState(true)
             self:reopenBrowser()
         end,
         on_settings_tap = function()

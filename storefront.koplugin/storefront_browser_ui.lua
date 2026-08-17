@@ -42,7 +42,11 @@ local ffiutil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local DataStorage = require("datastorage")
 
+local _asset_path_cache = {}
 local function getAssetPath(filename)
+    if _asset_path_cache[filename] then
+        return _asset_path_cache[filename]
+    end
     local info = debug.getinfo(1, "S")
     local dir = info.source:match("^@(.*[/\\])") or ""
     local rel_path = dir .. "assets/" .. filename
@@ -64,11 +68,14 @@ local function getAssetPath(filename)
         if ffiutil and ffiutil.realpath then
             local rp = ffiutil.realpath(p)
             if rp and lfs and lfs.attributes and lfs.attributes(rp, "mode") == "file" then
+                _asset_path_cache[filename] = rp
                 return rp
             end
         end
     end
-    return data_dir .. "/plugins/" .. rel_path
+    local fallback = data_dir .. "/plugins/" .. rel_path
+    _asset_path_cache[filename] = fallback
+    return fallback
 end
 
 local StorefrontBrowserDialog = FocusManager:extend{
@@ -358,8 +365,28 @@ end
 -- before the real dialog is created, so keeping this measurement here avoids
 -- mirroring the header, tab bar, toolbar, footer, and spacer geometry in the
 -- controller.
+local _viewport_measurement_cache = {}
+
 function StorefrontBrowserDialog:measureListViewport(options)
     options = options or {}
+    local screen_w = Device.screen:getWidth()
+    local screen_h = Device.screen:getHeight()
+    local cache_key = string.format("%dx%d|%s|%d|%s|%s|%s|%s|%s",
+        screen_w, screen_h,
+        tostring(options.current_tab or "Plugins"),
+        options.toolbar_buttons and #options.toolbar_buttons or 0,
+        tostring(options.show_filter_bar_plugins == true),
+        tostring(options.show_filter_bar_patches == true),
+        tostring(options.show_filter_bar_fonts == true),
+        tostring(options.show_filter_bar_screensavers ~= false),
+        tostring(options.show_filter_bar_installed ~= false)
+    )
+
+    if _viewport_measurement_cache[cache_key] then
+        local c = _viewport_measurement_cache[cache_key]
+        return c[1], c[2]
+    end
+
     local probe = StorefrontBrowserDialog:new{
         title = options.title or _("Storefront"),
         items = {},
@@ -373,6 +400,7 @@ function StorefrontBrowserDialog:measureListViewport(options)
         show_filter_bar_fonts = options.show_filter_bar_fonts == true,
         show_filter_bar_screensavers = options.show_filter_bar_screensavers ~= false,
         show_filter_bar_installed = options.show_filter_bar_installed ~= false,
+        is_probe = true,
     }
     -- KOReader's Widget:new initializes instances, while the lightweight
     -- headless test doubles do not.
@@ -381,13 +409,18 @@ function StorefrontBrowserDialog:measureListViewport(options)
     end
     local viewport_h = probe.list_scroller:getSize().h
     local viewport_w = probe:getListEntryWidth()
-    return math.max(1, viewport_h - 2 * Size.padding.default), math.max(1, viewport_w)
+    local res_h = math.max(1, viewport_h - 2 * Size.padding.default)
+    local res_w = math.max(1, viewport_w)
+    _viewport_measurement_cache[cache_key] = { res_h, res_w }
+    return res_h, res_w
 end
 
 function StorefrontBrowserDialog:init()
-    local ok_ratings, StorefrontRatings = pcall(require, "storefront_ratings")
-    if ok_ratings and StorefrontRatings and StorefrontRatings.fetchRatings then
-        StorefrontRatings.fetchRatings()
+    if not self.is_probe then
+        local ok_ratings, StorefrontRatings = pcall(require, "storefront_ratings")
+        if ok_ratings and StorefrontRatings and StorefrontRatings.fetchRatings then
+            StorefrontRatings.fetchRatings()
+        end
     end
 
     self.show_parent = self
