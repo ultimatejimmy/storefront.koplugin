@@ -58,6 +58,7 @@ R.Input = R.Device.input
 
 local StorefrontUtils = require("storefront_utils")
 R.StorefrontUtils = StorefrontUtils
+local Archiver = require("ffi/archiver")
 
 local softWrapLongTokens = StorefrontUtils.softWrapLongTokens
 local normalizeMetaPath = StorefrontUtils.normalizeMetaPath
@@ -4736,65 +4737,99 @@ function Storefront:_installPatchFromRepoInternal(repo, patch)
     end
     local target_path = patches_dir .. "/" .. patch.filename
     local temp_path = target_path .. ".download"
-    local progress = InfoMessage:new{
-        text = string.format(_("Downloading patch \"%s\"…"), patch.filename or _("patch")),
-        timeout = 0,
-    }
-    UIManager:show(progress)
-    local ok, download_err = downloadToFile(url, temp_path)
-    UIManager:close(progress)
-    if not ok then
-        util.removeFile(temp_path)
-        UIManager:show(InfoMessage:new{ text = _("Download failed: ") .. tostring(download_err), timeout = 6 })
-        if self.pending_patch_install and self.pending_patch_install.batch_callback then
-            local cb = self.pending_patch_install.batch_callback
-            self.pending_patch_install = nil
-            cb(false, download_err)
+    local is_batch = (G_storefront_batch_updating == true) or (self.pending_patch_install and self.pending_patch_install.is_batch == true)
+    local target_filename = patch.filename or (patch.name .. ".lua")
+
+    local size_str = (patch.size and patch.size > 0)
+        and string.format(" (%d KB)", math.floor(patch.size / 1024))
+        or ""
+
+    local function doInstallPatch(ok, download_err)
+        if not ok then
+            util.removeFile(temp_path)
+            if not is_batch then
+                UIManager:show(InfoMessage:new{ text = _("Download failed: ") .. tostring(download_err), timeout = 6 })
+            end
+            if self.pending_patch_install and self.pending_patch_install.batch_callback then
+                local cb = self.pending_patch_install.batch_callback
+                self.pending_patch_install = nil
+                cb(false, download_err)
+            end
+            return
         end
-        return
-    end
-    util.removeFile(target_path)
-    local rename_ok, rename_err = os.rename(temp_path, target_path)
-    if not rename_ok then
-        util.removeFile(temp_path)
-        UIManager:show(InfoMessage:new{ text = _("Failed to install patch: ") .. tostring(rename_err), timeout = 6 })
-        if self.pending_patch_install and self.pending_patch_install.batch_callback then
-            local cb = self.pending_patch_install.batch_callback
-            self.pending_patch_install = nil
-            cb(false, rename_err)
+
+        util.removeFile(target_path)
+        local rename_ok, rename_err = os.rename(temp_path, target_path)
+        if not rename_ok then
+            util.removeFile(temp_path)
+            if not is_batch then
+                UIManager:show(InfoMessage:new{ text = _("Failed to install patch: ") .. tostring(rename_err), timeout = 6 })
+            end
+            if self.pending_patch_install and self.pending_patch_install.batch_callback then
+                local cb = self.pending_patch_install.batch_callback
+                self.pending_patch_install = nil
+                cb(false, rename_err)
+            end
+            return
         end
-        return
-    end
-    -- Compute the actual SHA of the downloaded file so record.sha always reflects
-    -- the real installed content, even when updating from a stale record.sha.
-    local actual_sha = computeFileSha1(target_path)
-    local patch_for_record = patch
-    if actual_sha and actual_sha ~= patch.sha then
-        patch_for_record = {}
-        for k, v in pairs(patch) do patch_for_record[k] = v end
-        patch_for_record.sha = actual_sha
-    end
-    local stored_record = self:rememberPatchInstall(patch.filename, repo, patch_for_record)
-    if self.pending_patch_install then
-        local context = self.pending_patch_install
-        self.pending_patch_install = nil
-        if not G_storefront_batch_updating then
-            if context.mode == "update" and context.patch then
-                showRestartConfirmation(string.format(_("Updated patch %s."), context.patch.filename or _("patch")))
-            else
+
+        local actual_sha = computeFileSha1(target_path)
+        local patch_for_record = patch
+        if actual_sha and actual_sha ~= patch.sha then
+            patch_for_record = {}
+            for k, v in pairs(patch) do patch_for_record[k] = v end
+            patch_for_record.sha = actual_sha
+        end
+        local stored_record = self:rememberPatchInstall(patch.filename, repo, patch_for_record)
+        if self.pending_patch_install then
+            local context = self.pending_patch_install
+            self.pending_patch_install = nil
+            if not G_storefront_batch_updating then
+                if context.mode == "update" and context.patch then
+                    showRestartConfirmation(string.format(_("Updated patch %s."), context.patch.filename or _("patch")))
+                else
+                    showRestartConfirmation(string.format(_("Installed patch \"%s\"."), patch.filename))
+                end
+            end
+            if context.batch_callback then
+                context.batch_callback(true)
+            end
+        else
+            if not G_storefront_batch_updating then
                 showRestartConfirmation(string.format(_("Installed patch \"%s\"."), patch.filename))
             end
         end
-        if context.batch_callback then
-            context.batch_callback(true)
-        end
-    else
-        if not G_storefront_batch_updating then
-            showRestartConfirmation(string.format(_("Installed patch \"%s\"."), patch.filename))
+        if stored_record then
+            self:updateSinglePatchStatus(patch.filename, stored_record)
         end
     end
-    if stored_record then
-        self:updateSinglePatchStatus(patch.filename, stored_record)
+
+    if is_batch then
+        local ok, download_err = downloadToFile(url, temp_path)
+        doInstallPatch(ok, download_err)
+    else
+        local Trapper = require("ui/trapper")
+        local Toast = require("storefront_toast")
+        local dl_msg = string.format(_("Downloading patch %s%s…\nTap screen to cancel."), target_filename, size_str)
+        local progress_toast = Toast.show(dl_msg, 0)
+        Trapper:wrap(function()
+            local completed, res = Trapper:dismissableRunInSubprocess(function()
+                local dl_ok, dl_err = downloadToFile(url, temp_path)
+                return { ok = dl_ok, err = dl_err }
+            end, progress_toast)
+            if progress_toast and progress_toast.close then progress_toast:close() end
+            if not completed then
+                util.removeFile(temp_path)
+                Toast.show(_("Download cancelled."), 3)
+                if self.pending_patch_install and self.pending_patch_install.batch_callback then
+                    local cb = self.pending_patch_install.batch_callback
+                    self.pending_patch_install = nil
+                    cb(false, "Cancelled by user")
+                end
+                return
+            end
+            doInstallPatch(res and res.ok, res and res.err)
+        end)
     end
 end
 
@@ -5407,21 +5442,16 @@ function Storefront:installPluginFromReleaseAsset(repo, release, asset)
             lfs.mkdir(downloads_dir)
         end
 
-        local safe_name = tostring(asset.name or (repo.name .. "-asset.zip")):gsub("[^%w_%-%.]", "_")
+        local safe_name = tostring(asset.name or (repo.name .. "-asset.zip")):gsub("[^%w_%-%.%s]", "_")
         local zip_path = string.format("%s/%s-%d.zip", downloads_dir, safe_name, os.time())
+
+        local is_batch = (G_storefront_batch_updating == true) or (self.pending_install_context and self.pending_install_context.is_batch == true)
+        local display_name = repo and (repo.name or repo.full_name) or (asset and asset.name) or _("release asset")
 
         local size_str = (asset.size and asset.size > 0)
             and string.format(" (%d KB)", math.floor(asset.size / 1024))
             or ""
-        local progress = (not G_storefront_batch_updating) and InfoMessage:new{
-            text = string.format(
-                _("Downloading %s%s…\nThis may take a moment."),
-                tostring(asset.name or _("release asset")),
-                size_str
-            ),
-            timeout = 0,
-        } or nil
-        if progress then UIManager:show(progress) end
+
         local function notifyBatchError(err_msg)
             if self.pending_install_context and self.pending_install_context.batch_callback then
                 local cb = self.pending_install_context.batch_callback
@@ -5430,110 +5460,145 @@ function Storefront:installPluginFromReleaseAsset(repo, release, asset)
             end
         end
 
-        local ok, err = downloadToFile(url, zip_path)
-        if progress then UIManager:close(progress) end
-        if not ok then
-            util.removeFile(zip_path)
-            StorefrontLogger.err(string.format("Download failed: %s (url=%s)", tostring(err), url))
-            UIManager:show(InfoMessage:new{ text = _("Download failed: ") .. tostring(err), timeout = 6 })
-            notifyBatchError(err)
-            return
-        end
-
-        local reader = Archiver.Reader:new()
-        if not reader:open(zip_path) then
-            util.removeFile(zip_path)
-            StorefrontLogger.err(string.format("Failed to open archive for repo=%s", repo and repo.name or "?"))
-            UIManager:show(InfoMessage:new{ text = _("Failed to open downloaded archive."), timeout = 6 })
-            notifyBatchError("Failed to open downloaded archive")
-            return
-        end
-
-        local info, detect_err = detectPluginFromArchiveWithFallback(reader, repo, release, asset)
-        if not info then
-            reader:close()
-            util.removeFile(zip_path)
-            StorefrontLogger.err(string.format("Plugin detection failed: %s", tostring(detect_err)))
-            UIManager:show(InfoMessage:new{ text = detect_err or _("Could not detect plugin inside archive."), timeout = 6 })
-            notifyBatchError(detect_err or "Plugin detection failed")
-            return
-        end
-
-        StorefrontLogger.action(string.format("DETECTED plugin inside archive: dirname=%s, plugin_name=%s, version=%s", tostring(info.plugin_dirname), tostring(info.plugin_name), tostring(info.plugin_version)))
-
-        -- Store the release tag so it gets persisted in the install record.
-        if release and release.tag_name and release.tag_name ~= "" then
-            info.plugin_release_tag = release.tag_name
-        end
-        if (not info.plugin_version or info.plugin_version == "") and info.plugin_release_tag then
-            info.plugin_version = info.plugin_release_tag:gsub("^[vV]", "")
-        end
-
-        if self.pending_install_context and self.pending_install_context.mode == "update" then
-            local ctx_plugin = self.pending_install_context.plugin
-            if ctx_plugin and ctx_plugin.dirname and ctx_plugin.dirname ~= "" then
-                info.plugin_dirname = ctx_plugin.dirname
-            end
-        end
-
-        local function proceedWithInstall(dest_root)
-            local install_progress = (not G_storefront_batch_updating) and InfoMessage:new{ text = _("Extracting and installing plugin…\nPlease wait."), timeout = 0 } or nil
-            if install_progress then UIManager:show(install_progress) end
-            local ok_extract, dest_or_err = extractPluginToUserDir(reader, info, dest_root)
-            reader:close()
-            util.removeFile(zip_path)
-
-            if not ok_extract then
-                UIManager:show(InfoMessage:new{ text = _("Installation failed: ") .. tostring(dest_or_err), timeout = 6 })
+        local function doDownloadAndInstall(ok, err)
+            if not ok then
+                util.removeFile(zip_path)
+                StorefrontLogger.err(string.format("Download failed: %s (url=%s)", tostring(err), url))
+                if not is_batch then
+                    UIManager:show(InfoMessage:new{ text = _("Download failed: ") .. tostring(err), timeout = 6 })
+                end
+                notifyBatchError(err)
                 return
             end
 
-            -- Clean up duplicate directories on disk if any existed from prior bug
-            if info.duplicates then
-                for _, dup in ipairs(info.duplicates) do
-                    if dup.dirname and dup.dirname ~= info.plugin_dirname then
-                        local dup_path = (dup.root or dest_root) .. "/" .. dup.dirname
-                        deleteDirectoryRecursive(dup_path)
-                        InstallStore.remove(dup.dirname)
+            local reader = Archiver.Reader:new()
+            if not reader:open(zip_path) then
+                util.removeFile(zip_path)
+                StorefrontLogger.err(string.format("Failed to open archive for repo=%s", repo and repo.name or "?"))
+                if not is_batch then
+                    UIManager:show(InfoMessage:new{ text = _("Failed to open downloaded archive."), timeout = 6 })
+                end
+                notifyBatchError("Failed to open downloaded archive")
+                return
+            end
+
+            local info, detect_err = detectPluginFromArchiveWithFallback(reader, repo, release, asset)
+            if not info then
+                reader:close()
+                util.removeFile(zip_path)
+                StorefrontLogger.err(string.format("Plugin detection failed: %s", tostring(detect_err)))
+                if not is_batch then
+                    UIManager:show(InfoMessage:new{ text = detect_err or _("Could not detect plugin inside archive."), timeout = 6 })
+                end
+                notifyBatchError(detect_err or "Plugin detection failed")
+                return
+            end
+
+            StorefrontLogger.action(string.format("DETECTED plugin inside archive: dirname=%s, plugin_name=%s, version=%s", tostring(info.plugin_dirname), tostring(info.plugin_name), tostring(info.plugin_version)))
+
+            -- Store the release tag so it gets persisted in the install record.
+            if release and release.tag_name and release.tag_name ~= "" then
+                info.plugin_release_tag = release.tag_name
+            end
+            if (not info.plugin_version or info.plugin_version == "") and info.plugin_release_tag then
+                info.plugin_version = info.plugin_release_tag:gsub("^[vV]", "")
+            end
+
+            if self.pending_install_context and self.pending_install_context.mode == "update" then
+                local ctx_plugin = self.pending_install_context.plugin
+                if ctx_plugin and ctx_plugin.dirname and ctx_plugin.dirname ~= "" then
+                    info.plugin_dirname = ctx_plugin.dirname
+                end
+            end
+
+            local function proceedWithInstall(dest_root)
+                local install_progress = (not G_storefront_batch_updating) and InfoMessage:new{ text = _("Extracting and installing plugin…\nPlease wait."), timeout = 0 } or nil
+                if install_progress then UIManager:show(install_progress) end
+                local ok_extract, dest_or_err = extractPluginToUserDir(reader, info, dest_root)
+                reader:close()
+                util.removeFile(zip_path)
+
+                if not ok_extract then
+                    if not is_batch then
+                        UIManager:show(InfoMessage:new{ text = _("Installation failed: ") .. tostring(dest_or_err), timeout = 6 })
+                    end
+                    notifyBatchError(tostring(dest_or_err))
+                    return
+                end
+
+                -- Clean up duplicate directories on disk if any existed from prior bug
+                if info.duplicates then
+                    for _, dup in ipairs(info.duplicates) do
+                        if dup.dirname and dup.dirname ~= info.plugin_dirname then
+                            local dup_path = (dup.root or dest_root) .. "/" .. dup.dirname
+                            deleteDirectoryRecursive(dup_path)
+                            InstallStore.remove(dup.dirname)
+                        end
                     end
                 end
+
+                if install_progress then UIManager:close(install_progress) end
+
+                -- Some plugins' _meta.lua only set `fullname` (often wrapped in _()), so
+                -- plugin_name parsing can come back nil; fall back to the directory name
+                -- to avoid showing "nil" in the success message.
+                info.plugin_name = info.plugin_name or ((info.plugin_dirname or "plugin"):gsub("%.koplugin$", ""))
+                local msg
+                if self.pending_install_context and self.pending_install_context.mode == "update" then
+                    if info.plugin_version and info.plugin_version ~= "" then
+                        msg = string.format(_("Updated plugin \"%s\" to version %s."), info.plugin_name, info.plugin_version)
+                    else
+                        msg = string.format(_("Updated plugin \"%s\"."), info.plugin_name)
+                    end
+                else
+                    if info.plugin_version and info.plugin_version ~= "" then
+                        msg = string.format(_("msg_installed_plugin_version"), info.plugin_name, info.plugin_version)
+                    else
+                        msg = string.format(_("msg_installed_plugin"), info.plugin_name)
+                    end
+                end
+
+                if not is_batch and not _G.G_storefront_batch_updating then
+                    showRestartConfirmation(msg)
+                end
+
+                self:handlePostInstall(info, repo)
+                if self.updates_menu then
+                    self:updateUpdatesDialog()
+                end
             end
 
-            if install_progress then UIManager:close(install_progress) end
-
-            -- Some plugins' _meta.lua only set `fullname` (often wrapped in _()), so
-            -- plugin_name parsing can come back nil; fall back to the directory name
-            -- to avoid showing "nil" in the success message.
-            info.plugin_name = info.plugin_name or ((info.plugin_dirname or "plugin"):gsub("%.koplugin$", ""))
-            local msg
             if self.pending_install_context and self.pending_install_context.mode == "update" then
-                if info.plugin_version and info.plugin_version ~= "" then
-                    msg = string.format(_("Updated plugin \"%s\" to version %s."), info.plugin_name, info.plugin_version)
-                else
-                    msg = string.format(_("Updated plugin \"%s\"."), info.plugin_name)
-                end
+                proceedWithInstall(self.pending_install_context.plugin.root)
             else
-                if info.plugin_version and info.plugin_version ~= "" then
-                    msg = string.format(_("msg_installed_plugin_version"), info.plugin_name, info.plugin_version)
-                else
-                    msg = string.format(_("msg_installed_plugin"), info.plugin_name)
-                end
-            end
-
-            showRestartConfirmation(msg)
-
-            self:handlePostInstall(info, repo)
-            if self.updates_menu then
-                self:updateUpdatesDialog()
+                self:resolveNewInstallDestination(proceedWithInstall, function()
+                    reader:close()
+                    util.removeFile(zip_path)
+                end)
             end
         end
 
-        if self.pending_install_context and self.pending_install_context.mode == "update" then
-            proceedWithInstall(self.pending_install_context.plugin.root)
+        if is_batch then
+            local ok, err = downloadToFile(url, zip_path)
+            doDownloadAndInstall(ok, err)
         else
-            self:resolveNewInstallDestination(proceedWithInstall, function()
-                reader:close()
-                util.removeFile(zip_path)
+            local Trapper = require("ui/trapper")
+            local Toast = require("storefront_toast")
+            local dl_msg = string.format(_("Downloading %s%s…\nTap screen to cancel."), display_name, size_str)
+            local progress_toast = Toast.show(dl_msg, 0)
+            Trapper:wrap(function()
+                local completed, res = Trapper:dismissableRunInSubprocess(function()
+                    local dl_ok, dl_err = downloadToFile(url, zip_path)
+                    return { ok = dl_ok, err = dl_err }
+                end, progress_toast)
+                if progress_toast and progress_toast.close then progress_toast:close() end
+                if not completed then
+                    util.removeFile(zip_path)
+                    Toast.show(_("Download cancelled."), 3)
+                    notifyBatchError("Cancelled by user")
+                    return
+                end
+                doDownloadAndInstall(res and res.ok, res and res.err)
             end)
         end
     end)
@@ -8662,49 +8727,80 @@ function Storefront:renderRepoLines(descriptors)
     return lines
 end
 
+
+
 downloadToFile = function(url, local_path)
+    if not url or url == "" then
+        return false, _("Missing URL")
+    end
+    if not local_path or local_path == "" then
+        return false, _("Missing target path")
+    end
+
     local dir = local_path:match("^(.*)/")
     if dir and dir ~= "" then
         util.makePath(dir)
     end
 
-    local file, err = io.open(local_path, "wb")
+    local temp_path = local_path .. ".tmp"
+    pcall(os.remove, temp_path)
+
+    local file, err = io.open(temp_path, "wb")
     if not file then
         return false, err or "failed to open file for writing"
     end
 
-    socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+    socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT or 15, socketutil.FILE_TOTAL_TIMEOUT or 180)
     local request = {
         url = url,
         method = "GET",
         sink = socketutil.file_sink(file),
         redirect = true,
         headers = {
-            ["User-Agent"] = socketutil.USER_AGENT,
-            ["Accept"] = "application/zip, application/octet-stream",
+            ["User-Agent"] = socketutil.USER_AGENT or "Mozilla/5.0 (compatible; KOReader-Storefront/1.0)",
+            ["Accept"] = "application/zip, application/octet-stream, */*",
         },
     }
     local code, headers, status = socket.skip(1, http.request(request))
     socketutil:reset_timeout()
 
+    pcall(function() file:close() end)
+
     if code == socketutil.TIMEOUT_CODE
         or code == socketutil.SSL_HANDSHAKE_CODE
         or code == socketutil.SINK_TIMEOUT_CODE then
-        util.removeFile(local_path)
+        pcall(os.remove, temp_path)
         return false, status or code or "timeout"
     end
 
     if not headers then
-        util.removeFile(local_path)
+        pcall(os.remove, temp_path)
         return false, status or code or "network error"
     end
 
-    if code ~= 200 then
-        util.removeFile(local_path)
-        return false, status or tostring(code)
+    local res_code = tonumber(code) or 0
+    if res_code ~= 200 then
+        pcall(os.remove, temp_path)
+        return false, status or ("HTTP " .. tostring(code))
     end
 
-    return true
+    pcall(os.remove, local_path)
+    local rename_ok = os.rename(temp_path, local_path)
+    if not rename_ok then
+        local in_f = io.open(temp_path, "rb")
+        local out_f = io.open(local_path, "wb")
+        if in_f and out_f then
+            out_f:write(in_f:read("*all"))
+            in_f:close()
+            out_f:close()
+            pcall(os.remove, temp_path)
+            return true, nil
+        end
+        pcall(os.remove, temp_path)
+        return false, _("Failed to save downloaded file")
+    end
+
+    return true, nil
 end
 
 local function detectPluginFromArchive(reader, repo)

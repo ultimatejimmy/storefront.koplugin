@@ -366,6 +366,14 @@ function SearchNet:init(Storefront)
             end
         end)
     end
+
+    Storefront.cancelRefreshCache = function(sf)
+        local CatalogClient = require("storefront_net_catalog")
+        if CatalogClient and CatalogClient.cancelAsyncFetch then
+            CatalogClient.cancelAsyncFetch()
+        end
+        sf.is_refreshing = false
+    end
 end
 
 return SearchNet

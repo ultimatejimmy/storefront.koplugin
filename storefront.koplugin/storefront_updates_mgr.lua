@@ -145,6 +145,17 @@ function UpdatesMgr:init(Storefront)
             if progress_msg and progress_msg.close then
                 progress_msg:close()
             end
+            if err == "Cancelled by user" then
+                _G.G_storefront_batch_updating = false
+                sf.pending_install_context = nil
+                sf.pending_patch_install = nil
+                if sf.invalidateInstalledPluginsCache then
+                    sf:invalidateInstalledPluginsCache()
+                end
+                sf:softRefreshCurrentBrowserView()
+                StorefrontToast.show(_("Batch update cancelled."), 3)
+                return
+            end
             if success then
                 stats.success = stats.success + 1
             else

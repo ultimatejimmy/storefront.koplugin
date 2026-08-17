@@ -1832,3 +1832,18 @@ msgstr "≥ %s ⭐"
 msgid "✓ Current"
 msgstr "✓ 현재"
 
+msgid "Screensavers"
+msgstr ""
+
+msgid "Downloading…"
+msgstr ""
+
+msgid "Download cancelled."
+msgstr ""
+
+msgid "Batch update cancelled."
+msgstr ""
+
+msgid "Connecting…"
+msgstr ""
+

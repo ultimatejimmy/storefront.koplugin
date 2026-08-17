@@ -615,16 +615,36 @@ function M:init(Storefront)
             return
         end
         local target_path = PATCHES_ROOT .. "/" .. target_filename
-        local progress = InfoMessage:new{ text = string.format(_("Downloading patch %s…"), target_filename), timeout = 0 }
-        UIManager:show(progress)
-        UIManager:forceRePaint()
+        local size_str = (patch and patch.size and patch.size > 0)
+            and string.format(" (%d KB)", math.floor(patch.size / 1024))
+            or ""
 
-        local storefront_installer = require("storefront_installer")
+        local progress = (not is_batch) and InfoMessage:new{
+            text = string.format(_("Downloading patch %s%s…\nPlease wait."), target_filename, size_str),
+            timeout = 0,
+        } or nil
+
+        if progress then
+            UIManager:show(progress)
+            UIManager:forceRePaint()
+        end
+
         local ok_dl, dl_err = storefront_installer.downloadToFile(raw_url, target_path)
-        UIManager:close(progress)
+
+        if progress then
+            UIManager:close(progress)
+        end
 
         if not ok_dl then
-            UIManager:show(InfoMessage:new{ text = string.format(_("Failed to download patch: %s"), tostring(dl_err)), timeout = 5 })
+            util.removeFile(target_path)
+            if not is_batch then
+                UIManager:show(InfoMessage:new{ text = string.format(_("Failed to download patch: %s"), tostring(dl_err)), timeout = 5 })
+            end
+            if self.pending_patch_install and self.pending_patch_install.batch_callback then
+                local cb = self.pending_patch_install.batch_callback
+                self.pending_patch_install = nil
+                cb(false, tostring(dl_err))
+            end
             return
         end
 
@@ -635,10 +655,11 @@ function M:init(Storefront)
         invalidateInstalledPatchesCache()
 
         local is_update = self.pending_patch_install and self.pending_patch_install.mode == "update"
+        local batch_cb = self.pending_patch_install and self.pending_patch_install.batch_callback
         self.pending_patch_install = nil
         if is_update then
             StorefrontLogger.action(string.format("Updated patch \"%s\".", target_filename))
-            if not G_storefront_batch_updating then
+            if not is_batch and not _G.G_storefront_batch_updating then
                 self:showRestartConfirmation(string.format(_("Updated patch \"%s\"."), target_filename))
             end
             if self.patch_updates_menu then
@@ -646,12 +667,15 @@ function M:init(Storefront)
             end
         else
             StorefrontLogger.action(string.format("Installed patch \"%s\".", target_filename))
-            if not G_storefront_batch_updating then
+            if not is_batch and not _G.G_storefront_batch_updating then
                 self:showRestartConfirmation(string.format(_("Installed patch \"%s\"."), target_filename))
             end
         end
         if stored_record then
             self:updateSinglePatchStatus(target_filename, stored_record)
+        end
+        if batch_cb then
+            batch_cb(true)
         end
     end
 

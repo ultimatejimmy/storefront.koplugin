@@ -80,6 +80,20 @@ function StorefrontToastWidget:init()
         card,
     }
 
+    if self.dismissable ~= false then
+        if Device:hasKeys() then
+            self.key_events.AnyKeyPressed = { { Device.input.group.Any } }
+        end
+        if Device:isTouchDevice() then
+            local GestureRange = require("ui/gesturerange")
+            self.ges_events = {
+                TapDismiss = {
+                    GestureRange:new{ ges = "tap", range = Geom:new{ x = 0, y = 0, w = sw, h = sh } }
+                },
+            }
+        end
+    end
+
     if self.timeout and self.timeout > 0 then
         self._timer = UIManager:scheduleIn(self.timeout, function()
             self:close()
@@ -87,11 +101,28 @@ function StorefrontToastWidget:init()
     end
 end
 
-function StorefrontToastWidget:onTap()
+function StorefrontToastWidget:onTapDismiss()
     if self.dismissable ~= false then
+        if self.dismiss_callback then
+            self.dismiss_callback()
+        end
         self:close()
         return true
     end
+end
+
+function StorefrontToastWidget:onAnyKeyPressed()
+    if self.dismissable ~= false then
+        if self.dismiss_callback then
+            self.dismiss_callback()
+        end
+        self:close()
+        return true
+    end
+end
+
+function StorefrontToastWidget:onTap()
+    return self:onTapDismiss()
 end
 
 function StorefrontToastWidget:close()

@@ -1781,3 +1781,18 @@ msgstr "≥ %s ⭐"
 msgid "✓ Current"
 msgstr "✓ 当前版本"
 
+msgid "Downloading…"
+msgstr "正在下载…"
+
+msgid "Download cancelled."
+msgstr "下载已取消。"
+
+msgid "Batch update cancelled."
+msgstr "批量更新已取消。"
+
+msgid "Connecting…"
+msgstr "正在连接…"
+
+msgid "Screensavers"
+msgstr ""
+
