@@ -617,4 +617,91 @@ function StorefrontRatings.submitVote(item_or_id, direction, item_kind, callback
     UIManager:scheduleIn(0.05, dispatch_task)
 end
 
+--- Dispatches an anonymous download telemetry ping to the Cloudflare D1 backend in the background.
+--- Completely non-blocking and safe for e-ink devices.
+--- @param item_or_id table|number|string
+--- @param item_kind string|nil "screensaver", "plugin", "patch", or "font"
+--- @param callback function|nil Called with (success, error_message)
+function StorefrontRatings.trackDownload(item_or_id, item_kind, callback)
+    if not item_or_id then
+        if callback then callback(false, "Invalid item_or_id") end
+        return
+    end
+
+    local candidate_keys = getCandidateKeys(item_or_id)
+    local repo_id = candidate_keys[1] or tostring(item_or_id)
+    item_kind = item_kind or "screensaver"
+
+    -- Optimistically update local in-memory downloads count
+    local key = tostring(repo_id)
+    local cur = StorefrontRatings.liveRatings[key] or { up = 0, down = 0, wilson = 0, downloads = 0 }
+    cur.downloads = (tonumber(cur.downloads) or 0) + 1
+    StorefrontRatings.liveRatings[key] = cur
+
+    local UIManager = require("ui/uimanager")
+
+    local payload = json.encode({
+        action = "download",
+        repo_id = tonumber(repo_id) or repo_id,
+        item_kind = item_kind,
+    })
+
+    local dispatch_task = function()
+        logger.info("StorefrontRatings: tracking download", repo_id, item_kind)
+        local http_req = getHttpModule(StorefrontRatings.BASE_URL)
+        local response_body = {}
+        local headers = {
+            ["User-Agent"] = "KOReader-Storefront-Plugin/1.0",
+            ["Content-Type"] = "application/json",
+            ["Accept"] = "application/json",
+            ["Content-Length"] = tostring(#payload),
+        }
+
+        socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+        local ok_req, res_code = pcall(function()
+            local payload_sent = false
+            local params = {
+                url = StorefrontRatings.BASE_URL .. "/download",
+                method = "POST",
+                headers = headers,
+                source = function()
+                    if not payload_sent then payload_sent = true; return payload end
+                    return nil
+                end,
+                sink = function(chunk)
+                    if chunk then table.insert(response_body, chunk) end
+                    return 1
+                end,
+            }
+            local _, c = http_req.request(params)
+            return c
+        end)
+        socketutil:reset_timeout()
+
+        local code = tonumber(res_code) or 0
+        if ok_req and code == 200 then
+            local body_str = table.concat(response_body)
+            local ok_json, parsed = pcall(json.decode, body_str)
+            if ok_json and parsed and parsed.success and parsed.downloads then
+                for _, k in ipairs(candidate_keys) do
+                    local entry = StorefrontRatings.liveRatings[k] or { up = 0, down = 0, wilson = 0 }
+                    entry.downloads = tonumber(parsed.downloads) or entry.downloads
+                    StorefrontRatings.liveRatings[k] = entry
+                end
+                UIManager:scheduleIn(1, function()
+                    saveLocalRatingsFile(StorefrontRatings.liveRatings)
+                end)
+            end
+            logger.info("StorefrontRatings: download tracked successfully", repo_id)
+            if callback then UIManager:scheduleIn(0, function() callback(true, nil) end) end
+        else
+            local err_msg = "HTTP " .. tostring(res_code)
+            logger.dbg("StorefrontRatings: download track returned", err_msg)
+            if callback then UIManager:scheduleIn(0, function() callback(false, err_msg) end) end
+        end
+    end
+
+    UIManager:scheduleIn(0.05, dispatch_task)
+end
+
 return StorefrontRatings

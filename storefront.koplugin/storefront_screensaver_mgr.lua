@@ -390,6 +390,10 @@ function StorefrontScreensaverMgr.downloadWallpaper(item, callback)
             os.remove(filename)
             local ok_ren = os.rename(tmp_file, filename)
             if ok_ren then
+                local ok_r, StorefrontRatings = pcall(require, "storefront_ratings")
+                if ok_r and StorefrontRatings and StorefrontRatings.trackDownload then
+                    StorefrontRatings.trackDownload(item, "screensaver")
+                end
                 if callback then callback(true, filename) end
                 return filename
             end

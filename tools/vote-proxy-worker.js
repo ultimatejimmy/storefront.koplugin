@@ -1,7 +1,7 @@
 /**
- * Storefront Ratings Backend - Cloudflare Worker + D1 Database
+ * Storefront Ratings & Downloads Backend - Cloudflare Worker + D1 Database
  *
- * Provides fast, instant voting and rating aggregation for KOReader Storefront.
+ * Provides fast, instant voting, download tracking, and stats aggregation for KOReader Storefront.
  * Requires a D1 database binding named `DB`.
  */
 
@@ -41,6 +41,12 @@ async function initSchema(db) {
         wilson REAL DEFAULT 0.0
       );
     `),
+    db.prepare(`
+      CREATE TABLE IF NOT EXISTS downloads (
+        repo_id TEXT PRIMARY KEY,
+        count INTEGER DEFAULT 0
+      );
+    `),
   ]);
 }
 
@@ -67,18 +73,37 @@ export default {
       // Schema initialization failover
     }
 
-    // GET /ratings - Fetch all aggregated ratings
-    if (request.method === "GET" && (url.pathname === "/ratings" || url.pathname === "/")) {
+    // GET /ratings or /stats - Fetch all aggregated ratings & downloads
+    if (request.method === "GET" && (url.pathname === "/ratings" || url.pathname === "/" || url.pathname === "/stats")) {
       try {
-        const { results } = await db.prepare("SELECT repo_id, up, down, wilson FROM ratings").all();
+        const { results: ratingRows } = await db.prepare("SELECT repo_id, up, down, wilson FROM ratings").all();
+        let dlRows = [];
+        try {
+          const { results: dlResults } = await db.prepare("SELECT repo_id, count FROM downloads").all();
+          dlRows = dlResults || [];
+        } catch {}
+
+        const dlMap = {};
+        for (const r of dlRows) {
+          dlMap[r.repo_id] = r.count;
+        }
+
         const ratingsMap = {};
-        for (const row of results || []) {
+        for (const row of ratingRows || []) {
           ratingsMap[row.repo_id] = {
             up: row.up,
             down: row.down,
             wilson: row.wilson,
+            downloads: dlMap[row.repo_id] || 0,
           };
         }
+
+        for (const [id, count] of Object.entries(dlMap)) {
+          if (!ratingsMap[id]) {
+            ratingsMap[id] = { up: 0, down: 0, wilson: 0, downloads: count };
+          }
+        }
+
         return new Response(JSON.stringify(ratingsMap), {
           status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -91,7 +116,7 @@ export default {
       }
     }
 
-    // POST /vote - Record or update a device's vote
+    // POST /download or POST /vote
     if (request.method === "POST") {
       let body;
       try {
@@ -103,6 +128,42 @@ export default {
         });
       }
 
+      // Handle Download Counter Endpoint
+      if (url.pathname === "/download" || body.action === "download" || body.event_type === "download") {
+        const repo_id = String(body.repo_id || "");
+        if (!repo_id) {
+          return new Response(
+            JSON.stringify({ error: "Missing required field: repo_id" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        try {
+          await db
+            .prepare(
+              `INSERT INTO downloads (repo_id, count)
+               VALUES (?, 1)
+               ON CONFLICT(repo_id) DO UPDATE SET count = downloads.count + 1`
+            )
+            .bind(repo_id)
+            .run();
+
+          const row = await db.prepare("SELECT count FROM downloads WHERE repo_id = ?").bind(repo_id).first();
+          const count = row ? row.count : 1;
+
+          return new Response(
+            JSON.stringify({ success: true, repo_id, downloads: count }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        } catch (err) {
+          return new Response(JSON.stringify({ error: err.message }), {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+
+      // Handle Rating Vote Endpoint
       const repo_id = String(body.repo_id || "");
       const device_uuid = String(body.device_uuid || "");
       const direction = String(body.direction || "none").toLowerCase();
