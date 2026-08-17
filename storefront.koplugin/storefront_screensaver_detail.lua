@@ -331,12 +331,9 @@ function StorefrontScreensaverDetail:init()
 
             local row3_gap = sc(10)
             local row3_texts = not is_downloaded and { _("Download Only"), _("⚙ Settings") } or { _("Delete"), _("⚙ Settings") }
-            local all_modal_texts = { _("Set as Active"), _("Add to Shuffle"), _("Cancel"), row3_texts[1], row3_texts[2] }
-
-            local modal_font_size = StorefrontUtils.calcGroupFontSize(all_modal_texts, inner_w, 0, "cfont", sc(16))
-            local row3_max_sz = StorefrontUtils.calcGroupFontSize(row3_texts, inner_w, row3_gap, "cfont", sc(16))
-            modal_font_size = math.min(modal_font_size, row3_max_sz)
-            local row3_widths = StorefrontUtils.calcProportionalBtnWidths(row3_texts, inner_w, row3_gap, modal_font_size, "cfont")
+            local row3_font_size = StorefrontUtils.calcGroupFontSize(row3_texts, inner_w, row3_gap, "cfont", sc(16))
+            local row3_widths = StorefrontUtils.calcProportionalBtnWidths(row3_texts, inner_w, row3_gap, row3_font_size, "cfont")
+            local modal_font_size = row3_font_size
 
             local single_btn = StorefrontUtils.createButton{
                 text = _("Set as Active"),
