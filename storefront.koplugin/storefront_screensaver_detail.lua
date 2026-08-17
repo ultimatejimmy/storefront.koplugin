@@ -208,6 +208,21 @@ function StorefrontScreensaverDetail:init()
         table.insert(meta_items, score_frame_ref)
         table.insert(meta_items, HorizontalSpan:new{ width = sc(3) })
         table.insert(meta_items, down_ic)
+
+        local dl_count = (live_r and live_r.downloads) or item.downloads or 0
+        add_sep()
+        table.insert(meta_items, ImageWidget:new{
+            file = getAssetPath("download.svg"),
+            width = sc(15), height = sc(15),
+            scale_factor = 0, is_icon = true, alpha = true,
+        })
+        table.insert(meta_items, HorizontalSpan:new{ width = sc(3) })
+        local dl_str = dl_count >= 1000 and string.format("%.1fk", dl_count / 1000):gsub("%.0k", "k") or tostring(dl_count)
+        table.insert(meta_items, TextWidget:new{
+            text = dl_str,
+            face = Font:getFace("cfont", 14),
+            fgcolor = Blitbuffer.Color8(90),
+        })
     end
     local meta_label = HorizontalGroup:new(meta_items)
 
@@ -360,8 +375,16 @@ function StorefrontScreensaverDetail:init()
                             text = string.format(_("Delete '%s' from your device?"), item.title or item.id),
                             ok_text = _("Delete"),
                             cancel_text = _("Cancel"),
-                            callback = function()
-                                StorefrontScreensaverMgr.deleteLocalScreensaver(local_filepath)
+                            ok_callback = function()
+                                local path_to_del = local_filepath
+                                if not path_to_del or path_to_del == "" then
+                                    local _, found_path = StorefrontScreensaverMgr.isWallpaperDownloaded(item)
+                                    path_to_del = found_path
+                                end
+                                if path_to_del then
+                                    StorefrontScreensaverMgr.deleteLocalScreensaver(path_to_del)
+                                end
+                                Toast:new{ text = _("Wallpaper deleted from device."), timeout = 2 }:show()
                                 self:onClose()
                             end
                         })

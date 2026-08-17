@@ -777,8 +777,14 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
         return tostring(a):lower() < tostring(b):lower()
     end)
 
-    local sort_order = { "popular", "az", "za" }
-    local sort_labels = { popular = _("Most Popular"), az = _("A -> Z"), za = _("Z -> A") }
+    local sort_order = { "popular", "downloads", "recent", "az", "za" }
+    local sort_labels = {
+        popular   = _("Most Popular"),
+        downloads = _("Most Downloaded"),
+        recent    = _("Recently Added"),
+        az        = _("A -> Z"),
+        za        = _("Z -> A"),
+    }
 
     local function getCategorySummary(set, legacy_cat)
         if type(set) == "table" and next(set) and not set["all"] then

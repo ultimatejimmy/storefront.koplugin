@@ -32,6 +32,7 @@ local function normalizeRatingsTable(tbl)
                 up = tonumber(v.up) or 0,
                 down = tonumber(v.down) or 0,
                 wilson = tonumber(v.wilson) or 0,
+                downloads = tonumber(v.downloads) or 0,
             }
         end
     end
@@ -357,12 +358,14 @@ function StorefrontRatings.getRating(item_or_id, entry)
     local base_up = 0
     local base_down = 0
     local wilson = 0
+    local base_downloads = 0
 
     local e = type(entry) == "table" and entry or (type(item_or_id) == "table" and item_or_id or nil)
     if e then
-        base_up = tonumber(e.user_thumbs_up or (e.repo and e.repo.user_thumbs_up) or (e.plugin and e.plugin.user_thumbs_up) or (e.record and e.record.user_thumbs_up) or e.user_thumbs_up_base) or 0
+        base_up = tonumber(e.user_thumbs_up or (e.repo and e.repo.user_thumbs_up) or (e.plugin and e.plugin.user_thumbs_up) or (e.record and e.record.user_thumbs_up) or e.user_thumbs_up_base or e.likes) or 0
         base_down = tonumber(e.user_thumbs_down or (e.repo and e.repo.user_thumbs_down) or (e.plugin and e.plugin.user_thumbs_down) or (e.record and e.record.user_thumbs_down) or e.user_thumbs_down_base) or 0
         wilson = tonumber(e.wilson_score or (e.repo and e.repo.wilson_score) or e.wilson) or 0
+        base_downloads = tonumber(e.downloads or e.download_count or e.downloads_count or (e.repo and (e.repo.downloads or e.repo.download_count)) or e.installs) or 0
     end
 
     local candidate_keys = getCandidateKeys(item_or_id)
@@ -372,8 +375,10 @@ function StorefrontRatings.getRating(item_or_id, entry)
         if type(r) == "table" then
             local r_up = tonumber(r.up) or 0
             local r_down = tonumber(r.down) or 0
+            local r_dl = tonumber(r.downloads) or 0
             if r_up > base_up then base_up = r_up end
             if r_down > base_down then base_down = r_down end
+            if r_dl > base_downloads then base_downloads = r_dl end
             if (tonumber(r.wilson) or 0) > wilson then wilson = tonumber(r.wilson) or 0 end
             break
         end
@@ -399,7 +404,17 @@ function StorefrontRatings.getRating(item_or_id, entry)
         up = final_up,
         down = final_down,
         wilson = wilson,
+        downloads = base_downloads,
     }
+end
+
+--- Gets the total download count for an item.
+--- @param item_or_id table|number|string
+--- @param entry table|nil
+--- @return number
+function StorefrontRatings.getDownloads(item_or_id, entry)
+    local r = StorefrontRatings.getRating(item_or_id, entry)
+    return (r and r.downloads) or 0
 end
 
 --- Returns (or generates and saves) a persistent anonymous UUID for this device.
@@ -643,6 +658,7 @@ function StorefrontRatings.trackDownload(item_or_id, item_kind, callback)
     local payload = json.encode({
         action = "download",
         repo_id = tonumber(repo_id) or repo_id,
+        device_uuid = StorefrontRatings.getDeviceUUID(),
         item_kind = item_kind,
     })
 

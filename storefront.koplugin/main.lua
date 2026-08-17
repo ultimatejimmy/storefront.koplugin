@@ -7507,14 +7507,15 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
     self:ensureBrowserState()
     local ss_cat  = (self.browser_state.screensaver_category or ""):lower()
     local ss_cats = self.browser_state.screensaver_categories
-    local ss_sort = self.browser_state.screensaver_sort or "popular"  -- "popular" | "az" | "za"
+    local ss_sort = self.browser_state.screensaver_sort or "popular"  -- "popular" | "az" | "za" | "downloads" | "recent"
     local raw_search = util.trim((self.browser_state.search_text and self.browser_state.search_text ~= "") and self.browser_state.search_text or (self.browser_state.screensaver_search or ""))
     local raw_owner  = util.trim(self.browser_state.owner or "")
     local search_terms = extractSearchTerms(raw_search)
     local owner_term   = normalizedLower(raw_owner)
 
     local filtered = {}
-    for _, entry in ipairs(catalog) do
+    for cat_idx, entry in ipairs(catalog) do
+        entry._catalog_index = entry._catalog_index or cat_idx
         local pass = true
         -- 1. Category filter
         if type(ss_cats) == "table" and next(ss_cats) and not ss_cats["all"] then
@@ -7599,28 +7600,68 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
         if pass then table.insert(filtered, entry) end
     end
 
-    local function getRatingScore(entry)
-        if ok_ratings and StorefrontRatings and StorefrontRatings.getRating then
-            local live_r = StorefrontRatings.getRating(entry)
-            if live_r and (live_r.up > 0 or live_r.down > 0) then
-                return live_r.up - live_r.down
-            end
-        end
-        return 0
-    end
-
     if ss_sort == "popular" then
         local scores = {}
+        local dl_scores = {}
         if ok_ratings and StorefrontRatings and StorefrontRatings.getRating then
             for _, entry in ipairs(filtered) do
                 local live_r = StorefrontRatings.getRating(entry)
-                scores[entry] = (live_r and (live_r.up - live_r.down)) or 0
+                scores[entry] = (live_r and (live_r.up - live_r.down)) or entry.likes or 0
+                dl_scores[entry] = (live_r and live_r.downloads) or entry.downloads or entry.download_count or entry.downloads_count or entry.installs or 0
+            end
+        else
+            for _, entry in ipairs(filtered) do
+                scores[entry] = entry.likes or 0
+                dl_scores[entry] = entry.downloads or entry.download_count or entry.downloads_count or entry.installs or 0
             end
         end
         table.sort(filtered, function(a, b)
             local sa = scores[a] or 0
             local sb = scores[b] or 0
             if sa ~= sb then return sa > sb end
+            local dla = dl_scores[a] or 0
+            local dlb = dl_scores[b] or 0
+            if dla ~= dlb then return dla > dlb end
+            local ca = a._catalog_index or 0
+            local cb = b._catalog_index or 0
+            if ca ~= cb then return ca > cb end
+            return (a.title or a.name or "") < (b.title or b.name or "")
+        end)
+    elseif ss_sort == "downloads" then
+        local dl_scores = {}
+        local scores = {}
+        if ok_ratings and StorefrontRatings and StorefrontRatings.getRating then
+            for _, entry in ipairs(filtered) do
+                local live_r = StorefrontRatings.getRating(entry)
+                dl_scores[entry] = (live_r and live_r.downloads) or entry.downloads or entry.download_count or entry.downloads_count or entry.installs or 0
+                scores[entry] = (live_r and (live_r.up - live_r.down)) or entry.likes or 0
+            end
+        else
+            for _, entry in ipairs(filtered) do
+                dl_scores[entry] = entry.downloads or entry.download_count or entry.downloads_count or entry.installs or 0
+                scores[entry] = entry.likes or 0
+            end
+        end
+        table.sort(filtered, function(a, b)
+            local dla = dl_scores[a] or 0
+            local dlb = dl_scores[b] or 0
+            if dla ~= dlb then return dla > dlb end
+            local sa = scores[a] or 0
+            local sb = scores[b] or 0
+            if sa ~= sb then return sa > sb end
+            local ca = a._catalog_index or 0
+            local cb = b._catalog_index or 0
+            if ca ~= cb then return ca > cb end
+            return (a.title or a.name or "") < (b.title or b.name or "")
+        end)
+    elseif ss_sort == "recent" or ss_sort == "newest" then
+        table.sort(filtered, function(a, b)
+            local da = a.dateAdded or a.date_added or a.added or a.created_at
+            local db = b.dateAdded or b.date_added or b.added or b.created_at
+            if da and db and da ~= db then return da > db end
+            local ca = a._catalog_index or 0
+            local cb = b._catalog_index or 0
+            if ca ~= cb then return ca > cb end
             return (a.title or a.name or "") < (b.title or b.name or "")
         end)
     elseif ss_sort == "az" then
@@ -7730,7 +7771,16 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
         local getAssetPath = function(filename)
             local info = debug.getinfo(1, "S")
             local dir = info.source:match("^@(.*[/\\])") or ""
-            return dir .. "assets/" .. filename
+            local p1 = dir .. "assets/" .. filename
+            local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
+            if ok_lfs and lfs and lfs.attributes and lfs.attributes(p1, "mode") == "file" then
+                return p1
+            end
+            local p2 = dir .. "../assets/" .. filename
+            if ok_lfs and lfs and lfs.attributes and lfs.attributes(p2, "mode") == "file" then
+                return p2
+            end
+            return p1
         end
 
         -- Title (truncated)
@@ -7742,7 +7792,7 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
             max_width = inner_w,
         }
 
-        -- In-app ratings (thumbs up + net score) - ONLY shown if in-app ratings or user vote exist!
+        -- In-app ratings (thumbs up + net score) and downloads count
         local live_r = (ok_ratings and StorefrontRatings and StorefrontRatings.getRating) and StorefrontRatings.getRating(entry) or nil
         local user_vote = (ok_ratings and StorefrontRatings and StorefrontRatings.getUserVote) and StorefrontRatings.getUserVote(entry) or nil
         local has_rating = (live_r and (live_r.up > 0 or live_r.down > 0)) or (user_vote == "up" or user_vote == "down")
@@ -7751,30 +7801,46 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
             and string.format("%.1fk", net_score / 1000):gsub("%.0k", "k")
             or tostring(net_score)
 
+        local dl_count = (live_r and live_r.downloads) or entry.downloads or entry.download_count or entry.downloads_count or entry.installs or 0
+        local dl_str = dl_count >= 1000
+            and string.format("%.1fk", dl_count / 1000):gsub("%.0k", "k")
+            or tostring(dl_count)
+
         local display_cat = table.concat(StorefrontUtils.getMappedScreensaverCategories(entry.category), ", ")
         local meta_items = {
             TextWidget:new{
                 text      = display_cat,
                 face      = meta_face,
                 fgcolor   = Blitbuffer.Color8(110),
-                max_width = has_rating and math.floor(inner_w * 0.50) or inner_w,
+                max_width = math.floor(inner_w * 0.40),
             },
         }
 
         if has_rating then
             local icon_file = (user_vote == "down") and getAssetPath("thumbs-down-filled.svg")
                 or ((user_vote == "up") and getAssetPath("thumbs-up-filled.svg") or getAssetPath("thumbs-up.svg"))
-            table.insert(meta_items, HorizontalSpan:new{ width = sc(3) })
+            table.insert(meta_items, HorizontalSpan:new{ width = sc(2) })
             table.insert(meta_items, TextWidget:new{ text = "·", face = meta_face, fgcolor = Blitbuffer.Color8(140) })
-            table.insert(meta_items, HorizontalSpan:new{ width = sc(3) })
+            table.insert(meta_items, HorizontalSpan:new{ width = sc(2) })
             table.insert(meta_items, ImageWidget:new{
                 file = icon_file,
-                width = sc(13), height = sc(13),
+                width = sc(12), height = sc(12),
                 scale_factor = 0, is_icon = true, alpha = true,
             })
             table.insert(meta_items, HorizontalSpan:new{ width = sc(2) })
             table.insert(meta_items, TextWidget:new{ text = score_str, face = meta_face, fgcolor = Blitbuffer.Color8(90) })
         end
+
+        table.insert(meta_items, HorizontalSpan:new{ width = sc(2) })
+        table.insert(meta_items, TextWidget:new{ text = "·", face = meta_face, fgcolor = Blitbuffer.Color8(140) })
+        table.insert(meta_items, HorizontalSpan:new{ width = sc(2) })
+        table.insert(meta_items, ImageWidget:new{
+            file = getAssetPath("download.svg"),
+            width = sc(12), height = sc(12),
+            scale_factor = 0, is_icon = true, alpha = true,
+        })
+        table.insert(meta_items, HorizontalSpan:new{ width = sc(2) })
+        table.insert(meta_items, TextWidget:new{ text = dl_str, face = meta_face, fgcolor = Blitbuffer.Color8(90) })
 
         local meta_w = HorizontalGroup:new(meta_items)
 
@@ -8575,14 +8641,26 @@ function Storefront:showBrowser(kind)
                             callback = function() self:showScreensaverFilter() end
                         })
                     end
-                    local sort_labels = { popular = _("Most Popular"), az = _("A → Z"), za = _("Z → A") }
+                    local sort_labels = {
+                        popular   = _("Most Popular"),
+                        downloads = _("Most Downloaded"),
+                        recent    = _("Recently Added"),
+                        az        = _("A → Z"),
+                        za        = _("Z → A"),
+                    }
+                    local sort_cycle = { "popular", "downloads", "recent", "az", "za" }
                     table.insert(toolbar_buttons, {
                         id = "ss_sort",
                         text = sort_labels[ss_sort] or _("Most Popular"),
                         callback = function()
-                            -- Cycle: popular → az → za → popular
-                            local next = (ss_sort == "popular" and "az") or (ss_sort == "az" and "za") or "popular"
-                            self.browser_state.screensaver_sort = next
+                            local next_sort = "popular"
+                            for idx, s in ipairs(sort_cycle) do
+                                if ss_sort == s then
+                                    next_sort = sort_cycle[(idx % #sort_cycle) + 1]
+                                    break
+                                end
+                            end
+                            self.browser_state.screensaver_sort = next_sort
                             self.browser_state.page = 1
                             self:reopenBrowser()
                         end

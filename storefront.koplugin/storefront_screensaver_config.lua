@@ -32,8 +32,8 @@ end
 function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
     local sw = Device.screen:getWidth()
     local sh = Device.screen:getHeight()
-    local dialog_w = math.min(sw - sc(20), sc(420))
-    local dialog_h = math.min(sh - sc(40), sc(620))
+    local dialog_w = math.min(sw - sc(20), sc(460))
+    local max_dialog_h = math.min(sh - sc(30), sc(780))
 
     local title_font_size = storefront_theme.title_font_size or 22
 
@@ -104,7 +104,8 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
         }
 
         local title_container = FrameContainer:new{
-            padding = sc(10),
+            padding = sc(8),
+            padding_left = sc(12),
             bordersize = 0,
             title_label,
         }
@@ -121,13 +122,13 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
         local function create_section_header(title)
             local label = TextWidget:new{
                 text = title:upper(),
-                face = Font:getFace("cfont", storefront_theme.section_header_font_size or 15),
+                face = Font:getFace("cfont", storefront_theme.section_header_font_size or 14),
                 bold = true,
                 fgcolor = Blitbuffer.COLOR_BLACK,
             }
             return FrameContainer:new{
-                padding = sc(5),
-                padding_left = sc(8),
+                padding = sc(4),
+                padding_left = sc(10),
                 bordersize = 0,
                 width = dialog_w - sc(4),
                 background = Blitbuffer.COLOR_LIGHT_GRAY,
@@ -141,7 +142,7 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
 
             local title_line = TextWidget:new{
                 text = radio_symbol .. label_text,
-                face = Font:getFace("NotoSerif-Regular.ttf", 17),
+                face = Font:getFace("NotoSerif-Regular.ttf", 16),
                 bold = is_selected,
                 fgcolor = Blitbuffer.COLOR_BLACK,
             }
@@ -149,14 +150,14 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
             local btn_widget = nil
             local btn_w = 0
             if right_btn_text and on_right_btn then
-                btn_w = sc(84)
+                btn_w = sc(80)
                 btn_widget = Button:new{
                     text = right_btn_text,
                     text_font_size = 13,
                     bold = true,
                     bordersize = sc(1),
                     radius = sc(3),
-                    padding = sc(4),
+                    padding = sc(3),
                     padding_h = sc(8),
                     background = Blitbuffer.COLOR_WHITE,
                     callback = on_right_btn,
@@ -164,18 +165,22 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
             end
 
             local desc_w = dialog_w - sc(36) - btn_w
-            local desc_line = TextBoxWidget:new{
+            local desc_line = (desc_text and desc_text ~= "") and TextBoxWidget:new{
                 text = desc_text,
-                face = Font:getFace("cfont", 13),
+                face = Font:getFace("cfont", 12),
                 fgcolor = storefront_theme.color_label_dim,
                 width = desc_w,
-            }
+            } or nil
+
+            local left_vg_items = { title_line }
+            if desc_line then
+                table.insert(left_vg_items, VerticalSpan:new{ width = sc(1) })
+                table.insert(left_vg_items, desc_line)
+            end
 
             local left_vg = VerticalGroup:new{
                 align = "left",
-                title_line,
-                VerticalSpan:new{ width = sc(2) },
-                desc_line,
+                unpack(left_vg_items)
             }
 
             local left_frame = FrameContainer:new{
@@ -198,7 +203,9 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
 
             local row_hg = HorizontalGroup:new(row_elements)
             return FrameContainer:new{
-                padding = sc(8),
+                padding = sc(6),
+                padding_left = sc(10),
+                padding_right = sc(8),
                 bordersize = 0,
                 width = dialog_w - sc(4),
                 row_hg,
@@ -206,19 +213,34 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
         end
 
         local function create_toggle_row(checked, label_text, on_toggle)
-            local icon_str = checked and "☑ " or "☐ "
-            local title_line = TextWidget:new{
-                text = icon_str .. label_text,
-                face = Font:getFace("cfont", 16),
+            local icon_str = checked and "☑" or "☐"
+            local icon_w = TextWidget:new{
+                text = icon_str,
+                face = Font:getFace("cfont", 17),
                 bold = checked,
                 fgcolor = Blitbuffer.COLOR_BLACK,
             }
+            local label_w = TextBoxWidget:new{
+                text = label_text,
+                face = Font:getFace("cfont", 14),
+                bold = checked,
+                fgcolor = Blitbuffer.COLOR_BLACK,
+                width = dialog_w - sc(50),
+            }
+
+            local row_hg = HorizontalGroup:new{
+                icon_w,
+                HorizontalSpan:new{ width = sc(8) },
+                label_w,
+            }
 
             local frame = FrameContainer:new{
-                padding = sc(8),
+                padding = sc(6),
+                padding_left = sc(10),
+                padding_right = sc(8),
                 bordersize = 0,
                 width = dialog_w - sc(4),
-                title_line,
+                row_hg,
             }
 
             return make_row_item(frame, function()
@@ -235,7 +257,9 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
         -- Single Image Mode
         local active_file_str = tostring(settings.file or "")
         local active_filename = (active_file_str ~= "") and (active_file_str:match("([^/\\]+)$") or active_file_str) or _("None selected")
-        local single_desc = string.format(_("Displays a static wallpaper on sleep.\nActive: %s"), active_filename)
+        local single_desc = (active_filename ~= "" and active_filename ~= _("None selected"))
+            and string.format(_("Active: %s"), active_filename)
+            or _("Displays a static wallpaper on sleep")
         table.insert(scroll_vg, create_mode_row("single", _("Single Wallpaper"), single_desc, _("Change..."), openGallery))
 
         table.insert(scroll_vg, LineWidget:new{
@@ -244,7 +268,7 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
         })
 
         -- Folder Shuffle Mode
-        local shuffle_desc = string.format(_("Shuffles through all wallpapers in folder on sleep.\nPool size: %d wallpapers in rotation"), #local_wallpapers)
+        local shuffle_desc = string.format(_("Pool size: %d wallpapers in rotation"), #local_wallpapers)
         table.insert(scroll_vg, create_mode_row("shuffle", _("Folder Shuffle"), shuffle_desc, _("Collection"), openGallery))
 
         table.insert(scroll_vg, LineWidget:new{
@@ -290,13 +314,13 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
 
         local fill_title = TextWidget:new{
             text = _("Border Fill / Background"),
-            face = Font:getFace("cfont", 16),
+            face = Font:getFace("cfont", 15),
             bold = true,
             fgcolor = Blitbuffer.COLOR_BLACK,
         }
         local fill_badge = TextWidget:new{
             text = fill_display .. " ▾",
-            face = Font:getFace("cfont", 14),
+            face = Font:getFace("cfont", 13),
             bold = true,
             fgcolor = (current_fill == "none") and Blitbuffer.COLOR_BLACK or storefront_theme.color_label_dim,
         }
@@ -315,12 +339,14 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
         local fill_vg = VerticalGroup:new{
             align = "left",
             fill_top_row,
-            VerticalSpan:new{ width = sc(2) },
+            VerticalSpan:new{ width = sc(1) },
             fill_desc,
         }
 
         local fill_frame = FrameContainer:new{
-            padding = sc(8),
+            padding = sc(6),
+            padding_left = sc(10),
+            padding_right = sc(8),
             bordersize = 0,
             width = dialog_w - sc(4),
             fill_vg,
@@ -348,62 +374,19 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
             StorefrontScreensaverMgr.setScreensaverMode(settings.effective_mode, { invert = not settings.invert })
         end))
 
-        -- SECTION 3: QUICK ACTIONS
-        table.insert(scroll_vg, create_section_header(_("Wallpaper Collection")))
-
-        local function create_action_row(label_text, badge_text, callback)
-            local title_line = TextWidget:new{
-                text = label_text,
-                face = Font:getFace("cfont", 16),
-                bold = true,
-                fgcolor = Blitbuffer.COLOR_BLACK,
-            }
-            local badge_w = badge_text and TextWidget:new{
-                text = badge_text,
-                face = Font:getFace("cfont", 14),
-                fgcolor = storefront_theme.color_label_dim,
-            }
-
-            local row_elements = { title_line }
-            if badge_w then
-                local avail_w = dialog_w - sc(36)
-                local left_w = title_line:getSize().w
-                local right_w = badge_w:getSize().w
-                local span_w = math.max(sc(8), avail_w - left_w - right_w)
-                table.insert(row_elements, HorizontalSpan:new{ width = span_w })
-                table.insert(row_elements, badge_w)
-            end
-
-            local frame = FrameContainer:new{
-                padding = sc(8),
-                bordersize = 0,
-                width = dialog_w - sc(4),
-                HorizontalGroup:new(row_elements),
-            }
-
-            return make_row_item(frame, callback)
-        end
-
-        table.insert(scroll_vg, create_action_row(_("Open Wallpaper Collection Gallery"), string.format(_("%d items"), #local_wallpapers), openGallery))
-
-        table.insert(scroll_vg, create_action_row(_("Browse Wallpapers in Storefront"), "→", function()
-            if overlay then
-                local ov = overlay
-                overlay = nil
-                ov.onClose = nil
-                UIManager:close(ov, "ui")
-            end
-            if Storefront and type(Storefront.showBrowser) == "function" then
-                Storefront:showBrowser("screensaver")
-            end
-        end))
+        local title_h = title_container:getSize().h + sc(1)
+        local close_h = sc(46)
+        local max_scroll_h = max_dialog_h - title_h - close_h
+        local content_h = scroll_vg:getSize().h
+        local scroll_h = math.min(content_h, max_scroll_h)
+        local is_scrollable = content_h > max_scroll_h
 
         local scroll_container = ScrollableContainer:new{
-            dimen = Geom:new{ w = dialog_w - sc(4), h = dialog_h - sc(120) },
-            scroll_bar_width = 0,
-            show_scrollbar = false,
+            dimen = Geom:new{ w = dialog_w - sc(4), h = scroll_h },
+            scroll_bar_width = is_scrollable and sc(4) or 0,
+            show_scrollbar = is_scrollable,
             show_scrollbar_h = false,
-            show_scrollbar_v = false,
+            show_scrollbar_v = is_scrollable,
             bordersize = 0,
             padding = 0,
             scroll_vg,
@@ -429,7 +412,7 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
         }
 
         table.insert(content_vg, FrameContainer:new{
-            padding = sc(6),
+            padding = sc(4),
             bordersize = 0,
             width = dialog_w - sc(4),
             CenterContainer:new{
