@@ -2276,3 +2276,15 @@ msgstr "⚙ الإعدادات..."
 msgid "✓ Current"
 msgstr "✓ الحالي"
 
+msgid "Downloading…"
+msgstr ""
+
+msgid "Download cancelled."
+msgstr ""
+
+msgid "Batch update cancelled."
+msgstr ""
+
+msgid "Connecting…"
+msgstr ""
+

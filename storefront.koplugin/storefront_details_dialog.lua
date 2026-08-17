@@ -2252,7 +2252,7 @@ tr:nth-child(even) td { background-color: #f5f5f5 !important; }
 
             -- Perform network fetch asynchronously without blocking the UI main loop
             UIManager:scheduleIn(0.05, function()
-                if self.active_tab ~= tab_name then return end
+                if self.is_closed or self.active_tab ~= tab_name then return end
                 local ok, path
                 if tab_name == "release_notes" then
                     local rel_data = (self.update_item and (self.update_item.remote or self.update_item.remote_entry)) or self.repo.latest_release

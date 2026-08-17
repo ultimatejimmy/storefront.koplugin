@@ -702,104 +702,134 @@ function M:init(Storefront)
             lfs.mkdir(downloads_dir)
         end
         local zip_path = string.format("%s/%s-%d.zip", downloads_dir, repo.name, os.time())
-
-        local Toast = require("storefront_toast")
         local plugin_display_name = repo and (repo.name or repo.full_name) or "plugin"
-        local progress = Toast.show(string.format(_("Downloading %s…"), plugin_display_name), 0)
-        if UIManager.forceRePaint then UIManager:forceRePaint() end
-        local ok, err = downloadToFile(url, zip_path)
-        if progress and progress.close then progress:close() end
+        local is_repo_batch = (_G.G_storefront_batch_updating == true) or (self.pending_install_context and self.pending_install_context.is_batch)
 
-        if not ok then
-            util.removeFile(zip_path)
-            UIManager:show(InfoMessage:new{
-                text = _("Download failed: ") .. tostring(err),
-                timeout = 6,
-            })
-            return
-        end
-
-        local reader = Archiver.Reader:new()
-        if not reader:open(zip_path) then
-            util.removeFile(zip_path)
-            UIManager:show(InfoMessage:new{
-                text = _("Failed to open downloaded archive."),
-                timeout = 6,
-            })
-            return
-        end
-
-        local info, detect_err = detectPluginFromArchive(reader, repo)
-        if not info then
-            reader:close()
-            util.removeFile(zip_path)
-            UIManager:show(InfoMessage:new{
-                text = detect_err or _("Could not detect plugin inside archive."),
-                timeout = 6,
-            })
-            return
-        end
-
-        if self.pending_install_context and self.pending_install_context.mode == "update" then
-            local ctx_plugin = self.pending_install_context.plugin
-            if ctx_plugin and ctx_plugin.dirname and ctx_plugin.dirname ~= "" then
-                info.plugin_dirname = ctx_plugin.dirname
-            end
-        end
-
-        local function proceedWithInstall(dest_root)
-            local install_display_name = info and info.plugin_name or (repo and repo.name) or "plugin"
-            local install_progress = Toast.show(string.format(_("Installing %s…"), install_display_name), 0)
-            if UIManager.forceRePaint then UIManager:forceRePaint() end
-
-            local ok_extract, dest_or_err = extractPluginToUserDir(reader, info, dest_root)
-            reader:close()
-            util.removeFile(zip_path)
-
-            if install_progress and install_progress.close then install_progress:close() end
-
-            if not ok_extract then
+        local function doInstall(ok, err)
+            if not ok then
+                util.removeFile(zip_path)
                 UIManager:show(InfoMessage:new{
-                    text = _("Installation failed: ") .. tostring(dest_or_err),
+                    text = _("Download failed: ") .. tostring(err),
                     timeout = 6,
                 })
                 return
             end
 
-            info.plugin_name = info.plugin_name or ((info.plugin_dirname or "plugin"):gsub("%.koplugin$", ""))
-            local msg
+            local reader = Archiver.Reader:new()
+            if not reader:open(zip_path) then
+                util.removeFile(zip_path)
+                UIManager:show(InfoMessage:new{
+                    text = _("Failed to open downloaded archive."),
+                    timeout = 6,
+                })
+                return
+            end
+
+            local info, detect_err = detectPluginFromArchive(reader, repo)
+            if not info then
+                reader:close()
+                util.removeFile(zip_path)
+                UIManager:show(InfoMessage:new{
+                    text = detect_err or _("Could not detect plugin inside archive."),
+                    timeout = 6,
+                })
+                return
+            end
+
             if self.pending_install_context and self.pending_install_context.mode == "update" then
-                if info.plugin_version and info.plugin_version ~= "" then
-                    msg = string.format(_("Updated plugin \"%s\" to version %s."), info.plugin_name, info.plugin_version)
-                else
-                    msg = string.format(_("Updated plugin \"%s\"."), info.plugin_name)
+                local ctx_plugin = self.pending_install_context.plugin
+                if ctx_plugin and ctx_plugin.dirname and ctx_plugin.dirname ~= "" then
+                    info.plugin_dirname = ctx_plugin.dirname
                 end
+            end
+
+            local function proceedWithInstall(dest_root)
+                local install_display_name = info and info.plugin_name or (repo and repo.name) or "plugin"
+                local Toast = require("storefront_toast")
+                local install_progress = Toast.show(string.format(_("Installing %s…"), install_display_name), 0)
+                if UIManager.forceRePaint then UIManager:forceRePaint() end
+
+                local ok_extract, dest_or_err = extractPluginToUserDir(reader, info, dest_root)
+                reader:close()
+                util.removeFile(zip_path)
+
+                if install_progress and install_progress.close then install_progress:close() end
+
+                if not ok_extract then
+                    UIManager:show(InfoMessage:new{
+                        text = _("Installation failed: ") .. tostring(dest_or_err),
+                        timeout = 6,
+                    })
+                    return
+                end
+
+                info.plugin_name = info.plugin_name or ((info.plugin_dirname or "plugin"):gsub("%.koplugin$", ""))
+                local msg
+                if self.pending_install_context and self.pending_install_context.mode == "update" then
+                    if info.plugin_version and info.plugin_version ~= "" then
+                        msg = string.format(_("Updated plugin \"%s\" to version %s."), info.plugin_name, info.plugin_version)
+                    else
+                        msg = string.format(_("Updated plugin \"%s\"."), info.plugin_name)
+                    end
+                else
+                    if info.plugin_version and info.plugin_version ~= "" then
+                        msg = string.format(_("msg_installed_plugin_version"), info.plugin_name, info.plugin_version)
+                    else
+                        msg = string.format(_("msg_installed_plugin"), info.plugin_name)
+                    end
+                end
+
+                local is_batch = (_G.G_storefront_batch_updating == true) or (self.pending_install_context and self.pending_install_context.is_batch == true)
+                StorefrontLogger.action(msg)
+                if not is_batch and not _G.G_storefront_batch_updating then
+                    self:showRestartConfirmation(msg)
+                end
+
+                self:handlePostInstall(info, repo)
+                if self.updates_menu then
+                    self:updateUpdatesDialog()
+                end
+            end
+
+            if self.pending_install_context and self.pending_install_context.mode == "update" then
+                proceedWithInstall(self.pending_install_context.plugin.root)
             else
-                if info.plugin_version and info.plugin_version ~= "" then
-                    msg = string.format(_("msg_installed_plugin_version"), info.plugin_name, info.plugin_version)
-                else
-                    msg = string.format(_("msg_installed_plugin"), info.plugin_name)
-                end
-            end
-
-            local is_batch = (_G.G_storefront_batch_updating == true) or (self.pending_install_context and self.pending_install_context.is_batch == true)
-            StorefrontLogger.action(msg)
-            if not is_batch and not _G.G_storefront_batch_updating then
-                self:showRestartConfirmation(msg)
-            end
-
-            self:handlePostInstall(info, repo)
-            if self.updates_menu then
-                self:updateUpdatesDialog()
+                self:resolveNewInstallDestination(proceedWithInstall, function()
+                    reader:close()
+                    util.removeFile(zip_path)
+                end)
             end
         end
 
-        if self.pending_install_context and self.pending_install_context.mode == "update" then
-            proceedWithInstall(self.pending_install_context.plugin.root)
+        if is_repo_batch then
+            local Toast = require("storefront_toast")
+            local progress = Toast.show(string.format(_("Downloading %s…"), plugin_display_name), 0)
+            if UIManager.forceRePaint then UIManager:forceRePaint() end
+            local ok, err = downloadToFile(url, zip_path)
+            if progress and progress.close then progress:close() end
+            doInstall(ok, err)
         else
-            self:resolveNewInstallDestination(proceedWithInstall, function()
-                reader:close()
-                util.removeFile(zip_path)
+            local Trapper = require("ui/trapper")
+            local Toast = require("storefront_toast")
+            local dl_msg = string.format(_("Downloading %s…\nTap screen to cancel."), plugin_display_name)
+            local progress_toast = Toast.show(dl_msg, 0)
+            Trapper:wrap(function()
+                local completed, res = Trapper:dismissableRunInSubprocess(function()
+                    local dl_ok, dl_err = downloadToFile(url, zip_path)
+                    return { ok = dl_ok, err = dl_err }
+                end, progress_toast)
+                if progress_toast and progress_toast.close then progress_toast:close() end
+                if not completed then
+                    util.removeFile(zip_path)
+                    Toast.show(_("Download cancelled."), 3)
+                    if self.pending_install_context and self.pending_install_context.batch_callback then
+                        local cb = self.pending_install_context.batch_callback
+                        self.pending_install_context.batch_callback = nil
+                        cb(false, "Cancelled by user")
+                    end
+                    return
+                end
+                doInstall(res and res.ok, res and res.err)
             end)
         end
     end
@@ -821,140 +851,169 @@ function M:init(Storefront)
         end
         local zip_path = string.format("%s/%s-%d.zip", downloads_dir, repo.name or "plugin", os.time())
 
-        local Toast = require("storefront_toast")
-        local progress
-        if not is_batch then
-            local display_name = repo and (repo.name or repo.full_name) or asset_name
-            progress = Toast.show(string.format(_("Downloading %s…"), display_name), 0)
-            if UIManager.forceRePaint then UIManager:forceRePaint() end
-        end
+        local display_name = repo and (repo.name or repo.full_name) or asset_name
+        local size_str = (asset.size and asset.size > 0)
+            and string.format(" (%d KB)", math.floor(asset.size / 1024))
+            or ""
 
-        local ok, err = downloadToFile(asset.browser_download_url, zip_path)
-        if progress and progress.close then progress:close() end
-
-        if not ok then
-            util.removeFile(zip_path)
-            if not is_batch then
-                UIManager:show(InfoMessage:new{
-                    text = _("Download failed: ") .. tostring(err),
-                    timeout = 6,
-                })
-            end
-            if self.pending_install_context and self.pending_install_context.batch_callback then
-                local cb = self.pending_install_context.batch_callback
-                self.pending_install_context.batch_callback = nil
-                cb(false, tostring(err))
-            end
-            return
-        end
-
-        local reader = Archiver.Reader:new()
-        if not reader:open(zip_path) then
-            util.removeFile(zip_path)
-            if not is_batch then
-                UIManager:show(InfoMessage:new{
-                    text = _("Failed to open downloaded archive."),
-                    timeout = 6,
-                })
-            end
-            if self.pending_install_context and self.pending_install_context.batch_callback then
-                local cb = self.pending_install_context.batch_callback
-                self.pending_install_context.batch_callback = nil
-                cb(false, "Failed to open downloaded archive")
-            end
-            return
-        end
-
-        local info, detect_err = detectPluginFromArchive(reader, repo)
-        if not info then
-            reader:close()
-            util.removeFile(zip_path)
-            if not is_batch then
-                UIManager:show(InfoMessage:new{
-                    text = detect_err or _("Could not detect plugin inside archive."),
-                    timeout = 6,
-                })
-            end
-            if self.pending_install_context and self.pending_install_context.batch_callback then
-                local cb = self.pending_install_context.batch_callback
-                self.pending_install_context.batch_callback = nil
-                cb(false, detect_err or "Could not detect plugin inside archive")
-            end
-            return
-        end
-
-        info.asset_filename = asset.name
-        info.plugin_release_tag = (release and (release.tag_name or release.name)) or info.plugin_release_tag
-
-        if self.pending_install_context and self.pending_install_context.mode == "update" then
-            local ctx_plugin = self.pending_install_context.plugin
-            if ctx_plugin and ctx_plugin.dirname and ctx_plugin.dirname ~= "" then
-                info.plugin_dirname = ctx_plugin.dirname
-            end
-        end
-
-        local function proceedWithInstall(dest_root)
-            local install_progress
-            if not is_batch then
-                local display_name = info and info.plugin_name or (repo and repo.name) or "plugin"
-                install_progress = Toast.show(string.format(_("Installing %s…"), display_name), 0)
-                if UIManager.forceRePaint then UIManager:forceRePaint() end
-            end
-
-            local ok_extract, dest_or_err = extractPluginToUserDir(reader, info, dest_root)
-            reader:close()
-            util.removeFile(zip_path)
-
-            if install_progress and install_progress.close then install_progress:close() end
-
-            if not ok_extract then
+        local function doInstall(ok, err)
+            if not ok then
+                util.removeFile(zip_path)
                 if not is_batch then
                     UIManager:show(InfoMessage:new{
-                        text = _("Installation failed: ") .. tostring(dest_or_err),
+                        text = _("Download failed: ") .. tostring(err),
                         timeout = 6,
                     })
                 end
                 if self.pending_install_context and self.pending_install_context.batch_callback then
                     local cb = self.pending_install_context.batch_callback
                     self.pending_install_context.batch_callback = nil
-                    cb(false, tostring(dest_or_err))
+                    cb(false, tostring(err))
                 end
                 return
             end
 
-            info.plugin_name = info.plugin_name or ((info.plugin_dirname or "plugin"):gsub("%.koplugin$", ""))
-            local msg
+            local reader = Archiver.Reader:new()
+            if not reader:open(zip_path) then
+                util.removeFile(zip_path)
+                if not is_batch then
+                    UIManager:show(InfoMessage:new{
+                        text = _("Failed to open downloaded archive."),
+                        timeout = 6,
+                    })
+                end
+                if self.pending_install_context and self.pending_install_context.batch_callback then
+                    local cb = self.pending_install_context.batch_callback
+                    self.pending_install_context.batch_callback = nil
+                    cb(false, "Failed to open downloaded archive")
+                end
+                return
+            end
+
+            local info, detect_err = detectPluginFromArchive(reader, repo)
+            if not info then
+                reader:close()
+                util.removeFile(zip_path)
+                if not is_batch then
+                    UIManager:show(InfoMessage:new{
+                        text = detect_err or _("Could not detect plugin inside archive."),
+                        timeout = 6,
+                    })
+                end
+                if self.pending_install_context and self.pending_install_context.batch_callback then
+                    local cb = self.pending_install_context.batch_callback
+                    self.pending_install_context.batch_callback = nil
+                    cb(false, detect_err or "Could not detect plugin inside archive")
+                end
+                return
+            end
+
+            info.asset_filename = asset.name
+            info.plugin_release_tag = (release and (release.tag_name or release.name)) or info.plugin_release_tag
+
             if self.pending_install_context and self.pending_install_context.mode == "update" then
-                if info.plugin_version and info.plugin_version ~= "" then
-                    msg = string.format(_("Updated plugin \"%s\" to version %s."), info.plugin_name, info.plugin_version)
-                else
-                    msg = string.format(_("Updated plugin \"%s\"."), info.plugin_name)
+                local ctx_plugin = self.pending_install_context.plugin
+                if ctx_plugin and ctx_plugin.dirname and ctx_plugin.dirname ~= "" then
+                    info.plugin_dirname = ctx_plugin.dirname
                 end
+            end
+
+            local function proceedWithInstall(dest_root)
+                local Toast = require("storefront_toast")
+                local install_progress
+                if not is_batch then
+                    local pname = info and info.plugin_name or (repo and repo.name) or "plugin"
+                    install_progress = Toast.show(string.format(_("Installing %s…"), pname), 0)
+                    if UIManager.forceRePaint then UIManager:forceRePaint() end
+                end
+
+                local ok_extract, dest_or_err = extractPluginToUserDir(reader, info, dest_root)
+                reader:close()
+                util.removeFile(zip_path)
+
+                if install_progress and install_progress.close then install_progress:close() end
+
+                if not ok_extract then
+                    if not is_batch then
+                        UIManager:show(InfoMessage:new{
+                            text = _("Installation failed: ") .. tostring(dest_or_err),
+                            timeout = 6,
+                        })
+                    end
+                    if self.pending_install_context and self.pending_install_context.batch_callback then
+                        local cb = self.pending_install_context.batch_callback
+                        self.pending_install_context.batch_callback = nil
+                        cb(false, tostring(dest_or_err))
+                    end
+                    return
+                end
+
+                info.plugin_name = info.plugin_name or ((info.plugin_dirname or "plugin"):gsub("%.koplugin$", ""))
+                local msg
+                if self.pending_install_context and self.pending_install_context.mode == "update" then
+                    if info.plugin_version and info.plugin_version ~= "" then
+                        msg = string.format(_("Updated plugin \"%s\" to version %s."), info.plugin_name, info.plugin_version)
+                    else
+                        msg = string.format(_("Updated plugin \"%s\"."), info.plugin_name)
+                    end
+                else
+                    if info.plugin_version and info.plugin_version ~= "" then
+                        msg = string.format(_("msg_installed_plugin_version"), info.plugin_name, info.plugin_version)
+                    else
+                        msg = string.format(_("msg_installed_plugin"), info.plugin_name)
+                    end
+                end
+
+                StorefrontLogger.action(msg)
+                if not is_batch and not _G.G_storefront_batch_updating then
+                    self:showRestartConfirmation(msg)
+                end
+
+                self:handlePostInstall(info, repo)
+                if self.updates_menu then
+                    self:updateUpdatesDialog()
+                end
+            end
+
+            if self.pending_install_context and self.pending_install_context.mode == "update" then
+                proceedWithInstall(self.pending_install_context.plugin.root)
             else
-                if info.plugin_version and info.plugin_version ~= "" then
-                    msg = string.format(_("msg_installed_plugin_version"), info.plugin_name, info.plugin_version)
-                else
-                    msg = string.format(_("msg_installed_plugin"), info.plugin_name)
-                end
-            end
-
-            StorefrontLogger.action(msg)
-            if not is_batch and not _G.G_storefront_batch_updating then
-                self:showRestartConfirmation(msg)
-            end
-
-            self:handlePostInstall(info, repo)
-            if self.updates_menu then
-                self:updateUpdatesDialog()
+                self:resolveNewInstallDestination(proceedWithInstall, function()
+                    reader:close()
+                    util.removeFile(zip_path)
+                end)
             end
         end
 
-        if self.pending_install_context and self.pending_install_context.mode == "update" then
-            proceedWithInstall(self.pending_install_context.plugin.root)
+        if is_batch then
+            local Toast = require("storefront_toast")
+            local progress_b = Toast.show(string.format(_("Downloading %s…"), display_name), 0)
+            if UIManager.forceRePaint then UIManager:forceRePaint() end
+            local ok, err = downloadToFile(asset.browser_download_url, zip_path)
+            if progress_b and progress_b.close then progress_b:close() end
+            doInstall(ok, err)
         else
-            self:resolveNewInstallDestination(proceedWithInstall, function()
-                reader:close()
-                util.removeFile(zip_path)
+            local Trapper = require("ui/trapper")
+            local Toast = require("storefront_toast")
+            local dl_msg = string.format(_("Downloading %s%s…\nTap screen to cancel."), display_name, size_str)
+            local progress_toast = Toast.show(dl_msg, 0)
+            Trapper:wrap(function()
+                local completed, res = Trapper:dismissableRunInSubprocess(function()
+                    local dl_ok, dl_err = downloadToFile(asset.browser_download_url, zip_path)
+                    return { ok = dl_ok, err = dl_err }
+                end, progress_toast)
+                if progress_toast and progress_toast.close then progress_toast:close() end
+                if not completed then
+                    util.removeFile(zip_path)
+                    Toast.show(_("Download cancelled."), 3)
+                    if self.pending_install_context and self.pending_install_context.batch_callback then
+                        local cb = self.pending_install_context.batch_callback
+                        self.pending_install_context.batch_callback = nil
+                        cb(false, "Cancelled by user")
+                    end
+                    return
+                end
+                doInstall(res and res.ok, res and res.err)
             end)
         end
     end

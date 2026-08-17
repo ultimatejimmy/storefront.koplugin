@@ -2276,3 +2276,15 @@ msgstr "⚙ 设置..."
 msgid "✓ Current"
 msgstr "✓ 当前版本"
 
+msgid "Downloading…"
+msgstr ""
+
+msgid "Download cancelled."
+msgstr ""
+
+msgid "Batch update cancelled."
+msgstr ""
+
+msgid "Connecting…"
+msgstr ""
+
