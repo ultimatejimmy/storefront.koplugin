@@ -32,6 +32,7 @@ local function normalizeRatingsTable(tbl)
                 up = tonumber(v.up) or 0,
                 down = tonumber(v.down) or 0,
                 wilson = tonumber(v.wilson) or 0,
+                downloads = tonumber(v.downloads) or 0,
             }
         end
     end
@@ -268,15 +269,11 @@ local function getCandidateKeys(item_or_id)
         add_single(str_k)
         add_single(str_k:lower())
 
-        -- Handle .koplugin suffix variations
+        -- Handle .koplugin suffix variations if present
         if str_k:sub(-9) == ".koplugin" then
             local base = str_k:sub(1, -10)
             add_single(base)
             add_single(base:lower())
-        else
-            local with_ko = str_k .. ".koplugin"
-            add_single(with_ko)
-            add_single(with_ko:lower())
         end
 
         -- Handle .disabled suffix variations for patches
@@ -290,28 +287,35 @@ local function getCandidateKeys(item_or_id)
     if type(item_or_id) ~= "table" then
         local val = tostring(item_or_id or "")
         if val ~= "" then
-            if val:find("/") or val:match("^%d+$") then
-                add_key_variants(val)
-                return keys
-            end
-
-            local ok_inst, InstallStore = pcall(require, "storefront_installs")
-            if ok_inst and InstallStore and InstallStore.list then
-                local installs = InstallStore.list() or {}
-                local rec = installs[val] or installs[val .. ".koplugin"] or installs[val:gsub("%.koplugin$", "")]
-                if rec and rec.owner and rec.owner ~= "" then
-                    item_or_id = { owner = rec.owner, name = val, id = rec.repo_id or rec.id, repo_full_name = rec.repo_full_name }
+            add_key_variants(val)
+            if not val:find("/") and not val:match("^%d+$") then
+                local ok_inst, InstallStore = pcall(require, "storefront_installs")
+                if ok_inst and InstallStore and InstallStore.list then
+                    local installs = InstallStore.list() or {}
+                    local rec = installs[val] or installs[val .. ".koplugin"] or installs[val:gsub("%.koplugin$", "")]
+                    if rec and rec.owner and rec.owner ~= "" then
+                        item_or_id = { owner = rec.owner, name = val, id = rec.repo_id or rec.id, repo_full_name = rec.repo_full_name }
+                    end
                 end
             end
         end
     end
 
     if type(item_or_id) ~= "table" then
-        add_key_variants(item_or_id)
         return keys
     end
 
     local item = item_or_id
+
+    local primary_id = item.id
+        or item.repo_id
+        or (item.repo and (item.repo.repo_id or item.repo.id))
+        or (item.record and (item.record.repo_id or item.record.id))
+        or (item.plugin and item.plugin.id)
+
+    if primary_id then
+        add_key_variants(primary_id)
+    end
 
     local owner = item.owner
         or (type(item.full_name) == "string" and item.full_name:match("^([^/]+)/"))
@@ -331,28 +335,17 @@ local function getCandidateKeys(item_or_id)
         or (item.plugin and (item.plugin.dirname or item.plugin.name))
         or (item.patch and item.patch.filename)
 
-    local repo_id = item.repo_id
-        or (tonumber(item.id) and tonumber(item.id))
-        or (item.repo and (item.repo.repo_id or (tonumber(item.repo.id) and tonumber(item.repo.id))))
-        or (item.record and (item.record.repo_id or (tonumber(item.record.id) and tonumber(item.record.id))))
-
     if owner and type(owner) == "string" and owner ~= "" and name and type(name) == "string" and name ~= "" then
-        if repo_id then
-            add_key_variants(repo_id)
-        end
         add_key_variants(owner .. "/" .. name)
         local clean_name = name:gsub("%.koplugin$", "")
         add_key_variants(owner .. "/" .. clean_name)
-    elseif repo_id then
-        add_key_variants(repo_id)
-    else
-        add_key_variants(item.id)
-        add_key_variants(item.full_name)
-        add_key_variants(name)
-        add_key_variants(item.dirname)
-        add_key_variants(item.filename)
-        add_key_variants(item.font_name)
     end
+
+    add_key_variants(item.full_name)
+    add_key_variants(name)
+    add_key_variants(item.dirname)
+    add_key_variants(item.filename)
+    add_key_variants(item.font_name)
 
     return keys
 end
@@ -365,12 +358,14 @@ function StorefrontRatings.getRating(item_or_id, entry)
     local base_up = 0
     local base_down = 0
     local wilson = 0
+    local base_downloads = 0
 
     local e = type(entry) == "table" and entry or (type(item_or_id) == "table" and item_or_id or nil)
     if e then
-        base_up = tonumber(e.user_thumbs_up or (e.repo and e.repo.user_thumbs_up) or (e.plugin and e.plugin.user_thumbs_up) or (e.record and e.record.user_thumbs_up) or e.user_thumbs_up_base) or 0
+        base_up = tonumber(e.user_thumbs_up or (e.repo and e.repo.user_thumbs_up) or (e.plugin and e.plugin.user_thumbs_up) or (e.record and e.record.user_thumbs_up) or e.user_thumbs_up_base or e.likes) or 0
         base_down = tonumber(e.user_thumbs_down or (e.repo and e.repo.user_thumbs_down) or (e.plugin and e.plugin.user_thumbs_down) or (e.record and e.record.user_thumbs_down) or e.user_thumbs_down_base) or 0
         wilson = tonumber(e.wilson_score or (e.repo and e.repo.wilson_score) or e.wilson) or 0
+        base_downloads = tonumber(e.downloads or e.download_count or e.downloads_count or (e.repo and (e.repo.downloads or e.repo.download_count)) or e.installs) or 0
     end
 
     local candidate_keys = getCandidateKeys(item_or_id)
@@ -380,8 +375,10 @@ function StorefrontRatings.getRating(item_or_id, entry)
         if type(r) == "table" then
             local r_up = tonumber(r.up) or 0
             local r_down = tonumber(r.down) or 0
+            local r_dl = tonumber(r.downloads) or 0
             if r_up > base_up then base_up = r_up end
             if r_down > base_down then base_down = r_down end
+            if r_dl > base_downloads then base_downloads = r_dl end
             if (tonumber(r.wilson) or 0) > wilson then wilson = tonumber(r.wilson) or 0 end
             break
         end
@@ -407,7 +404,17 @@ function StorefrontRatings.getRating(item_or_id, entry)
         up = final_up,
         down = final_down,
         wilson = wilson,
+        downloads = base_downloads,
     }
+end
+
+--- Gets the total download count for an item.
+--- @param item_or_id table|number|string
+--- @param entry table|nil
+--- @return number
+function StorefrontRatings.getDownloads(item_or_id, entry)
+    local r = StorefrontRatings.getRating(item_or_id, entry)
+    return (r and r.downloads) or 0
 end
 
 --- Returns (or generates and saves) a persistent anonymous UUID for this device.
@@ -618,6 +625,94 @@ function StorefrontRatings.submitVote(item_or_id, direction, item_kind, callback
         else
             local err_msg = "HTTP " .. tostring(res_code)
             logger.warn("StorefrontRatings: vote submission returned", err_msg)
+            if callback then UIManager:scheduleIn(0, function() callback(false, err_msg) end) end
+        end
+    end
+
+    UIManager:scheduleIn(0.05, dispatch_task)
+end
+
+--- Dispatches an anonymous download telemetry ping to the Cloudflare D1 backend in the background.
+--- Completely non-blocking and safe for e-ink devices.
+--- @param item_or_id table|number|string
+--- @param item_kind string|nil "screensaver", "plugin", "patch", or "font"
+--- @param callback function|nil Called with (success, error_message)
+function StorefrontRatings.trackDownload(item_or_id, item_kind, callback)
+    if not item_or_id then
+        if callback then callback(false, "Invalid item_or_id") end
+        return
+    end
+
+    local candidate_keys = getCandidateKeys(item_or_id)
+    local repo_id = candidate_keys[1] or tostring(item_or_id)
+    item_kind = item_kind or "screensaver"
+
+    -- Optimistically update local in-memory downloads count
+    local key = tostring(repo_id)
+    local cur = StorefrontRatings.liveRatings[key] or { up = 0, down = 0, wilson = 0, downloads = 0 }
+    cur.downloads = (tonumber(cur.downloads) or 0) + 1
+    StorefrontRatings.liveRatings[key] = cur
+
+    local UIManager = require("ui/uimanager")
+
+    local payload = json.encode({
+        action = "download",
+        repo_id = tonumber(repo_id) or repo_id,
+        device_uuid = StorefrontRatings.getDeviceUUID(),
+        item_kind = item_kind,
+    })
+
+    local dispatch_task = function()
+        logger.info("StorefrontRatings: tracking download", repo_id, item_kind)
+        local http_req = getHttpModule(StorefrontRatings.BASE_URL)
+        local response_body = {}
+        local headers = {
+            ["User-Agent"] = "KOReader-Storefront-Plugin/1.0",
+            ["Content-Type"] = "application/json",
+            ["Accept"] = "application/json",
+            ["Content-Length"] = tostring(#payload),
+        }
+
+        socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+        local ok_req, res_code = pcall(function()
+            local payload_sent = false
+            local params = {
+                url = StorefrontRatings.BASE_URL .. "/download",
+                method = "POST",
+                headers = headers,
+                source = function()
+                    if not payload_sent then payload_sent = true; return payload end
+                    return nil
+                end,
+                sink = function(chunk)
+                    if chunk then table.insert(response_body, chunk) end
+                    return 1
+                end,
+            }
+            local _, c = http_req.request(params)
+            return c
+        end)
+        socketutil:reset_timeout()
+
+        local code = tonumber(res_code) or 0
+        if ok_req and code == 200 then
+            local body_str = table.concat(response_body)
+            local ok_json, parsed = pcall(json.decode, body_str)
+            if ok_json and parsed and parsed.success and parsed.downloads then
+                for _, k in ipairs(candidate_keys) do
+                    local entry = StorefrontRatings.liveRatings[k] or { up = 0, down = 0, wilson = 0 }
+                    entry.downloads = tonumber(parsed.downloads) or entry.downloads
+                    StorefrontRatings.liveRatings[k] = entry
+                end
+                UIManager:scheduleIn(1, function()
+                    saveLocalRatingsFile(StorefrontRatings.liveRatings)
+                end)
+            end
+            logger.info("StorefrontRatings: download tracked successfully", repo_id)
+            if callback then UIManager:scheduleIn(0, function() callback(true, nil) end) end
+        else
+            local err_msg = "HTTP " .. tostring(res_code)
+            logger.dbg("StorefrontRatings: download track returned", err_msg)
             if callback then UIManager:scheduleIn(0, function() callback(false, err_msg) end) end
         end
     end

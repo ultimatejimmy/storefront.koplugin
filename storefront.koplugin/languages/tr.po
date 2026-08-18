@@ -8,11 +8,32 @@ msgstr ""
 msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
 msgstr "\"Azizim Bay Bennet,\" dedi bir gün hanımı ona, \"Netherfield Park'ın nihayet kiralandığını duydunuz mu?\" Bay Bennet duymadığını söyledi. \"Ama kiralandı,\" diye karşılık verdi hanımı; \"çünkü Bayan Long az önce buradaydı ve bana her şeyi anlattı.\" Bay Bennet cevap vermedi."
 
+msgid "%d Categories"
+msgstr "%d Kategori"
+
+msgid "%d items"
+msgstr "%d öğe"
+
 msgid "%d patches"
 msgstr "%d yama"
 
 msgid "%d plugins"
 msgstr "%d eklenti"
+
+msgid "%d wallpapers"
+msgstr "%d duvar kağıdı"
+
+msgid "%d wallpapers stored on device"
+msgstr "%d duvar kağıdı cihazda kayıtlı"
+
+msgid "%d wallpapers · Folder Shuffle (all in rotation)"
+msgstr "%d duvar kağıdı · Klasör Karışık (hepsi döngüde)"
+
+msgid "%d wallpapers · Mode: Book Cover"
+msgstr "%d duvar kağıdı · Mod: Kitap Kapağı"
+
+msgid "%d wallpapers · Single mode active"
+msgstr "%d duvar kağıdı · Tekil mod aktif"
 
 msgid "%s and %s"
 msgstr "%s ve %s"
@@ -26,11 +47,20 @@ msgstr "%s güncel."
 msgid "%s needs an update."
 msgstr "%s güncelleme gerektiriyor."
 
+msgid "%s · %d files"
+msgstr "%s · %d dosya"
+
+msgid "%s · 1 file"
+msgstr "%s · 1 dosya"
+
 msgid "(fork)"
 msgstr "(çatallama)"
 
 msgid "(showing %d of %d commits)"
 msgstr "(%d / %d işleme gösteriliyor)"
+
+msgid "+ Add to Shuffle Pool"
+msgstr "+ Karışık Havuzuna Ekle"
 
 msgid "1 / 1"
 msgstr "1 / 1"
@@ -50,14 +80,44 @@ msgstr "< Önceki"
 msgid "?"
 msgstr "?"
 
+msgid "A -> Z"
+msgstr "A -> Z"
+
+msgid "A → Z"
+msgstr "A → Z"
+
 msgid "About"
 msgstr "Hakkında"
 
 msgid "About Storefront"
 msgstr "Storefront Hakkında"
 
+msgid "Active Single"
+msgstr "Aktif Tekil"
+
+msgid "Active Wallpaper ✓"
+msgstr "Aktif Duvar Kağıdı ✓"
+
+msgid "Active: %s"
+msgstr "Aktif: %s"
+
+msgid "Add to Shuffle"
+msgstr "Karışığa Ekle"
+
+msgid "Add to Shuffle Pool (Enable Shuffle)"
+msgstr "Karışık Havuzuna Ekle (Karıştırmayı Aç)"
+
+msgid "Added to shuffle pool & Folder Shuffle enabled!"
+msgstr "Havuza eklendi ve Klasör Karıştırma etkinleştirildi!"
+
 msgid "All"
 msgstr "Tümü"
+
+msgid "All Caches"
+msgstr "Tüm Önbellekler"
+
+msgid "All Categories"
+msgstr "Tüm Kategoriler"
 
 msgid "All Types"
 msgstr "Tüm Türler"
@@ -116,11 +176,29 @@ msgstr "Geri"
 msgid "Beta"
 msgstr "Beta"
 
+msgid "Black Fill"
+msgstr "Siyah Dolgu"
+
+msgid "Blank"
+msgstr "Boş"
+
+msgid "Book Cover"
+msgstr "Kitap Kapağı"
+
+msgid "Border Fill / Background"
+msgstr "Kenarlık Dolgusu / Arka Plan"
+
 msgid "Both owner and repository name are required."
 msgstr "Hem sahip hem de depo adı gereklidir."
 
 msgid "Branch: %s"
 msgstr "Dal: %s"
+
+msgid "Browse Wallpapers in Storefront"
+msgstr "Storefront Duvar Kağıtlarına Göz At"
+
+msgid "By "
+msgstr "By"
 
 msgid "By: %s"
 msgstr "Yazar: %s"
@@ -173,11 +251,26 @@ msgstr "Katalog kaynağı"
 msgid "Catalog updated: %d plugins, %d patches, %d fonts."
 msgstr "Katalog güncellendi: %d eklenti, %d yama, %d yazı tipi."
 
+msgid "Categories"
+msgstr "Kategoriler"
+
+msgid "Category: "
+msgstr "Kategori: "
+
 msgid "Category: %s"
 msgstr "Kategori: %s"
 
+msgid "Change..."
+msgstr "Değiştir..."
+
+msgid "Changelog for %s\n%s \\\\xE2\\\\x86\\\\x92 %s"
+msgstr "Changelog for %s\n%s \\\\xE2\\\\x86\\\\x92 %s"
+
 msgid "Changelog for %s\n%s → %s"
 msgstr "%s için değişiklik günlüğü\n%s → %s"
+
+msgid "Changelog for %s\\\n%s \\\\xE2\\\\x86\\\\x92 %s"
+msgstr "Changelog for %s\\\n%s \\\\xE2\\\\x86\\\\x92 %s"
 
 msgid "Changelog: %s"
 msgstr "Değişiklik günlüğü: %s"
@@ -227,29 +320,92 @@ msgstr "Eklenti güncellemeleri kontrol ediliyor…"
 msgid "Choose Build — %s"
 msgstr "Yapı Seç — %s"
 
+msgid "Clean"
+msgstr "Temizle"
+
 msgid "Clear"
 msgstr "Temizle"
+
+msgid "Clear All"
+msgstr "Tümünü Temizle"
+
+msgid "Clear All Caches?"
+msgstr "Tüm önbellekler temizlensin mi?"
+
+msgid "Clear Cache"
+msgstr "Önbelleği Temizle"
+
+msgid "Clear README Cache?"
+msgstr "README önbelleği temizlensin mi?"
 
 msgid "Clear README cache"
 msgstr "Temizle"
 
+msgid "Clear README cache (%s)?\nCached README files and images will be deleted."
+msgstr "Clear README cache (%s)?\nCached README files and images will be deleted."
+
+msgid "Clear Thumbnail Cache?"
+msgstr "Küçük resim önbelleği temizlensin mi?"
+
+msgid "Clear Wiki Cache?"
+msgstr "Wiki önbelleği temizlensin mi?"
+
+msgid "Clear Wiki cache (%s)?\nCached wiki articles and images will be deleted."
+msgstr "Clear Wiki cache (%s)?\nCached wiki articles and images will be deleted."
+
+msgid "Clear all cached data (%s)?\nAll README files, wiki articles, and thumbnails will be deleted."
+msgstr "Clear all cached data (%s)?\nAll README files, wiki articles, and thumbnails will be deleted."
+
+msgid "Clear cache…"
+msgstr "Önbelleği Temizle"
+
+msgid "Clear screensaver thumbnail cache (%s)?\nThumbnails will be re-downloaded when viewing wallpapers."
+msgstr "Clear screensaver thumbnail cache (%s)?\nThumbnails will be re-downloaded when viewing wallpapers."
+
+msgid "Clear search & filters"
+msgstr "Arama ve filtreleri temizle"
+
 msgid "Clear search/filters"
 msgstr "Aramayı/filtreleri temizle"
+
+msgid "Cleared README cache (%s freed)."
+msgstr "Cleared README cache (%s freed)."
+
+msgid "Cleared Wiki cache (%s freed)."
+msgstr "Cleared Wiki cache (%s freed)."
+
+msgid "Cleared all caches (%s freed, %d files)."
+msgstr "Cleared all caches (%s freed, %d files)."
+
+msgid "Cleared screensaver thumbnails (%s freed)."
+msgstr "Cleared screensaver thumbnails (%s freed)."
 
 msgid "Close"
 msgstr "Kapat"
 
+msgid "Collection"
+msgstr "Koleksiyon"
+
 msgid "Commit diff: %s → %s"
 msgstr "Commit farkı: %s → %s"
 
+msgid "Commits: %s \\\\xE2\\\\x86\\\\x92 %s"
+msgstr "Commits: %s \\\\xE2\\\\x86\\\\x92 %s"
+
 msgid "Commits: %s → %s"
 msgstr "Commitler: %s → %s"
+
+msgid "Community"
+msgstr "Topluluk"
 
 msgid "Config files only"
 msgstr "Yalnızca yapılandırma dosyaları"
 
 msgid "Configured ✓"
 msgstr "Yapılandırıldı ✓"
+
+msgid "Confirm"
+msgstr "Onayla"
 
 msgid "Confirm Update"
 msgstr "Güncellemeyi Onayla"
@@ -259,6 +415,9 @@ msgstr "Tümünü Güncellemeyi Onayla"
 
 msgid "Connecting to GitHub…\n\nPlease wait."
 msgstr "GitHub'a bağlanılıyor…\n\nLütfen bekleyin."
+
+msgid "Connecting to GitHub…\\\n\\\nPlease wait."
+msgstr "Connecting to GitHub…\\\n\\\nPlease wait."
 
 msgid "Continue"
 msgstr "Devam et"
@@ -305,6 +464,18 @@ msgstr "Sadece varsayılan"
 msgid "Delete"
 msgstr "Sil"
 
+msgid "Delete "
+msgstr "Sil"
+
+msgid "Delete '%s' from your device?"
+msgstr "'%s' cihazınızdan silinsin mi?"
+
+msgid "Delete File?"
+msgstr "Dosya silinsin mi?"
+
+msgid "Delete Wallpaper?"
+msgstr "Duvar kağıdı silinsin mi?"
+
 msgid "Delete all cached README files? They will be re-downloaded on demand."
 msgstr "Önbelleğe alınan tüm README dosyaları silinsin mi? İhtiyaç duyulduğunda tekrar indirilecekler."
 
@@ -319,6 +490,9 @@ msgstr "Yazı tipini sil "
 
 msgid "Delete font '%s'?"
 msgstr "'%s' yazı tipi silinsin mi?"
+
+msgid "Delete from Device"
+msgstr "Cihazdan Sil"
 
 msgid "Delete patch"
 msgstr "Yamayı sil"
@@ -365,6 +539,27 @@ msgstr "Eklentiyi devre dışı bırak"
 msgid "Disabled"
 msgstr "Devre dışı"
 
+msgid "Display Options"
+msgstr "Görünüm Seçenekleri"
+
+msgid "Displays a static wallpaper on sleep"
+msgstr "Uyku modunda statik duvar kağıdı gösterir"
+
+msgid "Displays a static wallpaper on sleep.\nActive: %s"
+msgstr "Uyku modunda statik duvar kağıdı gösterir.\nAktif: %s"
+
+msgid "Done"
+msgstr "Tamamlandı"
+
+msgid "Download & Set Active"
+msgstr "İndir ve Etkinleştir"
+
+msgid "Download Only"
+msgstr "Yalnızca İndir"
+
+msgid "Download Only (Save to Device)"
+msgstr "Yalnızca İndir (Cihaza Kaydet)"
+
 msgid "Download failed: "
 msgstr "İndirme başarısız: "
 
@@ -377,11 +572,20 @@ msgstr "İndirme seçenekleri — %s"
 msgid "Download options — %s (%s)"
 msgstr "İndirme seçenekleri — %s (%s)"
 
+msgid "Downloading "
+msgstr "Downloading..."
+
 msgid "Downloading %s%s…\nThis may take a moment."
 msgstr "%s%s indiriliyor…\nBu biraz zaman alabilir."
 
+msgid "Downloading %s%s…\\\nThis may take a moment."
+msgstr "Downloading %s%s…\\\nThis may take a moment."
+
 msgid "Downloading %s…"
 msgstr "%s indiriliyor…"
+
+msgid "Downloading '%s'..."
+msgstr "Downloading '%s'..."
 
 msgid "Downloading patch \"%s\"…"
 msgstr "\"%s\" yaması indiriliyor…"
@@ -389,8 +593,20 @@ msgstr "\"%s\" yaması indiriliyor…"
 msgid "Downloading patch %s…"
 msgstr "Yama %s indiriliyor…"
 
+msgid "Downloading patch \\\\\"%s\\\\\"…"
+msgstr "Downloading patch \\\\\"%s\\\\\"…"
+
+msgid "Downloading screensaver..."
+msgstr "Ekran koruyucu indiriliyor..."
+
+msgid "Downloading to shuffle pool..."
+msgstr "Karışık havuzuna indiriliyor..."
+
 msgid "Edit"
 msgstr "Düzenle"
+
+msgid "Empty (0 KB)"
+msgstr "Boş (0 KB)"
 
 msgid "Enable"
 msgstr "Etkinleştir"
@@ -412,6 +628,9 @@ msgstr "Eklenti numarasını girin"
 
 msgid "Extracting and installing plugin…\nPlease wait."
 msgstr "Eklenti çıkarılıyor ve kuruluyor…\nLütfen bekleyin."
+
+msgid "Extracting and installing plugin…\\\nPlease wait."
+msgstr "Extracting and installing plugin…\\\nPlease wait."
 
 msgid "Failed to check %s: %s"
 msgstr "%s kontrol edilemedi: %s"
@@ -439,6 +658,9 @@ msgstr "'%s' yaması devre dışı bırakılamadı."
 
 msgid "Failed to download patch: %s"
 msgstr "Yama indirilemedi: %s"
+
+msgid "Failed to download screensaver."
+msgstr "Ekran koruyucu indirilemedi."
 
 msgid "Failed to enable patch "
 msgstr "Yama etkinleştirilemedi "
@@ -512,6 +734,9 @@ msgstr "Yamaları filtrele ve sırala"
 msgid "Filter & Sort Plugins"
 msgstr "Eklentileri filtrele ve sırala"
 
+msgid "Filter & Sort Screensavers"
+msgstr "Ekran Koruyucuları Filtrele ve Sırala"
+
 msgid "Filter Installed Patches"
 msgstr "Yüklü Yamaları Filtrele"
 
@@ -536,6 +761,12 @@ msgstr "Filtreler: "
 msgid "Filters: (none)"
 msgstr "Filtreler: (yok)"
 
+msgid "Folder Shuffle"
+msgstr "Klasör Karıştırma"
+
+msgid "Folder Shuffle enabled with this wallpaper!"
+msgstr "Bu duvar kağıdıyla Klasör Karışık modu açıldı!"
+
 msgid "Font"
 msgstr "Yazı tipi"
 
@@ -553,6 +784,9 @@ msgstr "Yazı tipi stili"
 
 msgid "Fonts"
 msgstr "Yazı Tipleri"
+
+msgid "Free up storage space on your device. Cached items are re-downloaded automatically when needed."
+msgstr "Cihazınızda depolama alanı açın. Önbelleğe alınan öğeler gerektiğinde otomatik olarak yeniden indirilir."
 
 msgid "GitHub API rate limit exceeded. Add a GitHub token in Storefront settings to increase the limit (10→30 req/min)."
 msgstr "GitHub API istek sınırı aşıldı. Sınırı artırmak için Storefront ayarlarından bir GitHub belirteci ekleyin (10→30 istek/dk)."
@@ -623,6 +857,9 @@ msgstr "GitHub'dan yama kur"
 msgid "Install plugin from GitHub"
 msgstr "GitHub'dan eklenti kur"
 
+msgid "Install to Default?"
+msgstr "Varsayılana Yüklensin mi?"
+
 msgid "Install to default"
 msgstr "Varsayılana yükle"
 
@@ -644,14 +881,26 @@ msgstr "Yüklü Eklenti Ayarları"
 msgid "Installed Regular font style offline for \"%s\". Full font family queued for download when reconnected."
 msgstr "\"%s\" için Normal yazı tipi stili çevrim dışı kuruldu. Yeniden bağlandığında tüm yazı tipi ailesi indirilmek üzere sıraya alındı."
 
+msgid "Installed Regular font style offline for \\\\\"%s\\\\\". Full font family queued for download when reconnected."
+msgstr "Installed Regular font style offline for \\\\\"%s\\\\\". Full font family queued for download when reconnected."
+
 msgid "Installed font \"%s\" (%d file(s))."
 msgstr "\"%s\" yazı tipi kuruldu (%d dosya)."
+
+msgid "Installed font \\\\\"%s\\\\\" (%d file(s))."
+msgstr "Installed font \\\\\"%s\\\\\" (%d file(s))."
 
 msgid "Installed full font family \"%s\" (%d file(s))."
 msgstr "\"%s\" tam yazı tipi ailesi kuruldu (%d dosya)."
 
+msgid "Installed full font family \\\\\"%s\\\\\" (%d file(s))."
+msgstr "Installed full font family \\\\\"%s\\\\\" (%d file(s))."
+
 msgid "Installed patch \"%s\"."
 msgstr "\"%s\" yaması kuruldu."
+
+msgid "Installed patch \\\\\"%s\\\\\"."
+msgstr "Installed patch \\\\\"%s\\\\\"."
 
 msgid "Installed plugin \"%s\" (version %s)."
 msgstr "\"%s\" eklentisi kuruldu (sürüm %s)."
@@ -676,6 +925,9 @@ msgstr "Geçersiz yama hedef dosya adı."
 
 msgid "Invalid selection."
 msgstr "Geçersiz seçim."
+
+msgid "Invert colors (night mode / dark background)"
+msgstr "Renkleri tersine çevir (gece modu / koyu arka plan)"
 
 msgid "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters."
 msgstr "Servet sahibi bekar bir erkeğin bir eşe ihtiyacı olduğu evrensel olarak kabul edilen bir gerçektir."
@@ -736,6 +988,9 @@ msgstr "Eklenti yollarını yönet"
 
 msgid "Manage plugin paths\n\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
 msgstr "Eklenti yollarını yönet\n\nBir yolu gizlemek yalnızca Storefront'un burada gösterdiklerini/yönettiklerini etkiler. KOReader eklentileri bu yoldan yüklemeye devam edecektir."
+
+msgid "Manage plugin paths\\\n\\\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
+msgstr "Manage plugin paths\\\n\\\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
 
 msgid "Match"
 msgstr "Eşleştir"
@@ -836,8 +1091,17 @@ msgstr "Eklentiyi Düzenle"
 msgid "Modify Plugin: %s"
 msgstr "Eklentiyi Değiştir: %s"
 
+msgid "Most Downloaded"
+msgstr "En Çok İndirilenler"
+
+msgid "Most Popular"
+msgstr "En Popüler"
+
 msgid "Multiple custom plugin folders are configured. Where should this plugin be installed?"
 msgstr "Birden fazla özel eklenti klasörü yapılandırılmış. Bu eklenti nereye kurulsun?"
+
+msgid "My wallpaper collection"
+msgstr "Duvar kağıdı koleksiyonum"
 
 msgid "Name (A-Z)"
 msgstr "İsim (A-Z)"
@@ -865,6 +1129,9 @@ msgstr "Sonraki"
 
 msgid "Next >"
 msgstr "Sonraki >"
+
+msgid "No Fill (Transparent)"
+msgstr "Dolgu Yok (Şeffaf)"
 
 msgid "No Lua files found in plugin directory"
 msgstr "Eklenti dizininde Lua dosyası bulunamadı"
@@ -959,11 +1226,23 @@ msgstr "Bu depo için sürüm bulunamadı."
 msgid "No remote version info for %s."
 msgstr "%s için uzak sürüm bilgisi yok."
 
+msgid "No screensavers match this filter."
+msgstr "Bu filtreyle eşleşen ekran koruyucu yok."
+
 msgid "No stable releases found — uncheck filter to show all releases"
 msgstr "Kararlı sürüm bulunamadı — tüm sürümleri göstermek için filtre işaretini kaldırın"
 
 msgid "No tracked plugins to check."
 msgstr "Kontrol edilecek takip edilen eklenti yok."
+
+msgid "No wallpapers found in your screensavers folder.\n\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
+msgstr "Ekran koruyucu klasöründe duvar kağıdı bulunamadı.\n\nDuvar kağıdı indirmek için Storefront kataloğuna göz atın!"
+
+msgid "No wallpapers found in your screensavers folder.\\\n\\\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
+msgstr "No wallpapers found in your screensavers folder.\\\n\\\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
+
+msgid "None selected"
+msgstr "Hiçbiri seçilmedi"
 
 msgid "Not matched with a repository."
 msgstr "Bir depo ile eşleşmedi."
@@ -974,11 +1253,17 @@ msgstr "Ayarlanmadı"
 msgid "Notes"
 msgstr "Notlar"
 
+msgid "OK"
+msgstr "Tamam"
+
 msgid "Offline Regular"
 msgstr "Çevrimdışı Normal"
 
 msgid "Open"
 msgstr "Aç"
+
+msgid "Open Wallpaper Collection Gallery"
+msgstr "Duvar Kağıdı Galerisini Aç"
 
 msgid "Open details"
 msgstr "Ayrıntıları aç"
@@ -988,6 +1273,9 @@ msgstr "İsteğe bağlı. GitHub API istek sınırını artırır. Bir tane olu�
 
 msgid "Optional. Raises the GitHub API rate limit. Generate one (classic, 'public_repo' scope is enough) at github.com/settings/tokens, then paste it here."
 msgstr "İsteğe bağlı. GitHub API istek limitini artırır. github.com/settings/tokens adresinden bir jeton (klasik, 'public_repo' kapsamı yeterlidir) oluşturup buraya yapıştırın."
+
+msgid "Options ▾"
+msgstr "Seçenekler ▾"
 
 msgid "Origin"
 msgstr "Köken"
@@ -1021,6 +1309,9 @@ msgstr "Yama "
 
 msgid "Patch %s has been %s."
 msgstr "%s yaması %s durumuna getirildi."
+
+msgid "Patch '%s' deleted."
+msgstr "'%s' yaması silindi."
 
 msgid "Patch '%s' disabled."
 msgstr "'%s' yaması devre dışı bırakıldı."
@@ -1097,6 +1388,9 @@ msgstr "Eklentiler"
 msgid "Plugins cached: %s (last update: %s)"
 msgstr "Önbelleklenen eklentiler: %s (son güncelleme: %s)"
 
+msgid "Pool size: %d wallpapers in rotation"
+msgstr "Havuz boyutu: %d duvar kağıdı döngüde"
+
 msgid "Pre-installed core KOReader plugin."
 msgstr "Önceden yüklenmiş temel KOReader eklentisi."
 
@@ -1112,14 +1406,32 @@ msgstr "README"
 msgid "README download failed: "
 msgstr "README indirilemedi: "
 
+msgid "README files & images"
+msgstr "README dosyaları ve resimleri"
+
+msgid "Rate Wallpaper"
+msgstr "Duvar Kağıdını Oyla"
+
 msgid "Reading Passage Specimen"
 msgstr "Okuma Örneği"
+
+msgid "Reading Progress"
+msgstr "Okuma İlerlemesi"
+
+msgid "Reading Progress / Summary"
+msgstr "Okuma İlerlemesi / Özet"
+
+msgid "Recently Added"
+msgstr "Son Eklenenler"
 
 msgid "Refresh"
 msgstr "Yenile"
 
 msgid "Refresh cache"
 msgstr "Önbelleği yenile"
+
+msgid "Refresh catalog"
+msgstr "Kataloğu yenile"
 
 msgid "Refreshing catalog via Direct GitHub API…"
 msgstr "Katalog Doğrudan GitHub API ile yenileniyor…"
@@ -1181,6 +1493,15 @@ msgstr "Uzak: (kontrol edilmedi)"
 msgid "Remove"
 msgstr "Kaldır"
 
+msgid "Remove "
+msgstr "Kaldır"
+
+msgid "Remove '%s' from your wallpaper collection?"
+msgstr "'%s' duvar kağıdı koleksiyonunuzdan kaldırılsın mı?"
+
+msgid "Remove Wallpaper?"
+msgstr "Duvar kağıdı kaldırılsın mı?"
+
 msgid "Rename"
 msgstr "Yeniden adlandır"
 
@@ -1235,6 +1556,30 @@ msgstr "Örnek Metin"
 msgid "Save"
 msgstr "Kaydet"
 
+msgid "Screensaver"
+msgstr "Ekran Koruyucu"
+
+msgid "Screensaver & Wallpapers"
+msgstr "Ekran Koruyucu & Duvar Kağıtları"
+
+msgid "Screensaver Details"
+msgstr "Ekran Koruyucu Ayrıntıları"
+
+msgid "Screensaver Mode"
+msgstr "Ekran Koruyucu Modu"
+
+msgid "Screensaver Settings"
+msgstr "Ekran Koruyucu Ayarları"
+
+msgid "Screensaver mode"
+msgstr "Ekran koruyucu modu"
+
+msgid "Screensaver thumbnails"
+msgstr "Ekran koruyucu küçük resimleri"
+
+msgid "Screensavers"
+msgstr "Ekran Koruyucular"
+
 msgid "Search"
 msgstr "Ara"
 
@@ -1244,11 +1589,23 @@ msgstr "\"%s\" ara"
 msgid "Search & API"
 msgstr "Arama ve API"
 
+msgid "Search filter (\"%s\") is not applied to Updates."
+msgstr "Search filter (\"%s\") is not applied to Updates."
+
+msgid "Search filter (\\\\\"%s\\\\\") is not applied to Updates."
+msgstr "Search filter (\\\\\"%s\\\\\") is not applied to Updates."
+
 msgid "Search text"
 msgstr "Arama metni"
 
 msgid "Search: "
 msgstr "Ara: "
+
+msgid "Select All"
+msgstr "Tümünü Seç"
+
+msgid "Select Categories"
+msgstr "Kategorileri Seç"
 
 msgid "Select a repository patch entry to match with the chosen file."
 msgstr "Seçilen dosyayla eşleştirmek için bir depo yama girdisi seçin."
@@ -1274,11 +1631,53 @@ msgstr "Depo seçin"
 msgid "Set"
 msgstr "Ayarla"
 
+msgid "Set Active Single"
+msgstr "Aktif Tekil Olarak Ayarla"
+
+msgid "Set Single"
+msgstr "Tekil Ayarla"
+
+msgid "Set as Active"
+msgstr "Aktif Yap"
+
+msgid "Set as Active Single Wallpaper"
+msgstr "Aktif Tekil Duvar Kağıdı Olarak Ayarla"
+
+msgid "Set as active single wallpaper!"
+msgstr "Aktif tekil duvar kağıdı olarak ayarlandı!"
+
 msgid "Settings"
 msgstr "Ayarlar"
 
 msgid "Show needs update"
 msgstr "Güncelleme gerekenleri göster"
+
+msgid "Show reading progress banner overlay"
+msgstr "Okuma ilerleme çubuğunu göster"
+
+msgid "Shows reading stats, percentage, and chapter progress"
+msgstr "Okuma istatistiklerini, yüzdeyi ve bölüm ilerlemesini gösterir"
+
+msgid "Shows the cover of the book currently being read"
+msgstr "Şu anda okunan kitabın kapağını gösterir"
+
+msgid "Shuffle (%d)"
+msgstr "Karışık (%d)"
+
+msgid "Shuffle Pool"
+msgstr "Karışık Havuzu"
+
+msgid "Shuffles through all wallpapers in folder on sleep.\nPool size: %d wallpapers in rotation"
+msgstr "Uyku modunda klasördeki tüm duvar kağıtlarını sırayla gösterir.\nHavuz boyutu: %d duvar kağıdı döngüde"
+
+msgid "Single"
+msgstr "Tekil"
+
+msgid "Single Wallpaper"
+msgstr "Tekil Duvar Kağıdı"
+
+msgid "Solid fill for screen margins & letterboxing"
+msgstr "Ekran kenar boşlukları için düz dolgu"
 
 msgid "Sort"
 msgstr "Sırala"
@@ -1288,6 +1687,9 @@ msgstr "Sıralama modu"
 
 msgid "Sort: A-Z"
 msgstr "Sırala: A-Z"
+
+msgid "Sort: Most Liked"
+msgstr "Sırala: En Çok Beğenilen"
 
 msgid "Sort: Name (A → Z)"
 msgstr "Sırala: İsim (A-Z)"
@@ -1352,6 +1754,9 @@ msgstr "Storefront · Güncellemeler"
 msgid "Storefront: Open"
 msgstr "Storefront: Aç"
 
+msgid "Stretch image to fill entire screen"
+msgstr "Resmi tüm ekrana sığdıracak şekilde uzat"
+
 msgid "Style: "
 msgstr "Stil: "
 
@@ -1391,6 +1796,24 @@ msgstr "Pijamalı hasta yağız şoföre çabucak güvendi."
 msgid "This action cannot be undone.\n\nChanges will take effect after restart."
 msgstr "Bu işlem geri alınamaz.\n\nDeğişiklikler yeniden başlatmanın ardından etkinleşecektir."
 
+msgid "This action cannot be undone.\\\n\\\nChanges will take effect after restart."
+msgstr "This action cannot be undone.\\\n\\\nChanges will take effect after restart."
+
+msgid "This wallpaper is currently set as your active screensaver."
+msgstr "Bu duvar kağıdı şu anda etkin ekran koruyucunuz olarak ayarlandı."
+
+msgid "This will delete all cached README files, wiki articles, and screensaver thumbnails (%s)."
+msgstr "Bu işlem önbelleğe alınan tüm README dosyalarını, wiki makalelerini ve ekran koruyucu küçük resimlerini (%s) silecektir."
+
+msgid "This will delete cached README markdown files and downloaded images (%s)."
+msgstr "Bu işlem önbelleğe alınan README markdown dosyalarını ve indirilen resimleri (%s) silecektir."
+
+msgid "This will delete cached screensaver thumbnail previews (%s)."
+msgstr "Bu işlem önbelleğe alınan ekran koruyucu küçük resim önizlemelerini (%s) silecektir."
+
+msgid "This will delete cached wiki articles and downloaded images (%s)."
+msgstr "Bu işlem önbelleğe alınan wiki makalelerini ve indirilen resimleri (%s) silecektir."
+
 msgid "This will take effect on next restart."
 msgstr "Bu değişiklik bir sonraki yeniden başlatmada geçerli olacaktır."
 
@@ -1399,6 +1822,9 @@ msgstr "Toplam commit: %d"
 
 msgid "Tracked: %d"
 msgstr "İzlenen: %d"
+
+msgid "Transparent overlay (page content visible behind)"
+msgstr "Saydam katman (sayfa içeriği arkada görünür)"
 
 msgid "Type"
 msgstr "Tür"
@@ -1481,11 +1907,20 @@ msgstr "\"%s\" yaması güncellendi."
 msgid "Updated patch %s."
 msgstr "%s yaması güncellendi."
 
+msgid "Updated patch \\\\\"%s\\\\\"."
+msgstr "Updated patch \\\\\"%s\\\\\"."
+
 msgid "Updated plugin \"%s\" to version %s."
 msgstr "\"%s\" eklentisi %s sürümüne güncellendi."
 
 msgid "Updated plugin \"%s\"."
 msgstr "\"%s\" eklentisi güncellendi."
+
+msgid "Updated plugin \\\\\"%s\\\\\" to version %s."
+msgstr "Updated plugin \\\\\"%s\\\\\" to version %s."
+
+msgid "Updated plugin \\\\\"%s\\\\\"."
+msgstr "Updated plugin \\\\\"%s\\\\\"."
 
 msgid "Updated: %s"
 msgstr "Güncellendi: %s"
@@ -1514,17 +1949,59 @@ msgstr "Sürümler"
 msgid "View README"
 msgstr "README'yi görüntüle"
 
+msgid "View commits (%s \\\\xE2\\\\x86\\\\x92 %s)"
+msgstr "View commits (%s \\\\xE2\\\\x86\\\\x92 %s)"
+
 msgid "View commits (%s → %s)"
 msgstr "Commitleri görüntüle (%s → %s)"
 
+msgid "Wallpaper Collection"
+msgstr "Duvar Kağıdı Koleksiyonu"
+
+msgid "Wallpaper Options"
+msgstr "Duvar Kağıdı Seçenekleri"
+
+msgid "Wallpaper deleted from device."
+msgstr "Duvar kağıdı cihazdan silindi."
+
+msgid "Wallpaper removed"
+msgstr "Duvar kağıdı kaldırıldı"
+
+msgid "Wallpaper saved to collection!"
+msgstr "Duvar kağıdı koleksiyona kaydedildi!"
+
+msgid "Wallpaper set as active KOReader screensaver!"
+msgstr "Duvar kağıdı aktif KOReader ekran koruyucusu yapıldı!"
+
+msgid "Wallpaper set as active screensaver!"
+msgstr "Duvar kağıdı etkin ekran koruyucu olarak ayarlandı!"
+
 msgid "Warning: the selected version is older than what is currently installed. You are downgrading."
 msgstr "Uyarı: Seçilen sürüm şu anda yüklü olandan daha eski. Sürüm düşürüyorsunuz."
+
+msgid "White Fill"
+msgstr "Beyaz Dolgu"
 
 msgid "Wiki"
 msgstr "Wiki"
 
 msgid "Wiki Pages"
 msgstr "Wiki Sayfaları"
+
+msgid "Wiki pages & images"
+msgstr "Wiki sayfaları ve resimleri"
+
+msgid "Z -> A"
+msgstr "Z -> A"
+
+msgid "Z → A"
+msgstr "Z → A"
+
+msgid "[ Loading preview... ]"
+msgstr "[ Önizleme yükleniyor... ]"
+
+msgid "[ Wallpaper Preview Loading... ]"
+msgstr "[ Duvar Kağıdı Önizlemesi Yükleniyor... ]"
 
 msgid "[Ignored]"
 msgstr "[Yoksayıldı]"
@@ -1534,6 +2011,12 @@ msgstr "[taslak]"
 
 msgid "[pre]"
 msgstr "[ön]"
+
+msgid "\\\\\"My dear Mr. Bennet,\\\\\" said his lady to him one day, \\\\\"have you heard that Netherfield Park is let at last?\\\\\" Mr. Bennet replied that he had not. \\\\\"But it is,\\\\\" returned she; \\\\\"for Mrs. Long has just been here, and she told me all about it.\\\\\" Mr. Bennet made no answer."
+msgstr "\\\\\"My dear Mr. Bennet,\\\\\" said his lady to him one day, \\\\\"have you heard that Netherfield Park is let at last?\\\\\" Mr. Bennet replied that he had not. \\\\\"But it is,\\\\\" returned she; \\\\\"for Mrs. Long has just been here, and she told me all about it.\\\\\" Mr. Bennet made no answer."
+
+msgid "\\\\xC2\\\\xB7"
+msgstr "\\\\xC2\\\\xB7"
 
 msgid "about_text"
 msgstr "Storefront, KOReader eklentileri, yamaları ve yazı tipleri için yerleşik bir paket yöneticisidir."
@@ -1760,6 +2243,9 @@ msgstr "BENİOKU"
 msgid "tab_sample_text"
 msgstr "Örnek Metin"
 
+msgid "tab_screensavers"
+msgstr "Duvarlar"
+
 msgid "tab_versions"
 msgstr "Sürümler"
 
@@ -1778,11 +2264,17 @@ msgstr "·"
 msgid "≥ %s ⭐"
 msgstr "≥ %s ⭐"
 
+msgid "★ ACTIVE"
+msgstr "★ AKTİF"
+
+msgid "⚙ Settings"
+msgstr "⚙ Ayarlar"
+
+msgid "⚙ Settings..."
+msgstr "⚙ Ayarlar..."
+
 msgid "✓ Current"
 msgstr "✓ Geçerli"
-
-msgid "Screensavers"
-msgstr ""
 
 msgid "Downloading…"
 msgstr ""

@@ -92,7 +92,7 @@ function DeleteUI.showDeleteConfirmationDialog(display_name, is_plugin, plugin_i
     local body_text = _("This action cannot be undone.\n\nChanges will take effect after restart.")
     local body_widget = TextBoxWidget:new{
         text = body_text,
-        face = Font:getFace("NotoSerif-Regular.ttf", ui_font_size),
+        face = Font:getFace("cfont", ui_font_size),
         fgcolor = Blitbuffer.COLOR_BLACK,
         width = inner_w,
         alignment = "center",
@@ -116,7 +116,7 @@ function DeleteUI.showDeleteConfirmationDialog(display_name, is_plugin, plugin_i
 
         local check_text_widget = TextBoxWidget:new{
             text = get_check_text(),
-            face = Font:getFace("NotoSerif-Regular.ttf", ui_font_size),
+            face = Font:getFace("cfont", ui_font_size),
             fgcolor = Blitbuffer.COLOR_BLACK,
             width = inner_w,
             alignment = "center",
@@ -167,29 +167,37 @@ function DeleteUI.showDeleteConfirmationDialog(display_name, is_plugin, plugin_i
     end
 
     local btn_gap = sc(12)
-    local btn_w = math.floor((inner_w - btn_gap) / 2)
+    local StorefrontUtils = require("storefront_utils")
+    local cancel_text = _("Cancel")
+    local delete_text = _("Delete")
+    local btn_font_size = StorefrontUtils.calcGroupFontSize({ cancel_text, delete_text }, inner_w, btn_gap, "cfont", sc(16))
+    local btn_widths = StorefrontUtils.calcProportionalBtnWidths({ cancel_text, delete_text }, inner_w, btn_gap, btn_font_size, "cfont")
 
-    local cancel_btn = Button:new{
-        text = _("Cancel"),
-        bordersize = sc(1),
-        radius = storefront_theme.radius_btn or sc(18),
-        padding = sc(10),
-        width = btn_w,
-        show_parent = overlay,
-        allow_flash = false,
+    local cancel_btn = StorefrontUtils.createButton{
+        text = cancel_text,
+        text_font_size = btn_font_size,
+        bold = true,
+        bordersize = storefront_theme.border_btn or sc(1),
+        radius = storefront_theme.radius_btn or sc(4),
+        width = btn_widths[1],
+        height = sc(38),
+        background = Blitbuffer.COLOR_WHITE,
+        text_font_color = Blitbuffer.COLOR_BLACK,
         callback = function()
             UIManager:close(overlay, "ui")
         end,
     }
 
-    local delete_btn = Button:new{
-        text = _("Delete"),
-        bordersize = sc(1),
-        radius = storefront_theme.radius_btn or sc(18),
-        padding = sc(10),
-        width = inner_w - btn_gap - btn_w,
-        show_parent = overlay,
-        allow_flash = false,
+    local delete_btn = StorefrontUtils.createButton{
+        text = delete_text,
+        text_font_size = btn_font_size,
+        bold = true,
+        bordersize = storefront_theme.border_btn or sc(1),
+        radius = storefront_theme.radius_btn or sc(4),
+        width = btn_widths[2],
+        height = sc(38),
+        background = Blitbuffer.COLOR_BLACK,
+        text_font_color = Blitbuffer.COLOR_WHITE,
         callback = function()
             UIManager:close(overlay, "ui")
             UIManager:nextTick(function()
@@ -240,14 +248,13 @@ function DeleteUI.showDeleteConfirmationDialog(display_name, is_plugin, plugin_i
     }
 
     overlay = InputContainer:new{
+        align = "center",
+        vertical_align = "center",
         dimen = Geom:new{ w = sw, h = sh },
         key_events = {
             Close = { { "Back" } }
         },
-        CenterContainer:new{
-            dimen = Geom:new{ w = sw, h = sh },
-            card,
-        },
+        card,
     }
 
     overlay.onClose = function()

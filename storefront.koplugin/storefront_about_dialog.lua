@@ -2,6 +2,8 @@ local Screen = require("device").screen
 local Font = require("ui/font")
 local Geom = require("ui/geometry")
 local Blitbuffer = require("ffi/blitbuffer")
+local Button = require("ui/widget/button")
+local CenterContainer = require("ui/widget/container/centercontainer")
 local UIManager = require("ui/uimanager")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local InputContainer = require("ui/widget/container/inputcontainer")
@@ -77,7 +79,6 @@ end
 
 function StorefrontAboutDialog.checkForUpdates(Storefront)
     local NetworkMgr = require("ui/network/manager")
-    local ConfirmBox = require("ui/widget/confirmbox")
     local GitHub = require("storefront_net_github")
 
     NetworkMgr:runWhenOnline(function()
@@ -234,7 +235,7 @@ function StorefrontAboutDialog.show(Storefront, on_close_cb)
             local txt = TextBoxWidget:new{
                 text = left_text,
                 face = Font:getFace("cfont", ui_font_size),
-                fgcolor = callback and Blitbuffer.COLOR_BLACK or storefront_theme.color_label_dim,
+                fgcolor = Blitbuffer.COLOR_BLACK,
                 width = max_left_w,
                 alignment = "left",
             }
@@ -335,48 +336,32 @@ function StorefrontAboutDialog.show(Storefront, on_close_cb)
             background = Blitbuffer.COLOR_DARK_GRAY,
         })
 
-        -- Close Row
-        local close_text_widget = TextWidget:new{
+        -- Close Button at bottom
+        local StorefrontUtils = require("storefront_utils")
+        local close_btn = StorefrontUtils.createButton{
             text = _("Close"),
-            face = Font:getFace("cfont", ui_font_size),
+            text_font_size = ui_font_size,
             bold = true,
-            fgcolor = Blitbuffer.COLOR_BLACK,
+            bordersize = storefront_theme.border_btn or sc(1),
+            radius = storefront_theme.radius_btn or sc(4),
+            width = dialog_w - sc(20),
+            height = sc(38),
+            background = Blitbuffer.COLOR_WHITE,
+            text_font_color = Blitbuffer.COLOR_BLACK,
+            callback = function()
+                UIManager:close(overlay, "ui")
+                if on_close_cb then on_close_cb() end
+            end,
         }
-        local close_row_content = HorizontalGroup:new{
-            HorizontalSpan:new{ width = (dialog_w - close_text_widget:getSize().w) / 2 - sc(10) },
-            close_text_widget,
-        }
-        local close_frame = FrameContainer:new{
+        table.insert(content_vg, FrameContainer:new{
+            padding = sc(8),
             bordersize = 0,
-            padding = sc(10),
             width = dialog_w - sc(4),
-            close_row_content,
-        }
-        local close_btn = InputContainer:new{ close_frame }
-        local close_size = close_frame:getSize() or { w = dialog_w - sc(4), h = 0 }
-        close_btn.ges_events = {
-            Tap = {
-                GestureRange:new{
-                    ges = "tap",
-                    range = function()
-                        local dim = close_btn.dimen
-                        if not dim then return Geom:new{ x = -1, y = -1, w = 1, h = 1 } end
-                        return Geom:new{
-                            x = dim.x or 0,
-                            y = dim.y or 0,
-                            w = close_size.w or (dialog_w - sc(4)),
-                            h = close_size.h or 0,
-                        }
-                    end
-                }
+            CenterContainer:new{
+                dimen = Geom:new{ w = dialog_w - sc(20), h = sc(38) },
+                close_btn,
             }
-        }
-        close_btn.onTap = function()
-            UIManager:close(overlay, "ui")
-            if on_close_cb then on_close_cb() end
-            return true
-        end
-        table.insert(content_vg, close_btn)
+        })
 
         -- Build modal card (Matching Settings Card style 1:1)
         local card = FrameContainer:new{

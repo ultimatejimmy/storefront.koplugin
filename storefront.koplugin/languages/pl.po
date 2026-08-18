@@ -8,11 +8,32 @@ msgstr ""
 msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
 msgstr "\"Mój drogi panie Bennet,\" powiedziała do niego pewnego dnia jego żona, \"czy słyszałeś, że Netherfield Park został w końcu wydzierżawiony?\" Pan Bennet odpowiedział, że nie. \"Ależ tak,\" odparła, \"bo pani Long właśnie tu była i opowiedziała mi o wszystkim.\" Pan Bennet nie odpowiedział."
 
+msgid "%d Categories"
+msgstr "%d kategorii"
+
+msgid "%d items"
+msgstr "%d elementów"
+
 msgid "%d patches"
 msgstr "%d poprawek"
 
 msgid "%d plugins"
 msgstr "%d wtyczek"
+
+msgid "%d wallpapers"
+msgstr "%d tapet"
+
+msgid "%d wallpapers stored on device"
+msgstr "%d tapet zapisanych na urządzeniu"
+
+msgid "%d wallpapers · Folder Shuffle (all in rotation)"
+msgstr "%d tapet · Losowo z folderu (wszystkie w rotacji)"
+
+msgid "%d wallpapers · Mode: Book Cover"
+msgstr "%d tapet · Tryb: Okładka książki"
+
+msgid "%d wallpapers · Single mode active"
+msgstr "%d tapet · Tryb pojedynczy aktywny"
 
 msgid "%s and %s"
 msgstr "%s i %s"
@@ -26,11 +47,20 @@ msgstr "%s jest aktualna."
 msgid "%s needs an update."
 msgstr "%s wymaga aktualizacji."
 
+msgid "%s · %d files"
+msgstr "%s · %d plików"
+
+msgid "%s · 1 file"
+msgstr "%s · 1 plik"
+
 msgid "(fork)"
 msgstr "(fork)"
 
 msgid "(showing %d of %d commits)"
 msgstr "(wyświetlanie %d z %d commitów)"
+
+msgid "+ Add to Shuffle Pool"
+msgstr "+ Dodaj do losowej puli"
 
 msgid "1 / 1"
 msgstr "1 / 1"
@@ -50,14 +80,44 @@ msgstr "< Poprzednia"
 msgid "?"
 msgstr "?"
 
+msgid "A -> Z"
+msgstr "A -> Z"
+
+msgid "A → Z"
+msgstr "A → Z"
+
 msgid "About"
 msgstr "O programie"
 
 msgid "About Storefront"
 msgstr "O Storefront"
 
+msgid "Active Single"
+msgstr "Pojedynczy aktywny"
+
+msgid "Active Wallpaper ✓"
+msgstr "Aktywna tapeta ✓"
+
+msgid "Active: %s"
+msgstr "Aktywny: %s"
+
+msgid "Add to Shuffle"
+msgstr "Dodaj do losowych"
+
+msgid "Add to Shuffle Pool (Enable Shuffle)"
+msgstr "Dodaj do losowych (włącz losowanie)"
+
+msgid "Added to shuffle pool & Folder Shuffle enabled!"
+msgstr "Dodano do puli i włączono losowy wygaszacz!"
+
 msgid "All"
 msgstr "Wszystkie"
+
+msgid "All Caches"
+msgstr "Wszystkie pamięci podręczne"
+
+msgid "All Categories"
+msgstr "Wszystkie kategorie"
 
 msgid "All Types"
 msgstr "Wszystkie kateg."
@@ -116,11 +176,29 @@ msgstr "Wstecz"
 msgid "Beta"
 msgstr "Beta"
 
+msgid "Black Fill"
+msgstr "Czarne wypełnienie"
+
+msgid "Blank"
+msgstr "Puste"
+
+msgid "Book Cover"
+msgstr "Okładka książki"
+
+msgid "Border Fill / Background"
+msgstr "Wypełnienie krawędzi / Tło"
+
 msgid "Both owner and repository name are required."
 msgstr "Wymagany jest zarówno właściciel, jak i nazwa repozytorium."
 
 msgid "Branch: %s"
 msgstr "Gałąź: %s"
+
+msgid "Browse Wallpapers in Storefront"
+msgstr "Przeglądaj tapety w Storefront"
+
+msgid "By "
+msgstr "By"
 
 msgid "By: %s"
 msgstr "Autor: %s"
@@ -173,11 +251,26 @@ msgstr "Źródło katalogu"
 msgid "Catalog updated: %d plugins, %d patches, %d fonts."
 msgstr "Katalog zaktualizowany: wtyczki: %d, łatki: %d, czcionki: %d."
 
+msgid "Categories"
+msgstr "Kategorie"
+
+msgid "Category: "
+msgstr "Kategoria: "
+
 msgid "Category: %s"
 msgstr "Kategoria: %s"
 
+msgid "Change..."
+msgstr "Zmień..."
+
+msgid "Changelog for %s\n%s \\\\xE2\\\\x86\\\\x92 %s"
+msgstr "Changelog for %s\n%s \\\\xE2\\\\x86\\\\x92 %s"
+
 msgid "Changelog for %s\n%s → %s"
 msgstr "Lista zmian dla %s\n%s → %s"
+
+msgid "Changelog for %s\\\n%s \\\\xE2\\\\x86\\\\x92 %s"
+msgstr "Changelog for %s\\\n%s \\\\xE2\\\\x86\\\\x92 %s"
 
 msgid "Changelog: %s"
 msgstr "Lista zmian: %s"
@@ -227,29 +320,92 @@ msgstr "Sprawdzanie aktualizacji wtyczek…"
 msgid "Choose Build — %s"
 msgstr "Wybierz kompilację — %s"
 
+msgid "Clean"
+msgstr "Wyczyść"
+
 msgid "Clear"
 msgstr "Wyczyść"
+
+msgid "Clear All"
+msgstr "Wyczyść wszystko"
+
+msgid "Clear All Caches?"
+msgstr "Wyczyścić wszystkie pamięci podręczne?"
+
+msgid "Clear Cache"
+msgstr "Wyczyść pamięć podręczną"
+
+msgid "Clear README Cache?"
+msgstr "Wyczyścić pamięć podręczną README?"
 
 msgid "Clear README cache"
 msgstr "Wyczyść pamięć README"
 
+msgid "Clear README cache (%s)?\nCached README files and images will be deleted."
+msgstr "Clear README cache (%s)?\nCached README files and images will be deleted."
+
+msgid "Clear Thumbnail Cache?"
+msgstr "Wyczyścić pamięć podręczną miniatur?"
+
+msgid "Clear Wiki Cache?"
+msgstr "Wyczyścić pamięć podręczną Wiki?"
+
+msgid "Clear Wiki cache (%s)?\nCached wiki articles and images will be deleted."
+msgstr "Clear Wiki cache (%s)?\nCached wiki articles and images will be deleted."
+
+msgid "Clear all cached data (%s)?\nAll README files, wiki articles, and thumbnails will be deleted."
+msgstr "Clear all cached data (%s)?\nAll README files, wiki articles, and thumbnails will be deleted."
+
+msgid "Clear cache…"
+msgstr "Wyczyść pamięć podręczną"
+
+msgid "Clear screensaver thumbnail cache (%s)?\nThumbnails will be re-downloaded when viewing wallpapers."
+msgstr "Clear screensaver thumbnail cache (%s)?\nThumbnails will be re-downloaded when viewing wallpapers."
+
+msgid "Clear search & filters"
+msgstr "Wyczyść wyszukiwanie i filtry"
+
 msgid "Clear search/filters"
 msgstr "Wyczyść wyszukiwanie/filtry"
+
+msgid "Cleared README cache (%s freed)."
+msgstr "Cleared README cache (%s freed)."
+
+msgid "Cleared Wiki cache (%s freed)."
+msgstr "Cleared Wiki cache (%s freed)."
+
+msgid "Cleared all caches (%s freed, %d files)."
+msgstr "Cleared all caches (%s freed, %d files)."
+
+msgid "Cleared screensaver thumbnails (%s freed)."
+msgstr "Cleared screensaver thumbnails (%s freed)."
 
 msgid "Close"
 msgstr "Zamknij"
 
+msgid "Collection"
+msgstr "Kolekcja"
+
 msgid "Commit diff: %s → %s"
 msgstr "Różnica commitów: %s → %s"
 
+msgid "Commits: %s \\\\xE2\\\\x86\\\\x92 %s"
+msgstr "Commits: %s \\\\xE2\\\\x86\\\\x92 %s"
+
 msgid "Commits: %s → %s"
 msgstr "Commity: %s → %s"
+
+msgid "Community"
+msgstr "Społeczność"
 
 msgid "Config files only"
 msgstr "Tylko pliki konfiguracyjne"
 
 msgid "Configured ✓"
 msgstr "Skonfigurowano ✓"
+
+msgid "Confirm"
+msgstr "Potwierdź"
 
 msgid "Confirm Update"
 msgstr "Potwierdź aktualizację"
@@ -259,6 +415,9 @@ msgstr "Potwierdź aktualizację wszystkiego"
 
 msgid "Connecting to GitHub…\n\nPlease wait."
 msgstr "Łączenie z GitHubem…\n\nProszę czekać."
+
+msgid "Connecting to GitHub…\\\n\\\nPlease wait."
+msgstr "Connecting to GitHub…\\\n\\\nPlease wait."
 
 msgid "Continue"
 msgstr "Kontynuuj"
@@ -305,6 +464,18 @@ msgstr "Tylko wbudowane"
 msgid "Delete"
 msgstr "Usuń"
 
+msgid "Delete "
+msgstr "Usuń"
+
+msgid "Delete '%s' from your device?"
+msgstr "Usunąć '%s' z urządzenia?"
+
+msgid "Delete File?"
+msgstr "Usunąć plik?"
+
+msgid "Delete Wallpaper?"
+msgstr "Usunąć tapetę?"
+
 msgid "Delete all cached README files? They will be re-downloaded on demand."
 msgstr "Usunąć wszystkie podręczne pliki README? Zostaną pobrane ponownie na żądanie."
 
@@ -319,6 +490,9 @@ msgstr "Usuń czcionkę "
 
 msgid "Delete font '%s'?"
 msgstr "Usunąć czcionkę '%s'?"
+
+msgid "Delete from Device"
+msgstr "Usuń z urządzenia"
 
 msgid "Delete patch"
 msgstr "Usuń łatę"
@@ -365,6 +539,27 @@ msgstr "Wyłącz wtyczkę"
 msgid "Disabled"
 msgstr "Wyłączone"
 
+msgid "Display Options"
+msgstr "Opcje wyświetlania"
+
+msgid "Displays a static wallpaper on sleep"
+msgstr "Wyświetla statyczną tapetę w trybie uśpienia"
+
+msgid "Displays a static wallpaper on sleep.\nActive: %s"
+msgstr "Wyświetla statyczną tapetę w trybie uśpienia.\nAktywny: %s"
+
+msgid "Done"
+msgstr "Gotowe"
+
+msgid "Download & Set Active"
+msgstr "Pobierz i aktywuj"
+
+msgid "Download Only"
+msgstr "Tylko pobierz"
+
+msgid "Download Only (Save to Device)"
+msgstr "Tylko pobierz (zapisz na urządzeniu)"
+
 msgid "Download failed: "
 msgstr "Pobieranie nie powiodło się: "
 
@@ -377,11 +572,20 @@ msgstr "Opcje pobierania — %s"
 msgid "Download options — %s (%s)"
 msgstr "Opcje pobierania — %s (%s)"
 
+msgid "Downloading "
+msgstr "Downloading..."
+
 msgid "Downloading %s%s…\nThis may take a moment."
 msgstr "Pobieranie %s%s…\nTo może chwilę potrwać."
 
+msgid "Downloading %s%s…\\\nThis may take a moment."
+msgstr "Downloading %s%s…\\\nThis may take a moment."
+
 msgid "Downloading %s…"
 msgstr "Pobieranie %s…"
+
+msgid "Downloading '%s'..."
+msgstr "Downloading '%s'..."
 
 msgid "Downloading patch \"%s\"…"
 msgstr "Pobieranie łatki \"%s\"…"
@@ -389,8 +593,20 @@ msgstr "Pobieranie łatki \"%s\"…"
 msgid "Downloading patch %s…"
 msgstr "Pobieranie łaty %s…"
 
+msgid "Downloading patch \\\\\"%s\\\\\"…"
+msgstr "Downloading patch \\\\\"%s\\\\\"…"
+
+msgid "Downloading screensaver..."
+msgstr "Pobieranie wygaszacza ekranu..."
+
+msgid "Downloading to shuffle pool..."
+msgstr "Pobieranie do puli losowych..."
+
 msgid "Edit"
 msgstr "Edytuj"
+
+msgid "Empty (0 KB)"
+msgstr "Puste (0 KB)"
 
 msgid "Enable"
 msgstr "Włącz"
@@ -412,6 +628,9 @@ msgstr "Wprowadź numer wtyczki"
 
 msgid "Extracting and installing plugin…\nPlease wait."
 msgstr "Rozpakowywanie i instalowanie wtyczki…\nProszę czekać."
+
+msgid "Extracting and installing plugin…\\\nPlease wait."
+msgstr "Extracting and installing plugin…\\\nPlease wait."
 
 msgid "Failed to check %s: %s"
 msgstr "Nie udało się sprawdzić %s: %s"
@@ -439,6 +658,9 @@ msgstr "Nie udało się wyłączyć poprawki '%s'."
 
 msgid "Failed to download patch: %s"
 msgstr "Nie udało się pobrać łaty: %s"
+
+msgid "Failed to download screensaver."
+msgstr "Nie udało się pobrać wygaszacza ekranu."
 
 msgid "Failed to enable patch "
 msgstr "Nie udało się włączyć łaty "
@@ -512,6 +734,9 @@ msgstr "Filtrowanie i sortowanie poprawek"
 msgid "Filter & Sort Plugins"
 msgstr "Filtrowanie i sortowanie wtyczek"
 
+msgid "Filter & Sort Screensavers"
+msgstr "Filtruj i sortuj wygaszacze"
+
 msgid "Filter Installed Patches"
 msgstr "Filtruj zainstalowane łaty"
 
@@ -536,6 +761,12 @@ msgstr "Filtry: "
 msgid "Filters: (none)"
 msgstr "Filtry: (brak)"
 
+msgid "Folder Shuffle"
+msgstr "Losowo z folderu"
+
+msgid "Folder Shuffle enabled with this wallpaper!"
+msgstr "Włączono losowanie z folderu z tą tapetą!"
+
 msgid "Font"
 msgstr "Czcionka"
 
@@ -553,6 +784,9 @@ msgstr "Styl czcionki"
 
 msgid "Fonts"
 msgstr "Czcionki"
+
+msgid "Free up storage space on your device. Cached items are re-downloaded automatically when needed."
+msgstr "Zwolnij miejsce w pamięci urządzenia. Buforowane elementy są pobierane ponownie automatycznie w razie potrzeby."
 
 msgid "GitHub API rate limit exceeded. Add a GitHub token in Storefront settings to increase the limit (10→30 req/min)."
 msgstr "Przekroczono limit zapytań GitHub API. Dodaj token GitHub w ustawieniach Storefront, aby zwiększyć limit (10→30 zap./min)."
@@ -623,6 +857,9 @@ msgstr "Zainstaluj łatę z GitHuba"
 msgid "Install plugin from GitHub"
 msgstr "Zainstaluj wtyczkę z GitHuba"
 
+msgid "Install to Default?"
+msgstr "Zainstalować w domyślnej lokalizacji?"
+
 msgid "Install to default"
 msgstr "Zainstaluj w domyślnej"
 
@@ -644,14 +881,26 @@ msgstr "Ustawienia zainstalowanych wtyczek"
 msgid "Installed Regular font style offline for \"%s\". Full font family queued for download when reconnected."
 msgstr "Zainstalowano styl czcionki Regular w trybie offline dla \"%s\". Pełna rodzina czcionek została dodana do kolejki pobierania po ponownym połączeniu."
 
+msgid "Installed Regular font style offline for \\\\\"%s\\\\\". Full font family queued for download when reconnected."
+msgstr "Installed Regular font style offline for \\\\\"%s\\\\\". Full font family queued for download when reconnected."
+
 msgid "Installed font \"%s\" (%d file(s))."
 msgstr "Zainstalowano czcionkę \"%s\" (%d plik(ów))."
+
+msgid "Installed font \\\\\"%s\\\\\" (%d file(s))."
+msgstr "Installed font \\\\\"%s\\\\\" (%d file(s))."
 
 msgid "Installed full font family \"%s\" (%d file(s))."
 msgstr "Zainstalowano pełną rodzinę czcionek \"%s\" (%d plik(ów))."
 
+msgid "Installed full font family \\\\\"%s\\\\\" (%d file(s))."
+msgstr "Installed full font family \\\\\"%s\\\\\" (%d file(s))."
+
 msgid "Installed patch \"%s\"."
 msgstr "Zainstalowano łatkę \"%s\"."
+
+msgid "Installed patch \\\\\"%s\\\\\"."
+msgstr "Installed patch \\\\\"%s\\\\\"."
 
 msgid "Installed plugin \"%s\" (version %s)."
 msgstr "Zainstalowano wtyczkę \"%s\" (wersja %s)."
@@ -676,6 +925,9 @@ msgstr "Nieprawidłowa nazwa pliku docelowego łaty."
 
 msgid "Invalid selection."
 msgstr "Nieprawidłowy wybór."
+
+msgid "Invert colors (night mode / dark background)"
+msgstr "Odwróć kolory (tryb nocny / ciemne tło)"
 
 msgid "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters."
 msgstr "Jest prawdą powszechnie znaną, że samotnemu mężczyźnie posiadającemu pokaźny majątek potrzeba do szczęścia tylko żony. Jakkolwiek mało znane byłyby uczucia czy poglądy takiego człowieka, kiedy zjawia się po raz pierwszy w nowej okolicy, prawda ta jest tak głęboko zakorzeniona w umysłach okolicznych rodzin, że uważa się go za prawną własność tej czy innej z ich córek."
@@ -736,6 +988,9 @@ msgstr "Zarządzaj ścieżkami wtyczek"
 
 msgid "Manage plugin paths\n\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
 msgstr "Zarządzaj ścieżkami wtyczek\n\nUkrycie ścieżki wpływa tylko na to, co Storefront tu wyświetla/czym zarządza. KOReader nadal będzie ładować z niej wtyczki."
+
+msgid "Manage plugin paths\\\n\\\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
+msgstr "Manage plugin paths\\\n\\\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
 
 msgid "Match"
 msgstr "Dopasuj"
@@ -836,8 +1091,17 @@ msgstr "Modyfikuj wtyczkę"
 msgid "Modify Plugin: %s"
 msgstr "Modyfikuj wtyczkę: %s"
 
+msgid "Most Downloaded"
+msgstr "Najczęściej pobierane"
+
+msgid "Most Popular"
+msgstr "Najpopularniejsze"
+
 msgid "Multiple custom plugin folders are configured. Where should this plugin be installed?"
 msgstr "Skonfigurowano wiele własnych folderów wtyczek. Gdzie zainstalować tę wtyczkę?"
+
+msgid "My wallpaper collection"
+msgstr "Moja kolekcja tapet"
 
 msgid "Name (A-Z)"
 msgstr "Nazwa (A-Z)"
@@ -865,6 +1129,9 @@ msgstr "Dalej"
 
 msgid "Next >"
 msgstr "Następna >"
+
+msgid "No Fill (Transparent)"
+msgstr "Bez wypełnienia (przezroczyste)"
 
 msgid "No Lua files found in plugin directory"
 msgstr "Nie znaleziono plików Lua w katalogu wtyczki"
@@ -959,11 +1226,23 @@ msgstr "Brak wydań dla tego repozytorium."
 msgid "No remote version info for %s."
 msgstr "Brak zdalnych informacji o wersji dla %s."
 
+msgid "No screensavers match this filter."
+msgstr "Żaden wygaszacz nie pasuje do tego filtra."
+
 msgid "No stable releases found — uncheck filter to show all releases"
 msgstr "Nie znaleziono stabilnych wydań — odznacz filtr, aby pokazać wszystkie wydań"
 
 msgid "No tracked plugins to check."
 msgstr "Brak śledzonych wtyczek do sprawdzenia."
+
+msgid "No wallpapers found in your screensavers folder.\n\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
+msgstr "Nie znaleziono tapet w folderze wygaszaczy.\n\nPrzejrzyj katalog Storefront, aby pobrać tapety!"
+
+msgid "No wallpapers found in your screensavers folder.\\\n\\\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
+msgstr "No wallpapers found in your screensavers folder.\\\n\\\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
+
+msgid "None selected"
+msgstr "Nic nie wybrano"
 
 msgid "Not matched with a repository."
 msgstr "Brak dopasowania do repozytorium."
@@ -974,11 +1253,17 @@ msgstr "Nie ustawiono"
 msgid "Notes"
 msgstr "Notatki"
 
+msgid "OK"
+msgstr "OK"
+
 msgid "Offline Regular"
 msgstr "Offline Zwykły"
 
 msgid "Open"
 msgstr "Otwórz"
+
+msgid "Open Wallpaper Collection Gallery"
+msgstr "Otwórz galerię tapet"
 
 msgid "Open details"
 msgstr "Otwórz szczegóły"
@@ -988,6 +1273,9 @@ msgstr "Opcjonalnie. Zwiększa limit zapytań API GitHub. Wygeneruj token (klasy
 
 msgid "Optional. Raises the GitHub API rate limit. Generate one (classic, 'public_repo' scope is enough) at github.com/settings/tokens, then paste it here."
 msgstr "Opcjonalnie. Zwiększa limit zapytań GitHub API. Wygeneruj token (klasyczny, zakres 'public_repo' wystarczy) na github.com/settings/tokens, a następnie wklej go tutaj."
+
+msgid "Options ▾"
+msgstr "Opcje ▾"
 
 msgid "Origin"
 msgstr "Pochodzenie"
@@ -1021,6 +1309,9 @@ msgstr "Łata "
 
 msgid "Patch %s has been %s."
 msgstr "Łata %s została %s."
+
+msgid "Patch '%s' deleted."
+msgstr "Łatka '%s' została usunięta."
 
 msgid "Patch '%s' disabled."
 msgstr "Poprawka '%s' została wyłączona."
@@ -1097,6 +1388,9 @@ msgstr "Wtyczki"
 msgid "Plugins cached: %s (last update: %s)"
 msgstr "Zbuforowane wtyczki: %s (ostatnia aktualizacja: %s)"
 
+msgid "Pool size: %d wallpapers in rotation"
+msgstr "Rozmiar puli: %d tapet w rotacji"
+
 msgid "Pre-installed core KOReader plugin."
 msgstr "Fabrycznie zainstalowana wtyczka systemowa KOReader."
 
@@ -1112,14 +1406,32 @@ msgstr "README"
 msgid "README download failed: "
 msgstr "Pobieranie README nie powiodło się: "
 
+msgid "README files & images"
+msgstr "Pliki README i obrazy"
+
+msgid "Rate Wallpaper"
+msgstr "Oceń tapetę"
+
 msgid "Reading Passage Specimen"
 msgstr "Próbka czytania"
+
+msgid "Reading Progress"
+msgstr "Postęp czytania"
+
+msgid "Reading Progress / Summary"
+msgstr "Postęp czytania / Podsumowanie"
+
+msgid "Recently Added"
+msgstr "Ostatnio dodane"
 
 msgid "Refresh"
 msgstr "Odśwież"
 
 msgid "Refresh cache"
 msgstr "Odśwież pamięć podręczną"
+
+msgid "Refresh catalog"
+msgstr "Odśwież katalog"
 
 msgid "Refreshing catalog via Direct GitHub API…"
 msgstr "Odświeżanie katalogu przez Direct GitHub API…"
@@ -1181,6 +1493,15 @@ msgstr "Zdalna: (niesprawdzono)"
 msgid "Remove"
 msgstr "Usuń"
 
+msgid "Remove "
+msgstr "Usuń"
+
+msgid "Remove '%s' from your wallpaper collection?"
+msgstr "Usunąć '%s' z kolekcji tapet?"
+
+msgid "Remove Wallpaper?"
+msgstr "Usunąć tapetę?"
+
 msgid "Rename"
 msgstr "Zmień nazwę"
 
@@ -1235,6 +1556,30 @@ msgstr "Próbka tekstu"
 msgid "Save"
 msgstr "Zapisz"
 
+msgid "Screensaver"
+msgstr "Wygaszacz ekranu"
+
+msgid "Screensaver & Wallpapers"
+msgstr "Wygaszacz ekranu i tapety"
+
+msgid "Screensaver Details"
+msgstr "Szczegóły wygaszacza"
+
+msgid "Screensaver Mode"
+msgstr "Tryb wygaszacza"
+
+msgid "Screensaver Settings"
+msgstr "Ustawienia wygaszacza"
+
+msgid "Screensaver mode"
+msgstr "Tryb wygaszacza"
+
+msgid "Screensaver thumbnails"
+msgstr "Miniatury wygaszaczy"
+
+msgid "Screensavers"
+msgstr "Wygaszacze ekranu"
+
 msgid "Search"
 msgstr "Szukaj"
 
@@ -1244,11 +1589,23 @@ msgstr "Szukaj \"%s\""
 msgid "Search & API"
 msgstr "Wyszukiwanie i API"
 
+msgid "Search filter (\"%s\") is not applied to Updates."
+msgstr "Search filter (\"%s\") is not applied to Updates."
+
+msgid "Search filter (\\\\\"%s\\\\\") is not applied to Updates."
+msgstr "Search filter (\\\\\"%s\\\\\") is not applied to Updates."
+
 msgid "Search text"
 msgstr "Szukaj tekstu"
 
 msgid "Search: "
 msgstr "Szukaj: "
+
+msgid "Select All"
+msgstr "Zaznacz wszystko"
+
+msgid "Select Categories"
+msgstr "Wybierz kategorie"
 
 msgid "Select a repository patch entry to match with the chosen file."
 msgstr "Wybierz wpis łaty z repozytorium, aby dopasować z wybranym plikiem."
@@ -1274,11 +1631,53 @@ msgstr "Wybierz repozytorium"
 msgid "Set"
 msgstr "Ustaw"
 
+msgid "Set Active Single"
+msgstr "Ustaw jako aktywną tapetę"
+
+msgid "Set Single"
+msgstr "Ustaw pojedynczą"
+
+msgid "Set as Active"
+msgstr "Ustaw jako aktywne"
+
+msgid "Set as Active Single Wallpaper"
+msgstr "Ustaw jako aktywną pojedynczą tapetę"
+
+msgid "Set as active single wallpaper!"
+msgstr "Ustawiono jako aktywną pojedynczą tapetę!"
+
 msgid "Settings"
 msgstr "Ustawienia"
 
 msgid "Show needs update"
 msgstr "Pokaż wymagające aktualizacji"
+
+msgid "Show reading progress banner overlay"
+msgstr "Pokaż baner postępu czytania"
+
+msgid "Shows reading stats, percentage, and chapter progress"
+msgstr "Pokazuje statystyki czytania, procent i postęp rozdziału"
+
+msgid "Shows the cover of the book currently being read"
+msgstr "Pokazuje okładkę aktualnie czytanej książki"
+
+msgid "Shuffle (%d)"
+msgstr "Losowo (%d)"
+
+msgid "Shuffle Pool"
+msgstr "Pula losowych"
+
+msgid "Shuffles through all wallpapers in folder on sleep.\nPool size: %d wallpapers in rotation"
+msgstr "Losowo wyświetla wszystkie tapety z folderu w uśpieniu.\nRozmiar puli: %d tapet w rotacji"
+
+msgid "Single"
+msgstr "Pojedynczy"
+
+msgid "Single Wallpaper"
+msgstr "Pojedyncza tapeta"
+
+msgid "Solid fill for screen margins & letterboxing"
+msgstr "Wypełnienie marginesów ekranu"
 
 msgid "Sort"
 msgstr "Sortuj"
@@ -1288,6 +1687,9 @@ msgstr "Tryb sortowania"
 
 msgid "Sort: A-Z"
 msgstr "Sortuj: A-Z"
+
+msgid "Sort: Most Liked"
+msgstr "Sortuj: Najbardziej lubiane"
 
 msgid "Sort: Name (A → Z)"
 msgstr "Sortuj: Nazwa (A-Z)"
@@ -1352,6 +1754,9 @@ msgstr "Storefront · Aktualizacje"
 msgid "Storefront: Open"
 msgstr "Storefront: Otwórz"
 
+msgid "Stretch image to fill entire screen"
+msgstr "Rozciągnij obraz na cały ekran"
+
 msgid "Style: "
 msgstr "Styl: "
 
@@ -1391,6 +1796,24 @@ msgstr "Pchnąć w tę łódź jeża lub ośm skrzyń fig."
 msgid "This action cannot be undone.\n\nChanges will take effect after restart."
 msgstr "Tej operacji nie można cofnąć.\n\nZmiany wejdą w życie po ponownym uruchomieniu."
 
+msgid "This action cannot be undone.\\\n\\\nChanges will take effect after restart."
+msgstr "This action cannot be undone.\\\n\\\nChanges will take effect after restart."
+
+msgid "This wallpaper is currently set as your active screensaver."
+msgstr "Ta tapeta jest obecnie ustawiona jako aktywny wygaszacz ekranu."
+
+msgid "This will delete all cached README files, wiki articles, and screensaver thumbnails (%s)."
+msgstr "Spowoduje to usunięcie wszystkich zbuforowanych plików README, artykułów wiki i miniatur wygaszacza (%s)."
+
+msgid "This will delete cached README markdown files and downloaded images (%s)."
+msgstr "Spowoduje to usunięcie zbuforowanych plików markdown README i pobranych obrazów (%s)."
+
+msgid "This will delete cached screensaver thumbnail previews (%s)."
+msgstr "Spowoduje to usunięcie zbuforowanych podglądów miniatur wygaszacza ekranu (%s)."
+
+msgid "This will delete cached wiki articles and downloaded images (%s)."
+msgstr "Spowoduje to usunięcie zbuforowanych artykułów wiki i pobranych obrazów (%s)."
+
 msgid "This will take effect on next restart."
 msgstr "Zmiany zostaną zastosowane po ponownym uruchomieniu."
 
@@ -1399,6 +1822,9 @@ msgstr "Łącznie commitów: %d"
 
 msgid "Tracked: %d"
 msgstr "Śledzone: %d"
+
+msgid "Transparent overlay (page content visible behind)"
+msgstr "Przezroczysta nakładka (treść strony widoczna w tle)"
 
 msgid "Type"
 msgstr "Typ"
@@ -1481,11 +1907,20 @@ msgstr "Zaktualizowano łatkę \"%s\"."
 msgid "Updated patch %s."
 msgstr "Zaktualizowano łatkę %s."
 
+msgid "Updated patch \\\\\"%s\\\\\"."
+msgstr "Updated patch \\\\\"%s\\\\\"."
+
 msgid "Updated plugin \"%s\" to version %s."
 msgstr "Zaktualizowano wtyczkę \"%s\" do wersji %s."
 
 msgid "Updated plugin \"%s\"."
 msgstr "Zaktualizowano wtyczkę \"%s\"."
+
+msgid "Updated plugin \\\\\"%s\\\\\" to version %s."
+msgstr "Updated plugin \\\\\"%s\\\\\" to version %s."
+
+msgid "Updated plugin \\\\\"%s\\\\\"."
+msgstr "Updated plugin \\\\\"%s\\\\\"."
 
 msgid "Updated: %s"
 msgstr "Zaktualizowano: %s"
@@ -1514,17 +1949,59 @@ msgstr "Wersje"
 msgid "View README"
 msgstr "Zobacz README"
 
+msgid "View commits (%s \\\\xE2\\\\x86\\\\x92 %s)"
+msgstr "View commits (%s \\\\xE2\\\\x86\\\\x92 %s)"
+
 msgid "View commits (%s → %s)"
 msgstr "Zobacz commity (%s → %s)"
 
+msgid "Wallpaper Collection"
+msgstr "Kolekcja tapet"
+
+msgid "Wallpaper Options"
+msgstr "Opcje tapety"
+
+msgid "Wallpaper deleted from device."
+msgstr "Tapeta została usunięta z urządzenia."
+
+msgid "Wallpaper removed"
+msgstr "Tapeta usunięta"
+
+msgid "Wallpaper saved to collection!"
+msgstr "Tapeta zapisana w kolekcji!"
+
+msgid "Wallpaper set as active KOReader screensaver!"
+msgstr "Tapeta ustawiona jako wygaszacz KOReader!"
+
+msgid "Wallpaper set as active screensaver!"
+msgstr "Tapeta została ustawiona jako aktywny wygaszacz ekranu!"
+
 msgid "Warning: the selected version is older than what is currently installed. You are downgrading."
 msgstr "Ostrzeżenie: wybrana wersja jest starsza niż obecnie zainstalowana. Przywracasz starszą wersję."
+
+msgid "White Fill"
+msgstr "Białe wypełnienie"
 
 msgid "Wiki"
 msgstr "Wiki"
 
 msgid "Wiki Pages"
 msgstr "Strony Wiki"
+
+msgid "Wiki pages & images"
+msgstr "Strony wiki i obrazy"
+
+msgid "Z -> A"
+msgstr "Z -> A"
+
+msgid "Z → A"
+msgstr "Z → A"
+
+msgid "[ Loading preview... ]"
+msgstr "[ Ładowanie podglądu... ]"
+
+msgid "[ Wallpaper Preview Loading... ]"
+msgstr "[ Ładowanie podglądu tapety... ]"
 
 msgid "[Ignored]"
 msgstr "[Zignorowano]"
@@ -1534,6 +2011,12 @@ msgstr "[szkic]"
 
 msgid "[pre]"
 msgstr "[pre]"
+
+msgid "\\\\\"My dear Mr. Bennet,\\\\\" said his lady to him one day, \\\\\"have you heard that Netherfield Park is let at last?\\\\\" Mr. Bennet replied that he had not. \\\\\"But it is,\\\\\" returned she; \\\\\"for Mrs. Long has just been here, and she told me all about it.\\\\\" Mr. Bennet made no answer."
+msgstr "\\\\\"My dear Mr. Bennet,\\\\\" said his lady to him one day, \\\\\"have you heard that Netherfield Park is let at last?\\\\\" Mr. Bennet replied that he had not. \\\\\"But it is,\\\\\" returned she; \\\\\"for Mrs. Long has just been here, and she told me all about it.\\\\\" Mr. Bennet made no answer."
+
+msgid "\\\\xC2\\\\xB7"
+msgstr "\\\\xC2\\\\xB7"
 
 msgid "about_text"
 msgstr "Storefront to menedżer pakietów dla wtyczek, poprawek i czcionek KOReader."
@@ -1760,6 +2243,9 @@ msgstr "README"
 msgid "tab_sample_text"
 msgstr "Przykładowy tekst"
 
+msgid "tab_screensavers"
+msgstr "Tapety"
+
 msgid "tab_versions"
 msgstr "Wersje"
 
@@ -1778,11 +2264,17 @@ msgstr "·"
 msgid "≥ %s ⭐"
 msgstr "≥ %s ⭐"
 
+msgid "★ ACTIVE"
+msgstr "★ AKTYWNY"
+
+msgid "⚙ Settings"
+msgstr "⚙ Ustawienia"
+
+msgid "⚙ Settings..."
+msgstr "⚙ Ustawienia..."
+
 msgid "✓ Current"
 msgstr "✓ Aktualna"
-
-msgid "Screensavers"
-msgstr ""
 
 msgid "Downloading…"
 msgstr ""

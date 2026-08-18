@@ -8,11 +8,32 @@ msgstr ""
 msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
 msgstr "\"عزيزي السيد بينيت،\" قالت له زوجته ذات يوم، \"هل سمعت أن نيثرفيلد بارك قد أُجّرت أخيراً؟\" فأجاب السيد بينيت بأنه لم يسمع. \"لكنها كذلك،\" أردفت قائلة؛ \"فقد كانت السيدة لونغ هنا للتو، وأخبرتني بكل شيء عنها.\" فلم يرد السيد بينيت."
 
+msgid "%d Categories"
+msgstr "%d فئات"
+
+msgid "%d items"
+msgstr "%d عناصر"
+
 msgid "%d patches"
 msgstr "%d رقع"
 
 msgid "%d plugins"
 msgstr "%d إضافات"
+
+msgid "%d wallpapers"
+msgstr "%d خلفيات"
+
+msgid "%d wallpapers stored on device"
+msgstr "%d خلفيات محفوظة على الجهاز"
+
+msgid "%d wallpapers · Folder Shuffle (all in rotation)"
+msgstr "%d خلفيات · تبديل المجلد (الكل بالتناوب)"
+
+msgid "%d wallpapers · Mode: Book Cover"
+msgstr "%d خلفيات · الوضع: غلاف الكتاب"
+
+msgid "%d wallpapers · Single mode active"
+msgstr "%d خلفيات · الوضع الفردي نشط"
 
 msgid "%s and %s"
 msgstr "%s و %s"
@@ -26,11 +47,20 @@ msgstr "%s محدث."
 msgid "%s needs an update."
 msgstr "%s يحتاج إلى تحديث."
 
+msgid "%s · %d files"
+msgstr "%s · %d ملفات"
+
+msgid "%s · 1 file"
+msgstr "%s · ملف واحد"
+
 msgid "(fork)"
 msgstr "(تفريع)"
 
 msgid "(showing %d of %d commits)"
 msgstr "(عرض %d من %d التزامات)"
+
+msgid "+ Add to Shuffle Pool"
+msgstr "+ إضافة إلى العرض العشوائي"
 
 msgid "1 / 1"
 msgstr "1 / 1"
@@ -50,14 +80,44 @@ msgstr "السابق"
 msgid "?"
 msgstr "?"
 
+msgid "A -> Z"
+msgstr "أ -> ي"
+
+msgid "A → Z"
+msgstr "أ → ي"
+
 msgid "About"
 msgstr "حول"
 
 msgid "About Storefront"
 msgstr "حول Storefront"
 
+msgid "Active Single"
+msgstr "فردي نشط"
+
+msgid "Active Wallpaper ✓"
+msgstr "الخلفية النشطة ✓"
+
+msgid "Active: %s"
+msgstr "نشط: %s"
+
+msgid "Add to Shuffle"
+msgstr "إضافة للتبديل"
+
+msgid "Add to Shuffle Pool (Enable Shuffle)"
+msgstr "إضافة لمجموعة التبديل (تفعيل التبديل)"
+
+msgid "Added to shuffle pool & Folder Shuffle enabled!"
+msgstr "تمت الإضافة وتفعيل العرض العشوائي للمجلد!"
+
 msgid "All"
 msgstr "الكل"
+
+msgid "All Caches"
+msgstr "كل الذاكرة المؤقتة"
+
+msgid "All Categories"
+msgstr "جميع الفئات"
 
 msgid "All Types"
 msgstr "جميع الأنواع"
@@ -116,11 +176,29 @@ msgstr "رجوع"
 msgid "Beta"
 msgstr "تجريبي"
 
+msgid "Black Fill"
+msgstr "تعبئة سوداء"
+
+msgid "Blank"
+msgstr "فارغ"
+
+msgid "Book Cover"
+msgstr "غلاف الكتاب"
+
+msgid "Border Fill / Background"
+msgstr "تعبئة الحدود / الخلفية"
+
 msgid "Both owner and repository name are required."
 msgstr "اسم المالك واسم المستودع مطلوبان معاً."
 
 msgid "Branch: %s"
 msgstr "الفرع: %s"
+
+msgid "Browse Wallpapers in Storefront"
+msgstr "تصفح الخلفيات في Storefront"
+
+msgid "By "
+msgstr "By"
 
 msgid "By: %s"
 msgstr "بواسطة: %s"
@@ -173,11 +251,26 @@ msgstr "مصدر الكتالوج"
 msgid "Catalog updated: %d plugins, %d patches, %d fonts."
 msgstr "تم تحديث الكتالوج: %d إضافة، %d تصحيح، %d خطوط."
 
+msgid "Categories"
+msgstr "الفئات"
+
+msgid "Category: "
+msgstr "الفئة: "
+
 msgid "Category: %s"
 msgstr "الفئة: %s"
 
+msgid "Change..."
+msgstr "تغيير..."
+
+msgid "Changelog for %s\n%s \\\\xE2\\\\x86\\\\x92 %s"
+msgstr "Changelog for %s\n%s \\\\xE2\\\\x86\\\\x92 %s"
+
 msgid "Changelog for %s\n%s → %s"
 msgstr "سجل التغييرات لـ %s\n%s → %s"
+
+msgid "Changelog for %s\\\n%s \\\\xE2\\\\x86\\\\x92 %s"
+msgstr "Changelog for %s\\\n%s \\\\xE2\\\\x86\\\\x92 %s"
 
 msgid "Changelog: %s"
 msgstr "سجل التغييرات: %s"
@@ -227,29 +320,92 @@ msgstr "التحقق من تحديثات الملحق…"
 msgid "Choose Build — %s"
 msgstr "اختر البناء — %s"
 
+msgid "Clean"
+msgstr "تنظيف"
+
 msgid "Clear"
 msgstr "مسح"
+
+msgid "Clear All"
+msgstr "مسح الكل"
+
+msgid "Clear All Caches?"
+msgstr "مسح كل الذاكرة المؤقتة؟"
+
+msgid "Clear Cache"
+msgstr "مسح الذاكرة المؤقتة"
+
+msgid "Clear README Cache?"
+msgstr "مسح ذاكرة README المؤقتة؟"
 
 msgid "Clear README cache"
 msgstr "مسح التخزين المؤقت"
 
+msgid "Clear README cache (%s)?\nCached README files and images will be deleted."
+msgstr "Clear README cache (%s)?\nCached README files and images will be deleted."
+
+msgid "Clear Thumbnail Cache?"
+msgstr "مسح ذاكرة الصور المصغرة المؤقتة؟"
+
+msgid "Clear Wiki Cache?"
+msgstr "مسح ذاكرة Wiki المؤقتة؟"
+
+msgid "Clear Wiki cache (%s)?\nCached wiki articles and images will be deleted."
+msgstr "Clear Wiki cache (%s)?\nCached wiki articles and images will be deleted."
+
+msgid "Clear all cached data (%s)?\nAll README files, wiki articles, and thumbnails will be deleted."
+msgstr "Clear all cached data (%s)?\nAll README files, wiki articles, and thumbnails will be deleted."
+
+msgid "Clear cache…"
+msgstr "مسح الذاكرة المؤقتة"
+
+msgid "Clear screensaver thumbnail cache (%s)?\nThumbnails will be re-downloaded when viewing wallpapers."
+msgstr "Clear screensaver thumbnail cache (%s)?\nThumbnails will be re-downloaded when viewing wallpapers."
+
+msgid "Clear search & filters"
+msgstr "مسح البحث والتصفيات"
+
 msgid "Clear search/filters"
 msgstr "مسح البحث/المصفيات"
+
+msgid "Cleared README cache (%s freed)."
+msgstr "Cleared README cache (%s freed)."
+
+msgid "Cleared Wiki cache (%s freed)."
+msgstr "Cleared Wiki cache (%s freed)."
+
+msgid "Cleared all caches (%s freed, %d files)."
+msgstr "Cleared all caches (%s freed, %d files)."
+
+msgid "Cleared screensaver thumbnails (%s freed)."
+msgstr "Cleared screensaver thumbnails (%s freed)."
 
 msgid "Close"
 msgstr "إغلاق"
 
+msgid "Collection"
+msgstr "المجموعة"
+
 msgid "Commit diff: %s → %s"
 msgstr "فروق التعديل: %s → %s"
 
+msgid "Commits: %s \\\\xE2\\\\x86\\\\x92 %s"
+msgstr "Commits: %s \\\\xE2\\\\x86\\\\x92 %s"
+
 msgid "Commits: %s → %s"
 msgstr "التغييرات: %s → %s"
+
+msgid "Community"
+msgstr "المجتمع"
 
 msgid "Config files only"
 msgstr "ملفات التكوين فقط"
 
 msgid "Configured ✓"
 msgstr "مُعد ✓"
+
+msgid "Confirm"
+msgstr "تأكيد"
 
 msgid "Confirm Update"
 msgstr "تأكيد التحديث"
@@ -259,6 +415,9 @@ msgstr "تأكيد تحديث الكل"
 
 msgid "Connecting to GitHub…\n\nPlease wait."
 msgstr "جاري الاتصال بـ GitHub…\n\nيرجى الانتظار."
+
+msgid "Connecting to GitHub…\\\n\\\nPlease wait."
+msgstr "Connecting to GitHub…\\\n\\\nPlease wait."
 
 msgid "Continue"
 msgstr "متابعة"
@@ -305,6 +464,18 @@ msgstr "الافتراضي فقط"
 msgid "Delete"
 msgstr "حذف"
 
+msgid "Delete "
+msgstr "حذف"
+
+msgid "Delete '%s' from your device?"
+msgstr "حذف '%s' من جهازك؟"
+
+msgid "Delete File?"
+msgstr "حذف الملف؟"
+
+msgid "Delete Wallpaper?"
+msgstr "حذف الخلفية؟"
+
 msgid "Delete all cached README files? They will be re-downloaded on demand."
 msgstr "حذف جميع ملفات README المخزنة مؤقتًا؟ سيتم إعادة تنزيلها عند الطلب."
 
@@ -319,6 +490,9 @@ msgstr "حذف الخط "
 
 msgid "Delete font '%s'?"
 msgstr "هل تريد حذف الخط '%s'؟"
+
+msgid "Delete from Device"
+msgstr "حذف من الجهاز"
 
 msgid "Delete patch"
 msgstr "حذف الرقعة"
@@ -365,6 +539,27 @@ msgstr "تعطيل الملحق"
 msgid "Disabled"
 msgstr "معطل"
 
+msgid "Display Options"
+msgstr "خيارات العرض"
+
+msgid "Displays a static wallpaper on sleep"
+msgstr "يعرض خلفية ثابتة أثناء السكون"
+
+msgid "Displays a static wallpaper on sleep.\nActive: %s"
+msgstr "يعرض خلفية ثابتة أثناء السكون.\nالنشط: %s"
+
+msgid "Done"
+msgstr "تم"
+
+msgid "Download & Set Active"
+msgstr "تنزيل وتفعيل"
+
+msgid "Download Only"
+msgstr "تنزيل فقط"
+
+msgid "Download Only (Save to Device)"
+msgstr "تنزيل فقط (حفظ بالجهاز)"
+
 msgid "Download failed: "
 msgstr "فشل التنزيل: "
 
@@ -377,11 +572,20 @@ msgstr "خيارات التنزيل — %s"
 msgid "Download options — %s (%s)"
 msgstr "خيارات التنزيل — %s (%s)"
 
+msgid "Downloading "
+msgstr "Downloading..."
+
 msgid "Downloading %s%s…\nThis may take a moment."
 msgstr "جاري تنزيل %s%s…\nقد يستغرق هذا لحظة."
 
+msgid "Downloading %s%s…\\\nThis may take a moment."
+msgstr "Downloading %s%s…\\\nThis may take a moment."
+
 msgid "Downloading %s…"
 msgstr "جاري تحميل %s…"
+
+msgid "Downloading '%s'..."
+msgstr "Downloading '%s'..."
 
 msgid "Downloading patch \"%s\"…"
 msgstr "جاري تنزيل التصحيح \"%s\"…"
@@ -389,8 +593,20 @@ msgstr "جاري تنزيل التصحيح \"%s\"…"
 msgid "Downloading patch %s…"
 msgstr "جاري تنزيل التصحيح %s…"
 
+msgid "Downloading patch \\\\\"%s\\\\\"…"
+msgstr "Downloading patch \\\\\"%s\\\\\"…"
+
+msgid "Downloading screensaver..."
+msgstr "جارٍ تنزيل شاشة التوقف..."
+
+msgid "Downloading to shuffle pool..."
+msgstr "جارٍ التنزيل إلى مجموعة التبديل..."
+
 msgid "Edit"
 msgstr "تعديل"
+
+msgid "Empty (0 KB)"
+msgstr "فارغ (0 كيلوبايت)"
 
 msgid "Enable"
 msgstr "تمكين"
@@ -412,6 +628,9 @@ msgstr "أدخل رقم الإضافة"
 
 msgid "Extracting and installing plugin…\nPlease wait."
 msgstr "جاري استخراج الإضافة وتثبيتها…\nيرجى الانتظار."
+
+msgid "Extracting and installing plugin…\\\nPlease wait."
+msgstr "Extracting and installing plugin…\\\nPlease wait."
 
 msgid "Failed to check %s: %s"
 msgstr "فشل التحقق من %s: %s"
@@ -439,6 +658,9 @@ msgstr "فشل تعطيل التصحيح '%s'."
 
 msgid "Failed to download patch: %s"
 msgstr "فشل تنزيل الرقعة: %s"
+
+msgid "Failed to download screensaver."
+msgstr "فشل تنزيل شاشة التوقف."
 
 msgid "Failed to enable patch "
 msgstr "فشل تمكين التصحيح "
@@ -512,6 +734,9 @@ msgstr "تصفية وفرز التصحيحات"
 msgid "Filter & Sort Plugins"
 msgstr "تصفية وفرز الإضافات"
 
+msgid "Filter & Sort Screensavers"
+msgstr "تصفية وفرز شاشات التوقف"
+
 msgid "Filter Installed Patches"
 msgstr "تصفية التصحيحات المثبتة"
 
@@ -536,6 +761,12 @@ msgstr "الفلاتر: "
 msgid "Filters: (none)"
 msgstr "الفلاتر: (لا يوجد)"
 
+msgid "Folder Shuffle"
+msgstr "عرض عشوائي للمجلد"
+
+msgid "Folder Shuffle enabled with this wallpaper!"
+msgstr "تم تفعيل تبديل المجلد مع هذه الخلفية!"
+
 msgid "Font"
 msgstr "الخط"
 
@@ -553,6 +784,9 @@ msgstr "نمط الخط"
 
 msgid "Fonts"
 msgstr "الخطوط"
+
+msgid "Free up storage space on your device. Cached items are re-downloaded automatically when needed."
+msgstr "توفير مساحة التخزين على جهازك. يُعاد تنزيل العناصر المخزنة مؤقتًا تلقائيًا عند الحاجة."
 
 msgid "GitHub API rate limit exceeded. Add a GitHub token in Storefront settings to increase the limit (10→30 req/min)."
 msgstr "تم تجاوز حد استخدام API لـ GitHub. أضف رمز GitHub في إعدادات متجر الإضافات لزيادة الحد (10←30 طلب/دقيقة)."
@@ -623,6 +857,9 @@ msgstr "تثبيت تصحيح من GitHub"
 msgid "Install plugin from GitHub"
 msgstr "تثبيت إضافة من GitHub"
 
+msgid "Install to Default?"
+msgstr "التثبيت في المجلد الافتراضي؟"
+
 msgid "Install to default"
 msgstr "التثبيت في الموقع الافتراضي"
 
@@ -644,14 +881,26 @@ msgstr "إعدادات الإضافات المثبتة"
 msgid "Installed Regular font style offline for \"%s\". Full font family queued for download when reconnected."
 msgstr "تم تثبيت نمط الخط العادي دون اتصال لـ \"%s\". تم إدراج عائلة الخط الكاملة في قائمة الانتظار للتنزيل عند إعادة الاتصال."
 
+msgid "Installed Regular font style offline for \\\\\"%s\\\\\". Full font family queued for download when reconnected."
+msgstr "Installed Regular font style offline for \\\\\"%s\\\\\". Full font family queued for download when reconnected."
+
 msgid "Installed font \"%s\" (%d file(s))."
 msgstr "تم تثبيت الخط \"%s\" (%d ملفات)."
+
+msgid "Installed font \\\\\"%s\\\\\" (%d file(s))."
+msgstr "Installed font \\\\\"%s\\\\\" (%d file(s))."
 
 msgid "Installed full font family \"%s\" (%d file(s))."
 msgstr "تم تثبيت عائلة الخط الكاملة \"%s\" (%d ملفات)."
 
+msgid "Installed full font family \\\\\"%s\\\\\" (%d file(s))."
+msgstr "Installed full font family \\\\\"%s\\\\\" (%d file(s))."
+
 msgid "Installed patch \"%s\"."
 msgstr "تم تثبيت التصحيح \"%s\"."
+
+msgid "Installed patch \\\\\"%s\\\\\"."
+msgstr "Installed patch \\\\\"%s\\\\\"."
 
 msgid "Installed plugin \"%s\" (version %s)."
 msgstr "تم تثبيت الإضافة \"%s\" (الإصدار %s)."
@@ -676,6 +925,9 @@ msgstr "اسم ملف الهدف للرقعة غير صالحة."
 
 msgid "Invalid selection."
 msgstr "تحديد غير صالح."
+
+msgid "Invert colors (night mode / dark background)"
+msgstr "عكس الألوان (الوضع الليلي / خلفية داكنة)"
 
 msgid "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters."
 msgstr "إنها حقيقة معترف بها عالمياً، أن الرجل الأعزب الذي يملك ثروة جيدة لا بد أنه يبحث عن زوجة."
@@ -736,6 +988,9 @@ msgstr "إدارة مسارات الملحقات"
 
 msgid "Manage plugin paths\n\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
 msgstr "إدارة مسارات الإضافات\n\nإخفاء مسار يؤثر فقط على ما يعرضه/يديره Storefront هنا. سيستمر KOReader في تحميل الإضافات منه."
+
+msgid "Manage plugin paths\\\n\\\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
+msgstr "Manage plugin paths\\\n\\\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
 
 msgid "Match"
 msgstr "مطابقة"
@@ -836,8 +1091,17 @@ msgstr "تعديل الإضافة"
 msgid "Modify Plugin: %s"
 msgstr "تعديل الملحق: %s"
 
+msgid "Most Downloaded"
+msgstr "الأكثر تنزيلاً"
+
+msgid "Most Popular"
+msgstr "الأكثر شعبية"
+
 msgid "Multiple custom plugin folders are configured. Where should this plugin be installed?"
 msgstr "تم تكوين مجلدات إضافات مخصصة متعددة. أين ينبغي تثبيت هذه الإضافة؟"
+
+msgid "My wallpaper collection"
+msgstr "مجموعة خلفياتي"
 
 msgid "Name (A-Z)"
 msgstr "الاسم (أ-ي)"
@@ -865,6 +1129,9 @@ msgstr "التالي"
 
 msgid "Next >"
 msgstr "التالي >"
+
+msgid "No Fill (Transparent)"
+msgstr "بدون تعبئة (شفاف)"
 
 msgid "No Lua files found in plugin directory"
 msgstr "لم يتم العثور على ملفات Lua في دليل الملحق"
@@ -959,11 +1226,23 @@ msgstr "لم يتم العثور على إصدارات لهذا المستودع
 msgid "No remote version info for %s."
 msgstr "لا توجد معلومات إصدار بعيد لـ %s."
 
+msgid "No screensavers match this filter."
+msgstr "لا توجد شاشات توقف تطابق هذا الفلتر."
+
 msgid "No stable releases found — uncheck filter to show all releases"
 msgstr "لم يتم العثور على إصدارات مستقرة — ألغِ تحديد المصفاة لإظهار كافة الإصدارات"
 
 msgid "No tracked plugins to check."
 msgstr "لا توجد ملحقات متتبعة للتحقق منها."
+
+msgid "No wallpapers found in your screensavers folder.\n\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
+msgstr "لم يتم العثور على خلفيات في مجلد شاشات التوقف.\n\nتصفح كتالوج شاشات التوقف في Storefront لتنزيل الخلفيات!"
+
+msgid "No wallpapers found in your screensavers folder.\\\n\\\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
+msgstr "No wallpapers found in your screensavers folder.\\\n\\\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
+
+msgid "None selected"
+msgstr "لم يتم تحديد أي شيء"
 
 msgid "Not matched with a repository."
 msgstr "غير مطابق مع أي مستودع."
@@ -974,11 +1253,17 @@ msgstr "غير محدد"
 msgid "Notes"
 msgstr "ملاحظات"
 
+msgid "OK"
+msgstr "حسناً"
+
 msgid "Offline Regular"
 msgstr "عادي بدون اتصال"
 
 msgid "Open"
 msgstr "فتح"
+
+msgid "Open Wallpaper Collection Gallery"
+msgstr "فتح معرض الخلفيات"
 
 msgid "Open details"
 msgstr "فتح التفاصيل"
@@ -988,6 +1273,9 @@ msgstr "اختياري. يرفع حد استخدام API لـ GitHub. أنشئ �
 
 msgid "Optional. Raises the GitHub API rate limit. Generate one (classic, 'public_repo' scope is enough) at github.com/settings/tokens, then paste it here."
 msgstr "اختياري. يرفع حد معدل طلبات API لـ GitHub. أنشئ رمزًا (كلاسيكي، نطاق 'public_repo' كافٍ) في github.com/settings/tokens، ثم ألصقه هنا."
+
+msgid "Options ▾"
+msgstr "خيارات ▾"
 
 msgid "Origin"
 msgstr "الأصل"
@@ -1021,6 +1309,9 @@ msgstr "التصحيح "
 
 msgid "Patch %s has been %s."
 msgstr "التصحيح %s أصبح %s."
+
+msgid "Patch '%s' deleted."
+msgstr "تم حذف التصحيح '%s'."
 
 msgid "Patch '%s' disabled."
 msgstr "تم تعطيل التصحيح '%s'."
@@ -1097,6 +1388,9 @@ msgstr "الملحقات"
 msgid "Plugins cached: %s (last update: %s)"
 msgstr "الإضافات المخبأة: %s (آخر تحديث: %s)"
 
+msgid "Pool size: %d wallpapers in rotation"
+msgstr "حجم المجموعة: %d خلفيات بالتناوب"
+
 msgid "Pre-installed core KOReader plugin."
 msgstr "إضافة أساسية مثبتة مسبقاً في KOReader."
 
@@ -1112,14 +1406,32 @@ msgstr "README"
 msgid "README download failed: "
 msgstr "فشل تنزيل README: "
 
+msgid "README files & images"
+msgstr "ملفات README والصور"
+
+msgid "Rate Wallpaper"
+msgstr "تقييم الخلفية"
+
 msgid "Reading Passage Specimen"
 msgstr "عينة القراءة"
+
+msgid "Reading Progress"
+msgstr "تقدم القراءة"
+
+msgid "Reading Progress / Summary"
+msgstr "تقدم القراءة / الملخص"
+
+msgid "Recently Added"
+msgstr "أضيف حديثاً"
 
 msgid "Refresh"
 msgstr "تحديث"
 
 msgid "Refresh cache"
 msgstr "تحديث التخزين المؤقت"
+
+msgid "Refresh catalog"
+msgstr "تحديث الكتالوج"
 
 msgid "Refreshing catalog via Direct GitHub API…"
 msgstr "تحديث الفهرس عبر Direct GitHub API…"
@@ -1181,6 +1493,15 @@ msgstr "البعيد: (لم يتم التحقق)"
 msgid "Remove"
 msgstr "إزالة"
 
+msgid "Remove "
+msgstr "إزالة"
+
+msgid "Remove '%s' from your wallpaper collection?"
+msgstr "إزالة '%s' من مجموعة خلفياتك؟"
+
+msgid "Remove Wallpaper?"
+msgstr "إزالة الخلفية؟"
+
 msgid "Rename"
 msgstr "إعادة تسمية"
 
@@ -1235,6 +1556,30 @@ msgstr "نص تجريبي"
 msgid "Save"
 msgstr "حفظ"
 
+msgid "Screensaver"
+msgstr "شاشة التوقف"
+
+msgid "Screensaver & Wallpapers"
+msgstr "شاشات التوقف والخلفيات"
+
+msgid "Screensaver Details"
+msgstr "تفاصيل شاشة التوقف"
+
+msgid "Screensaver Mode"
+msgstr "وضع شاشة التوقف"
+
+msgid "Screensaver Settings"
+msgstr "إعدادات شاشة التوقف"
+
+msgid "Screensaver mode"
+msgstr "وضع شاشة التوقف"
+
+msgid "Screensaver thumbnails"
+msgstr "الصور المصغرة لشاشات التوقف"
+
+msgid "Screensavers"
+msgstr "شاشات التوقف"
+
 msgid "Search"
 msgstr "بحث"
 
@@ -1244,11 +1589,23 @@ msgstr "البحث عن \"%s\""
 msgid "Search & API"
 msgstr "البحث والواجهة"
 
+msgid "Search filter (\"%s\") is not applied to Updates."
+msgstr "Search filter (\"%s\") is not applied to Updates."
+
+msgid "Search filter (\\\\\"%s\\\\\") is not applied to Updates."
+msgstr "Search filter (\\\\\"%s\\\\\") is not applied to Updates."
+
 msgid "Search text"
 msgstr "نص البحث"
 
 msgid "Search: "
 msgstr "بحث: "
+
+msgid "Select All"
+msgstr "تحديد الكل"
+
+msgid "Select Categories"
+msgstr "تحديد الفئات"
 
 msgid "Select a repository patch entry to match with the chosen file."
 msgstr "حدد إدخال تصحيح المستودع لمطابقته مع الملف المختار."
@@ -1274,11 +1631,53 @@ msgstr "حدد المستودع"
 msgid "Set"
 msgstr "تعيين"
 
+msgid "Set Active Single"
+msgstr "تعيين كخلفية مفردة نشطة"
+
+msgid "Set Single"
+msgstr "تعيين كفردي"
+
+msgid "Set as Active"
+msgstr "تعيين كنشط"
+
+msgid "Set as Active Single Wallpaper"
+msgstr "تعيين كخلفية فردية نشطة"
+
+msgid "Set as active single wallpaper!"
+msgstr "تم التعيين كخلفية فردية نشطة!"
+
 msgid "Settings"
 msgstr "الإعدادات"
 
 msgid "Show needs update"
 msgstr "إظهار ما يحتاج إلى تحديث"
+
+msgid "Show reading progress banner overlay"
+msgstr "إظهار شريط تقدم القراءة"
+
+msgid "Shows reading stats, percentage, and chapter progress"
+msgstr "يعرض إحصائيات القراءة والنسبة المئوية وتقدم الفصل"
+
+msgid "Shows the cover of the book currently being read"
+msgstr "يعرض غلاف الكتاب المقروء حالياً"
+
+msgid "Shuffle (%d)"
+msgstr "تبديل (%d)"
+
+msgid "Shuffle Pool"
+msgstr "مجموعة التبديل"
+
+msgid "Shuffles through all wallpapers in folder on sleep.\nPool size: %d wallpapers in rotation"
+msgstr "يبدل بين جميع الخلفيات في المجلد أثناء السكون.\nحجم المجموعة: %d خلفيات بالتناوب"
+
+msgid "Single"
+msgstr "فردي"
+
+msgid "Single Wallpaper"
+msgstr "خلفية مفردة"
+
+msgid "Solid fill for screen margins & letterboxing"
+msgstr "ملء مصمت لهوامش الشاشة"
 
 msgid "Sort"
 msgstr "فرز"
@@ -1288,6 +1687,9 @@ msgstr "وضع الفرز"
 
 msgid "Sort: A-Z"
 msgstr "الفرز: أ-ي"
+
+msgid "Sort: Most Liked"
+msgstr "الترتيب: الأكثر إعجاباً"
 
 msgid "Sort: Name (A → Z)"
 msgstr "الفرز: الاسم (أ-ي)"
@@ -1352,6 +1754,9 @@ msgstr "المتجر · التحديثات"
 msgid "Storefront: Open"
 msgstr "متجر الإضافات: فتح"
 
+msgid "Stretch image to fill entire screen"
+msgstr "تمديد الصورة لملء الشاشة بالكامل"
+
 msgid "Style: "
 msgstr "النمط: "
 
@@ -1391,6 +1796,24 @@ msgstr "صوت صفير البلبل هيج قلبي الثمل."
 msgid "This action cannot be undone.\n\nChanges will take effect after restart."
 msgstr "لا يمكن التراجع عن هذا الإجراء.\n\nستسري التغييرات بعد إعادة التشغيل."
 
+msgid "This action cannot be undone.\\\n\\\nChanges will take effect after restart."
+msgstr "This action cannot be undone.\\\n\\\nChanges will take effect after restart."
+
+msgid "This wallpaper is currently set as your active screensaver."
+msgstr "تم تعيين هذه الخلفية حالياً كشاشة التوقف النشطة."
+
+msgid "This will delete all cached README files, wiki articles, and screensaver thumbnails (%s)."
+msgstr "سيؤدي هذا إلى حذف جميع ملفات README ومقالات Wiki والصور المصغرة المخزنة مؤقتًا (%s)."
+
+msgid "This will delete cached README markdown files and downloaded images (%s)."
+msgstr "سيؤدي هذا إلى حذف ملفات Markdown لـ README والصور المحملة المخزنة مؤقتًا (%s)."
+
+msgid "This will delete cached screensaver thumbnail previews (%s)."
+msgstr "سيؤدي هذا إلى حذف معاينات الصور المصغرة لشاشات التوقف المخزنة مؤقتًا (%s)."
+
+msgid "This will delete cached wiki articles and downloaded images (%s)."
+msgstr "سيؤدي هذا إلى حذف مقالات Wiki والصور المحملة المخزنة مؤقتًا (%s)."
+
 msgid "This will take effect on next restart."
 msgstr "سيدخل هذا التغيير حيز التنفيذ عند إعادة التشغيل القادمة."
 
@@ -1399,6 +1822,9 @@ msgstr "إجمالي التعديلات: %d"
 
 msgid "Tracked: %d"
 msgstr "المتتبعة: %d"
+
+msgid "Transparent overlay (page content visible behind)"
+msgstr "طبقة شفافة (محتوى الصفحة مرئي في الخلف)"
 
 msgid "Type"
 msgstr "النوع"
@@ -1481,11 +1907,20 @@ msgstr "تم تحديث التصحيح \"%s\"."
 msgid "Updated patch %s."
 msgstr "تم تحديث التصحيح %s."
 
+msgid "Updated patch \\\\\"%s\\\\\"."
+msgstr "Updated patch \\\\\"%s\\\\\"."
+
 msgid "Updated plugin \"%s\" to version %s."
 msgstr "تم تحديث الإضافة \"%s\" إلى الإصدار %s."
 
 msgid "Updated plugin \"%s\"."
 msgstr "تم تحديث الإضافة \"%s\"."
+
+msgid "Updated plugin \\\\\"%s\\\\\" to version %s."
+msgstr "Updated plugin \\\\\"%s\\\\\" to version %s."
+
+msgid "Updated plugin \\\\\"%s\\\\\"."
+msgstr "Updated plugin \\\\\"%s\\\\\"."
 
 msgid "Updated: %s"
 msgstr "تم التحديث: %s"
@@ -1514,17 +1949,59 @@ msgstr "الإصدارات"
 msgid "View README"
 msgstr "عرض README"
 
+msgid "View commits (%s \\\\xE2\\\\x86\\\\x92 %s)"
+msgstr "View commits (%s \\\\xE2\\\\x86\\\\x92 %s)"
+
 msgid "View commits (%s → %s)"
 msgstr "عرض التعديلات (%s → %s)"
 
+msgid "Wallpaper Collection"
+msgstr "مجموعة الخلفيات"
+
+msgid "Wallpaper Options"
+msgstr "خيارات الخلفية"
+
+msgid "Wallpaper deleted from device."
+msgstr "تم حذف الخلفية من الجهاز."
+
+msgid "Wallpaper removed"
+msgstr "تمت إزالة الخلفية"
+
+msgid "Wallpaper saved to collection!"
+msgstr "تم حفظ الخلفية في المجموعة!"
+
+msgid "Wallpaper set as active KOReader screensaver!"
+msgstr "تم تعيين الخلفية كشاشة توقف نشطة في KOReader!"
+
+msgid "Wallpaper set as active screensaver!"
+msgstr "تم تعيين الخلفية كشاشة توقف نشطة!"
+
 msgid "Warning: the selected version is older than what is currently installed. You are downgrading."
 msgstr "تحذير: الإصدار المحدد أقدم من الإصدار المثبت حالياً. أنت تقوم بالتراجع عن الإصدار."
+
+msgid "White Fill"
+msgstr "تعبئة بيضاء"
 
 msgid "Wiki"
 msgstr "الويكي"
 
 msgid "Wiki Pages"
 msgstr "صفحات الويكي"
+
+msgid "Wiki pages & images"
+msgstr "صفحات Wiki والصور"
+
+msgid "Z -> A"
+msgstr "ي -> أ"
+
+msgid "Z → A"
+msgstr "ي → أ"
+
+msgid "[ Loading preview... ]"
+msgstr "[ جارٍ تحميل المعاينة... ]"
+
+msgid "[ Wallpaper Preview Loading... ]"
+msgstr "[ جارٍ تحميل معاينة الخلفية... ]"
 
 msgid "[Ignored]"
 msgstr "[تم التجاهل]"
@@ -1534,6 +2011,12 @@ msgstr "[مسودة]"
 
 msgid "[pre]"
 msgstr "[تجريبي]"
+
+msgid "\\\\\"My dear Mr. Bennet,\\\\\" said his lady to him one day, \\\\\"have you heard that Netherfield Park is let at last?\\\\\" Mr. Bennet replied that he had not. \\\\\"But it is,\\\\\" returned she; \\\\\"for Mrs. Long has just been here, and she told me all about it.\\\\\" Mr. Bennet made no answer."
+msgstr "\\\\\"My dear Mr. Bennet,\\\\\" said his lady to him one day, \\\\\"have you heard that Netherfield Park is let at last?\\\\\" Mr. Bennet replied that he had not. \\\\\"But it is,\\\\\" returned she; \\\\\"for Mrs. Long has just been here, and she told me all about it.\\\\\" Mr. Bennet made no answer."
+
+msgid "\\\\xC2\\\\xB7"
+msgstr "\\\\xC2\\\\xB7"
 
 msgid "about_text"
 msgstr "Storefront هو مدير حزم مدمج في KOReader للإضافات والتصحيحات والخطوط."
@@ -1760,6 +2243,9 @@ msgstr "اقرأني"
 msgid "tab_sample_text"
 msgstr "نص تجريبي"
 
+msgid "tab_screensavers"
+msgstr "الخلفيات"
+
 msgid "tab_versions"
 msgstr "الإصدارات"
 
@@ -1778,11 +2264,17 @@ msgstr "·"
 msgid "≥ %s ⭐"
 msgstr "≥ %s ⭐"
 
+msgid "★ ACTIVE"
+msgstr "★ نشط"
+
+msgid "⚙ Settings"
+msgstr "⚙ الإعدادات"
+
+msgid "⚙ Settings..."
+msgstr "⚙ الإعدادات..."
+
 msgid "✓ Current"
 msgstr "✓ الحالي"
-
-msgid "Screensavers"
-msgstr ""
 
 msgid "Downloading…"
 msgstr ""

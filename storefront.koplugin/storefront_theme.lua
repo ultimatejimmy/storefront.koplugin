@@ -10,9 +10,9 @@ local function sc(val)
 end
 
 local storefront_theme = {
-    border_line_h = sc(2),
+    border_line_h = sc(1),
     border_window = sc(2),
-    border_btn = sc(2),
+    border_btn = sc(1),
     border_preview = sc(2),
     color_border = Blitbuffer.COLOR_DARK_GRAY,
     color_bg = Blitbuffer.COLOR_WHITE,

@@ -8,11 +8,32 @@ msgstr ""
 msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
 msgstr "「あなた、ネザーフィールド・パークがようやく貸し出されたのをご存じですか？」ある日、ベネット夫人が夫に尋ねました。ベネット氏は知らないと答えました。「でも本当ですよ」と夫人は続けました。「ロング夫人がさっき来て、一部始終を教えてくれたのですから。」ベネット氏は何も答えませんでした。"
 
+msgid "%d Categories"
+msgstr "%d カテゴリ"
+
+msgid "%d items"
+msgstr "%d 件"
+
 msgid "%d patches"
 msgstr "%d件のパッチ"
 
 msgid "%d plugins"
 msgstr "%d件のプラグイン"
+
+msgid "%d wallpapers"
+msgstr "%d 枚の壁紙"
+
+msgid "%d wallpapers stored on device"
+msgstr "%d 枚の壁紙がデバイスに保存されています"
+
+msgid "%d wallpapers · Folder Shuffle (all in rotation)"
+msgstr "%d 枚の壁紙 · フォルダシャッフル (すべてローテーション)"
+
+msgid "%d wallpapers · Mode: Book Cover"
+msgstr "%d 枚の壁紙 · モード: 表紙"
+
+msgid "%d wallpapers · Single mode active"
+msgstr "%d 枚の壁紙 · 単一モード有効"
 
 msgid "%s and %s"
 msgstr "%s と %s"
@@ -26,11 +47,20 @@ msgstr "%s は最新です。"
 msgid "%s needs an update."
 msgstr "%s の更新が必要です。"
 
+msgid "%s · %d files"
+msgstr "%s · %d ファイル"
+
+msgid "%s · 1 file"
+msgstr "%s · 1 ファイル"
+
 msgid "(fork)"
 msgstr "(フォーク)"
 
 msgid "(showing %d of %d commits)"
 msgstr "(%d / %d 件のコミットを表示中)"
+
+msgid "+ Add to Shuffle Pool"
+msgstr "+ シャッフルに追加"
 
 msgid "1 / 1"
 msgstr "1 / 1"
@@ -50,14 +80,44 @@ msgstr "< 前へ"
 msgid "?"
 msgstr "?"
 
+msgid "A -> Z"
+msgstr "A -> Z"
+
+msgid "A → Z"
+msgstr "A → Z"
+
 msgid "About"
 msgstr "情報"
 
 msgid "About Storefront"
 msgstr "Storefrontについて"
 
+msgid "Active Single"
+msgstr "個別有効"
+
+msgid "Active Wallpaper ✓"
+msgstr "適用中の壁紙 ✓"
+
+msgid "Active: %s"
+msgstr "アクティブ: %s"
+
+msgid "Add to Shuffle"
+msgstr "シャッフルに追加"
+
+msgid "Add to Shuffle Pool (Enable Shuffle)"
+msgstr "シャッフルプールに追加 (シャッフル有効化)"
+
+msgid "Added to shuffle pool & Folder Shuffle enabled!"
+msgstr "シャッフルに追加し、フォルダシャッフルを有効化しました！"
+
 msgid "All"
 msgstr "すべて"
+
+msgid "All Caches"
+msgstr "すべてのキャッシュ"
+
+msgid "All Categories"
+msgstr "すべてのカテゴリ"
 
 msgid "All Types"
 msgstr "すべての種類"
@@ -116,11 +176,29 @@ msgstr "戻る"
 msgid "Beta"
 msgstr "ベータ"
 
+msgid "Black Fill"
+msgstr "黒塗りつぶし"
+
+msgid "Blank"
+msgstr "空白"
+
+msgid "Book Cover"
+msgstr "本の表紙"
+
+msgid "Border Fill / Background"
+msgstr "枠の塗りつぶし / 背景"
+
 msgid "Both owner and repository name are required."
 msgstr "所有者とリポジトリ名の両方が必要です。"
 
 msgid "Branch: %s"
 msgstr "ブランチ: %s"
+
+msgid "Browse Wallpapers in Storefront"
+msgstr "Storefrontで壁紙を探す"
+
+msgid "By "
+msgstr "By"
 
 msgid "By: %s"
 msgstr "作者: %s"
@@ -173,11 +251,26 @@ msgstr "カタログソース"
 msgid "Catalog updated: %d plugins, %d patches, %d fonts."
 msgstr "カタログを更新しました: %d プラグイン、%d パッチ、%d フォント。"
 
+msgid "Categories"
+msgstr "カテゴリ"
+
+msgid "Category: "
+msgstr "カテゴリ: "
+
 msgid "Category: %s"
 msgstr "カテゴリ: %s"
 
+msgid "Change..."
+msgstr "変更..."
+
+msgid "Changelog for %s\n%s \\\\xE2\\\\x86\\\\x92 %s"
+msgstr "Changelog for %s\n%s \\\\xE2\\\\x86\\\\x92 %s"
+
 msgid "Changelog for %s\n%s → %s"
 msgstr "%s の変更履歴\n%s → %s"
+
+msgid "Changelog for %s\\\n%s \\\\xE2\\\\x86\\\\x92 %s"
+msgstr "Changelog for %s\\\n%s \\\\xE2\\\\x86\\\\x92 %s"
 
 msgid "Changelog: %s"
 msgstr "変更履歴: %s"
@@ -227,29 +320,92 @@ msgstr "プラグインの更新を確認中…"
 msgid "Choose Build — %s"
 msgstr "ビルドを選択 — %s"
 
+msgid "Clean"
+msgstr "クリーン"
+
 msgid "Clear"
 msgstr "消去"
+
+msgid "Clear All"
+msgstr "すべて消去"
+
+msgid "Clear All Caches?"
+msgstr "すべてのキャッシュを消去しますか？"
+
+msgid "Clear Cache"
+msgstr "キャッシュを消去"
+
+msgid "Clear README Cache?"
+msgstr "READMEキャッシュを消去しますか？"
 
 msgid "Clear README cache"
 msgstr "キャッシュをクリア"
 
+msgid "Clear README cache (%s)?\nCached README files and images will be deleted."
+msgstr "Clear README cache (%s)?\nCached README files and images will be deleted."
+
+msgid "Clear Thumbnail Cache?"
+msgstr "サムネイルキャッシュを消去しますか？"
+
+msgid "Clear Wiki Cache?"
+msgstr "Wikiキャッシュを消去しますか？"
+
+msgid "Clear Wiki cache (%s)?\nCached wiki articles and images will be deleted."
+msgstr "Clear Wiki cache (%s)?\nCached wiki articles and images will be deleted."
+
+msgid "Clear all cached data (%s)?\nAll README files, wiki articles, and thumbnails will be deleted."
+msgstr "Clear all cached data (%s)?\nAll README files, wiki articles, and thumbnails will be deleted."
+
+msgid "Clear cache…"
+msgstr "キャッシュを消去"
+
+msgid "Clear screensaver thumbnail cache (%s)?\nThumbnails will be re-downloaded when viewing wallpapers."
+msgstr "Clear screensaver thumbnail cache (%s)?\nThumbnails will be re-downloaded when viewing wallpapers."
+
+msgid "Clear search & filters"
+msgstr "検索とフィルタをクリア"
+
 msgid "Clear search/filters"
 msgstr "検索/フィルターをクリア"
+
+msgid "Cleared README cache (%s freed)."
+msgstr "Cleared README cache (%s freed)."
+
+msgid "Cleared Wiki cache (%s freed)."
+msgstr "Cleared Wiki cache (%s freed)."
+
+msgid "Cleared all caches (%s freed, %d files)."
+msgstr "Cleared all caches (%s freed, %d files)."
+
+msgid "Cleared screensaver thumbnails (%s freed)."
+msgstr "Cleared screensaver thumbnails (%s freed)."
 
 msgid "Close"
 msgstr "閉じる"
 
+msgid "Collection"
+msgstr "コレクション"
+
 msgid "Commit diff: %s → %s"
 msgstr "コミット差分: %s → %s"
 
+msgid "Commits: %s \\\\xE2\\\\x86\\\\x92 %s"
+msgstr "Commits: %s \\\\xE2\\\\x86\\\\x92 %s"
+
 msgid "Commits: %s → %s"
 msgstr "コミット: %s → %s"
+
+msgid "Community"
+msgstr "コミュニティ"
 
 msgid "Config files only"
 msgstr "設定ファイルのみ"
 
 msgid "Configured ✓"
 msgstr "設定済み ✓"
+
+msgid "Confirm"
+msgstr "確認"
 
 msgid "Confirm Update"
 msgstr "更新の確認"
@@ -259,6 +415,9 @@ msgstr "すべて更新の確認"
 
 msgid "Connecting to GitHub…\n\nPlease wait."
 msgstr "GitHub に接続中…\n\nしばらくお待ちください。"
+
+msgid "Connecting to GitHub…\\\n\\\nPlease wait."
+msgstr "Connecting to GitHub…\\\n\\\nPlease wait."
 
 msgid "Continue"
 msgstr "続行"
@@ -305,6 +464,18 @@ msgstr "デフォルトのみ"
 msgid "Delete"
 msgstr "削除"
 
+msgid "Delete "
+msgstr "削除"
+
+msgid "Delete '%s' from your device?"
+msgstr "'%s' をデバイスから削除しますか？"
+
+msgid "Delete File?"
+msgstr "ファイルを削除しますか？"
+
+msgid "Delete Wallpaper?"
+msgstr "壁紙を削除しますか？"
+
 msgid "Delete all cached README files? They will be re-downloaded on demand."
 msgstr "キャッシュされたすべてのREADMEファイルを削除しますか？ 必要に応じて再ダウンロードされます。"
 
@@ -319,6 +490,9 @@ msgstr "フォントを削除 "
 
 msgid "Delete font '%s'?"
 msgstr "フォント '%s' を削除しますか？"
+
+msgid "Delete from Device"
+msgstr "デバイスから削除"
 
 msgid "Delete patch"
 msgstr "パッチを削除"
@@ -365,6 +539,27 @@ msgstr "プラグインを無効化"
 msgid "Disabled"
 msgstr "無効"
 
+msgid "Display Options"
+msgstr "表示オプション"
+
+msgid "Displays a static wallpaper on sleep"
+msgstr "スリープ時に静止壁紙を表示します"
+
+msgid "Displays a static wallpaper on sleep.\nActive: %s"
+msgstr "スリープ時に静止壁紙を表示します。\nアクティブ: %s"
+
+msgid "Done"
+msgstr "完了"
+
+msgid "Download & Set Active"
+msgstr "ダウンロードして適用"
+
+msgid "Download Only"
+msgstr "ダウンロードのみ"
+
+msgid "Download Only (Save to Device)"
+msgstr "ダウンロードのみ (デバイスに保存)"
+
 msgid "Download failed: "
 msgstr "ダウンロードに失敗しました: "
 
@@ -377,11 +572,20 @@ msgstr "ダウンロードオプション — %s"
 msgid "Download options — %s (%s)"
 msgstr "ダウンロードオプション — %s (%s)"
 
+msgid "Downloading "
+msgstr "Downloading..."
+
 msgid "Downloading %s%s…\nThis may take a moment."
 msgstr "%s%s をダウンロード中…\nこれには少し時間がかかる場合があります。"
 
+msgid "Downloading %s%s…\\\nThis may take a moment."
+msgstr "Downloading %s%s…\\\nThis may take a moment."
+
 msgid "Downloading %s…"
 msgstr "%s をダウンロード中…"
+
+msgid "Downloading '%s'..."
+msgstr "Downloading '%s'..."
 
 msgid "Downloading patch \"%s\"…"
 msgstr "パッチ「%s」をダウンロード中…"
@@ -389,8 +593,20 @@ msgstr "パッチ「%s」をダウンロード中…"
 msgid "Downloading patch %s…"
 msgstr "パッチ %s をダウンロード中…"
 
+msgid "Downloading patch \\\\\"%s\\\\\"…"
+msgstr "Downloading patch \\\\\"%s\\\\\"…"
+
+msgid "Downloading screensaver..."
+msgstr "スクリーンセーバーをダウンロード中..."
+
+msgid "Downloading to shuffle pool..."
+msgstr "シャッフルプールにダウンロード中..."
+
 msgid "Edit"
 msgstr "編集"
+
+msgid "Empty (0 KB)"
+msgstr "空 (0 KB)"
 
 msgid "Enable"
 msgstr "有効化"
@@ -412,6 +628,9 @@ msgstr "プラグイン番号を入力"
 
 msgid "Extracting and installing plugin…\nPlease wait."
 msgstr "プラグインを解凍してインストール中…\nしばらくお待ちください。"
+
+msgid "Extracting and installing plugin…\\\nPlease wait."
+msgstr "Extracting and installing plugin…\\\nPlease wait."
 
 msgid "Failed to check %s: %s"
 msgstr "%s の確認に失敗しました: %s"
@@ -439,6 +658,9 @@ msgstr "パッチ '%s' の無効化に失敗しました。"
 
 msgid "Failed to download patch: %s"
 msgstr "パッチのダウンロードに失敗しました: %s"
+
+msgid "Failed to download screensaver."
+msgstr "スクリーンセーバーのダウンロードに失敗しました。"
 
 msgid "Failed to enable patch "
 msgstr "パッチの有効化に失敗しました "
@@ -512,6 +734,9 @@ msgstr "パッチのフィルターと並べ替え"
 msgid "Filter & Sort Plugins"
 msgstr "プラグインのフィルターと並べ替え"
 
+msgid "Filter & Sort Screensavers"
+msgstr "スクリーンセーバーを絞り込み & 並び替え"
+
 msgid "Filter Installed Patches"
 msgstr "インストール済みパッチをフィルター"
 
@@ -536,6 +761,12 @@ msgstr "フィルター: "
 msgid "Filters: (none)"
 msgstr "フィルター: (なし)"
 
+msgid "Folder Shuffle"
+msgstr "フォルダシャッフル"
+
+msgid "Folder Shuffle enabled with this wallpaper!"
+msgstr "この壁紙でフォルダシャッフルが有効になりました！"
+
 msgid "Font"
 msgstr "フォント"
 
@@ -553,6 +784,9 @@ msgstr "フォントスタイル"
 
 msgid "Fonts"
 msgstr "フォント"
+
+msgid "Free up storage space on your device. Cached items are re-downloaded automatically when needed."
+msgstr "デバイスの空き容量を増やします。キャッシュされた項目は必要に応じて自動的に再ダウンロードされます。"
 
 msgid "GitHub API rate limit exceeded. Add a GitHub token in Storefront settings to increase the limit (10→30 req/min)."
 msgstr "GitHub APIのレート制限を超過しました。制限を増やすには Storefront の設定で GitHub トークンを追加してください (10→30 リクエスト/分)。"
@@ -623,6 +857,9 @@ msgstr "GitHubからパッチをインストール"
 msgid "Install plugin from GitHub"
 msgstr "GitHub からプラグインをインストール"
 
+msgid "Install to Default?"
+msgstr "デフォルトにインストールしますか？"
+
 msgid "Install to default"
 msgstr "デフォルトにインストール"
 
@@ -644,14 +881,26 @@ msgstr "インストール済みプラグインの設定"
 msgid "Installed Regular font style offline for \"%s\". Full font family queued for download when reconnected."
 msgstr "「%s」の Regular フォントスタイルをオフラインでインストールしました。再接続時にフォントファミリー全体のダウンロードが実行されます。"
 
+msgid "Installed Regular font style offline for \\\\\"%s\\\\\". Full font family queued for download when reconnected."
+msgstr "Installed Regular font style offline for \\\\\"%s\\\\\". Full font family queued for download when reconnected."
+
 msgid "Installed font \"%s\" (%d file(s))."
 msgstr "フォント「%s」をインストールしました (%d ファイル)。"
+
+msgid "Installed font \\\\\"%s\\\\\" (%d file(s))."
+msgstr "Installed font \\\\\"%s\\\\\" (%d file(s))."
 
 msgid "Installed full font family \"%s\" (%d file(s))."
 msgstr "フォントファミリー「%s」全体をインストールしました (%d ファイル)。"
 
+msgid "Installed full font family \\\\\"%s\\\\\" (%d file(s))."
+msgstr "Installed full font family \\\\\"%s\\\\\" (%d file(s))."
+
 msgid "Installed patch \"%s\"."
 msgstr "パッチ「%s」をインストールしました。"
+
+msgid "Installed patch \\\\\"%s\\\\\"."
+msgstr "Installed patch \\\\\"%s\\\\\"."
 
 msgid "Installed plugin \"%s\" (version %s)."
 msgstr "プラグイン「%s」（バージョン %s）をインストールしました。"
@@ -676,6 +925,9 @@ msgstr "パッチ対象のファイル名が無効です。"
 
 msgid "Invalid selection."
 msgstr "無効な選択です。"
+
+msgid "Invert colors (night mode / dark background)"
+msgstr "色を反転（夜間モード / ダーク背景）"
 
 msgid "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters."
 msgstr "資産のある独身男性が妻を求めているということは、世一般的によく知られた真理である。"
@@ -736,6 +988,9 @@ msgstr "プラグインパスの管理"
 
 msgid "Manage plugin paths\n\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
 msgstr "プラグインのパスを管理\n\nパスを非表示にしても Storefront での表示・管理にのみ影響します。KOReader は引き続きそのパスからプラグインを読み込みます。"
+
+msgid "Manage plugin paths\\\n\\\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
+msgstr "Manage plugin paths\\\n\\\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
 
 msgid "Match"
 msgstr "照合"
@@ -836,8 +1091,17 @@ msgstr "プラグインを変更"
 msgid "Modify Plugin: %s"
 msgstr "プラグインの修正: %s"
 
+msgid "Most Downloaded"
+msgstr "ダウンロード数順"
+
+msgid "Most Popular"
+msgstr "人気順"
+
 msgid "Multiple custom plugin folders are configured. Where should this plugin be installed?"
 msgstr "複数のカスタムプラグインフォルダが設定されています。このプラグインをどこにインストールしますか？"
+
+msgid "My wallpaper collection"
+msgstr "マイ壁紙コレクション"
 
 msgid "Name (A-Z)"
 msgstr "名前（A-Z）"
@@ -865,6 +1129,9 @@ msgstr "次へ"
 
 msgid "Next >"
 msgstr "次へ >"
+
+msgid "No Fill (Transparent)"
+msgstr "塗りつぶしなし (透明)"
 
 msgid "No Lua files found in plugin directory"
 msgstr "プラグインディレクトリ内にLuaファイルが見つかりません"
@@ -959,11 +1226,23 @@ msgstr "このリポジトリにはリリースが見つかりません。"
 msgid "No remote version info for %s."
 msgstr "%s のリモートバージョン情報がありません。"
 
+msgid "No screensavers match this filter."
+msgstr "このフィルタに一致するスクリーンセーバーはありません。"
+
 msgid "No stable releases found — uncheck filter to show all releases"
 msgstr "安定リリースが見つかりません — すべてのリリースを表示するにはフィルターを解除してください"
 
 msgid "No tracked plugins to check."
 msgstr "確認対象の追跡中プラグインがありません。"
+
+msgid "No wallpapers found in your screensavers folder.\n\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
+msgstr "スクリーンセーバーフォルダに壁紙が見つかりませんでした。\n\nStorefrontのカタログから壁紙をダウンロードしてください！"
+
+msgid "No wallpapers found in your screensavers folder.\\\n\\\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
+msgstr "No wallpapers found in your screensavers folder.\\\n\\\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
+
+msgid "None selected"
+msgstr "選択なし"
 
 msgid "Not matched with a repository."
 msgstr "リポジトリに関連付けられていません。"
@@ -974,11 +1253,17 @@ msgstr "未設定"
 msgid "Notes"
 msgstr "メモ"
 
+msgid "OK"
+msgstr "OK"
+
 msgid "Offline Regular"
 msgstr "オフライン Regular"
 
 msgid "Open"
 msgstr "開く"
+
+msgid "Open Wallpaper Collection Gallery"
+msgstr "壁紙ギャラリーを開く"
 
 msgid "Open details"
 msgstr "詳細を開く"
@@ -988,6 +1273,9 @@ msgstr "任意。GitHub API のレート制限を引き上げます。作成方�
 
 msgid "Optional. Raises the GitHub API rate limit. Generate one (classic, 'public_repo' scope is enough) at github.com/settings/tokens, then paste it here."
 msgstr "任意。GitHub APIのレート制限を引き上げます。github.com/settings/tokens でトークン(classic、'public_repo'スコープで十分です)を生成し、ここに貼り付けてください。"
+
+msgid "Options ▾"
+msgstr "オプション ▾"
 
 msgid "Origin"
 msgstr "提供元"
@@ -1021,6 +1309,9 @@ msgstr "パッチ "
 
 msgid "Patch %s has been %s."
 msgstr "パッチ %s が%sされました。"
+
+msgid "Patch '%s' deleted."
+msgstr "パッチ '%s' を削除しました。"
 
 msgid "Patch '%s' disabled."
 msgstr "パッチ '%s' を無効化しました。"
@@ -1097,6 +1388,9 @@ msgstr "プラグイン"
 msgid "Plugins cached: %s (last update: %s)"
 msgstr "キャッシュ済みプラグイン: %s (最終更新: %s)"
 
+msgid "Pool size: %d wallpapers in rotation"
+msgstr "プールサイズ: %d 枚の壁紙がローテーション"
+
 msgid "Pre-installed core KOReader plugin."
 msgstr "KOReader に標準でインストールされているコアプラグインです。"
 
@@ -1112,14 +1406,32 @@ msgstr "README"
 msgid "README download failed: "
 msgstr "READMEのダウンロードに失敗しました: "
 
+msgid "README files & images"
+msgstr "READMEファイルと画像"
+
+msgid "Rate Wallpaper"
+msgstr "壁紙を評価"
+
 msgid "Reading Passage Specimen"
 msgstr "サンプル文章"
+
+msgid "Reading Progress"
+msgstr "読書進捗"
+
+msgid "Reading Progress / Summary"
+msgstr "読書の進捗 / サマリー"
+
+msgid "Recently Added"
+msgstr "最近追加された項目"
 
 msgid "Refresh"
 msgstr "更新"
 
 msgid "Refresh cache"
 msgstr "キャッシュを更新"
+
+msgid "Refresh catalog"
+msgstr "カタログを更新"
 
 msgid "Refreshing catalog via Direct GitHub API…"
 msgstr "Direct GitHub API経由でカタログを更新中…"
@@ -1181,6 +1493,15 @@ msgstr "リモート: (未確認)"
 msgid "Remove"
 msgstr "削除"
 
+msgid "Remove "
+msgstr "削除"
+
+msgid "Remove '%s' from your wallpaper collection?"
+msgstr "'%s' を壁紙コレクションから削除しますか？"
+
+msgid "Remove Wallpaper?"
+msgstr "壁紙を削除しますか？"
+
 msgid "Rename"
 msgstr "名前を変更"
 
@@ -1235,6 +1556,30 @@ msgstr "サンプルテキスト"
 msgid "Save"
 msgstr "保存"
 
+msgid "Screensaver"
+msgstr "スクリーンセーバー"
+
+msgid "Screensaver & Wallpapers"
+msgstr "スクリーンセーバー & 壁紙"
+
+msgid "Screensaver Details"
+msgstr "スクリーンセーバーの詳細"
+
+msgid "Screensaver Mode"
+msgstr "スクリーンセーバーモード"
+
+msgid "Screensaver Settings"
+msgstr "スクリーンセーバー設定"
+
+msgid "Screensaver mode"
+msgstr "スクリーンセーバーモード"
+
+msgid "Screensaver thumbnails"
+msgstr "スクリーンセーバーサムネイル"
+
+msgid "Screensavers"
+msgstr "スクリーンセーバー"
+
 msgid "Search"
 msgstr "検索"
 
@@ -1244,11 +1589,23 @@ msgstr "「%s」を検索"
 msgid "Search & API"
 msgstr "検索とAPI"
 
+msgid "Search filter (\"%s\") is not applied to Updates."
+msgstr "Search filter (\"%s\") is not applied to Updates."
+
+msgid "Search filter (\\\\\"%s\\\\\") is not applied to Updates."
+msgstr "Search filter (\\\\\"%s\\\\\") is not applied to Updates."
+
 msgid "Search text"
 msgstr "検索テキスト"
 
 msgid "Search: "
 msgstr "検索: "
+
+msgid "Select All"
+msgstr "すべて選択"
+
+msgid "Select Categories"
+msgstr "カテゴリを選択"
 
 msgid "Select a repository patch entry to match with the chosen file."
 msgstr "選択したファイルと照合するリポジトリのパッチ項目を選択してください。"
@@ -1274,11 +1631,53 @@ msgstr "リポジトリを選択"
 msgid "Set"
 msgstr "設定"
 
+msgid "Set Active Single"
+msgstr "この壁紙を適用"
+
+msgid "Set Single"
+msgstr "単一に設定"
+
+msgid "Set as Active"
+msgstr "アクティブに設定"
+
+msgid "Set as Active Single Wallpaper"
+msgstr "アクティブな単一壁紙として設定"
+
+msgid "Set as active single wallpaper!"
+msgstr "アクティブな単一壁紙として設定しました！"
+
 msgid "Settings"
 msgstr "設定"
 
 msgid "Show needs update"
 msgstr "要更新のみ表示"
+
+msgid "Show reading progress banner overlay"
+msgstr "読書進捗バナーを表示"
+
+msgid "Shows reading stats, percentage, and chapter progress"
+msgstr "読書統計、パーセンテージ、章の進捗を表示します"
+
+msgid "Shows the cover of the book currently being read"
+msgstr "現在読んでいる本の表紙を表示します"
+
+msgid "Shuffle (%d)"
+msgstr "シャッフル (%d)"
+
+msgid "Shuffle Pool"
+msgstr "シャッフルプール"
+
+msgid "Shuffles through all wallpapers in folder on sleep.\nPool size: %d wallpapers in rotation"
+msgstr "スリープ時にフォルダ内のすべての壁紙を順に切り替えます。\nプールサイズ: %d 枚の壁紙がローテーション"
+
+msgid "Single"
+msgstr "単一"
+
+msgid "Single Wallpaper"
+msgstr "単一壁紙"
+
+msgid "Solid fill for screen margins & letterboxing"
+msgstr "画面余白を塗りつぶし"
 
 msgid "Sort"
 msgstr "並べ替え"
@@ -1288,6 +1687,9 @@ msgstr "並べ替えモード"
 
 msgid "Sort: A-Z"
 msgstr "順序: A-Z"
+
+msgid "Sort: Most Liked"
+msgstr "並び替え: 高評価順"
 
 msgid "Sort: Name (A → Z)"
 msgstr "順序: 名前（昇順）"
@@ -1352,6 +1754,9 @@ msgstr "Storefront · 更新"
 msgid "Storefront: Open"
 msgstr "Storefront: 開く"
 
+msgid "Stretch image to fill entire screen"
+msgstr "画面全体に合わせて拡大"
+
 msgid "Style: "
 msgstr "スタイル: "
 
@@ -1391,6 +1796,24 @@ msgstr "いろはにほへと ちりぬるを わかよたれそ つねならむ
 msgid "This action cannot be undone.\n\nChanges will take effect after restart."
 msgstr "この操作は取り消せません。\n\n変更は再起動後に有効になります。"
 
+msgid "This action cannot be undone.\\\n\\\nChanges will take effect after restart."
+msgstr "This action cannot be undone.\\\n\\\nChanges will take effect after restart."
+
+msgid "This wallpaper is currently set as your active screensaver."
+msgstr "この壁紙は現在アクティブなスクリーンセーバーとして設定されています。"
+
+msgid "This will delete all cached README files, wiki articles, and screensaver thumbnails (%s)."
+msgstr "キャッシュされたすべてのREADMEファイル、Wiki記事、スクリーンセーバーのサムネイル (%s) が削除されます。"
+
+msgid "This will delete cached README markdown files and downloaded images (%s)."
+msgstr "キャッシュされたREADMEマークダウンファイルとダウンロード画像 (%s) が削除されます。"
+
+msgid "This will delete cached screensaver thumbnail previews (%s)."
+msgstr "キャッシュされたスクリーンセーバーのサムネイルプレビュー (%s) が削除されます。"
+
+msgid "This will delete cached wiki articles and downloaded images (%s)."
+msgstr "キャッシュされたWiki記事とダウンロード画像 (%s) が削除されます。"
+
 msgid "This will take effect on next restart."
 msgstr "これは次回の再起動時に有効になります。"
 
@@ -1399,6 +1822,9 @@ msgstr "総コミット数: %d"
 
 msgid "Tracked: %d"
 msgstr "追跡中: %d"
+
+msgid "Transparent overlay (page content visible behind)"
+msgstr "透明オーバーレイ（読書画面の上に表示）"
 
 msgid "Type"
 msgstr "種類"
@@ -1481,11 +1907,20 @@ msgstr "パッチ「%s」を更新しました。"
 msgid "Updated patch %s."
 msgstr "パッチ %s を更新しました。"
 
+msgid "Updated patch \\\\\"%s\\\\\"."
+msgstr "Updated patch \\\\\"%s\\\\\"."
+
 msgid "Updated plugin \"%s\" to version %s."
 msgstr "プラグイン「%s」をバージョン %s に更新しました。"
 
 msgid "Updated plugin \"%s\"."
 msgstr "プラグイン「%s」を更新しました。"
+
+msgid "Updated plugin \\\\\"%s\\\\\" to version %s."
+msgstr "Updated plugin \\\\\"%s\\\\\" to version %s."
+
+msgid "Updated plugin \\\\\"%s\\\\\"."
+msgstr "Updated plugin \\\\\"%s\\\\\"."
 
 msgid "Updated: %s"
 msgstr "更新日時: %s"
@@ -1514,17 +1949,59 @@ msgstr "バージョン"
 msgid "View README"
 msgstr "README を表示"
 
+msgid "View commits (%s \\\\xE2\\\\x86\\\\x92 %s)"
+msgstr "View commits (%s \\\\xE2\\\\x86\\\\x92 %s)"
+
 msgid "View commits (%s → %s)"
 msgstr "コミットを表示 (%s → %s)"
 
+msgid "Wallpaper Collection"
+msgstr "壁紙コレクション"
+
+msgid "Wallpaper Options"
+msgstr "壁紙オプション"
+
+msgid "Wallpaper deleted from device."
+msgstr "壁紙をデバイスから削除しました。"
+
+msgid "Wallpaper removed"
+msgstr "壁紙を削除しました"
+
+msgid "Wallpaper saved to collection!"
+msgstr "壁紙をコレクションに保存しました！"
+
+msgid "Wallpaper set as active KOReader screensaver!"
+msgstr "壁紙をKOReaderのスクリーンセーバーに設定しました！"
+
+msgid "Wallpaper set as active screensaver!"
+msgstr "壁紙をアクティブなスクリーンセーバーに設定しました！"
+
 msgid "Warning: the selected version is older than what is currently installed. You are downgrading."
 msgstr "警告: 選択したバージョンは現在インストールされているものより古いバージョンです。ダウングレードされます。"
+
+msgid "White Fill"
+msgstr "白塗りつぶし"
 
 msgid "Wiki"
 msgstr "Wiki"
 
 msgid "Wiki Pages"
 msgstr "Wiki ページ"
+
+msgid "Wiki pages & images"
+msgstr "Wikiページと画像"
+
+msgid "Z -> A"
+msgstr "Z -> A"
+
+msgid "Z → A"
+msgstr "Z → A"
+
+msgid "[ Loading preview... ]"
+msgstr "[ プレビューを読み込み中... ]"
+
+msgid "[ Wallpaper Preview Loading... ]"
+msgstr "[ 壁紙プレビューを読み込み中... ]"
 
 msgid "[Ignored]"
 msgstr "[無視]"
@@ -1534,6 +2011,12 @@ msgstr "[下書き]"
 
 msgid "[pre]"
 msgstr "[プレ]"
+
+msgid "\\\\\"My dear Mr. Bennet,\\\\\" said his lady to him one day, \\\\\"have you heard that Netherfield Park is let at last?\\\\\" Mr. Bennet replied that he had not. \\\\\"But it is,\\\\\" returned she; \\\\\"for Mrs. Long has just been here, and she told me all about it.\\\\\" Mr. Bennet made no answer."
+msgstr "\\\\\"My dear Mr. Bennet,\\\\\" said his lady to him one day, \\\\\"have you heard that Netherfield Park is let at last?\\\\\" Mr. Bennet replied that he had not. \\\\\"But it is,\\\\\" returned she; \\\\\"for Mrs. Long has just been here, and she told me all about it.\\\\\" Mr. Bennet made no answer."
+
+msgid "\\\\xC2\\\\xB7"
+msgstr "\\\\xC2\\\\xB7"
 
 msgid "about_text"
 msgstr "Storefrontは、KOReader用のプラグイン、パッチ、フォントのパッケージマネージャーです。"
@@ -1760,6 +2243,9 @@ msgstr "README"
 msgid "tab_sample_text"
 msgstr "サンプルテキスト"
 
+msgid "tab_screensavers"
+msgstr "壁紙"
+
 msgid "tab_versions"
 msgstr "バージョン"
 
@@ -1778,11 +2264,17 @@ msgstr "·"
 msgid "≥ %s ⭐"
 msgstr "≥ %s ⭐"
 
+msgid "★ ACTIVE"
+msgstr "★ 有効"
+
+msgid "⚙ Settings"
+msgstr "⚙ 設定"
+
+msgid "⚙ Settings..."
+msgstr "⚙ 設定..."
+
 msgid "✓ Current"
 msgstr "✓ 現在"
-
-msgid "Screensavers"
-msgstr ""
 
 msgid "Downloading…"
 msgstr ""

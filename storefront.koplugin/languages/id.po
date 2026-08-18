@@ -8,11 +8,32 @@ msgstr ""
 msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
 msgstr "\"Suamiku Mr. Bennet yang baik,\" kata istrinya suatu hari, \"sudahkah Anda mendengar bahwa Netherfield Park akhirnya disewakan?\" Mr. Bennet menjawab belum. \"Tapi memang sudah,\" balasnya; \"karena Mrs. Long baru saja dari sini, dan menceritakan semuanya kepadaku.\" Mr. Bennet tidak menjawab."
 
+msgid "%d Categories"
+msgstr "%d Kategori"
+
+msgid "%d items"
+msgstr "%d item"
+
 msgid "%d patches"
 msgstr "%d tambalan"
 
 msgid "%d plugins"
 msgstr "%d plugin"
+
+msgid "%d wallpapers"
+msgstr "%d wallpaper"
+
+msgid "%d wallpapers stored on device"
+msgstr "%d wallpaper disimpan di perangkat"
+
+msgid "%d wallpapers · Folder Shuffle (all in rotation)"
+msgstr "%d wallpaper · Acak Folder (semua berputar)"
+
+msgid "%d wallpapers · Mode: Book Cover"
+msgstr "%d wallpaper · Mode: Sampul Buku"
+
+msgid "%d wallpapers · Single mode active"
+msgstr "%d wallpaper · Mode tunggal aktif"
 
 msgid "%s and %s"
 msgstr "%s dan %s"
@@ -26,11 +47,20 @@ msgstr "%s sudah yang terbaru."
 msgid "%s needs an update."
 msgstr "%s memerlukan pembaruan."
 
+msgid "%s · %d files"
+msgstr "%s · %d file"
+
+msgid "%s · 1 file"
+msgstr "%s · 1 file"
+
 msgid "(fork)"
 msgstr "(fork)"
 
 msgid "(showing %d of %d commits)"
 msgstr "(menampilkan %d dari %d komit)"
+
+msgid "+ Add to Shuffle Pool"
+msgstr "+ Tambahkan ke Acak"
 
 msgid "1 / 1"
 msgstr "1 / 1"
@@ -50,14 +80,44 @@ msgstr "< SBLM"
 msgid "?"
 msgstr "?"
 
+msgid "A -> Z"
+msgstr "A -> Z"
+
+msgid "A → Z"
+msgstr "A → Z"
+
 msgid "About"
 msgstr "Tentang"
 
 msgid "About Storefront"
 msgstr "Tentang Storefront"
 
+msgid "Active Single"
+msgstr "Tunggal Aktif"
+
+msgid "Active Wallpaper ✓"
+msgstr "Wallpaper Aktif ✓"
+
+msgid "Active: %s"
+msgstr "Aktif: %s"
+
+msgid "Add to Shuffle"
+msgstr "Tambah ke Acak"
+
+msgid "Add to Shuffle Pool (Enable Shuffle)"
+msgstr "Tambah ke Kolam Acak (Aktifkan Acak)"
+
+msgid "Added to shuffle pool & Folder Shuffle enabled!"
+msgstr "Ditambahkan ke daftar acak & putar acak diaktifkan!"
+
 msgid "All"
 msgstr "Semua"
+
+msgid "All Caches"
+msgstr "Semua Cache"
+
+msgid "All Categories"
+msgstr "Semua Kategori"
 
 msgid "All Types"
 msgstr "Semua Tipe"
@@ -116,11 +176,29 @@ msgstr "Kembali"
 msgid "Beta"
 msgstr "Beta"
 
+msgid "Black Fill"
+msgstr "Isian Hitam"
+
+msgid "Blank"
+msgstr "Kosong"
+
+msgid "Book Cover"
+msgstr "Sampul Buku"
+
+msgid "Border Fill / Background"
+msgstr "Isian Tepi / Latar Belakang"
+
 msgid "Both owner and repository name are required."
 msgstr "Pemilik dan nama repositori wajib diisi."
 
 msgid "Branch: %s"
 msgstr "Cabang: %s"
+
+msgid "Browse Wallpapers in Storefront"
+msgstr "Jelajahi Wallpaper di Storefront"
+
+msgid "By "
+msgstr "By"
 
 msgid "By: %s"
 msgstr "Oleh: %s"
@@ -173,11 +251,26 @@ msgstr "Sumber katalog"
 msgid "Catalog updated: %d plugins, %d patches, %d fonts."
 msgstr "Katalog diperbarui: %d plugin, %d tambalan, %d font."
 
+msgid "Categories"
+msgstr "Kategori"
+
+msgid "Category: "
+msgstr "Kategori: "
+
 msgid "Category: %s"
 msgstr "Kategori: %s"
 
+msgid "Change..."
+msgstr "Ubah..."
+
+msgid "Changelog for %s\n%s \\\\xE2\\\\x86\\\\x92 %s"
+msgstr "Changelog for %s\n%s \\\\xE2\\\\x86\\\\x92 %s"
+
 msgid "Changelog for %s\n%s → %s"
 msgstr "Catatan perubahan untuk %s\n%s → %s"
+
+msgid "Changelog for %s\\\n%s \\\\xE2\\\\x86\\\\x92 %s"
+msgstr "Changelog for %s\\\n%s \\\\xE2\\\\x86\\\\x92 %s"
 
 msgid "Changelog: %s"
 msgstr "Log perubahan: %s"
@@ -227,29 +320,92 @@ msgstr "Memeriksa pembaruan plugin…"
 msgid "Choose Build — %s"
 msgstr "Pilih Build — %s"
 
+msgid "Clean"
+msgstr "Bersihkan"
+
 msgid "Clear"
 msgstr "Bersihkan"
+
+msgid "Clear All"
+msgstr "Hapus Semua"
+
+msgid "Clear All Caches?"
+msgstr "Hapus Semua Cache?"
+
+msgid "Clear Cache"
+msgstr "Hapus Cache"
+
+msgid "Clear README Cache?"
+msgstr "Hapus Cache README?"
 
 msgid "Clear README cache"
 msgstr "Hapus cache README"
 
+msgid "Clear README cache (%s)?\nCached README files and images will be deleted."
+msgstr "Clear README cache (%s)?\nCached README files and images will be deleted."
+
+msgid "Clear Thumbnail Cache?"
+msgstr "Hapus Cache Gambar Mini?"
+
+msgid "Clear Wiki Cache?"
+msgstr "Hapus Cache Wiki?"
+
+msgid "Clear Wiki cache (%s)?\nCached wiki articles and images will be deleted."
+msgstr "Clear Wiki cache (%s)?\nCached wiki articles and images will be deleted."
+
+msgid "Clear all cached data (%s)?\nAll README files, wiki articles, and thumbnails will be deleted."
+msgstr "Clear all cached data (%s)?\nAll README files, wiki articles, and thumbnails will be deleted."
+
+msgid "Clear cache…"
+msgstr "Hapus Cache"
+
+msgid "Clear screensaver thumbnail cache (%s)?\nThumbnails will be re-downloaded when viewing wallpapers."
+msgstr "Clear screensaver thumbnail cache (%s)?\nThumbnails will be re-downloaded when viewing wallpapers."
+
+msgid "Clear search & filters"
+msgstr "Hapus pencarian & filter"
+
 msgid "Clear search/filters"
 msgstr "Hapus pencarian/filter"
+
+msgid "Cleared README cache (%s freed)."
+msgstr "Cleared README cache (%s freed)."
+
+msgid "Cleared Wiki cache (%s freed)."
+msgstr "Cleared Wiki cache (%s freed)."
+
+msgid "Cleared all caches (%s freed, %d files)."
+msgstr "Cleared all caches (%s freed, %d files)."
+
+msgid "Cleared screensaver thumbnails (%s freed)."
+msgstr "Cleared screensaver thumbnails (%s freed)."
 
 msgid "Close"
 msgstr "Tutup"
 
+msgid "Collection"
+msgstr "Koleksi"
+
 msgid "Commit diff: %s → %s"
 msgstr "Perbedaan komit: %s → %s"
 
+msgid "Commits: %s \\\\xE2\\\\x86\\\\x92 %s"
+msgstr "Commits: %s \\\\xE2\\\\x86\\\\x92 %s"
+
 msgid "Commits: %s → %s"
 msgstr "Komit: %s → %s"
+
+msgid "Community"
+msgstr "Komunitas"
 
 msgid "Config files only"
 msgstr "Hanya berkas konfigurasi"
 
 msgid "Configured ✓"
 msgstr "Terkonfigurasi ✓"
+
+msgid "Confirm"
+msgstr "Konfirmasi"
 
 msgid "Confirm Update"
 msgstr "Konfirmasi Pembaruan"
@@ -259,6 +415,9 @@ msgstr "Konfirmasi Perbarui Semua"
 
 msgid "Connecting to GitHub…\n\nPlease wait."
 msgstr "Menghubungkan ke GitHub…\n\nMohon tunggu."
+
+msgid "Connecting to GitHub…\\\n\\\nPlease wait."
+msgstr "Connecting to GitHub…\\\n\\\nPlease wait."
 
 msgid "Continue"
 msgstr "Lanjutkan"
@@ -305,6 +464,18 @@ msgstr "Default saja"
 msgid "Delete"
 msgstr "Hapus"
 
+msgid "Delete "
+msgstr "Hapus"
+
+msgid "Delete '%s' from your device?"
+msgstr "Hapus '%s' dari perangkat Anda?"
+
+msgid "Delete File?"
+msgstr "Hapus File?"
+
+msgid "Delete Wallpaper?"
+msgstr "Hapus Wallpaper?"
+
 msgid "Delete all cached README files? They will be re-downloaded on demand."
 msgstr "Hapus semua berkas README yang tersimpan di tembolok? Berkas akan diunduh ulang saat dibutuhkan."
 
@@ -319,6 +490,9 @@ msgstr "Hapus font "
 
 msgid "Delete font '%s'?"
 msgstr "Hapus font '%s'?"
+
+msgid "Delete from Device"
+msgstr "Hapus dari Perangkat"
 
 msgid "Delete patch"
 msgstr "Hapus patch"
@@ -365,6 +539,27 @@ msgstr "Nonaktifkan plugin"
 msgid "Disabled"
 msgstr "Dinonaktifkan"
 
+msgid "Display Options"
+msgstr "Opsi Tampilan"
+
+msgid "Displays a static wallpaper on sleep"
+msgstr "Menampilkan wallpaper statis saat tidur"
+
+msgid "Displays a static wallpaper on sleep.\nActive: %s"
+msgstr "Menampilkan wallpaper statis saat tidur.\nAktif: %s"
+
+msgid "Done"
+msgstr "Selesai"
+
+msgid "Download & Set Active"
+msgstr "Unduh & Terapkan"
+
+msgid "Download Only"
+msgstr "Unduh Saja"
+
+msgid "Download Only (Save to Device)"
+msgstr "Unduh Saja (Simpan ke Perangkat)"
+
 msgid "Download failed: "
 msgstr "Unduhan gagal: "
 
@@ -377,11 +572,20 @@ msgstr "Opsi unduhan — %s"
 msgid "Download options — %s (%s)"
 msgstr "Opsi unduhan — %s (%s)"
 
+msgid "Downloading "
+msgstr "Downloading..."
+
 msgid "Downloading %s%s…\nThis may take a moment."
 msgstr "Mengunduh %s%s…\nIni mungkin memerlukan waktu sejenak."
 
+msgid "Downloading %s%s…\\\nThis may take a moment."
+msgstr "Downloading %s%s…\\\nThis may take a moment."
+
 msgid "Downloading %s…"
 msgstr "Mengunduh %s…"
+
+msgid "Downloading '%s'..."
+msgstr "Downloading '%s'..."
 
 msgid "Downloading patch \"%s\"…"
 msgstr "Mengunduh patch \"%s\"…"
@@ -389,8 +593,20 @@ msgstr "Mengunduh patch \"%s\"…"
 msgid "Downloading patch %s…"
 msgstr "Mengunduh patch %s…"
 
+msgid "Downloading patch \\\\\"%s\\\\\"…"
+msgstr "Downloading patch \\\\\"%s\\\\\"…"
+
+msgid "Downloading screensaver..."
+msgstr "Mengunduh screensaver..."
+
+msgid "Downloading to shuffle pool..."
+msgstr "Mengunduh ke kolam acak..."
+
 msgid "Edit"
 msgstr "Edit"
+
+msgid "Empty (0 KB)"
+msgstr "Kosong (0 KB)"
 
 msgid "Enable"
 msgstr "Aktifkan"
@@ -412,6 +628,9 @@ msgstr "Masukkan nomor plugin"
 
 msgid "Extracting and installing plugin…\nPlease wait."
 msgstr "Mengekstrak dan memasang plugin…\nMohon tunggu."
+
+msgid "Extracting and installing plugin…\\\nPlease wait."
+msgstr "Extracting and installing plugin…\\\nPlease wait."
 
 msgid "Failed to check %s: %s"
 msgstr "Gagal memeriksa %s: %s"
@@ -439,6 +658,9 @@ msgstr "Gagal menonaktifkan tambalan '%s'."
 
 msgid "Failed to download patch: %s"
 msgstr "Gagal mengunduh patch: %s"
+
+msgid "Failed to download screensaver."
+msgstr "Gagal mengunduh screensaver."
 
 msgid "Failed to enable patch "
 msgstr "Gagal mengaktifkan patch "
@@ -512,6 +734,9 @@ msgstr "Filter & Urutkan Tambalan"
 msgid "Filter & Sort Plugins"
 msgstr "Filter & Urutkan Plugin"
 
+msgid "Filter & Sort Screensavers"
+msgstr "Filter & Urutkan Screensaver"
+
 msgid "Filter Installed Patches"
 msgstr "Filter Patch Terpasang"
 
@@ -536,6 +761,12 @@ msgstr "Filter: "
 msgid "Filters: (none)"
 msgstr "Filter: (tidak ada)"
 
+msgid "Folder Shuffle"
+msgstr "Putar Acak Folder"
+
+msgid "Folder Shuffle enabled with this wallpaper!"
+msgstr "Acak Folder diaktifkan dengan wallpaper ini!"
+
 msgid "Font"
 msgstr "Font"
 
@@ -553,6 +784,9 @@ msgstr "Gaya font"
 
 msgid "Fonts"
 msgstr "Font"
+
+msgid "Free up storage space on your device. Cached items are re-downloaded automatically when needed."
+msgstr "Bebaskan ruang penyimpanan perangkat. Item cache akan diunduh ulang secara otomatis saat dibutuhkan."
 
 msgid "GitHub API rate limit exceeded. Add a GitHub token in Storefront settings to increase the limit (10→30 req/min)."
 msgstr "Batas laju API GitHub terlampaui. Tambahkan token GitHub di pengaturan Storefront untuk meningkatkan batas (10→30 req/min)."
@@ -623,6 +857,9 @@ msgstr "Pasang patch dari GitHub"
 msgid "Install plugin from GitHub"
 msgstr "Pasang plugin dari GitHub"
 
+msgid "Install to Default?"
+msgstr "Pasang ke Default?"
+
 msgid "Install to default"
 msgstr "Pasang ke standar"
 
@@ -644,14 +881,26 @@ msgstr "Pengaturan Plugin Terpasang"
 msgid "Installed Regular font style offline for \"%s\". Full font family queued for download when reconnected."
 msgstr "Gaya font Reguler terpasang secara luring untuk \"%s\". Rumpun font lengkap diantrekan untuk diunduh saat terhubung kembali."
 
+msgid "Installed Regular font style offline for \\\\\"%s\\\\\". Full font family queued for download when reconnected."
+msgstr "Installed Regular font style offline for \\\\\"%s\\\\\". Full font family queued for download when reconnected."
+
 msgid "Installed font \"%s\" (%d file(s))."
 msgstr "Font \"%s\" terpasang (%d berkas)."
+
+msgid "Installed font \\\\\"%s\\\\\" (%d file(s))."
+msgstr "Installed font \\\\\"%s\\\\\" (%d file(s))."
 
 msgid "Installed full font family \"%s\" (%d file(s))."
 msgstr "Rumpun font lengkap \"%s\" terpasang (%d berkas)."
 
+msgid "Installed full font family \\\\\"%s\\\\\" (%d file(s))."
+msgstr "Installed full font family \\\\\"%s\\\\\" (%d file(s))."
+
 msgid "Installed patch \"%s\"."
 msgstr "Patch \"%s\" terpasang."
+
+msgid "Installed patch \\\\\"%s\\\\\"."
+msgstr "Installed patch \\\\\"%s\\\\\"."
 
 msgid "Installed plugin \"%s\" (version %s)."
 msgstr "Plugin \"%s\" terpasang (versi %s)."
@@ -676,6 +925,9 @@ msgstr "Nama berkas target patch tidak valid."
 
 msgid "Invalid selection."
 msgstr "Pilihan tidak valid."
+
+msgid "Invert colors (night mode / dark background)"
+msgstr "Balikkan warna (mode malam / latar gelap)"
 
 msgid "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters."
 msgstr "Adalah kebenaran yang diakui secara umum, bahwa seorang pria lajang yang kaya pasti membutuhkan seorang istri."
@@ -736,6 +988,9 @@ msgstr "Kelola jalur plugin"
 
 msgid "Manage plugin paths\n\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
 msgstr "Kelola jalur plugin\n\nMenyembunyikan jalur hanya memengaruhi apa yang ditampilkan/dikelola Storefront di sini. KOReader akan tetap memuat plugin darinya."
+
+msgid "Manage plugin paths\\\n\\\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
+msgstr "Manage plugin paths\\\n\\\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
 
 msgid "Match"
 msgstr "Cocokkan"
@@ -836,8 +1091,17 @@ msgstr "Ubah Plugin"
 msgid "Modify Plugin: %s"
 msgstr "Ubah Plugin: %s"
 
+msgid "Most Downloaded"
+msgstr "Paling Banyak Diunduh"
+
+msgid "Most Popular"
+msgstr "Paling Populer"
+
 msgid "Multiple custom plugin folders are configured. Where should this plugin be installed?"
 msgstr "Beberapa folder plugin kustom dikonfigurasi. Di mana plugin ini harus dipasang?"
+
+msgid "My wallpaper collection"
+msgstr "Koleksi wallpaper saya"
 
 msgid "Name (A-Z)"
 msgstr "Nama (A-Z)"
@@ -865,6 +1129,9 @@ msgstr "Berikutnya"
 
 msgid "Next >"
 msgstr "Lanjut >"
+
+msgid "No Fill (Transparent)"
+msgstr "Tanpa Isian (Transparan)"
 
 msgid "No Lua files found in plugin directory"
 msgstr "Berkas Lua tidak ditemukan di direktori plugin"
@@ -959,11 +1226,23 @@ msgstr "Rilis tidak ditemukan untuk repositori ini."
 msgid "No remote version info for %s."
 msgstr "Tidak ada info versi jarak jauh untuk %s."
 
+msgid "No screensavers match this filter."
+msgstr "Tidak ada screensaver yang cocok dengan filter ini."
+
 msgid "No stable releases found — uncheck filter to show all releases"
 msgstr "Tidak ada rilis stabil yang ditemukan — hapus centang filter untuk menampilkan semua rilis"
 
 msgid "No tracked plugins to check."
 msgstr "Tidak ada plugin terlacak untuk diperiksa."
+
+msgid "No wallpapers found in your screensavers folder.\n\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
+msgstr "Tidak ada wallpaper di folder screensaver.\n\nJelajahi katalog Screensaver di Storefront untuk mengunduh wallpaper!"
+
+msgid "No wallpapers found in your screensavers folder.\\\n\\\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
+msgstr "No wallpapers found in your screensavers folder.\\\n\\\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
+
+msgid "None selected"
+msgstr "Tidak ada yang dipilih"
 
 msgid "Not matched with a repository."
 msgstr "Tidak cocok dengan repositori."
@@ -974,11 +1253,17 @@ msgstr "Belum diatur"
 msgid "Notes"
 msgstr "Catatan"
 
+msgid "OK"
+msgstr "OK"
+
 msgid "Offline Regular"
 msgstr "Offline Regular"
 
 msgid "Open"
 msgstr "Buka"
+
+msgid "Open Wallpaper Collection Gallery"
+msgstr "Buka Galeri Wallpaper"
 
 msgid "Open details"
 msgstr "Buka detail"
@@ -988,6 +1273,9 @@ msgstr "Opsional. Meningkatkan batas laju API GitHub. Buat satu (klasik, "
 
 msgid "Optional. Raises the GitHub API rate limit. Generate one (classic, 'public_repo' scope is enough) at github.com/settings/tokens, then paste it here."
 msgstr "Opsional. Meningkatkan batas laju API GitHub. Buat token (klasik, cakupan 'public_repo' sudah cukup) di github.com/settings/tokens, lalu tempelkan di sini."
+
+msgid "Options ▾"
+msgstr "Opsi ▾"
 
 msgid "Origin"
 msgstr "Asal"
@@ -1021,6 +1309,9 @@ msgstr "Patch "
 
 msgid "Patch %s has been %s."
 msgstr "Patch %s telah %s."
+
+msgid "Patch '%s' deleted."
+msgstr "Patch '%s' dihapus."
 
 msgid "Patch '%s' disabled."
 msgstr "Tambalan '%s' dinonaktifkan."
@@ -1097,6 +1388,9 @@ msgstr "Plugin"
 msgid "Plugins cached: %s (last update: %s)"
 msgstr "Plugin tersimpan: %s (pembaruan terakhir: %s)"
 
+msgid "Pool size: %d wallpapers in rotation"
+msgstr "Ukuran kolam: %d wallpaper berputar"
+
 msgid "Pre-installed core KOReader plugin."
 msgstr "Plugin inti KOReader bawaan."
 
@@ -1112,14 +1406,32 @@ msgstr "README"
 msgid "README download failed: "
 msgstr "Pengunduhan README gagal: "
 
+msgid "README files & images"
+msgstr "File & gambar README"
+
+msgid "Rate Wallpaper"
+msgstr "Nilai Wallpaper"
+
 msgid "Reading Passage Specimen"
 msgstr "Spesimen Bacaan"
+
+msgid "Reading Progress"
+msgstr "Progres Membaca"
+
+msgid "Reading Progress / Summary"
+msgstr "Kemajuan Membaca / Ringkasan"
+
+msgid "Recently Added"
+msgstr "Baru Ditambahkan"
 
 msgid "Refresh"
 msgstr "Segarkan"
 
 msgid "Refresh cache"
 msgstr "Segarkan cache"
+
+msgid "Refresh catalog"
+msgstr "Segarkan katalog"
 
 msgid "Refreshing catalog via Direct GitHub API…"
 msgstr "Menyegarkan katalog via Direct GitHub API…"
@@ -1181,6 +1493,15 @@ msgstr "Remote: (tidak diperiksa)"
 msgid "Remove"
 msgstr "Hapus"
 
+msgid "Remove "
+msgstr "Hapus"
+
+msgid "Remove '%s' from your wallpaper collection?"
+msgstr "Hapus '%s' dari koleksi wallpaper Anda?"
+
+msgid "Remove Wallpaper?"
+msgstr "Hapus Wallpaper?"
+
 msgid "Rename"
 msgstr "Ubah nama"
 
@@ -1235,6 +1556,30 @@ msgstr "Teks Contoh"
 msgid "Save"
 msgstr "Simpan"
 
+msgid "Screensaver"
+msgstr "Screensaver"
+
+msgid "Screensaver & Wallpapers"
+msgstr "Screensaver & Wallpaper"
+
+msgid "Screensaver Details"
+msgstr "Detail Screensaver"
+
+msgid "Screensaver Mode"
+msgstr "Mode Screensaver"
+
+msgid "Screensaver Settings"
+msgstr "Pengaturan Screensaver"
+
+msgid "Screensaver mode"
+msgstr "Mode screensaver"
+
+msgid "Screensaver thumbnails"
+msgstr "Gambar mini screensaver"
+
+msgid "Screensavers"
+msgstr "Screensaver"
+
 msgid "Search"
 msgstr "Cari"
 
@@ -1244,11 +1589,23 @@ msgstr "Cari \"%s\""
 msgid "Search & API"
 msgstr "Cari & API"
 
+msgid "Search filter (\"%s\") is not applied to Updates."
+msgstr "Search filter (\"%s\") is not applied to Updates."
+
+msgid "Search filter (\\\\\"%s\\\\\") is not applied to Updates."
+msgstr "Search filter (\\\\\"%s\\\\\") is not applied to Updates."
+
 msgid "Search text"
 msgstr "Teks pencarian"
 
 msgid "Search: "
 msgstr "Cari: "
+
+msgid "Select All"
+msgstr "Pilih Semua"
+
+msgid "Select Categories"
+msgstr "Pilih Kategori"
 
 msgid "Select a repository patch entry to match with the chosen file."
 msgstr "Pilih entri patch repositori untuk dicocokkan dengan berkas yang dipilih."
@@ -1274,11 +1631,53 @@ msgstr "Pilih repositori"
 msgid "Set"
 msgstr "Atur"
 
+msgid "Set Active Single"
+msgstr "Atur Sebagai Wallpaper Tunggal"
+
+msgid "Set Single"
+msgstr "Setel Tunggal"
+
+msgid "Set as Active"
+msgstr "Jadikan Aktif"
+
+msgid "Set as Active Single Wallpaper"
+msgstr "Jadikan Wallpaper Tunggal Aktif"
+
+msgid "Set as active single wallpaper!"
+msgstr "Disetel sebagai wallpaper tunggal aktif!"
+
 msgid "Settings"
 msgstr "Pengaturan"
 
 msgid "Show needs update"
 msgstr "Tampilkan yang perlu pembaruan"
+
+msgid "Show reading progress banner overlay"
+msgstr "Tampilkan bilah progres membaca"
+
+msgid "Shows reading stats, percentage, and chapter progress"
+msgstr "Menampilkan statistik membaca, persentase, dan kemajuan bab"
+
+msgid "Shows the cover of the book currently being read"
+msgstr "Menampilkan sampul buku yang sedang dibaca"
+
+msgid "Shuffle (%d)"
+msgstr "Acak (%d)"
+
+msgid "Shuffle Pool"
+msgstr "Kolam Acak"
+
+msgid "Shuffles through all wallpapers in folder on sleep.\nPool size: %d wallpapers in rotation"
+msgstr "Mengacak semua wallpaper di folder saat tidur.\nUkuran kolam: %d wallpaper berputar"
+
+msgid "Single"
+msgstr "Tunggal"
+
+msgid "Single Wallpaper"
+msgstr "Wallpaper Tunggal"
+
+msgid "Solid fill for screen margins & letterboxing"
+msgstr "Isian warna solid untuk margin layar"
 
 msgid "Sort"
 msgstr "Urutkan"
@@ -1288,6 +1687,9 @@ msgstr "Mode Urut"
 
 msgid "Sort: A-Z"
 msgstr "Urut: A-Z"
+
+msgid "Sort: Most Liked"
+msgstr "Urutkan: Paling Disukai"
 
 msgid "Sort: Name (A → Z)"
 msgstr "Urut: Nama (A-Z)"
@@ -1352,6 +1754,9 @@ msgstr "Storefront · Pembaruan"
 msgid "Storefront: Open"
 msgstr "Storefront: Buka"
 
+msgid "Stretch image to fill entire screen"
+msgstr "Regangkan gambar ke layar penuh"
+
 msgid "Style: "
 msgstr "Gaya: "
 
@@ -1391,6 +1796,24 @@ msgstr "Saya ingin makan nasi goreng pedas manis enak sekali."
 msgid "This action cannot be undone.\n\nChanges will take effect after restart."
 msgstr "Tindakan ini tidak dapat dibatalkan.\n\nPerubahan akan berlaku setelah mulai ulang."
 
+msgid "This action cannot be undone.\\\n\\\nChanges will take effect after restart."
+msgstr "This action cannot be undone.\\\n\\\nChanges will take effect after restart."
+
+msgid "This wallpaper is currently set as your active screensaver."
+msgstr "Wallpaper ini saat ini disetel sebagai screensaver aktif Anda."
+
+msgid "This will delete all cached README files, wiki articles, and screensaver thumbnails (%s)."
+msgstr "Ini akan menghapus semua file README, artikel wiki, dan gambar mini screensaver yang di-cache (%s)."
+
+msgid "This will delete cached README markdown files and downloaded images (%s)."
+msgstr "Ini akan menghapus file markdown README dan gambar yang diunduh di cache (%s)."
+
+msgid "This will delete cached screensaver thumbnail previews (%s)."
+msgstr "Ini akan menghapus pratinjau gambar mini screensaver di cache (%s)."
+
+msgid "This will delete cached wiki articles and downloaded images (%s)."
+msgstr "Ini akan menghapus artikel wiki dan gambar yang diunduh di cache (%s)."
+
 msgid "This will take effect on next restart."
 msgstr "Ini akan berlaku pada pemuatan ulang berikutnya."
 
@@ -1399,6 +1822,9 @@ msgstr "Total komit: %d"
 
 msgid "Tracked: %d"
 msgstr "Melacak: %d"
+
+msgid "Transparent overlay (page content visible behind)"
+msgstr "Lapisan transparan (halaman terlihat di belakang)"
 
 msgid "Type"
 msgstr "Tipe"
@@ -1481,11 +1907,20 @@ msgstr "Patch \"%s\" diperbarui."
 msgid "Updated patch %s."
 msgstr "Tambalan %s telah diperbarui."
 
+msgid "Updated patch \\\\\"%s\\\\\"."
+msgstr "Updated patch \\\\\"%s\\\\\"."
+
 msgid "Updated plugin \"%s\" to version %s."
 msgstr "Plugin \"%s\" diperbarui ke versi %s."
 
 msgid "Updated plugin \"%s\"."
 msgstr "Plugin \"%s\" diperbarui."
+
+msgid "Updated plugin \\\\\"%s\\\\\" to version %s."
+msgstr "Updated plugin \\\\\"%s\\\\\" to version %s."
+
+msgid "Updated plugin \\\\\"%s\\\\\"."
+msgstr "Updated plugin \\\\\"%s\\\\\"."
 
 msgid "Updated: %s"
 msgstr "Diperbarui: %s"
@@ -1514,17 +1949,59 @@ msgstr "Versi"
 msgid "View README"
 msgstr "Lihat README"
 
+msgid "View commits (%s \\\\xE2\\\\x86\\\\x92 %s)"
+msgstr "View commits (%s \\\\xE2\\\\x86\\\\x92 %s)"
+
 msgid "View commits (%s → %s)"
 msgstr "Lihat komit (%s → %s)"
 
+msgid "Wallpaper Collection"
+msgstr "Koleksi Wallpaper"
+
+msgid "Wallpaper Options"
+msgstr "Opsi Wallpaper"
+
+msgid "Wallpaper deleted from device."
+msgstr "Wallpaper dihapus dari perangkat."
+
+msgid "Wallpaper removed"
+msgstr "Wallpaper dihapus"
+
+msgid "Wallpaper saved to collection!"
+msgstr "Wallpaper disimpan ke koleksi!"
+
+msgid "Wallpaper set as active KOReader screensaver!"
+msgstr "Wallpaper diatur sebagai screensaver KOReader aktif!"
+
+msgid "Wallpaper set as active screensaver!"
+msgstr "Wallpaper disetel sebagai screensaver aktif!"
+
 msgid "Warning: the selected version is older than what is currently installed. You are downgrading."
 msgstr "Peringatan: versi yang dipilih lebih lama daripada yang terpasang saat ini. Anda menurunkan versi."
+
+msgid "White Fill"
+msgstr "Isian Putih"
 
 msgid "Wiki"
 msgstr "Wiki"
 
 msgid "Wiki Pages"
 msgstr "Halaman Wiki"
+
+msgid "Wiki pages & images"
+msgstr "Halaman & gambar Wiki"
+
+msgid "Z -> A"
+msgstr "Z -> A"
+
+msgid "Z → A"
+msgstr "Z → A"
+
+msgid "[ Loading preview... ]"
+msgstr "[ Memuat pratinjau... ]"
+
+msgid "[ Wallpaper Preview Loading... ]"
+msgstr "[ Memuat Pratinjau Wallpaper... ]"
 
 msgid "[Ignored]"
 msgstr "[Diabaikan]"
@@ -1534,6 +2011,12 @@ msgstr "[draf]"
 
 msgid "[pre]"
 msgstr "[pre]"
+
+msgid "\\\\\"My dear Mr. Bennet,\\\\\" said his lady to him one day, \\\\\"have you heard that Netherfield Park is let at last?\\\\\" Mr. Bennet replied that he had not. \\\\\"But it is,\\\\\" returned she; \\\\\"for Mrs. Long has just been here, and she told me all about it.\\\\\" Mr. Bennet made no answer."
+msgstr "\\\\\"My dear Mr. Bennet,\\\\\" said his lady to him one day, \\\\\"have you heard that Netherfield Park is let at last?\\\\\" Mr. Bennet replied that he had not. \\\\\"But it is,\\\\\" returned she; \\\\\"for Mrs. Long has just been here, and she told me all about it.\\\\\" Mr. Bennet made no answer."
+
+msgid "\\\\xC2\\\\xB7"
+msgstr "\\\\xC2\\\\xB7"
 
 msgid "about_text"
 msgstr "Storefront adalah manajer paket bawaan KOReader untuk plugin, tambalan, dan font."
@@ -1760,6 +2243,9 @@ msgstr "README"
 msgid "tab_sample_text"
 msgstr "Teks Contoh"
 
+msgid "tab_screensavers"
+msgstr "Wallpaper"
+
 msgid "tab_versions"
 msgstr "Versi"
 
@@ -1778,11 +2264,17 @@ msgstr "·"
 msgid "≥ %s ⭐"
 msgstr "≥ %s ⭐"
 
+msgid "★ ACTIVE"
+msgstr "★ AKTIF"
+
+msgid "⚙ Settings"
+msgstr "⚙ Pengaturan"
+
+msgid "⚙ Settings..."
+msgstr "⚙ Pengaturan..."
+
 msgid "✓ Current"
 msgstr "✓ Saat ini"
-
-msgid "Screensavers"
-msgstr ""
 
 msgid "Downloading…"
 msgstr ""

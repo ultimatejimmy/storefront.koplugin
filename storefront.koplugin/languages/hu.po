@@ -8,11 +8,32 @@ msgstr ""
 msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
 msgstr "\"Drága Bennet úr!\" – mondta egy nap a felesége –, \"hallotta, hogy végre kiadták Netherfield Parkot?\" Bennet úr azt felelte, hogy nem. \"Pedig így van\" – válaszolta az asszony –, \"mert Mrs. Long épp most járt itt, és mindent elmesélt róla.\" Bennet úr nem válaszolt."
 
+msgid "%d Categories"
+msgstr "%d kategória"
+
+msgid "%d items"
+msgstr "%d elem"
+
 msgid "%d patches"
 msgstr "%d javítás"
 
 msgid "%d plugins"
 msgstr "%d bővítmény"
+
+msgid "%d wallpapers"
+msgstr "%d háttérkép"
+
+msgid "%d wallpapers stored on device"
+msgstr "%d háttérkép tárolva az eszközön"
+
+msgid "%d wallpapers · Folder Shuffle (all in rotation)"
+msgstr "%d háttérkép · Mappa keverés (mind forog)"
+
+msgid "%d wallpapers · Mode: Book Cover"
+msgstr "%d háttérkép · Mód: Könyvborító"
+
+msgid "%d wallpapers · Single mode active"
+msgstr "%d háttérkép · Egyedi mód aktív"
 
 msgid "%s and %s"
 msgstr "%s és %s"
@@ -26,11 +47,20 @@ msgstr "%s naprakész."
 msgid "%s needs an update."
 msgstr "%s frissítést igényel."
 
+msgid "%s · %d files"
+msgstr "%s · %d fájl"
+
+msgid "%s · 1 file"
+msgstr "%s · 1 fájl"
+
 msgid "(fork)"
 msgstr "(fork)"
 
 msgid "(showing %d of %d commits)"
 msgstr "(megjelenítve %d / %d commit)"
+
+msgid "+ Add to Shuffle Pool"
+msgstr "+ Hozzáadás a véletlenszerű listához"
 
 msgid "1 / 1"
 msgstr "1 / 1"
@@ -50,14 +80,44 @@ msgstr "< Előző"
 msgid "?"
 msgstr "?"
 
+msgid "A -> Z"
+msgstr "A -> Z"
+
+msgid "A → Z"
+msgstr "A → Z"
+
 msgid "About"
 msgstr "Névjegy"
 
 msgid "About Storefront"
 msgstr "Storefront névjegye"
 
+msgid "Active Single"
+msgstr "Aktív egyedi"
+
+msgid "Active Wallpaper ✓"
+msgstr "Aktív háttérkép ✓"
+
+msgid "Active: %s"
+msgstr "Aktív: %s"
+
+msgid "Add to Shuffle"
+msgstr "Hozzáadás keveréshez"
+
+msgid "Add to Shuffle Pool (Enable Shuffle)"
+msgstr "Hozzáadás a keveréshez (keverés bekapcsolása)"
+
+msgid "Added to shuffle pool & Folder Shuffle enabled!"
+msgstr "Hozzáadva a listához és véletlenszerű mód engedélyezve!"
+
 msgid "All"
 msgstr "Mind"
+
+msgid "All Caches"
+msgstr "Minden gyorsítótár"
+
+msgid "All Categories"
+msgstr "Minden kategória"
 
 msgid "All Types"
 msgstr "Minden típus"
@@ -116,11 +176,29 @@ msgstr "Vissza"
 msgid "Beta"
 msgstr "Béta"
 
+msgid "Black Fill"
+msgstr "Fekete kitöltés"
+
+msgid "Blank"
+msgstr "Üres"
+
+msgid "Book Cover"
+msgstr "Könyvborító"
+
+msgid "Border Fill / Background"
+msgstr "Szegély kitöltés / Háttér"
+
 msgid "Both owner and repository name are required."
 msgstr "A tulajdonos és a tárhely neve is kötelező."
 
 msgid "Branch: %s"
 msgstr "Ág: %s"
+
+msgid "Browse Wallpapers in Storefront"
+msgstr "Háttérképek böngészése a Storefrontban"
+
+msgid "By "
+msgstr "By"
 
 msgid "By: %s"
 msgstr "Szerző: %s"
@@ -173,11 +251,26 @@ msgstr "Katalógus forrása"
 msgid "Catalog updated: %d plugins, %d patches, %d fonts."
 msgstr "Katalógus frissítve: %d bővítmény, %d javítás, %d betűtípus."
 
+msgid "Categories"
+msgstr "Kategóriák"
+
+msgid "Category: "
+msgstr "Kategória: "
+
 msgid "Category: %s"
 msgstr "Kategória: %s"
 
+msgid "Change..."
+msgstr "Módosítás..."
+
+msgid "Changelog for %s\n%s \\\\xE2\\\\x86\\\\x92 %s"
+msgstr "Changelog for %s\n%s \\\\xE2\\\\x86\\\\x92 %s"
+
 msgid "Changelog for %s\n%s → %s"
 msgstr "%s változási naplója\n%s → %s"
+
+msgid "Changelog for %s\\\n%s \\\\xE2\\\\x86\\\\x92 %s"
+msgstr "Changelog for %s\\\n%s \\\\xE2\\\\x86\\\\x92 %s"
 
 msgid "Changelog: %s"
 msgstr "Változásnapló: %s"
@@ -227,29 +320,92 @@ msgstr "Bővítményfrissítések ellenőrzése…"
 msgid "Choose Build — %s"
 msgstr "Build kiválasztása — %s"
 
+msgid "Clean"
+msgstr "Tisztítás"
+
 msgid "Clear"
 msgstr "Törlés"
+
+msgid "Clear All"
+msgstr "Mindent töröl"
+
+msgid "Clear All Caches?"
+msgstr "Minden gyorsítótár törlése?"
+
+msgid "Clear Cache"
+msgstr "Gyorsítótár törlése"
+
+msgid "Clear README Cache?"
+msgstr "README gyorsítótár törlése?"
 
 msgid "Clear README cache"
 msgstr "README törlése"
 
+msgid "Clear README cache (%s)?\nCached README files and images will be deleted."
+msgstr "Clear README cache (%s)?\nCached README files and images will be deleted."
+
+msgid "Clear Thumbnail Cache?"
+msgstr "Bélyegkép gyorsítótár törlése?"
+
+msgid "Clear Wiki Cache?"
+msgstr "Wiki gyorsítótár törlése?"
+
+msgid "Clear Wiki cache (%s)?\nCached wiki articles and images will be deleted."
+msgstr "Clear Wiki cache (%s)?\nCached wiki articles and images will be deleted."
+
+msgid "Clear all cached data (%s)?\nAll README files, wiki articles, and thumbnails will be deleted."
+msgstr "Clear all cached data (%s)?\nAll README files, wiki articles, and thumbnails will be deleted."
+
+msgid "Clear cache…"
+msgstr "Gyorsítótár törlése"
+
+msgid "Clear screensaver thumbnail cache (%s)?\nThumbnails will be re-downloaded when viewing wallpapers."
+msgstr "Clear screensaver thumbnail cache (%s)?\nThumbnails will be re-downloaded when viewing wallpapers."
+
+msgid "Clear search & filters"
+msgstr "Keresés és szűrők törlése"
+
 msgid "Clear search/filters"
 msgstr "Keresés/szűrők törlése"
+
+msgid "Cleared README cache (%s freed)."
+msgstr "Cleared README cache (%s freed)."
+
+msgid "Cleared Wiki cache (%s freed)."
+msgstr "Cleared Wiki cache (%s freed)."
+
+msgid "Cleared all caches (%s freed, %d files)."
+msgstr "Cleared all caches (%s freed, %d files)."
+
+msgid "Cleared screensaver thumbnails (%s freed)."
+msgstr "Cleared screensaver thumbnails (%s freed)."
 
 msgid "Close"
 msgstr "Bezárás"
 
+msgid "Collection"
+msgstr "Gyűjtemény"
+
 msgid "Commit diff: %s → %s"
 msgstr "Commit diff: %s → %s"
 
+msgid "Commits: %s \\\\xE2\\\\x86\\\\x92 %s"
+msgstr "Commits: %s \\\\xE2\\\\x86\\\\x92 %s"
+
 msgid "Commits: %s → %s"
 msgstr "Commitek: %s → %s"
+
+msgid "Community"
+msgstr "Közösség"
 
 msgid "Config files only"
 msgstr "Csak konfigurációs fájlok"
 
 msgid "Configured ✓"
 msgstr "Beállítva ✓"
+
+msgid "Confirm"
+msgstr "Megerősítés"
 
 msgid "Confirm Update"
 msgstr "Frissítés megerősítése"
@@ -259,6 +415,9 @@ msgstr "Összes frissítésének megerősítése"
 
 msgid "Connecting to GitHub…\n\nPlease wait."
 msgstr "Kapcsolódás a GitHubhoz…\n\nKérjük, várjon."
+
+msgid "Connecting to GitHub…\\\n\\\nPlease wait."
+msgstr "Connecting to GitHub…\\\n\\\nPlease wait."
 
 msgid "Continue"
 msgstr "Folytatás"
@@ -305,6 +464,18 @@ msgstr "Csak alapértelmezett"
 msgid "Delete"
 msgstr "Törlés"
 
+msgid "Delete "
+msgstr "Törlés"
+
+msgid "Delete '%s' from your device?"
+msgstr "Törli a(z) '%s' elemet az eszközről?"
+
+msgid "Delete File?"
+msgstr "Fájl törlése?"
+
+msgid "Delete Wallpaper?"
+msgstr "Háttérkép törlése?"
+
 msgid "Delete all cached README files? They will be re-downloaded on demand."
 msgstr "Törli az összes gyorsítótárazott README fájlt? Szükség esetén újból letöltődnek."
 
@@ -319,6 +490,9 @@ msgstr "Betűtípus törlése "
 
 msgid "Delete font '%s'?"
 msgstr "Törli a(z) '%s' betűtípust?"
+
+msgid "Delete from Device"
+msgstr "Törlés az eszközről"
 
 msgid "Delete patch"
 msgstr "Javítás törlése"
@@ -365,6 +539,27 @@ msgstr "Bővítmény letiltása"
 msgid "Disabled"
 msgstr "Letiltva"
 
+msgid "Display Options"
+msgstr "Megjelenítési beállítások"
+
+msgid "Displays a static wallpaper on sleep"
+msgstr "Statikus háttérképet jelenít meg alvó állapotban"
+
+msgid "Displays a static wallpaper on sleep.\nActive: %s"
+msgstr "Statikus háttérképet jelenít meg alvó állapotban.\nAktív: %s"
+
+msgid "Done"
+msgstr "Kész"
+
+msgid "Download & Set Active"
+msgstr "Letöltés és aktiválás"
+
+msgid "Download Only"
+msgstr "Csak letöltés"
+
+msgid "Download Only (Save to Device)"
+msgstr "Csak letöltés (mentés az eszközre)"
+
 msgid "Download failed: "
 msgstr "Sikertelen letöltés: "
 
@@ -377,11 +572,20 @@ msgstr "Letöltési lehetőségek — %s"
 msgid "Download options — %s (%s)"
 msgstr "Letöltési lehetőségek — %s (%s)"
 
+msgid "Downloading "
+msgstr "Downloading..."
+
 msgid "Downloading %s%s…\nThis may take a moment."
 msgstr "%s%s letöltése…\nEz eltarthat egy ideig."
 
+msgid "Downloading %s%s…\\\nThis may take a moment."
+msgstr "Downloading %s%s…\\\nThis may take a moment."
+
 msgid "Downloading %s…"
 msgstr "%s letöltése…"
+
+msgid "Downloading '%s'..."
+msgstr "Downloading '%s'..."
 
 msgid "Downloading patch \"%s\"…"
 msgstr "A(z) \"%s\" javítás letöltése…"
@@ -389,8 +593,20 @@ msgstr "A(z) \"%s\" javítás letöltése…"
 msgid "Downloading patch %s…"
 msgstr "%s javítás letöltése…"
 
+msgid "Downloading patch \\\\\"%s\\\\\"…"
+msgstr "Downloading patch \\\\\"%s\\\\\"…"
+
+msgid "Downloading screensaver..."
+msgstr "Képernyőkímélő letöltése..."
+
+msgid "Downloading to shuffle pool..."
+msgstr "Letöltés a keverési készletbe..."
+
 msgid "Edit"
 msgstr "Szerkesztés"
+
+msgid "Empty (0 KB)"
+msgstr "Üres (0 KB)"
 
 msgid "Enable"
 msgstr "Engedélyezés"
@@ -412,6 +628,9 @@ msgstr "Adja meg a bővítmény számát"
 
 msgid "Extracting and installing plugin…\nPlease wait."
 msgstr "Bővítmény kibontása és telepítése…\nKérjük, várjon."
+
+msgid "Extracting and installing plugin…\\\nPlease wait."
+msgstr "Extracting and installing plugin…\\\nPlease wait."
 
 msgid "Failed to check %s: %s"
 msgstr "%s ellenőrzése sikertelen: %s"
@@ -439,6 +658,9 @@ msgstr "A(z) '%s' javítás letiltása sikertelen."
 
 msgid "Failed to download patch: %s"
 msgstr "Nem sikerült letölteni a javítást: %s"
+
+msgid "Failed to download screensaver."
+msgstr "Nem sikerült letölteni a képernyőkímélőt."
 
 msgid "Failed to enable patch "
 msgstr "A javítás engedélyezése sikertelen: "
@@ -512,6 +734,9 @@ msgstr "Javítások szűrése és rendezése"
 msgid "Filter & Sort Plugins"
 msgstr "Bővítmények szűrése és rendezése"
 
+msgid "Filter & Sort Screensavers"
+msgstr "Képernyőkímélők szűrése és rendezése"
+
 msgid "Filter Installed Patches"
 msgstr "Telepített javítások szűrése"
 
@@ -536,6 +761,12 @@ msgstr "Szűrők: "
 msgid "Filters: (none)"
 msgstr "Szűrők: (nincs)"
 
+msgid "Folder Shuffle"
+msgstr "Mappa véletlenszerű"
+
+msgid "Folder Shuffle enabled with this wallpaper!"
+msgstr "Mappa keverés bekapcsolva ezzel a háttérképpel!"
+
 msgid "Font"
 msgstr "Betűtípus"
 
@@ -553,6 +784,9 @@ msgstr "Betűstílus"
 
 msgid "Fonts"
 msgstr "Betűtípusok"
+
+msgid "Free up storage space on your device. Cached items are re-downloaded automatically when needed."
+msgstr "Tárhely felszabadítása az eszközön. A gyorsítótárazott elemek szükség esetén automatikusan újraletődnek."
 
 msgid "GitHub API rate limit exceeded. Add a GitHub token in Storefront settings to increase the limit (10→30 req/min)."
 msgstr "A GitHub API kéréskorlátja túllépve. Adjon meg egy GitHub tokent a Storefront beállításaiban a korlát növeléséhez (10→30 kérés/perc)."
@@ -623,6 +857,9 @@ msgstr "Javítás telepítése GitHubról"
 msgid "Install plugin from GitHub"
 msgstr "Bővítmény telepítése GitHubról"
 
+msgid "Install to Default?"
+msgstr "Telepítés az alapértelmezett helyre?"
+
 msgid "Install to default"
 msgstr "Telepítés az alapértelmezett helyre"
 
@@ -644,14 +881,26 @@ msgstr "Telepített bővítmények beállításai"
 msgid "Installed Regular font style offline for \"%s\". Full font family queued for download when reconnected."
 msgstr "Offline telepítve a Normál betűstílus ehhez: \"%s\". A teljes betűcsalád letöltése sorba állítva az újracsatlakozáshoz."
 
+msgid "Installed Regular font style offline for \\\\\"%s\\\\\". Full font family queued for download when reconnected."
+msgstr "Installed Regular font style offline for \\\\\"%s\\\\\". Full font family queued for download when reconnected."
+
 msgid "Installed font \"%s\" (%d file(s))."
 msgstr "A(z) \"%s\" betűtípus telepítve (%d fájl)."
+
+msgid "Installed font \\\\\"%s\\\\\" (%d file(s))."
+msgstr "Installed font \\\\\"%s\\\\\" (%d file(s))."
 
 msgid "Installed full font family \"%s\" (%d file(s))."
 msgstr "A(z) \"%s\" teljes betűcsalád telepítve (%d fájl)."
 
+msgid "Installed full font family \\\\\"%s\\\\\" (%d file(s))."
+msgstr "Installed full font family \\\\\"%s\\\\\" (%d file(s))."
+
 msgid "Installed patch \"%s\"."
 msgstr "A(z) \"%s\" javítás telepítve."
+
+msgid "Installed patch \\\\\"%s\\\\\"."
+msgstr "Installed patch \\\\\"%s\\\\\"."
 
 msgid "Installed plugin \"%s\" (version %s)."
 msgstr "A(z) \"%s\" bővítmény telepítve (%s verzió)."
@@ -676,6 +925,9 @@ msgstr "Érvénytelen célfájlnév a javításhoz."
 
 msgid "Invalid selection."
 msgstr "Érvénytelen kijelölés."
+
+msgid "Invert colors (night mode / dark background)"
+msgstr "Színek megfordítása (éjszakai mód / sötét háttér)"
 
 msgid "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters."
 msgstr "Általánosan elismert igazság, hogy a tehetős nőtlen embernek nyomban feleségre van szüksége."
@@ -736,6 +988,9 @@ msgstr "Bővítményútvonalak kezelése"
 
 msgid "Manage plugin paths\n\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
 msgstr "Bővítményútvonalak kezelése\n\nEgy útvonal elrejtése csak azt befolyásolja, amit a Storefront itt megjelenít/kezel. A KOReader továbbra is betölti belőle a bővítményeket."
+
+msgid "Manage plugin paths\\\n\\\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
+msgstr "Manage plugin paths\\\n\\\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
 
 msgid "Match"
 msgstr "Párosítás"
@@ -836,8 +1091,17 @@ msgstr "Bővítmény módosítása"
 msgid "Modify Plugin: %s"
 msgstr "Bővítmény módosítása: %s"
 
+msgid "Most Downloaded"
+msgstr "Legtöbbet letöltött"
+
+msgid "Most Popular"
+msgstr "Legnépszerűbb"
+
 msgid "Multiple custom plugin folders are configured. Where should this plugin be installed?"
 msgstr "Több egyéni bővítménymappa van beállítva. Hová legyen telepítve ez a bővítmény?"
+
+msgid "My wallpaper collection"
+msgstr "Háttérkép gyűjteményem"
 
 msgid "Name (A-Z)"
 msgstr "Név (A-Z)"
@@ -865,6 +1129,9 @@ msgstr "Következő"
 
 msgid "Next >"
 msgstr "Következő >"
+
+msgid "No Fill (Transparent)"
+msgstr "Nincs kitöltés (átlátszó)"
 
 msgid "No Lua files found in plugin directory"
 msgstr "Nem találhatók Lua fájlok a bővítmény könyvtárában"
@@ -959,11 +1226,23 @@ msgstr "Nem találhatók kiadások ehhez a tárhelyhez."
 msgid "No remote version info for %s."
 msgstr "Nincs távoli verzióinformáció ehhez: %s."
 
+msgid "No screensavers match this filter."
+msgstr "Nincs a szűrőnek megfelelő képernyőkímélő."
+
 msgid "No stable releases found — uncheck filter to show all releases"
 msgstr "Nem találhatók stabil kiadások — törölje a szűrőt az összes kiadás megjelenítéséhez"
 
 msgid "No tracked plugins to check."
 msgstr "Nincsenek nyomon követett bővítmények az ellenőrzéshez."
+
+msgid "No wallpapers found in your screensavers folder.\n\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
+msgstr "Nem találhatók háttérképek a képernyőkímélő mappában.\n\nBöngésszen a Storefront katalógusában háttérképek letöltéséhez!"
+
+msgid "No wallpapers found in your screensavers folder.\\\n\\\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
+msgstr "No wallpapers found in your screensavers folder.\\\n\\\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
+
+msgid "None selected"
+msgstr "Nincs kiválasztva"
 
 msgid "Not matched with a repository."
 msgstr "Nincs repóhoz párosítva."
@@ -974,11 +1253,17 @@ msgstr "Nincs megadva"
 msgid "Notes"
 msgstr "Megjegyzések"
 
+msgid "OK"
+msgstr "OK"
+
 msgid "Offline Regular"
 msgstr "Offline Regular"
 
 msgid "Open"
 msgstr "Megnyitás"
+
+msgid "Open Wallpaper Collection Gallery"
+msgstr "Háttérkép-galéria megnyitása"
 
 msgid "Open details"
 msgstr "Részletek megnyitása"
@@ -988,6 +1273,9 @@ msgstr "Opcionális. Növeli a GitHub API kéréskorlátját. Hozzon létre egye
 
 msgid "Optional. Raises the GitHub API rate limit. Generate one (classic, 'public_repo' scope is enough) at github.com/settings/tokens, then paste it here."
 msgstr "Opcionális. Növeli a GitHub API kéréskorlátját. Hozzon létre egyet (a klasszikus, 'public_repo' hatókör elegendő) a github.com/settings/tokens címen, majd illessze be ide."
+
+msgid "Options ▾"
+msgstr "Opciók ▾"
 
 msgid "Origin"
 msgstr "Eredet"
@@ -1021,6 +1309,9 @@ msgstr "Javítás "
 
 msgid "Patch %s has been %s."
 msgstr "A(z) %s javítás %s lett."
+
+msgid "Patch '%s' deleted."
+msgstr "A(z) '%s' javítás törölve."
 
 msgid "Patch '%s' disabled."
 msgstr "'%s' javítás letiltva."
@@ -1097,6 +1388,9 @@ msgstr "Bővítmények"
 msgid "Plugins cached: %s (last update: %s)"
 msgstr "Gyorsítótárazott bővítmények: %s (utolsó frissítés: %s)"
 
+msgid "Pool size: %d wallpapers in rotation"
+msgstr "Készlet mérete: %d háttérkép forog"
+
 msgid "Pre-installed core KOReader plugin."
 msgstr "Előre telepített KOReader alapbővítmény."
 
@@ -1112,14 +1406,32 @@ msgstr "README"
 msgid "README download failed: "
 msgstr "README letöltése sikertelen: "
 
+msgid "README files & images"
+msgstr "README fájlok és képek"
+
+msgid "Rate Wallpaper"
+msgstr "Háttérkép értékelése"
+
 msgid "Reading Passage Specimen"
 msgstr "Olvasási minta"
+
+msgid "Reading Progress"
+msgstr "Olvasási állapot"
+
+msgid "Reading Progress / Summary"
+msgstr "Olvasási folyamat / Összegzés"
+
+msgid "Recently Added"
+msgstr "Nemrég hozzáadva"
 
 msgid "Refresh"
 msgstr "Frissítés"
 
 msgid "Refresh cache"
 msgstr "Gyorsítótár frissítése"
+
+msgid "Refresh catalog"
+msgstr "Katalógus frissítése"
 
 msgid "Refreshing catalog via Direct GitHub API…"
 msgstr "Katalógus frissítése Direct GitHub API használatával…"
@@ -1181,6 +1493,15 @@ msgstr "Távoli: (nincs ellenőrizve)"
 msgid "Remove"
 msgstr "Eltávolítás"
 
+msgid "Remove "
+msgstr "Eltávolítás"
+
+msgid "Remove '%s' from your wallpaper collection?"
+msgstr "Eltávolítja a(z) '%s' elemet a háttérkép gyűjteményből?"
+
+msgid "Remove Wallpaper?"
+msgstr "Háttérkép eltávolítása?"
+
 msgid "Rename"
 msgstr "Átnevezés"
 
@@ -1235,6 +1556,30 @@ msgstr "Mintaszöveg"
 msgid "Save"
 msgstr "Mentés"
 
+msgid "Screensaver"
+msgstr "Képernyőkímélő"
+
+msgid "Screensaver & Wallpapers"
+msgstr "Képernyőkímélő és háttérképek"
+
+msgid "Screensaver Details"
+msgstr "Képernyőkímélő részletei"
+
+msgid "Screensaver Mode"
+msgstr "Képernyőkímélő mód"
+
+msgid "Screensaver Settings"
+msgstr "Képernyővédő beállításai"
+
+msgid "Screensaver mode"
+msgstr "Képernyőkímélő mód"
+
+msgid "Screensaver thumbnails"
+msgstr "Képernyőkímélő bélyegképek"
+
+msgid "Screensavers"
+msgstr "Képernyővédők"
+
 msgid "Search"
 msgstr "Keresés"
 
@@ -1244,11 +1589,23 @@ msgstr "\"%s\" keresése"
 msgid "Search & API"
 msgstr "Keresés és API"
 
+msgid "Search filter (\"%s\") is not applied to Updates."
+msgstr "Search filter (\"%s\") is not applied to Updates."
+
+msgid "Search filter (\\\\\"%s\\\\\") is not applied to Updates."
+msgstr "Search filter (\\\\\"%s\\\\\") is not applied to Updates."
+
 msgid "Search text"
 msgstr "Keresendő szöveg"
 
 msgid "Search: "
 msgstr "Keresés: "
+
+msgid "Select All"
+msgstr "Mindet kijelöli"
+
+msgid "Select Categories"
+msgstr "Kategóriák kiválasztása"
 
 msgid "Select a repository patch entry to match with the chosen file."
 msgstr "Válasszon ki egy tárhely-javítási bejegyzést a kiválasztott fájllal való párosításhoz."
@@ -1274,11 +1631,53 @@ msgstr "Repó kiválasztása"
 msgid "Set"
 msgstr "Beállítás"
 
+msgid "Set Active Single"
+msgstr "Beállítás aktív egyéni háttérképként"
+
+msgid "Set Single"
+msgstr "Egyediként beállít"
+
+msgid "Set as Active"
+msgstr "Beállítás aktívként"
+
+msgid "Set as Active Single Wallpaper"
+msgstr "Beállítás aktív egyedi háttérképként"
+
+msgid "Set as active single wallpaper!"
+msgstr "Beállítva aktív egyedi háttérképként!"
+
 msgid "Settings"
 msgstr "Beállítások"
 
 msgid "Show needs update"
 msgstr "Frissítendők megjelenítése"
+
+msgid "Show reading progress banner overlay"
+msgstr "Olvasási haladás sáv megjelenítése"
+
+msgid "Shows reading stats, percentage, and chapter progress"
+msgstr "Megjeleníti az olvasási statisztikát, a százalékot és a fejezet haladását"
+
+msgid "Shows the cover of the book currently being read"
+msgstr "Az éppen olvasott könyv borítóját jeleníti meg"
+
+msgid "Shuffle (%d)"
+msgstr "Keverés (%d)"
+
+msgid "Shuffle Pool"
+msgstr "Keverési készlet"
+
+msgid "Shuffles through all wallpapers in folder on sleep.\nPool size: %d wallpapers in rotation"
+msgstr "Minden háttérképet váltogat a mappában alvó állapotban.\nKészlet mérete: %d háttérkép forog"
+
+msgid "Single"
+msgstr "Egyedi"
+
+msgid "Single Wallpaper"
+msgstr "Egyedi háttérkép"
+
+msgid "Solid fill for screen margins & letterboxing"
+msgstr "Egyszínű kitöltés a képernyő margóihoz"
 
 msgid "Sort"
 msgstr "Rendezés"
@@ -1288,6 +1687,9 @@ msgstr "Rendezési mód"
 
 msgid "Sort: A-Z"
 msgstr "Rendezés: A-Z"
+
+msgid "Sort: Most Liked"
+msgstr "Rendezés: Legkedveltebb"
 
 msgid "Sort: Name (A → Z)"
 msgstr "Rendezés: Név (A-Z)"
@@ -1352,6 +1754,9 @@ msgstr "Storefront · Frissítések"
 msgid "Storefront: Open"
 msgstr "Storefront: Megnyitás"
 
+msgid "Stretch image to fill entire screen"
+msgstr "Kép nyújtása teljes képernyőre"
+
 msgid "Style: "
 msgstr "Stílus: "
 
@@ -1391,6 +1796,24 @@ msgstr "Jókedvű víg tengerész ivott édes bort."
 msgid "This action cannot be undone.\n\nChanges will take effect after restart."
 msgstr "Ez a művelet nem vonható vissza.\n\nA változtatások az újraindítás után lépnek életbe."
 
+msgid "This action cannot be undone.\\\n\\\nChanges will take effect after restart."
+msgstr "This action cannot be undone.\\\n\\\nChanges will take effect after restart."
+
+msgid "This wallpaper is currently set as your active screensaver."
+msgstr "Ez a háttérkép van jelenleg beállítva aktív képernyőkímélőként."
+
+msgid "This will delete all cached README files, wiki articles, and screensaver thumbnails (%s)."
+msgstr "Ez törli az összes gyorsítótárazott README fájlt, wiki cikket és képernyőkímélő bélyegképet (%s)."
+
+msgid "This will delete cached README markdown files and downloaded images (%s)."
+msgstr "Ez törli a gyorsítótárazott README markdown fájlokat és a letöltött képeket (%s)."
+
+msgid "This will delete cached screensaver thumbnail previews (%s)."
+msgstr "Ez törli a gyorsítótárazott képernyőkímélő bélyegkép előnézeteket (%s)."
+
+msgid "This will delete cached wiki articles and downloaded images (%s)."
+msgstr "Ez törli a gyorsítótárazott wiki cikkeket és a letöltött képeket (%s)."
+
 msgid "This will take effect on next restart."
 msgstr "Ez a következő újraindításkor lép életbe."
 
@@ -1399,6 +1822,9 @@ msgstr "Összes commit: %d"
 
 msgid "Tracked: %d"
 msgstr "Követett: %d"
+
+msgid "Transparent overlay (page content visible behind)"
+msgstr "Átlátszó réteg (az oldal tartalma látható a háttérben)"
 
 msgid "Type"
 msgstr "Típus"
@@ -1481,11 +1907,20 @@ msgstr "A(z) \"%s\" javítás frissítve."
 msgid "Updated patch %s."
 msgstr "Frissített javítás: %s."
 
+msgid "Updated patch \\\\\"%s\\\\\"."
+msgstr "Updated patch \\\\\"%s\\\\\"."
+
 msgid "Updated plugin \"%s\" to version %s."
 msgstr "A(z) \"%s\" bővítmény frissítve a %s verzióra."
 
 msgid "Updated plugin \"%s\"."
 msgstr "A(z) \"%s\" bővítmény frissítve."
+
+msgid "Updated plugin \\\\\"%s\\\\\" to version %s."
+msgstr "Updated plugin \\\\\"%s\\\\\" to version %s."
+
+msgid "Updated plugin \\\\\"%s\\\\\"."
+msgstr "Updated plugin \\\\\"%s\\\\\"."
 
 msgid "Updated: %s"
 msgstr "Frissítve: %s"
@@ -1514,17 +1949,59 @@ msgstr "Verziók"
 msgid "View README"
 msgstr "README megtekintése"
 
+msgid "View commits (%s \\\\xE2\\\\x86\\\\x92 %s)"
+msgstr "View commits (%s \\\\xE2\\\\x86\\\\x92 %s)"
+
 msgid "View commits (%s → %s)"
 msgstr "Commitek megtekintése (%s → %s)"
 
+msgid "Wallpaper Collection"
+msgstr "Háttérkép-gyűjtemény"
+
+msgid "Wallpaper Options"
+msgstr "Háttérkép beállítások"
+
+msgid "Wallpaper deleted from device."
+msgstr "Háttérkép törölve az eszközről."
+
+msgid "Wallpaper removed"
+msgstr "Háttérkép eltávolítva"
+
+msgid "Wallpaper saved to collection!"
+msgstr "Háttérkép elmentve a gyűjteménybe!"
+
+msgid "Wallpaper set as active KOReader screensaver!"
+msgstr "Háttérkép beállítva aktív KOReader képernyővédőként!"
+
+msgid "Wallpaper set as active screensaver!"
+msgstr "Háttérkép beállítva aktív képernyőkímélőként!"
+
 msgid "Warning: the selected version is older than what is currently installed. You are downgrading."
 msgstr "Figyelem: a kiválasztott verzió régebbi a jelenleg telepítettnél. Visszalépést hajtanál végre."
+
+msgid "White Fill"
+msgstr "Fehér kitöltés"
 
 msgid "Wiki"
 msgstr "Wiki"
 
 msgid "Wiki Pages"
 msgstr "Wiki oldalak"
+
+msgid "Wiki pages & images"
+msgstr "Wiki oldalak és képek"
+
+msgid "Z -> A"
+msgstr "Z -> A"
+
+msgid "Z → A"
+msgstr "Z → A"
+
+msgid "[ Loading preview... ]"
+msgstr "[ Előnézet betöltése... ]"
+
+msgid "[ Wallpaper Preview Loading... ]"
+msgstr "[ Háttérkép előnézet betöltése... ]"
 
 msgid "[Ignored]"
 msgstr "[Mellőzve]"
@@ -1534,6 +2011,12 @@ msgstr "[piszkozat]"
 
 msgid "[pre]"
 msgstr "[előzetes]"
+
+msgid "\\\\\"My dear Mr. Bennet,\\\\\" said his lady to him one day, \\\\\"have you heard that Netherfield Park is let at last?\\\\\" Mr. Bennet replied that he had not. \\\\\"But it is,\\\\\" returned she; \\\\\"for Mrs. Long has just been here, and she told me all about it.\\\\\" Mr. Bennet made no answer."
+msgstr "\\\\\"My dear Mr. Bennet,\\\\\" said his lady to him one day, \\\\\"have you heard that Netherfield Park is let at last?\\\\\" Mr. Bennet replied that he had not. \\\\\"But it is,\\\\\" returned she; \\\\\"for Mrs. Long has just been here, and she told me all about it.\\\\\" Mr. Bennet made no answer."
+
+msgid "\\\\xC2\\\\xB7"
+msgstr "\\\\xC2\\\\xB7"
 
 msgid "about_text"
 msgstr "A Storefront egy KOReader-be épített csomagkezelő bővítményekhez, javításokhoz és betűtípusokhoz."
@@ -1760,6 +2243,9 @@ msgstr "Olvass el"
 msgid "tab_sample_text"
 msgstr "Mintaszöveg"
 
+msgid "tab_screensavers"
+msgstr "Hátterek"
+
 msgid "tab_versions"
 msgstr "Verziók"
 
@@ -1778,11 +2264,17 @@ msgstr "·"
 msgid "≥ %s ⭐"
 msgstr "≥ %s ⭐"
 
+msgid "★ ACTIVE"
+msgstr "★ AKTÍV"
+
+msgid "⚙ Settings"
+msgstr "⚙ Beállítások"
+
+msgid "⚙ Settings..."
+msgstr "⚙ Beállítások..."
+
 msgid "✓ Current"
 msgstr "✓ Jelenlegi"
-
-msgid "Screensavers"
-msgstr ""
 
 msgid "Downloading…"
 msgstr ""

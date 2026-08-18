@@ -40,6 +40,7 @@ function StorefrontToastWidget:init()
         width = sc(22),
         height = sc(22),
         scale_factor = 0,
+        is_icon = true,
         alpha = true,
     }
 
@@ -131,6 +132,11 @@ function StorefrontToastWidget:close()
         self._timer = nil
     end
     UIManager:close(self)
+end
+
+function StorefrontToastWidget:show()
+    UIManager:show(self)
+    return self
 end
 
 function StorefrontToastWidget:setText(text)
