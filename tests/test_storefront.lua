@@ -1,5 +1,10 @@
 -- Storefront Automated Test Suite
--- Tests: Font face preview rendering, FontList registry isolation, batch font deletion, alias expansion.
+-- Tests: Font face preview rendering, fallback paths, cache hit/miss, FontList registry isolation, alias expansion, localization.
+
+local script_dir = debug.getinfo(1, "S").source:match("^@?(.*[/\\])") or "./"
+package.path = script_dir .. "../storefront.koplugin/?.lua;" .. script_dir .. "?.lua;" .. script_dir .. "../?.lua;" .. package.path
+
+require("spec_helper")
 
 local function runTests()
     print("==================================================")
@@ -18,25 +23,6 @@ local function runTests()
             print(" [FAIL] " .. name .. (msg and (" - " .. tostring(msg)) or ""))
         end
     end
-
-    -- Setup package.path for plugin directory imports
-    local script_dir = debug.getinfo(1, "S").source:match("^@?(.*[/\\])") or "./"
-    package.path = script_dir .. "../storefront.koplugin/?.lua;" .. script_dir .. "../?.lua;" .. package.path
-
-    -- Mock basic KOReader modules if running outside full KOReader environment
-    package.loaded["gettext"] = package.loaded["gettext"] or { _ = function(str) return str end }
-    package.loaded["device"] = package.loaded["device"] or {
-        screen = {
-            scaleBySize = function(_, val) return val end,
-            getWidth = function() return 600 end,
-            getHeight = function() return 800 end,
-        },
-        hasKeys = function() return false end,
-        hasKeyboard = function() return false end,
-    }
-    package.loaded["ui/geometry"] = package.loaded["ui/geometry"] or { new = function(_, t) return t end }
-    package.loaded["ui/widget/container/inputcontainer"] = package.loaded["ui/widget/container/inputcontainer"] or { extend = function(_, t) return t end }
-    package.loaded["ffi/blitbuffer"] = package.loaded["ffi/blitbuffer"] or { COLOR_BLACK = 0, COLOR_WHITE = 1 }
 
     -- ----------------------------------------------------
     -- TEST 1: Catalog Font Face Preview Resolution
@@ -75,9 +61,37 @@ local function runTests()
     end
 
     -- ----------------------------------------------------
-    -- TEST 2: FontList Registry Isolation
+    -- TEST 2: Font Fallback & Cache Regression Tests
     -- ----------------------------------------------------
-    print("\n--- TEST 2: FontList Registry Isolation ---")
+    print("\n--- TEST 2: Font Fallback & Cache Robustness ---")
+    -- Test A: Font not in bundled assets with font_file specified (regression test for ipairs nil bug)
+    local unbundled_entry = {
+        kind = "font",
+        is_font = true,
+        name = "UnbundledTestFont",
+        font_family = "UnbundledTestFontFamily",
+        font_file = "UnbundledTestFont-Regular.ttf",
+    }
+    local ok_unbundled, face_unbundled = pcall(StorefrontListItem.resolveFontItemFace, unbundled_entry, 22)
+    assertTest(ok_unbundled and face_unbundled ~= nil, "Unbundled Font with font_file (no crash on fallback)")
+
+    -- Test B: Repeated resolution to test cache hit with false/empty
+    local ok_cached, face_cached = pcall(StorefrontListItem.resolveFontItemFace, unbundled_entry, 22)
+    assertTest(ok_cached and face_cached ~= nil, "Cached Unbundled Font (cache hit branch)")
+
+    -- Test C: Font with no font_file
+    local no_file_entry = {
+        kind = "font",
+        is_font = true,
+        name = "NoFileFont",
+    }
+    local ok_nofile, face_nofile = pcall(StorefrontListItem.resolveFontItemFace, no_file_entry, 22)
+    assertTest(ok_nofile and face_nofile ~= nil, "Font without font_file")
+
+    -- ----------------------------------------------------
+    -- TEST 3: FontList Registry Isolation
+    -- ----------------------------------------------------
+    print("\n--- TEST 3: FontList Registry Isolation ---")
     local ok_fl, FontList = pcall(require, "fontlist")
     if ok_fl and FontList then
         local fontlist_count = FontList.fontlist and #FontList.fontlist or 0
@@ -104,9 +118,9 @@ local function runTests()
     end
 
     -- ----------------------------------------------------
-    -- TEST 3: Alias Expansion Audit
+    -- TEST 4: Alias Expansion Audit
     -- ----------------------------------------------------
-    print("\n--- TEST 3: Alias Stem Mapping Coverage ---")
+    print("\n--- TEST 4: Alias Stem Mapping Coverage ---")
     local font_aliases = {
         ["bitter"] = { "nv bitter", "bitter", "nv_bitter" },
         ["nv bitter"] = { "nv bitter", "bitter", "nv_bitter" },
@@ -126,11 +140,11 @@ local function runTests()
     assertTest(font_aliases["gentium plus"] ~= nil, "Alias Exists: Gentium Plus")
 
     -- ----------------------------------------------------
-    -- TEST 4: Localization Suite Run
+    -- TEST 5: Localization Suite Run
     -- ----------------------------------------------------
-    print("\n--- TEST 4: Localization Suite ---")
-    local ok_loc_suite = pcall(dofile, script_dir .. "storefront_localization_test.lua")
-    assertTest(ok_loc_suite, "Localization Test Suite Execution")
+    print("\n--- TEST 5: Localization Suite ---")
+    local ok_loc_suite, loc_err = pcall(dofile, script_dir .. "storefront_localization_test.lua")
+    assertTest(ok_loc_suite, "Localization Test Suite Execution", loc_err)
 
     print("\n==================================================")
     print(string.format("  SUMMARY: %d Passed, %d Failed", passed, failed))
@@ -138,8 +152,12 @@ local function runTests()
     return failed == 0
 end
 
-local ok, success = pcall(runTests)
-if not ok or not success then
+local ok, success = xpcall(runTests, debug.traceback)
+if not ok then
+    print("\n[CRITICAL ERROR IN TEST HARNESS]")
+    print(success)
+    os.exit(1)
+elseif not success then
     os.exit(1)
 else
     os.exit(0)

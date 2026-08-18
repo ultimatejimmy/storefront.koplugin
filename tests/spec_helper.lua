@@ -242,6 +242,20 @@ package.loaded["ui/widget/button"] = {
         return btn
     end
 }
+package.loaded["ui/widget/imagewidget"] = {
+    new = function(a, b)
+        local iw = { type = "ImageWidget", args = b or a }
+        iw.getSize = function() return { w = 100, h = 100 } end
+        return iw
+    end
+}
+package.loaded["ui/widget/overlapgroup"] = {
+    new = function(a, b)
+        local og = { type = "OverlapGroup", args = b or a }
+        og.getSize = function() return { w = 100, h = 100 } end
+        return og
+    end
+}
 package.loaded["ffi/blitbuffer"] = {
     COLOR_BLACK = 0,
     COLOR_WHITE = 1,
@@ -290,15 +304,165 @@ local ok_json, real_json = pcall(require, "json")
 if ok_json and type(real_json) == "table" and type(real_json.decode) == "function" then
     json_lib = real_json
 else
-    pcall(function() json_lib = require("dkjson") end)
-    if not json_lib then
-        json_lib = {
-            encode = function(t) return "{}" end,
-            decode = function(s) return {} end
-        }
+    local ok_dk, real_dk = pcall(require, "dkjson")
+    if ok_dk and type(real_dk) == "table" and type(real_dk.decode) == "function" then
+        json_lib = real_dk
     end
 end
+
+if not json_lib then
+    local function parse_json(str)
+        if not str or str == "" then return nil end
+        local pos = 1
+        local len = #str
+
+        local function skip_whitespace()
+            while pos <= len do
+                local b = str:byte(pos)
+                if b == 32 or b == 9 or b == 10 or b == 13 then
+                    pos = pos + 1
+                else
+                    break
+                end
+            end
+        end
+
+        local parse_val
+
+        local function parse_str()
+            pos = pos + 1
+            local start = pos
+            local chunks = {}
+            while pos <= len do
+                local c = str:sub(pos, pos)
+                if c == '"' then
+                    table.insert(chunks, str:sub(start, pos - 1))
+                    pos = pos + 1
+                    return table.concat(chunks)
+                elseif c == '\\' then
+                    table.insert(chunks, str:sub(start, pos - 1))
+                    local next_c = str:sub(pos + 1, pos + 1)
+                    if next_c == '"' or next_c == '\\' or next_c == '/' then
+                        table.insert(chunks, next_c)
+                        pos = pos + 2
+                    elseif next_c == 'b' then table.insert(chunks, '\b'); pos = pos + 2
+                    elseif next_c == 'f' then table.insert(chunks, '\f'); pos = pos + 2
+                    elseif next_c == 'n' then table.insert(chunks, '\n'); pos = pos + 2
+                    elseif next_c == 'r' then table.insert(chunks, '\r'); pos = pos + 2
+                    elseif next_c == 't' then table.insert(chunks, '\t'); pos = pos + 2
+                    elseif next_c == 'u' then
+                        pos = pos + 6
+                        table.insert(chunks, "?")
+                    else
+                        table.insert(chunks, next_c)
+                        pos = pos + 2
+                    end
+                    start = pos
+                else
+                    pos = pos + 1
+                end
+            end
+            return table.concat(chunks)
+        end
+
+        local function parse_array()
+            pos = pos + 1
+            local arr = {}
+            skip_whitespace()
+            if str:sub(pos, pos) == ']' then
+                pos = pos + 1
+                return arr
+            end
+            while pos <= len do
+                table.insert(arr, parse_val())
+                skip_whitespace()
+                local c = str:sub(pos, pos)
+                if c == ',' then
+                    pos = pos + 1
+                    skip_whitespace()
+                elseif c == ']' then
+                    pos = pos + 1
+                    return arr
+                else
+                    break
+                end
+            end
+            return arr
+        end
+
+        local function parse_obj()
+            pos = pos + 1
+            local obj = {}
+            skip_whitespace()
+            if str:sub(pos, pos) == '}' then
+                pos = pos + 1
+                return obj
+            end
+            while pos <= len do
+                skip_whitespace()
+                if str:sub(pos, pos) ~= '"' then break end
+                local key = parse_str()
+                skip_whitespace()
+                if str:sub(pos, pos) == ':' then
+                    pos = pos + 1
+                end
+                local val = parse_val()
+                obj[key] = val
+                skip_whitespace()
+                local c = str:sub(pos, pos)
+                if c == ',' then
+                    pos = pos + 1
+                elseif c == '}' then
+                    pos = pos + 1
+                    return obj
+                else
+                    break
+                end
+            end
+            return obj
+        end
+
+        parse_val = function()
+            skip_whitespace()
+            local c = str:sub(pos, pos)
+            if c == '"' then
+                return parse_str()
+            elseif c == '{' then
+                return parse_obj()
+            elseif c == '[' then
+                return parse_array()
+            elseif c == 't' and str:sub(pos, pos + 3) == 'true' then
+                pos = pos + 4
+                return true
+            elseif c == 'f' and str:sub(pos, pos + 4) == 'false' then
+                pos = pos + 5
+                return false
+            elseif c == 'n' and str:sub(pos, pos + 3) == 'null' then
+                pos = pos + 4
+                return nil
+            else
+                local num_str = str:match("^-?[%d%.eE+-]+", pos)
+                if num_str then
+                    pos = pos + #num_str
+                    return tonumber(num_str)
+                end
+                pos = pos + 1
+                return nil
+            end
+        end
+
+        return parse_val()
+    end
+
+    json_lib = {
+        encode = function(t) return "{}" end,
+        decode = function(s) return parse_json(s) end
+    }
+end
+
 package.loaded["json"] = json_lib
+package.loaded["dkjson"] = json_lib
+package.loaded["libs/libkoreader-dkjson"] = json_lib
 
 function _G.createMockPlugin()
     local plugin = {

@@ -1,0 +1,41 @@
+name: Test Suite & Lint
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Lua Tests & Linting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Lua & Luacheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lua5.1 luarocks
+          sudo luarocks install luacheck
+
+      - name: Syntax Check All Lua Files
+        run: |
+          cd /tmp
+          for f in $(find $GITHUB_WORKSPACE/storefront.koplugin -name "*.lua"); do
+            luac -p "$f" || exit 1
+          done
+          echo "All Lua files passed syntax validation."
+
+      - name: Run Luacheck Linter
+        run: |
+          luacheck storefront.koplugin --no-color --std lua51+koreader || luacheck storefront.koplugin --no-color --globals _ _G
+        continue-on-error: true
+
+      - name: Run Test Suite
+        run: |
+          lua tests/test_storefront.lua

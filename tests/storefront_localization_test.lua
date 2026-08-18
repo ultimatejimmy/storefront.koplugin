@@ -122,7 +122,7 @@ local function runTests()
     Localization.current_language = "es"
     Localization:loadTranslations()
     local str_es_install = Localization:t("Installed plugin \"%s\" (version %s).", "koinsight", "0.2.3")
-    assertTest(str_es_install == "Conector \"koinsight\" (versión 0.2.3) instalado.", "Spanish quoted install notification", "Got: " .. tostring(str_es_install))
+    assertTest(str_es_install == "Se instaló el complemento \"koinsight\" (versión 0.2.3).", "Spanish quoted install notification", "Got: " .. tostring(str_es_install))
 
     -- Test German translation loading
     Localization.current_language = "de"
