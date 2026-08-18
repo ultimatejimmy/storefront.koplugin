@@ -12,8 +12,9 @@ Storefront surfaces a curated list of plugins and patches from GitHub with filte
 
 ## Key Capabilities
 
-- **Unified browser** for plugins, patches, and fonts with persistent filters and paging.
+- **Unified browser** for plugins, patches, fonts, and screensavers with persistent filters and paging.
 - **Offline-friendly cache** stored under `data/cache/Storefront` so existing results remain accessible when you lose connectivity.
+- **Screensavers & Wallpapers** browser optimized for e-ink displays with instant download, folder shuffle rotation, and display customizer.
 - **Per-entry README viewer** that fetches `README.md` directly from GitHub and displays it in the plugin.
 - **Install/update pipeline** that handles `.koplugin` archives, verifies metadata, and copies files to the correct locations.
 - **Update tracking** for installed plugins and numbered patch files, complete with SHA comparisons and refreshable summaries.
@@ -23,15 +24,23 @@ Storefront surfaces a curated list of plugins and patches from GitHub with filte
 
 ## Screenshots
 
-| Plugins Browser | Patches Browser |
+| Plugins Browser | Screensavers Browser |
 | :---: | :---: |
-| ![Plugins Browser](https://raw.githubusercontent.com/wiki/ultimatejimmy/storefront.koplugin/img/plugin_list.png) | ![Patches Browser](https://raw.githubusercontent.com/wiki/ultimatejimmy/storefront.koplugin/img/patches_list.png) |
+| ![Plugins Browser](https://raw.githubusercontent.com/wiki/ultimatejimmy/storefront.koplugin/img/plugin_list.png) | ![Screensavers Browser](https://raw.githubusercontent.com/wiki/ultimatejimmy/storefront.koplugin/img/screensavers.png) |
+
+| Screensaver Filter & Sort | Screensaver Settings |
+| :---: | :---: |
+| ![Screensaver Filter](https://raw.githubusercontent.com/wiki/ultimatejimmy/storefront.koplugin/img/screensaver_filter.png) | ![Screensaver Settings](https://raw.githubusercontent.com/wiki/ultimatejimmy/storefront.koplugin/img/screensaver_settings.png) |
+
+| Patches Browser | Fonts Browser |
+| :---: | :---: |
+| ![Patches Browser](https://raw.githubusercontent.com/wiki/ultimatejimmy/storefront.koplugin/img/patches_list.png) | ![Fonts Browser](https://raw.githubusercontent.com/wiki/ultimatejimmy/storefront.koplugin/img/fonts_list.png) |
 
 | Plugin Detail & README | Check Updates |
 | :---: | :---: |
 | ![Plugin Detail](https://raw.githubusercontent.com/wiki/ultimatejimmy/storefront.koplugin/img/plugin_detail.png) | ![Updates](https://raw.githubusercontent.com/wiki/ultimatejimmy/storefront.koplugin/img/update.png) |
 
-| Installed Plugins | Versions Tab |
+| Installed Items | Versions Tab |
 | :---: | :---: |
 | ![Installed Plugins](https://raw.githubusercontent.com/wiki/ultimatejimmy/storefront.koplugin/img/installed.png) | ![Versions](https://raw.githubusercontent.com/wiki/ultimatejimmy/storefront.koplugin/img/versions.png) |
 
@@ -42,7 +51,7 @@ For full details on how to install, configure, and use the plugin, please visit 
 Detailed guides available on the wiki:
 * [1. Installation Guide](https://github.com/ultimatejimmy/storefront.koplugin/wiki/1.-Installation)
 * [2. Usage Guide](https://github.com/ultimatejimmy/storefront.koplugin/wiki/2.-Usage)
-* [3. Plugin, Patch, and Font Management Guide](https://github.com/ultimatejimmy/storefront.koplugin/wiki/3.-Management)
+* [3. Plugin, Patch, Font, and Screensaver Management Guide](https://github.com/ultimatejimmy/storefront.koplugin/wiki/3.-Management)
 * [4. Language Support](https://github.com/ultimatejimmy/storefront.koplugin/wiki/4.-Language-Support)
 * [5. Troubleshooting](https://github.com/ultimatejimmy/storefront.koplugin/wiki/5.-Troubleshooting)
 * [6. Settings Guide](https://github.com/ultimatejimmy/storefront.koplugin/wiki/6.-Settings)
@@ -54,4 +63,5 @@ Detailed guides available on the wiki:
 [liberapay](https://liberapay.com/ultimatejimmy) 
 
 [Buy me a coffee](https://www.buymeacoffee.com/ultimatejimmy)
+
 

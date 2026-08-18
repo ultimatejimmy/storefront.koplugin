@@ -72,24 +72,23 @@ local function resolveFontItemFace(e, size)
     local font_cache_key = font_folder .. "|" .. font_family .. "|" .. font_file
     local loaded_font_path = _font_face_path_cache[font_cache_key]
 
-    if loaded_font_path == nil then
-        local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
-        if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
-        local ok_ffi, ffiutil = pcall(require, "ffi/util")
-        local ok_ds, DataStorage = pcall(require, "datastorage")
-        local util_mod = require("util")
-        local data_dir = (ok_ds and DataStorage and DataStorage.getDataDir) and DataStorage:getDataDir() or ""
+    local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
+    if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
+    local ok_ffi, ffiutil = pcall(require, "ffi/util")
+    local ok_ds, DataStorage = pcall(require, "datastorage")
+    local data_dir = (ok_ds and DataStorage and DataStorage.getDataDir) and DataStorage:getDataDir() or ""
 
+    local folder_candidates = {}
+    if font_folder ~= "" then table.insert(folder_candidates, font_folder) end
+    if font_family ~= "" and font_family ~= font_folder then table.insert(folder_candidates, font_family) end
+    if e.name and e.name ~= font_folder and e.name ~= font_family then table.insert(folder_candidates, e.name) end
+
+    if loaded_font_path == nil then
         local info = debug.getinfo(1, "S")
         local script_dir = info and info.source and info.source:match("^@(.*[/\\])") or ""
         if script_dir:sub(-1) == "/" or script_dir:sub(-1) == "\\" then
             script_dir = script_dir:sub(1, -2)
         end
-
-        local folder_candidates = {}
-        if font_folder ~= "" then table.insert(folder_candidates, font_folder) end
-        if font_family ~= "" and font_family ~= font_folder then table.insert(folder_candidates, font_family) end
-        if e.name and e.name ~= font_folder and e.name ~= font_family then table.insert(folder_candidates, e.name) end
 
         local search_dirs = {}
         for _, f_name in ipairs(folder_candidates) do
@@ -158,8 +157,6 @@ local function resolveFontItemFace(e, size)
     end
 
     if loaded_font_path then
-        local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
-        if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
         if ok_lfs and lfs and lfs.attributes and lfs.attributes(loaded_font_path, "mode") == "file" then
             local ok_fl, FontList = pcall(require, "fontlist")
             if ok_fl and FontList and FontList.getFontList then
