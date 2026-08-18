@@ -230,7 +230,7 @@ function StorefrontBrowserDialog:buildTabBar()
 
         local tab_frame = FrameContainer:new{
             padding_top = sc(4),
-            padding_bottom = sc(4),
+            padding_bottom = 0,
             padding_left = (i == 1) and sc(10) or sc(8),
             padding_right = sc(8),
             bordersize = 0,

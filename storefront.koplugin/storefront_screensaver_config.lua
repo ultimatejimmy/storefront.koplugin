@@ -92,6 +92,69 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
             UIManager:close(ov, "ui")
         end
 
+        local available_h = sh - sc(24)
+        local title_font_size
+        local header_font_size
+        local mode_title_font_size
+        local ui_font_size
+        local subtext_font_size
+        local btn_font_size
+        local icon_font_size
+        local row_pad_v
+        local header_pad_v
+        local title_pad_v
+        local close_h
+
+        if available_h >= sc(650) then
+            title_font_size = 20
+            header_font_size = 13
+            mode_title_font_size = 15
+            ui_font_size = 14
+            subtext_font_size = 12
+            btn_font_size = 13
+            icon_font_size = 16
+            row_pad_v = sc(4)
+            header_pad_v = sc(3)
+            title_pad_v = sc(8)
+            close_h = sc(36)
+        elseif available_h >= sc(520) then
+            title_font_size = 18
+            header_font_size = 12
+            mode_title_font_size = 14
+            ui_font_size = 13
+            subtext_font_size = 11
+            btn_font_size = 12
+            icon_font_size = 15
+            row_pad_v = sc(3)
+            header_pad_v = sc(2)
+            title_pad_v = sc(6)
+            close_h = sc(32)
+        elseif available_h >= sc(440) then
+            title_font_size = 16
+            header_font_size = 11
+            mode_title_font_size = 13
+            ui_font_size = 12
+            subtext_font_size = 10
+            btn_font_size = 11
+            icon_font_size = 14
+            row_pad_v = sc(2)
+            header_pad_v = sc(2)
+            title_pad_v = sc(4)
+            close_h = sc(28)
+        else
+            title_font_size = 14
+            header_font_size = 10
+            mode_title_font_size = 12
+            ui_font_size = 11
+            subtext_font_size = 9
+            btn_font_size = 10
+            icon_font_size = 13
+            row_pad_v = sc(1)
+            header_pad_v = sc(1)
+            title_pad_v = sc(2)
+            close_h = sc(24)
+        end
+
         local settings = StorefrontScreensaverMgr.getScreensaverSettings()
         local local_wallpapers = StorefrontScreensaverMgr.listLocalScreensavers()
 
@@ -104,7 +167,7 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
         }
 
         local title_container = FrameContainer:new{
-            padding = sc(8),
+            padding = title_pad_v,
             padding_left = sc(12),
             bordersize = 0,
             title_label,
@@ -122,12 +185,12 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
         local function create_section_header(title)
             local label = TextWidget:new{
                 text = title:upper(),
-                face = Font:getFace("cfont", storefront_theme.section_header_font_size or 14),
+                face = Font:getFace("cfont", header_font_size),
                 bold = true,
                 fgcolor = Blitbuffer.COLOR_BLACK,
             }
             return FrameContainer:new{
-                padding = sc(4),
+                padding = header_pad_v,
                 padding_left = sc(10),
                 bordersize = 0,
                 width = dialog_w - sc(4),
@@ -142,7 +205,7 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
 
             local title_line = TextWidget:new{
                 text = radio_symbol .. label_text,
-                face = Font:getFace("NotoSerif-Regular.ttf", 16),
+                face = Font:getFace("NotoSerif-Regular.ttf", mode_title_font_size),
                 bold = is_selected,
                 fgcolor = Blitbuffer.COLOR_BLACK,
             }
@@ -150,15 +213,15 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
             local btn_widget = nil
             local btn_w = 0
             if right_btn_text and on_right_btn then
-                btn_w = sc(80)
+                btn_w = sc(76)
                 btn_widget = Button:new{
                     text = right_btn_text,
-                    text_font_size = 13,
+                    text_font_size = btn_font_size,
                     bold = true,
                     bordersize = sc(1),
                     radius = sc(3),
-                    padding = sc(3),
-                    padding_h = sc(8),
+                    padding = sc(2),
+                    padding_h = sc(6),
                     background = Blitbuffer.COLOR_WHITE,
                     callback = on_right_btn,
                 }
@@ -167,7 +230,7 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
             local desc_w = dialog_w - sc(36) - btn_w
             local desc_line = (desc_text and desc_text ~= "") and TextBoxWidget:new{
                 text = desc_text,
-                face = Font:getFace("cfont", 12),
+                face = Font:getFace("cfont", subtext_font_size),
                 fgcolor = storefront_theme.color_label_dim,
                 width = desc_w,
             } or nil
@@ -203,7 +266,7 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
 
             local row_hg = HorizontalGroup:new(row_elements)
             return FrameContainer:new{
-                padding = sc(6),
+                padding = row_pad_v,
                 padding_left = sc(10),
                 padding_right = sc(8),
                 bordersize = 0,
@@ -216,13 +279,13 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
             local icon_str = checked and "☑" or "☐"
             local icon_w = TextWidget:new{
                 text = icon_str,
-                face = Font:getFace("cfont", 17),
+                face = Font:getFace("cfont", icon_font_size),
                 bold = checked,
                 fgcolor = Blitbuffer.COLOR_BLACK,
             }
             local label_w = TextBoxWidget:new{
                 text = label_text,
-                face = Font:getFace("cfont", 14),
+                face = Font:getFace("cfont", ui_font_size),
                 bold = checked,
                 fgcolor = Blitbuffer.COLOR_BLACK,
                 width = dialog_w - sc(50),
@@ -235,7 +298,7 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
             }
 
             local frame = FrameContainer:new{
-                padding = sc(6),
+                padding = row_pad_v,
                 padding_left = sc(10),
                 padding_right = sc(8),
                 bordersize = 0,
@@ -314,19 +377,19 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
 
         local fill_title = TextWidget:new{
             text = _("Border Fill / Background"),
-            face = Font:getFace("cfont", 15),
+            face = Font:getFace("cfont", ui_font_size),
             bold = true,
             fgcolor = Blitbuffer.COLOR_BLACK,
         }
         local fill_badge = TextWidget:new{
             text = fill_display .. " ▾",
-            face = Font:getFace("cfont", 13),
+            face = Font:getFace("cfont", subtext_font_size),
             bold = true,
             fgcolor = (current_fill == "none") and Blitbuffer.COLOR_BLACK or storefront_theme.color_label_dim,
         }
         local fill_desc = TextWidget:new{
             text = (current_fill == "none") and _("Transparent overlay (page content visible behind)") or _("Solid fill for screen margins & letterboxing"),
-            face = Font:getFace("cfont", 12),
+            face = Font:getFace("cfont", subtext_font_size),
             fgcolor = storefront_theme.color_label_dim,
         }
 
@@ -344,7 +407,7 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
         }
 
         local fill_frame = FrameContainer:new{
-            padding = sc(6),
+            padding = row_pad_v,
             padding_left = sc(10),
             padding_right = sc(8),
             bordersize = 0,
@@ -375,8 +438,8 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
         end))
 
         local title_h = title_container:getSize().h + sc(1)
-        local close_h = sc(46)
-        local max_scroll_h = max_dialog_h - title_h - close_h
+        local close_h_total = close_h + sc(8)
+        local max_scroll_h = max_dialog_h - title_h - close_h_total
         local content_h = scroll_vg:getSize().h
         local scroll_h = math.min(content_h, max_scroll_h)
         local is_scrollable = content_h > max_scroll_h
@@ -402,23 +465,23 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
         local StorefrontUtils = require("storefront_utils")
         local close_btn = StorefrontUtils.createButton{
             text = _("Close"),
-            text_font_size = 16,
+            text_font_size = btn_font_size + 2,
             bold = true,
             bordersize = storefront_theme.border_btn or sc(1),
             radius = sc(4),
             width = dialog_w - sc(20),
-            height = sc(38),
+            height = close_h,
             background = Blitbuffer.COLOR_WHITE,
             text_font_color = Blitbuffer.COLOR_BLACK,
             callback = closeConfig,
         }
 
         table.insert(content_vg, FrameContainer:new{
-            padding = sc(4),
+            padding = sc(3),
             bordersize = 0,
             width = dialog_w - sc(4),
             CenterContainer:new{
-                dimen = Geom:new{ w = dialog_w - sc(20), h = sc(38) },
+                dimen = Geom:new{ w = dialog_w - sc(20), h = close_h },
                 close_btn,
             }
         })

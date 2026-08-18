@@ -14,6 +14,7 @@ local GestureRange = require("ui/gesturerange")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local MovableContainer = require("ui/widget/container/movablecontainer")
 local TextBoxWidget = require("ui/widget/textboxwidget")
+local ScrollableContainer = require("ui/widget/container/scrollablecontainer")
 local LineWidget = require("ui/widget/linewidget")
 local CheckButton = require("ui/widget/checkbutton")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
@@ -92,6 +93,64 @@ function StorefrontFilterDialog.showInstalledFilter(arg1, arg2)
             UIManager:close(overlay, "ui")
         end
 
+        local available_h = sh - sc(24)
+        local title_font_size
+        local header_font_size
+        local ui_font_size
+        local subtext_font_size
+        local row_pad_v
+        local header_pad_v
+        local title_pad_v
+        local apply_pad_v
+        local apply_font_size
+        local apply_h
+
+        if available_h >= sc(650) then
+            title_font_size = 20
+            header_font_size = 13
+            ui_font_size = 15
+            subtext_font_size = 14
+            row_pad_v = sc(6)
+            header_pad_v = sc(3)
+            title_pad_v = sc(8)
+            apply_pad_v = sc(8)
+            apply_font_size = 16
+            apply_h = sc(36)
+        elseif available_h >= sc(520) then
+            title_font_size = 18
+            header_font_size = 12
+            ui_font_size = 14
+            subtext_font_size = 13
+            row_pad_v = sc(4)
+            header_pad_v = sc(2)
+            title_pad_v = sc(6)
+            apply_pad_v = sc(6)
+            apply_font_size = 15
+            apply_h = sc(32)
+        elseif available_h >= sc(440) then
+            title_font_size = 16
+            header_font_size = 11
+            ui_font_size = 13
+            subtext_font_size = 12
+            row_pad_v = sc(3)
+            header_pad_v = sc(2)
+            title_pad_v = sc(4)
+            apply_pad_v = sc(4)
+            apply_font_size = 13
+            apply_h = sc(28)
+        else
+            title_font_size = 14
+            header_font_size = 10
+            ui_font_size = 11
+            subtext_font_size = 10
+            row_pad_v = sc(2)
+            header_pad_v = sc(1)
+            title_pad_v = sc(2)
+            apply_pad_v = sc(2)
+            apply_font_size = 11
+            apply_h = sc(24)
+        end
+
         local title_label = TextWidget:new{
             text = _("Filter & Sort Installed"),
             face = Font:getFace("NotoSerif-Regular.ttf", title_font_size),
@@ -100,7 +159,8 @@ function StorefrontFilterDialog.showInstalledFilter(arg1, arg2)
         }
 
         local title_container = FrameContainer:new{
-            padding = sc(10),
+            padding = title_pad_v,
+            padding_left = sc(10),
             bordersize = 0,
             title_label,
         }
@@ -116,8 +176,8 @@ function StorefrontFilterDialog.showInstalledFilter(arg1, arg2)
 
         local function create_setting_row(left_text, right_widget, callback)
             local row_elements = {}
-            local frame_padding = sc(10)
-            local avail_w = dialog_w - (frame_padding * 2) - sc(4)
+            local frame_padding_h = sc(10)
+            local avail_w = dialog_w - (frame_padding_h * 2) - sc(4)
             local right_w = 0
             if right_widget then
                 right_w = (right_widget.getSize and right_widget:getSize().w) or sc(60)
@@ -144,7 +204,9 @@ function StorefrontFilterDialog.showInstalledFilter(arg1, arg2)
 
             local frame = FrameContainer:new{
                 bordersize = 0,
-                padding = frame_padding,
+                padding = row_pad_v,
+                padding_left = frame_padding_h,
+                padding_right = frame_padding_h,
                 width = dialog_w - sc(4),
                 HorizontalGroup:new(row_elements),
             }
@@ -182,12 +244,12 @@ function StorefrontFilterDialog.showInstalledFilter(arg1, arg2)
         local function create_section_header(title)
             local label = TextWidget:new{
                 text = title:upper(),
-                face = Font:getFace("cfont", storefront_theme.section_header_font_size or 16),
+                face = Font:getFace("cfont", header_font_size),
                 bold = true,
                 fgcolor = Blitbuffer.COLOR_BLACK,
             }
             return FrameContainer:new{
-                padding = sc(5),
+                padding = header_pad_v,
                 padding_left = sc(8),
                 bordersize = 0,
                 width = dialog_w - sc(4),
@@ -202,7 +264,7 @@ function StorefrontFilterDialog.showInstalledFilter(arg1, arg2)
         local cur_type = state.filter_type or "all"
         local type_widget = TextWidget:new{
             text = type_labels[cur_type] or cur_type,
-            face = Font:getFace("cfont", storefront_theme.subtext_font_size or 16),
+            face = Font:getFace("cfont", subtext_font_size),
             fgcolor = storefront_theme.color_label_dim,
         }
         table.insert(content_vg, create_setting_row(_("Type"), type_widget, function()
@@ -220,7 +282,7 @@ function StorefrontFilterDialog.showInstalledFilter(arg1, arg2)
         local cur_origin = state.filter_default or "all"
         local origin_widget = TextWidget:new{
             text = origin_labels[cur_origin] or cur_origin,
-            face = Font:getFace("cfont", storefront_theme.subtext_font_size or 16),
+            face = Font:getFace("cfont", subtext_font_size),
             fgcolor = storefront_theme.color_label_dim,
         }
         table.insert(content_vg, create_setting_row(_("Origin"), origin_widget, function()
@@ -236,7 +298,7 @@ function StorefrontFilterDialog.showInstalledFilter(arg1, arg2)
         local cur_status = state.filter_status or "all"
         local status_widget = TextWidget:new{
             text = status_labels[cur_status] or cur_status,
-            face = Font:getFace("cfont", storefront_theme.subtext_font_size or 16),
+            face = Font:getFace("cfont", subtext_font_size),
             fgcolor = storefront_theme.color_label_dim,
         }
         table.insert(content_vg, create_setting_row(_("Status"), status_widget, function()
@@ -261,7 +323,7 @@ function StorefrontFilterDialog.showInstalledFilter(arg1, arg2)
         local cur_sort = state.sort_mode or "name_asc"
         local sort_widget = TextWidget:new{
             text = sort_labels[cur_sort] or cur_sort,
-            face = Font:getFace("cfont", storefront_theme.subtext_font_size or 16),
+            face = Font:getFace("cfont", subtext_font_size),
             fgcolor = storefront_theme.color_label_dim,
         }
         table.insert(content_vg, create_setting_row(_("Sort mode"), sort_widget, function()
@@ -300,13 +362,14 @@ function StorefrontFilterDialog.showInstalledFilter(arg1, arg2)
         -- Centered Apply button at bottom
         local apply_btn = Button:new{
             text = _("Apply"),
-            text_font_size = 18,
+            text_font_size = apply_font_size,
             text_font_color = Blitbuffer.COLOR_WHITE,
             background = Blitbuffer.COLOR_BLACK,
             bordersize = 0,
-            padding = sc(10),
+            padding = sc(4),
             radius = sc(4),
             width = dialog_w - sc(36),
+            height = apply_h,
             allow_flash = false,
             callback = function()
                 if overlay then UIManager:close(overlay, "ui") end
@@ -320,11 +383,11 @@ function StorefrontFilterDialog.showInstalledFilter(arg1, arg2)
         end
 
         local apply_container = FrameContainer:new{
-            padding = sc(10),
+            padding = apply_pad_v,
             bordersize = 0,
             width = dialog_w - sc(4),
             CenterContainer:new{
-                dimen = Geom:new{ w = dialog_w - sc(20), h = apply_btn:getSize().h },
+                dimen = Geom:new{ w = dialog_w - sc(20), h = apply_h },
                 apply_btn,
             }
         }
@@ -385,6 +448,64 @@ function StorefrontFilterDialog.showCatalogFilter(arg1, arg2)
             UIManager:close(overlay, "ui")
         end
 
+        local available_h = sh - sc(24)
+        local title_font_size
+        local header_font_size
+        local ui_font_size
+        local subtext_font_size
+        local row_pad_v
+        local header_pad_v
+        local title_pad_v
+        local apply_pad_v
+        local apply_font_size
+        local apply_h
+
+        if available_h >= sc(650) then
+            title_font_size = 20
+            header_font_size = 13
+            ui_font_size = 15
+            subtext_font_size = 14
+            row_pad_v = sc(6)
+            header_pad_v = sc(3)
+            title_pad_v = sc(8)
+            apply_pad_v = sc(8)
+            apply_font_size = 16
+            apply_h = sc(36)
+        elseif available_h >= sc(520) then
+            title_font_size = 18
+            header_font_size = 12
+            ui_font_size = 14
+            subtext_font_size = 13
+            row_pad_v = sc(4)
+            header_pad_v = sc(2)
+            title_pad_v = sc(6)
+            apply_pad_v = sc(6)
+            apply_font_size = 15
+            apply_h = sc(32)
+        elseif available_h >= sc(440) then
+            title_font_size = 16
+            header_font_size = 11
+            ui_font_size = 13
+            subtext_font_size = 12
+            row_pad_v = sc(3)
+            header_pad_v = sc(2)
+            title_pad_v = sc(4)
+            apply_pad_v = sc(4)
+            apply_font_size = 13
+            apply_h = sc(28)
+        else
+            title_font_size = 14
+            header_font_size = 10
+            ui_font_size = 11
+            subtext_font_size = 10
+            row_pad_v = sc(2)
+            header_pad_v = sc(1)
+            title_pad_v = sc(2)
+            apply_pad_v = sc(2)
+            apply_font_size = 11
+            apply_h = sc(24)
+        end
+
         local title_text = (state.tab == "Patches") and _("Filter & Sort Patches") or ((state.tab == "Fonts") and _("Filter & Sort Fonts") or _("Filter & Sort Plugins"))
         local title_label = TextWidget:new{
             text = title_text,
@@ -394,7 +515,8 @@ function StorefrontFilterDialog.showCatalogFilter(arg1, arg2)
         }
 
         local title_container = FrameContainer:new{
-            padding = sc(10),
+            padding = title_pad_v,
+            padding_left = sc(10),
             bordersize = 0,
             title_label,
         }
@@ -410,8 +532,8 @@ function StorefrontFilterDialog.showCatalogFilter(arg1, arg2)
 
         local function create_setting_row(left_text, right_widget, callback)
             local row_elements = {}
-            local frame_padding = sc(10)
-            local avail_w = dialog_w - (frame_padding * 2) - sc(4)
+            local frame_padding_h = sc(10)
+            local avail_w = dialog_w - (frame_padding_h * 2) - sc(4)
             local right_w = 0
             if right_widget then
                 right_w = (right_widget.getSize and right_widget:getSize().w) or sc(60)
@@ -438,7 +560,9 @@ function StorefrontFilterDialog.showCatalogFilter(arg1, arg2)
 
             local frame = FrameContainer:new{
                 bordersize = 0,
-                padding = frame_padding,
+                padding = row_pad_v,
+                padding_left = frame_padding_h,
+                padding_right = frame_padding_h,
                 width = dialog_w - sc(4),
                 HorizontalGroup:new(row_elements),
             }
@@ -476,12 +600,12 @@ function StorefrontFilterDialog.showCatalogFilter(arg1, arg2)
         local function create_section_header(title)
             local label = TextWidget:new{
                 text = title:upper(),
-                face = Font:getFace("cfont", storefront_theme.section_header_font_size or 16),
+                face = Font:getFace("cfont", header_font_size),
                 bold = true,
                 fgcolor = Blitbuffer.COLOR_BLACK,
             }
             return FrameContainer:new{
-                padding = sc(5),
+                padding = header_pad_v,
                 padding_left = sc(8),
                 bordersize = 0,
                 width = dialog_w - sc(4),
@@ -498,7 +622,7 @@ function StorefrontFilterDialog.showCatalogFilter(arg1, arg2)
             local cat_label = (cur_cat == "all") and _("All") or cur_cat:lower()
             local cat_widget = TextWidget:new{
                 text = cat_label,
-                face = Font:getFace("cfont", storefront_theme.subtext_font_size or 16),
+                face = Font:getFace("cfont", subtext_font_size),
                 fgcolor = storefront_theme.color_label_dim,
             }
             table.insert(content_vg, create_setting_row(_("Font style"), cat_widget, function()
@@ -520,7 +644,7 @@ function StorefrontFilterDialog.showCatalogFilter(arg1, arg2)
         local stars_label = (cur_stars > 0) and (tostring(cur_stars) .. "+") or _("Any")
         local stars_widget = TextWidget:new{
             text = stars_label,
-            face = Font:getFace("cfont", storefront_theme.subtext_font_size or 16),
+            face = Font:getFace("cfont", subtext_font_size),
             fgcolor = storefront_theme.color_label_dim,
         }
         table.insert(content_vg, create_setting_row(_("Minimum stars"), stars_widget, function()
@@ -541,7 +665,7 @@ function StorefrontFilterDialog.showCatalogFilter(arg1, arg2)
         local sort_text = sort_opt and sort_opt.summary or _("Sort")
         local sort_widget = TextWidget:new{
             text = sort_text,
-            face = Font:getFace("cfont", storefront_theme.subtext_font_size or 16),
+            face = Font:getFace("cfont", subtext_font_size),
             fgcolor = storefront_theme.color_label_dim,
         }
         table.insert(content_vg, create_setting_row(_("Sort mode"), sort_widget, function()
@@ -575,13 +699,14 @@ function StorefrontFilterDialog.showCatalogFilter(arg1, arg2)
         -- Apply button at bottom
         local apply_btn = Button:new{
             text = _("Apply"),
-            text_font_size = 18,
+            text_font_size = apply_font_size,
             text_font_color = Blitbuffer.COLOR_WHITE,
             background = Blitbuffer.COLOR_BLACK,
             bordersize = 0,
-            padding = sc(10),
+            padding = sc(4),
             radius = sc(4),
             width = dialog_w - sc(36),
+            height = apply_h,
             callback = function()
                 if overlay then UIManager:close(overlay, "ui") end
                 state.page = 1
@@ -594,11 +719,11 @@ function StorefrontFilterDialog.showCatalogFilter(arg1, arg2)
         end
 
         local apply_container = FrameContainer:new{
-            padding = sc(10),
+            padding = apply_pad_v,
             bordersize = 0,
             width = dialog_w - sc(4),
             CenterContainer:new{
-                dimen = Geom:new{ w = dialog_w - sc(20), h = apply_btn:getSize().h },
+                dimen = Geom:new{ w = dialog_w - sc(20), h = apply_h },
                 apply_btn,
             }
         }
@@ -853,21 +978,70 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
         local function build_cat_overlay()
             if cat_overlay then UIManager:close(cat_overlay, "ui") end
 
+            local available_h = sh - sc(24)
+            local title_font_size
+            local ui_font_size
+            local icon_size
+            local row_pad_v
+            local title_pad_v
+            local action_pad_v
+            local btn_font_size
+            local btn_pad_h
+
+            if available_h >= sc(650) then
+                title_font_size = 20
+                ui_font_size = 15
+                icon_size = sc(20)
+                row_pad_v = sc(5)
+                title_pad_v = sc(8)
+                action_pad_v = sc(6)
+                btn_font_size = 14
+                btn_pad_h = sc(12)
+            elseif available_h >= sc(520) then
+                title_font_size = 18
+                ui_font_size = 14
+                icon_size = sc(18)
+                row_pad_v = sc(4)
+                title_pad_v = sc(6)
+                action_pad_v = sc(4)
+                btn_font_size = 13
+                btn_pad_h = sc(10)
+            elseif available_h >= sc(440) then
+                title_font_size = 16
+                ui_font_size = 13
+                icon_size = sc(16)
+                row_pad_v = sc(2)
+                title_pad_v = sc(4)
+                action_pad_v = sc(3)
+                btn_font_size = 12
+                btn_pad_h = sc(8)
+            else
+                title_font_size = 14
+                ui_font_size = 11
+                icon_size = sc(14)
+                row_pad_v = sc(1)
+                title_pad_v = sc(2)
+                action_pad_v = sc(2)
+                btn_font_size = 11
+                btn_pad_h = sc(6)
+            end
+
             local title_label = TextWidget:new{
                 text = _("Select Categories"),
                 face = Font:getFace("NotoSerif-Regular.ttf", title_font_size),
                 bold = true, fgcolor = Blitbuffer.COLOR_BLACK,
             }
+            local title_container = FrameContainer:new{ padding = title_pad_v, padding_left = sc(10), bordersize = 0, title_label }
             local content = VerticalGroup:new{
                 align = "left",
-                FrameContainer:new{ padding = sc(10), bordersize = 0, title_label },
+                title_container,
                 LineWidget:new{ dimen = Geom:new{ w = dialog_w - sc(4), h = sc(1) }, background = Blitbuffer.COLOR_BLACK },
             }
 
             -- Select All / Clear buttons row
             local sel_all_btn = Button:new{
-                text = _("Select All"), text_font_size = 14,
-                bordersize = sc(1), radius = sc(3), padding = sc(4), padding_h = sc(12),
+                text = _("Select All"), text_font_size = btn_font_size,
+                bordersize = sc(1), radius = sc(3), padding = sc(3), padding_h = btn_pad_h,
                 background = Blitbuffer.COLOR_WHITE,
                 callback = function()
                     local new_set = {}
@@ -877,8 +1051,8 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
                 end,
             }
             local clear_btn = Button:new{
-                text = _("Clear"), text_font_size = 14,
-                bordersize = sc(1), radius = sc(3), padding = sc(4), padding_h = sc(12),
+                text = _("Clear"), text_font_size = btn_font_size,
+                bordersize = sc(1), radius = sc(3), padding = sc(3), padding_h = btn_pad_h,
                 background = Blitbuffer.COLOR_WHITE,
                 callback = function()
                     cat_set = { all = true }
@@ -886,8 +1060,8 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
                 end,
             }
             local done_btn = Button:new{
-                text = _("Done"), text_font_size = 14,
-                bordersize = 0, radius = sc(3), padding = sc(4), padding_h = sc(16),
+                text = _("Done"), text_font_size = btn_font_size,
+                bordersize = 0, radius = sc(3), padding = sc(3), padding_h = btn_pad_h + sc(4),
                 background = Blitbuffer.COLOR_BLACK,
                 text_font_color = Blitbuffer.COLOR_WHITE,
                 callback = function()
@@ -897,10 +1071,11 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
             }
             if done_btn.label_widget then done_btn.label_widget.fgcolor = Blitbuffer.COLOR_WHITE end
 
+            local action_btn_h = math.max(sel_all_btn:getSize().h, done_btn:getSize().h)
             local action_row_frame = FrameContainer:new{
-                padding = sc(8), bordersize = 0, width = dialog_w - sc(4),
+                padding = action_pad_v, bordersize = 0, width = dialog_w - sc(4),
                 CenterContainer:new{
-                    dimen = Geom:new{ w = dialog_w - sc(20), h = sc(36) },
+                    dimen = Geom:new{ w = dialog_w - sc(20), h = action_btn_h },
                     HorizontalGroup:new{
                         sel_all_btn,
                         HorizontalSpan:new{ width = sc(10) },
@@ -916,7 +1091,8 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
                 background = Blitbuffer.COLOR_LIGHT_GRAY,
             })
 
-            -- All category rows (with generous padding, FeatherIcons, and text)
+            -- Category rows inside a scrollable container if height exceeds screen
+            local list_vg = VerticalGroup:new{ align = "left" }
             for idx, cat_name in ipairs(cats) do
                 local key = cat_name:lower()
                 local is_checked = (cat_set[key] == true) or (cat_set["all"] and key == "all")
@@ -926,8 +1102,8 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
                 local icon_file = getAssetPath(is_checked and "check-square.svg" or "square.svg")
                 local icon_widget = ImageWidget:new{
                     file = icon_file,
-                    width = sc(22),
-                    height = sc(22),
+                    width = icon_size,
+                    height = icon_size,
                     scale_factor = 0,
                     is_icon = true,
                     alpha = true,
@@ -935,7 +1111,7 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
 
                 local row_label = TextBoxWidget:new{
                     text = display_name .. count_str,
-                    face = Font:getFace("cfont", ui_font_size - 1),
+                    face = Font:getFace("cfont", ui_font_size),
                     fgcolor = Blitbuffer.COLOR_BLACK,
                     width = dialog_w - sc(68),
                     alignment = "left",
@@ -943,18 +1119,18 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
 
                 local row_group = HorizontalGroup:new{
                     CenterContainer:new{
-                        dimen = Geom:new{ w = sc(24), h = sc(24) },
+                        dimen = Geom:new{ w = icon_size + sc(4), h = icon_size + sc(4) },
                         icon_widget,
                     },
-                    HorizontalSpan:new{ width = sc(12) },
+                    HorizontalSpan:new{ width = sc(10) },
                     row_label,
                 }
 
                 local row_frame = FrameContainer:new{
                     bordersize = 0,
-                    padding = sc(12),
-                    padding_left = sc(16),
-                    padding_right = sc(16),
+                    padding = row_pad_v,
+                    padding_left = sc(14),
+                    padding_right = sc(14),
                     width = dialog_w - sc(4),
                     background = Blitbuffer.COLOR_WHITE,
                     row_group,
@@ -987,15 +1163,34 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
                     build_cat_overlay()
                     return true
                 end
-                table.insert(content, row_item)
+                table.insert(list_vg, row_item)
 
                 if idx < #cats then
-                    table.insert(content, LineWidget:new{
+                    table.insert(list_vg, LineWidget:new{
                         dimen = Geom:new{ w = dialog_w - sc(4), h = sc(1) },
                         background = Blitbuffer.COLOR_LIGHT_GRAY,
                     })
                 end
             end
+
+            local title_h = title_container:getSize().h + sc(1)
+            local action_h = action_row_frame:getSize().h + sc(1)
+            local max_scroll_h = sh - sc(40) - title_h - action_h
+            local content_h = list_vg:getSize().h
+            local scroll_h = math.min(content_h, max_scroll_h)
+            local is_scrollable = content_h > max_scroll_h
+
+            local scroll_container = ScrollableContainer:new{
+                dimen = Geom:new{ w = dialog_w - sc(4), h = scroll_h },
+                scroll_bar_width = is_scrollable and sc(4) or 0,
+                show_scrollbar = is_scrollable,
+                show_scrollbar_h = false,
+                show_scrollbar_v = is_scrollable,
+                bordersize = 0,
+                padding = 0,
+                list_vg,
+            }
+            table.insert(content, scroll_container)
 
             local card = FrameContainer:new{
                 padding = 0,
@@ -1031,20 +1226,79 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
     refresh = function()
         if overlay then UIManager:close(overlay, "ui") end
 
+        local available_h = sh - sc(24)
+        local title_font_size
+        local header_font_size
+        local ui_font_size
+        local subtext_font_size
+        local row_pad_v
+        local header_pad_v
+        local title_pad_v
+        local apply_pad_v
+        local apply_font_size
+        local apply_h
+
+        if available_h >= sc(650) then
+            title_font_size = 20
+            header_font_size = 13
+            ui_font_size = 15
+            subtext_font_size = 14
+            row_pad_v = sc(6)
+            header_pad_v = sc(3)
+            title_pad_v = sc(8)
+            apply_pad_v = sc(8)
+            apply_font_size = 16
+            apply_h = sc(36)
+        elseif available_h >= sc(520) then
+            title_font_size = 18
+            header_font_size = 12
+            ui_font_size = 14
+            subtext_font_size = 13
+            row_pad_v = sc(4)
+            header_pad_v = sc(2)
+            title_pad_v = sc(6)
+            apply_pad_v = sc(6)
+            apply_font_size = 15
+            apply_h = sc(32)
+        elseif available_h >= sc(440) then
+            title_font_size = 16
+            header_font_size = 11
+            ui_font_size = 13
+            subtext_font_size = 12
+            row_pad_v = sc(3)
+            header_pad_v = sc(2)
+            title_pad_v = sc(4)
+            apply_pad_v = sc(4)
+            apply_font_size = 13
+            apply_h = sc(28)
+        else
+            title_font_size = 14
+            header_font_size = 10
+            ui_font_size = 11
+            subtext_font_size = 10
+            row_pad_v = sc(2)
+            header_pad_v = sc(1)
+            title_pad_v = sc(2)
+            apply_pad_v = sc(2)
+            apply_font_size = 11
+            apply_h = sc(24)
+        end
+
         local title_label = TextWidget:new{
             text = _("Filter & Sort Screensavers"),
             face = Font:getFace("NotoSerif-Regular.ttf", title_font_size),
             bold = true, fgcolor = Blitbuffer.COLOR_BLACK,
         }
+        local title_container = FrameContainer:new{ padding = title_pad_v, padding_left = sc(10), bordersize = 0, title_label }
         local content_vg = VerticalGroup:new{
             align = "left",
-            FrameContainer:new{ padding = sc(10), bordersize = 0, title_label },
+            title_container,
             LineWidget:new{ dimen = Geom:new{ w = dialog_w - sc(4), h = sc(1) }, background = Blitbuffer.COLOR_BLACK },
         }
 
         local function create_setting_row(left_text, right_widget, callback)
-            local frame_padding = sc(10)
-            local avail_w = dialog_w - (frame_padding * 2) - sc(4)
+            local frame_padding_h = sc(10)
+            local avail_w = dialog_w - (frame_padding_h * 2) - sc(4)
             local right_w = right_widget and ((right_widget.getSize and right_widget:getSize().w) or sc(60)) or 0
             local max_left_w = math.max(sc(60), avail_w - right_w - sc(12))
 
@@ -1059,20 +1313,34 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
             if right_widget then table.insert(row_children, right_widget) end
 
             local frame = FrameContainer:new{
-                bordersize = 0, padding = frame_padding,
+                bordersize = 0, padding = row_pad_v,
+                padding_left = frame_padding_h, padding_right = frame_padding_h,
                 width = dialog_w - sc(4), HorizontalGroup:new(row_children),
             }
             if not callback then return frame end
             return make_row_item(frame, callback, dialog_w - sc(4), (frame:getSize() or { h = 0 }).h)
         end
 
-        table.insert(content_vg, make_section_header(_("Filters")))
+        local function make_section_header_local(title)
+            local label = TextWidget:new{
+                text = title:upper(),
+                face = Font:getFace("cfont", header_font_size),
+                bold = true, fgcolor = Blitbuffer.COLOR_BLACK,
+            }
+            return FrameContainer:new{
+                padding = header_pad_v, padding_left = sc(8), bordersize = 0,
+                width = dialog_w - sc(4), background = Blitbuffer.COLOR_LIGHT_GRAY,
+                label,
+            }
+        end
+
+        table.insert(content_vg, make_section_header_local(_("Filters")))
 
         -- Category row
         local cat_display = getCategorySummary(state.screensaver_categories, state.screensaver_category)
         local cat_widget = TextWidget:new{
             text = cat_display,
-            face = Font:getFace("cfont", storefront_theme.subtext_font_size or 16),
+            face = Font:getFace("cfont", subtext_font_size),
             fgcolor = storefront_theme.color_label_dim,
         }
         table.insert(content_vg, create_setting_row(_("Categories"), cat_widget, function()
@@ -1083,13 +1351,13 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
             end)
         end))
 
-        table.insert(content_vg, make_section_header(_("Sorting")))
+        table.insert(content_vg, make_section_header_local(_("Sorting")))
 
         -- Sort row
         local cur_sort = state.screensaver_sort or "popular"
         local sort_widget = TextWidget:new{
             text = sort_labels[cur_sort] or sort_labels.popular,
-            face = Font:getFace("cfont", storefront_theme.subtext_font_size or 16),
+            face = Font:getFace("cfont", subtext_font_size),
             fgcolor = storefront_theme.color_label_dim,
         }
         table.insert(content_vg, create_setting_row(_("Sort mode"), sort_widget, function()
@@ -1121,9 +1389,10 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
 
         -- Apply button
         local apply_btn = Button:new{
-            text = _("Apply"), text_font_size = 18,
+            text = _("Apply"), text_font_size = apply_font_size,
             text_font_color = Blitbuffer.COLOR_WHITE, background = Blitbuffer.COLOR_BLACK,
-            bordersize = 0, padding = sc(10), radius = sc(4), width = dialog_w - sc(36),
+            bordersize = 0, padding = sc(4), radius = sc(4), width = dialog_w - sc(36),
+            height = apply_h,
             callback = function()
                 if overlay then UIManager:close(overlay, "ui") end
                 state.page = 1
@@ -1134,9 +1403,9 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
         if apply_btn.label_widget then apply_btn.label_widget.fgcolor = Blitbuffer.COLOR_WHITE end
 
         table.insert(content_vg, FrameContainer:new{
-            padding = sc(10), bordersize = 0, width = dialog_w - sc(4),
+            padding = apply_pad_v, bordersize = 0, width = dialog_w - sc(4),
             CenterContainer:new{
-                dimen = Geom:new{ w = dialog_w - sc(20), h = apply_btn:getSize().h },
+                dimen = Geom:new{ w = dialog_w - sc(20), h = apply_h },
                 apply_btn,
             }
         })
