@@ -95,7 +95,6 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
         local available_h = sh - sc(24)
         local title_font_size
         local header_font_size
-        local mode_title_font_size
         local ui_font_size
         local subtext_font_size
         local btn_font_size
@@ -107,10 +106,9 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
 
         if available_h >= sc(650) then
             title_font_size = 20
-            header_font_size = 13
-            mode_title_font_size = 15
-            ui_font_size = 14
-            subtext_font_size = 12
+            header_font_size = 14
+            ui_font_size = 15
+            subtext_font_size = 13
             btn_font_size = 13
             icon_font_size = 16
             row_pad_v = sc(4)
@@ -119,10 +117,9 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
             close_h = sc(36)
         elseif available_h >= sc(520) then
             title_font_size = 18
-            header_font_size = 12
-            mode_title_font_size = 14
-            ui_font_size = 13
-            subtext_font_size = 11
+            header_font_size = 13
+            ui_font_size = 14
+            subtext_font_size = 12
             btn_font_size = 12
             icon_font_size = 15
             row_pad_v = sc(3)
@@ -132,9 +129,8 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
         elseif available_h >= sc(440) then
             title_font_size = 16
             header_font_size = 11
-            mode_title_font_size = 13
-            ui_font_size = 12
-            subtext_font_size = 10
+            ui_font_size = 13
+            subtext_font_size = 11
             btn_font_size = 11
             icon_font_size = 14
             row_pad_v = sc(2)
@@ -144,9 +140,8 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
         else
             title_font_size = 14
             header_font_size = 10
-            mode_title_font_size = 12
             ui_font_size = 11
-            subtext_font_size = 9
+            subtext_font_size = 10
             btn_font_size = 10
             icon_font_size = 13
             row_pad_v = sc(1)
@@ -205,7 +200,7 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
 
             local title_line = TextWidget:new{
                 text = radio_symbol .. label_text,
-                face = Font:getFace("NotoSerif-Regular.ttf", mode_title_font_size),
+                face = Font:getFace("cfont", ui_font_size),
                 bold = is_selected,
                 fgcolor = Blitbuffer.COLOR_BLACK,
             }
@@ -286,7 +281,6 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
             local label_w = TextBoxWidget:new{
                 text = label_text,
                 face = Font:getFace("cfont", ui_font_size),
-                bold = checked,
                 fgcolor = Blitbuffer.COLOR_BLACK,
                 width = dialog_w - sc(50),
             }
