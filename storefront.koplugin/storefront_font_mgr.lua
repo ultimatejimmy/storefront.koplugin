@@ -217,36 +217,30 @@ function M:init(Storefront)
                     rec.pending_download = false
                     rec.download_error = "HTTP download failed after 3 attempts"
                     InstallStore.upsertFont(font_name, rec)
-                    goto continue_pending
-                end
-
-                if last_attempt > 0 and (now - last_attempt) < 3600 then
-                    goto continue_pending
-                end
-
-                local download_url = rec.download_url
-                if download_url and download_url:find("ultimatejimmy.github.io/fonts/", 1, true) then
-                    download_url = download_url:gsub("ultimatejimmy.github.io/fonts/", "ultimatejimmy.github.io/storefront.koplugin/fonts/")
-                    rec.download_url = download_url
-                end
-                if not download_url or download_url == ""
-                   or download_url:find("raw.githubusercontent.com", 1, true)
-                   or download_url:find("github.com/google/fonts/raw", 1, true) then
-                    local ok_cache, Cache = pcall(require, "storefront_cache")
-                    if ok_cache and Cache then
-                        local cat_repo = Cache.getRepoByName(rec.owner or "", font_name) or Cache.getRepoByName("", font_name)
-                        if cat_repo and cat_repo.download_url then
-                            download_url = cat_repo.download_url
-                            rec.download_url = download_url
+                elseif not (last_attempt > 0 and (now - last_attempt) < 3600) then
+                    local download_url = rec.download_url
+                    if download_url and download_url:find("ultimatejimmy.github.io/fonts/", 1, true) then
+                        download_url = download_url:gsub("ultimatejimmy.github.io/fonts/", "ultimatejimmy.github.io/storefront.koplugin/fonts/")
+                        rec.download_url = download_url
+                    end
+                    if not download_url or download_url == ""
+                       or download_url:find("raw.githubusercontent.com", 1, true)
+                       or download_url:find("github.com/google/fonts/raw", 1, true) then
+                        local ok_cache, Cache = pcall(require, "storefront_cache")
+                        if ok_cache and Cache then
+                            local cat_repo = Cache.getRepoByName(rec.owner or "", font_name) or Cache.getRepoByName("", font_name)
+                            if cat_repo and cat_repo.download_url then
+                                download_url = cat_repo.download_url
+                                rec.download_url = download_url
+                            end
                         end
                     end
-                end
 
-                if download_url and download_url ~= "" then
-                    table.insert(pending, rec)
+                    if download_url and download_url ~= "" then
+                        table.insert(pending, rec)
+                    end
                 end
             end
-            ::continue_pending::
         end
 
         if #pending == 0 then

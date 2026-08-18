@@ -17,18 +17,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Lua & Luacheck
+      - name: Install Lua, LuaJIT & Luacheck
         run: |
           sudo apt-get update
-          sudo apt-get install -y lua5.1 luarocks
+          sudo apt-get install -y lua5.1 luajit luarocks
           sudo luarocks install luacheck
 
       - name: Syntax Check All Lua Files
         run: |
           cd /tmp
-          for f in $(find $GITHUB_WORKSPACE/storefront.koplugin -name "*.lua"); do
-            luac -p "$f" || exit 1
-          done
+          find "$GITHUB_WORKSPACE" -name "*.lua" -exec luac -p {} +
           echo "All Lua files passed syntax validation."
 
       - name: Run Luacheck Linter

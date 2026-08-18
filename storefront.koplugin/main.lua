@@ -1808,6 +1808,7 @@ function Storefront:collectUpdateSummary()
         local record = records[plugin.dirname]
         local tracked = record and record.owner and record.repo
         local repo_key = tracked and (record.owner:lower() .. "/" .. record.repo:lower()) or nil
+        local is_duplicate = false
 
         if repo_key then
             if repo_map[repo_key] then
@@ -1838,24 +1839,25 @@ function Storefront:collectUpdateSummary()
                 else
                     existing_item.duplicates = existing_item.duplicates or {}
                     table.insert(existing_item.duplicates, plugin)
-                    goto continue_plugin
+                    is_duplicate = true
                 end
             end
         end
 
-        if tracked then
-            summary.tracked = summary.tracked + 1
-        else
-            summary.unmatched = summary.unmatched + 1
-        end
+        if not is_duplicate then
+            if tracked then
+                summary.tracked = summary.tracked + 1
+            else
+                summary.unmatched = summary.unmatched + 1
+            end
 
-        local remote = remote_info[plugin.dirname]
-        if not remote and record and record.repo then
-            remote = remote_info[record.repo]
-                or remote_info[record.repo .. ".koplugin"]
-                or remote_info[record.repo:lower()]
-                or remote_info[record.repo:lower() .. ".koplugin"]
-        end
+            local remote = remote_info[plugin.dirname]
+            if not remote and record and record.repo then
+                remote = remote_info[record.repo]
+                    or remote_info[record.repo .. ".koplugin"]
+                    or remote_info[record.repo:lower()]
+                    or remote_info[record.repo:lower() .. ".koplugin"]
+            end
         -- A remote entry with an error is still usable if it has a release_tag_name.
         -- Only treat it as unchecked if it has NO version info at all.
         local has_checked_info = remote and (remote.release_tag_name or remote.remote_version) and not (remote.error and not remote.release_tag_name)
@@ -2031,9 +2033,8 @@ function Storefront:collectUpdateSummary()
         if repo_key then
             repo_map[repo_key] = #data
         end
-
-        ::continue_plugin::
     end
+end
 
     summary.data = data
     summary.records = records
@@ -7324,83 +7325,82 @@ function Storefront:buildInstalledEntries(available_list_height)
         local installed_fonts = listInstalledFonts()
         for i, font_rec in ipairs(installed_fonts) do
             local font_name = font_rec.font_name or font_rec.repo or ""
-            if font_name == "" then goto continue_font end
+            if font_name ~= "" then
+                local catalog_repo = nil
+                local ok_cache, Cache2 = pcall(require, "storefront_cache")
+                if ok_cache and Cache2 then
+                    catalog_repo = Cache2.getRepoByName(font_rec.owner or "", font_name)
+                        or Cache2.getRepoByName("", font_name)
+                end
 
-            local catalog_repo = nil
-            local ok_cache, Cache2 = pcall(require, "storefront_cache")
-            if ok_cache and Cache2 then
-                catalog_repo = Cache2.getRepoByName(font_rec.owner or "", font_name)
-                    or Cache2.getRepoByName("", font_name)
-            end
+                local match_search = true
+                if search_text ~= "" then
+                    local f_name = font_name:lower()
+                    local f_owner = (font_rec.owner or (catalog_repo and catalog_repo.owner) or ""):lower()
+                    local f_family = (catalog_repo and catalog_repo.font_family or ""):lower()
+                    local f_desc = (catalog_repo and catalog_repo.description or ""):lower()
+                    local f_full = (font_rec.full_name or (catalog_repo and catalog_repo.full_name) or ""):lower()
+                    if not (f_name:find(search_text, 1, true) or f_owner:find(search_text, 1, true) or f_family:find(search_text, 1, true) or f_desc:find(search_text, 1, true) or f_full:find(search_text, 1, true)) then
+                        match_search = false
+                    end
+                end
 
-            local match_search = true
-            if search_text ~= "" then
-                local f_name = font_name:lower()
-                local f_owner = (font_rec.owner or (catalog_repo and catalog_repo.owner) or ""):lower()
-                local f_family = (catalog_repo and catalog_repo.font_family or ""):lower()
-                local f_desc = (catalog_repo and catalog_repo.description or ""):lower()
-                local f_full = (font_rec.full_name or (catalog_repo and catalog_repo.full_name) or ""):lower()
-                if not (f_name:find(search_text, 1, true) or f_owner:find(search_text, 1, true) or f_family:find(search_text, 1, true) or f_desc:find(search_text, 1, true) or f_full:find(search_text, 1, true)) then
-                    match_search = false
+                if filter_owner ~= "" then
+                    local f_owner = (font_rec.owner or (catalog_repo and catalog_repo.owner) or ""):lower()
+                    if not f_owner:find(filter_owner, 1, true) then
+                        match_search = false
+                    end
+                end
+
+                if filter_min_stars > 0 then
+                    local stars = (catalog_repo and tonumber(catalog_repo.stars)) or 0
+                    if stars < filter_min_stars then
+                        match_search = false
+                    end
+                end
+
+                if match_search then
+
+                    table.insert(items, {
+                        name = font_name,
+                        owner = font_rec.owner or "",
+                        stars_fmt = (catalog_repo and catalog_repo.stars and tonumber(catalog_repo.stars) and tonumber(catalog_repo.stars) > 0) and tostring(catalog_repo.stars) or nil,
+                        updated = formatTimestamp(font_rec.installed_at),
+                        mtime = font_rec.installed_at or 0,
+                        kind_label = _("Font"),
+                        description = (catalog_repo and catalog_repo.description) or "",
+                        badge = font_rec.pending_download and _("Offline Regular") or nil,
+                        is_entry = true,
+                        is_installed_item = true,
+                        is_font = true,
+                        kind = "font",
+                        font_name = font_name,
+                        font_family = catalog_repo and catalog_repo.font_family or font_name,
+                        font_file = catalog_repo and catalog_repo.font_file or font_rec.font_file,
+                        callback = function()
+                            local DetailsDialog = require("storefront_details_dialog")
+                            local repo = catalog_repo or {
+                                name = font_name,
+                                owner = font_rec.owner or "",
+                                full_name = font_rec.full_name or font_name,
+                                download_url = font_rec.download_url,
+                                description = "",
+                                stars = 0,
+                                font_family = font_name,
+                            }
+                            if not repo.download_url and catalog_repo then
+                                repo.download_url = catalog_repo.download_url
+                            end
+                            local details_dialog = DetailsDialog:new{
+                                Storefront = self,
+                                repo = repo,
+                                kind = "font",
+                            }
+                            details_dialog:show()
+                        end,
+                    })
                 end
             end
-
-            if filter_owner ~= "" then
-                local f_owner = (font_rec.owner or (catalog_repo and catalog_repo.owner) or ""):lower()
-                if not f_owner:find(filter_owner, 1, true) then
-                    match_search = false
-                end
-            end
-
-            if filter_min_stars > 0 then
-                local stars = (catalog_repo and tonumber(catalog_repo.stars)) or 0
-                if stars < filter_min_stars then
-                    match_search = false
-                end
-            end
-
-            if match_search then
-
-                table.insert(items, {
-                    name = font_name,
-                    owner = font_rec.owner or "",
-                    stars_fmt = (catalog_repo and catalog_repo.stars and tonumber(catalog_repo.stars) and tonumber(catalog_repo.stars) > 0) and tostring(catalog_repo.stars) or nil,
-                    updated = formatTimestamp(font_rec.installed_at),
-                    mtime = font_rec.installed_at or 0,
-                    kind_label = _("Font"),
-                    description = (catalog_repo and catalog_repo.description) or "",
-                    badge = font_rec.pending_download and _("Offline Regular") or nil,
-                    is_entry = true,
-                    is_installed_item = true,
-                    is_font = true,
-                    kind = "font",
-                    font_name = font_name,
-                    font_family = catalog_repo and catalog_repo.font_family or font_name,
-                    font_file = catalog_repo and catalog_repo.font_file or font_rec.font_file,
-                    callback = function()
-                        local DetailsDialog = require("storefront_details_dialog")
-                        local repo = catalog_repo or {
-                            name = font_name,
-                            owner = font_rec.owner or "",
-                            full_name = font_rec.full_name or font_name,
-                            download_url = font_rec.download_url,
-                            description = "",
-                            stars = 0,
-                            font_family = font_name,
-                        }
-                        if not repo.download_url and catalog_repo then
-                            repo.download_url = catalog_repo.download_url
-                        end
-                        local details_dialog = DetailsDialog:new{
-                            Storefront = self,
-                            repo = repo,
-                            kind = "font",
-                        }
-                        details_dialog:show()
-                    end,
-                })
-            end
-            ::continue_font::
         end
     end
 
