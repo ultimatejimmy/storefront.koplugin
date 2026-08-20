@@ -16,6 +16,14 @@ end
 -- Mock dependencies for headless testing
 package.loaded["socket.http"] = {}
 package.loaded["ssl.https"] = {}
+package.loaded["socket"] = {}
+package.loaded["socketutil"] = {
+    set_timeout = function() end,
+    reset_timeout = function() end,
+}
+package.loaded["ltn12"] = {
+    sink = { table = function() return function() end end }
+}
 
 local ok_json, real_json = pcall(require, "json")
 if not ok_json or not real_json or type(real_json.decode) ~= "function" then
@@ -60,6 +68,14 @@ end
 
 package.loaded["logger"] = { dbg = function() end, info = function() end, warn = function() end, err = function() end }
 package.loaded["datastorage"] = { getSettingsDir = function() return "/tmp" end, getDataDir = function() return "/tmp" end }
+package.loaded["ffi/blitbuffer"] = { COLOR_BLACK = 0, COLOR_WHITE = 1, Color8 = function(g) return g end }
+package.loaded["ffi/util"] = { realpath = function(p) return p end, purgeDir = function() end }
+package.loaded["ffi/utf8proc"] = {}
+package.loaded["ui/font"] = { getFace = function() return {} end }
+package.loaded["ui/geometry"] = { new = function(a, b) return b or a end }
+package.loaded["ui/uimanager"] = { show = function() end, close = function() end }
+package.loaded["ui/widget/infomessage"] = { new = function(a, b) return b or a end }
+package.loaded["device"] = { isAndroid = function() return false end, isKindle = function() return false end, isDesktop = function() return true end, home_dir = "/tmp" }
 
 local memory_store = {}
 package.loaded["luasettings"] = {
@@ -72,7 +88,12 @@ package.loaded["luasettings"] = {
         }
     end
 }
-package.loaded["gettext"] = function(s) return s end
+package.loaded["gettext"] = setmetatable({
+    _ = function(s) return s end,
+    getLanguage = function() return "en" end,
+}, {
+    __call = function(_, s) return s end,
+})
 
 print("=== Running Font System Unit Tests ===")
 
@@ -109,6 +130,22 @@ check("Lora full_installed updated to true", font_list2 and font_list2["lora"] a
 InstallStore.removeFont("lora")
 local font_list3 = InstallStore.listFonts()
 check("Lora font removed successfully", font_list3 and font_list3["lora"] == nil)
+
+-- Test 4: User Font Dirs & Multi-Directory Resolution
+local ok_fm, FontMgr = pcall(require, "storefront_font_mgr")
+check("storefront_font_mgr requires cleanly (" .. tostring(FontMgr) .. ")", ok_fm and FontMgr ~= nil)
+if ok_fm and FontMgr then
+    local user_dirs = FontMgr.getUserFontDirs and FontMgr.getUserFontDirs()
+    check("getUserFontDirs returns table with at least 1 path", type(user_dirs) == "table" and #user_dirs >= 1)
+    local has_primary = false
+    for _, d in ipairs(user_dirs or {}) do
+        if d:find("fonts") then
+            has_primary = true
+            break
+        end
+    end
+    check("getUserFontDirs includes font directory path", has_primary == true)
+end
 
 print("=== Font System Unit Tests Summary ===")
 print(string.format("Total Failures: %d", failures))

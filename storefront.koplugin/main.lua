@@ -6719,9 +6719,14 @@ function Storefront:makeRepoMenuItem(repo, installed_lookup, installed_fonts_map
                 local ok_ds, DataStorage = pcall(require, "datastorage")
                 local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
                 if ok_ds and DataStorage and ok_lfs and lfs and lfs.attributes then
-                    local fonts_dir = DataStorage:getDataDir() .. "/fonts/" .. font_name
-                    if lfs.attributes(fonts_dir, "mode") == "directory" then
-                        is_installed = true
+                    local ok_mgr, font_mgr = pcall(require, "storefront_font_mgr")
+                    local font_roots = (ok_mgr and font_mgr and font_mgr.getUserFontDirs) and font_mgr.getUserFontDirs() or { DataStorage:getDataDir() .. "/fonts" }
+                    for _, froot in ipairs(font_roots) do
+                        local fonts_dir = froot .. "/" .. font_name
+                        if lfs.attributes(fonts_dir, "mode") == "directory" then
+                            is_installed = true
+                            break
+                        end
                     end
                 end
             end

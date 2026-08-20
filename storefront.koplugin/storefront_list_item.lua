@@ -109,6 +109,13 @@ local function resolveFontItemFace(e, size)
                 table.insert(search_dirs, data_dir .. "/plugins/storefront.koplugin/storefront.koplugin/assets/bundled_fonts/" .. f_name)
                 table.insert(search_dirs, data_dir .. "/plugins/storefront.koplugin/storefront.koplugin/assets/fonts/" .. f_name)
             end
+            local ok_mgr, font_mgr = pcall(require, "storefront_font_mgr")
+            if ok_mgr and font_mgr and font_mgr.getUserFontDirs then
+                local udirs = font_mgr.getUserFontDirs()
+                for _, udir in ipairs(udirs) do
+                    table.insert(search_dirs, udir .. "/" .. f_name)
+                end
+            end
         end
 
         for _, dir_path in ipairs(search_dirs) do

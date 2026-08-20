@@ -134,6 +134,65 @@ local function purgeFontCacheFiles()
     StorefrontLogger.info("Storefront: font caches purged from disk")
 end
 
+local function getUserFontDirs()
+    local ok_ds, DataStorage = pcall(require, "datastorage")
+    local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
+    if not (ok_ds and DataStorage and ok_lfs and lfs) then
+        return { "/tmp/fonts" }
+    end
+
+    local dirs = {}
+    local seen = {}
+
+    local function addDir(d)
+        if not d or d == "" or type(d) ~= "string" then return end
+        local abs_d = d
+        local ok_fu, fu = pcall(require, "ffi/util")
+        if ok_fu and fu and fu.realpath then
+            local rp = fu.realpath(d)
+            if rp and rp ~= "" then abs_d = rp end
+        end
+        if not seen[abs_d] then
+            seen[abs_d] = true
+            table.insert(dirs, abs_d)
+        end
+    end
+
+    -- 1. Primary KOReader data fonts dir (used on Kindle, Android, and Desktop config)
+    local primary_data_dir = DataStorage:getDataDir() .. "/fonts"
+    addDir(primary_data_dir)
+
+    -- 2. Check FontSettings / external font paths if available
+    local ok_fs, FontSettings = pcall(require, "ui/elements/font_settings")
+    if ok_fs and FontSettings and type(FontSettings.getPath) == "function" then
+        local ok_call, paths_str = pcall(FontSettings.getPath, FontSettings)
+        if ok_call and paths_str and type(paths_str) == "string" then
+            for dir in string.gmatch(paths_str, "[^;]+") do
+                if dir ~= "" and not dir:find("^/usr/share") and not dir:find("^/system") and not dir:find("^/ebrmain") then
+                    addDir(dir)
+                end
+            end
+        end
+    end
+
+    -- 3. Check desktop XDG/HOME standard font directories (Linux/WSL fallback)
+    local xdg_data = os.getenv("XDG_DATA_HOME")
+    if xdg_data and xdg_data ~= "" then
+        addDir(xdg_data .. "/fonts")
+    end
+    local home = os.getenv("HOME")
+    if home and home ~= "" then
+        addDir(home .. "/.local/share/fonts")
+    end
+
+    -- 4. Check relative CWD 'fonts' folder if it exists as a directory
+    if lfs.attributes and lfs.attributes("fonts", "mode") == "directory" then
+        addDir("fonts")
+    end
+
+    return dirs
+end
+
 local G_installed_fonts_cache = nil
 
 local function listInstalledFonts()
@@ -156,31 +215,33 @@ local function listInstalledFonts()
     local ok_ds, DataStorage = pcall(require, "datastorage")
     local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
     if ok_ds and ok_lfs then
-        local fonts_root = DataStorage:getDataDir() .. "/fonts"
-        if lfs.attributes(fonts_root, "mode") == "directory" then
-            for file in lfs.dir(fonts_root) do
-                if file ~= "." and file ~= ".." and not file:match("%.deleted$") then
-                    local p = fonts_root .. "/" .. file
-                    local mode = lfs.attributes(p, "mode")
-                    if mode == "directory" then
-                        local key = file:lower()
-                        if not seen[key] then
-                            local has_font = false
-                            for subf in lfs.dir(p) do
-                                if (subf:match("%.ttf$") or subf:match("%.otf$")) and not subf:match("%.deleted$") then
-                                    has_font = true
-                                    break
+        local search_roots = getUserFontDirs()
+        for _, fonts_root in ipairs(search_roots) do
+            if lfs.attributes(fonts_root, "mode") == "directory" then
+                for file in lfs.dir(fonts_root) do
+                    if file ~= "." and file ~= ".." and not file:match("%.deleted$") then
+                        local p = fonts_root .. "/" .. file
+                        local mode = lfs.attributes(p, "mode")
+                        if mode == "directory" then
+                            local key = file:lower()
+                            if not seen[key] then
+                                local has_font = false
+                                for subf in lfs.dir(p) do
+                                    if (subf:match("%.ttf$") or subf:match("%.otf$")) and not subf:match("%.deleted$") then
+                                        has_font = true
+                                        break
+                                    end
                                 end
-                            end
-                            if has_font then
-                                seen[key] = true
-                                table.insert(result, {
-                                    font_name = file,
-                                    repo = file,
-                                    full_name = file,
-                                    installed_at = os.time(),
-                                    version = "1.0",
-                                })
+                                if has_font then
+                                    seen[key] = true
+                                    table.insert(result, {
+                                        font_name = file,
+                                        repo = file,
+                                        full_name = file,
+                                        installed_at = os.time(),
+                                        version = "1.0",
+                                    })
+                                end
                             end
                         end
                     end
@@ -248,6 +309,7 @@ function M:init(Storefront)
         end
 
         local fonts_root = DataStorage:getDataDir() .. "/fonts"
+        local user_font_dirs = getUserFontDirs()
 
         local function copySingleFile(src_file, dst_file)
             local sf = io.open(src_file, "rb")
@@ -262,6 +324,16 @@ function M:init(Storefront)
                 end
             end
             return false
+        end
+
+        local function copyToAllTargets(src_file, item_name, f_target_name)
+            for _, udir in ipairs(user_font_dirs) do
+                if udir ~= fonts_root then
+                    pcall(util.makePath, udir .. "/" .. f_target_name)
+                    copySingleFile(src_file, udir .. "/" .. f_target_name .. "/" .. item_name)
+                    copySingleFile(src_file, udir .. "/" .. item_name)
+                end
+            end
         end
 
         local synced_count = 0
@@ -298,6 +370,7 @@ function M:init(Storefront)
                                                 if parent and parent ~= "" then util.makePath(parent) end
                                                 if reader:extractToPath(entry.path, dst_sub) then
                                                     copySingleFile(dst_sub, dst_flat)
+                                                    copyToAllTargets(dst_sub, f_name, font_name)
                                                     extracted_count = extracted_count + 1
                                                 end
                                             end
@@ -319,6 +392,7 @@ function M:init(Storefront)
                         local dst_name = font_name:gsub("%s+", "_") .. "-Regular." .. ext
                         local dst_sub = font_target_dir .. "/" .. dst_name
                         copySingleFile(tmp_path, dst_sub)
+                        copyToAllTargets(dst_sub, dst_name, font_name)
                         extracted_count = 1
                     end
 
@@ -389,11 +463,11 @@ function M:init(Storefront)
         local font_target_dir = fonts_root .. "/" .. font_name
         util.makePath(font_target_dir)
 
-        local local_fonts_dir = "fonts"
-        local has_local_fonts = lfs.attributes(local_fonts_dir, "mode") == "directory"
-        local local_font_target_dir = local_fonts_dir .. "/" .. font_name
-        if has_local_fonts then
-            util.makePath(local_font_target_dir)
+        local user_font_dirs = getUserFontDirs()
+        for _, udir in ipairs(user_font_dirs) do
+            if udir ~= fonts_root then
+                pcall(util.makePath, udir .. "/" .. font_name)
+            end
         end
 
         local function copySingleFile(src_file, dst_file)
@@ -409,6 +483,16 @@ function M:init(Storefront)
                 end
             end
             return false
+        end
+
+        local function copyToAllTargets(src_file, item_name)
+            for _, udir in ipairs(user_font_dirs) do
+                if udir ~= fonts_root then
+                    pcall(util.makePath, udir .. "/" .. font_name)
+                    copySingleFile(src_file, udir .. "/" .. font_name .. "/" .. item_name)
+                    copySingleFile(src_file, udir .. "/" .. item_name)
+                end
+            end
         end
 
         local installed_count = 0
@@ -445,12 +529,12 @@ function M:init(Storefront)
 
                                 for _, item in ipairs(entries) do
                                     local dst_sub = font_target_dir .. "/" .. item.name
+                                    local dst_flat = fonts_root .. "/" .. item.name
                                     local parent = dst_sub:match("^(.*)/")
                                     if parent and parent ~= "" then util.makePath(parent) end
                                     if reader:extractToPath(item.entry_path, dst_sub) then
-                                        if has_local_fonts then
-                                            copySingleFile(dst_sub, local_font_target_dir .. "/" .. item.name)
-                                        end
+                                        copySingleFile(dst_sub, dst_flat)
+                                        copyToAllTargets(dst_sub, item.name)
                                         installed_count = installed_count + 1
                                     end
                                 end
@@ -461,10 +545,10 @@ function M:init(Storefront)
                 else
                     local ext = download_url:match("%.([^%.%?]+)$") or "ttf"
                     local dst_name = font_name:gsub("%s+", "_") .. "-Regular." .. ext
-                    copySingleFile(tmp_path, font_target_dir .. "/" .. dst_name)
-                    if has_local_fonts then
-                        copySingleFile(tmp_path, local_font_target_dir .. "/" .. dst_name)
-                    end
+                    local dst_file = font_target_dir .. "/" .. dst_name
+                    copySingleFile(tmp_path, dst_file)
+                    copySingleFile(tmp_path, fonts_root .. "/" .. dst_name)
+                    copyToAllTargets(dst_file, dst_name)
                     installed_count = 1
                 end
                 os.remove(tmp_path)
@@ -503,10 +587,10 @@ function M:init(Storefront)
                         if file ~= "." and file ~= ".." and (file:match("%.ttf$") or file:match("%.otf$") or file:match("%.ttf%.asset$") or file:match("%.otf%.asset$")) then
                             local src_file = real_src .. "/" .. file
                             local dst_name = file:gsub("%.asset$", "")
-                            copySingleFile(src_file, font_target_dir .. "/" .. dst_name)
-                            if has_local_fonts then
-                                copySingleFile(src_file, local_font_target_dir .. "/" .. dst_name)
-                            end
+                            local dst_file = font_target_dir .. "/" .. dst_name
+                            copySingleFile(src_file, dst_file)
+                            copySingleFile(src_file, fonts_root .. "/" .. dst_name)
+                            copyToAllTargets(src_file, dst_name)
                             installed_count = installed_count + 1
                         end
                     end
@@ -658,6 +742,10 @@ function M:init(Storefront)
                 addRootDir("fonts")
                 addRootDir("/home/" .. (os.getenv("USER") or os.getenv("LOGNAME") or "") .. "/.config/koreader/fonts")
                 addRootDir(DataStorage:getDataDir() .. "/../fonts")
+                local user_all_dirs = getUserFontDirs()
+                for _, udir in ipairs(user_all_dirs) do
+                    addRootDir(udir)
+                end
 
                 local storefront_cache_dir = DataStorage:getDataDir() .. "/cache/Storefront"
                 if lfs.attributes(storefront_cache_dir, "mode") == "directory" then
@@ -755,5 +843,6 @@ end
 M.downloadFileToPath = downloadFileToPath
 M.purgeFontCacheFiles = purgeFontCacheFiles
 M.listInstalledFonts = listInstalledFonts
+M.getUserFontDirs = getUserFontDirs
 
 return M

@@ -9,6 +9,13 @@ describe("storefront_font_mgr", function()
         assert.is_function(storefront_font_mgr.listInstalledFonts)
         assert.is_function(storefront_font_mgr.downloadFileToPath)
         assert.is_function(storefront_font_mgr.purgeFontCacheFiles)
+        assert.is_function(storefront_font_mgr.getUserFontDirs)
+    end)
+
+    it("returns array of user font directories including data and fallback paths", function()
+        local dirs = storefront_font_mgr.getUserFontDirs()
+        assert.is_table(dirs)
+        assert.is_true(#dirs >= 1)
     end)
 
     it("initializes Storefront mixin methods", function()
