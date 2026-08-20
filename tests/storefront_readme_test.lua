@@ -80,6 +80,18 @@ local link_obj = { uri = "storefront-img:/cache/readme/test.png" }
 local extracted_href = (type(link_obj) == "table" and (link_obj.uri or link_obj.url)) or (type(link_obj) == "string" and link_obj) or ""
 check("link object uri extracted correctly", mock_details_dialog:onLinkTap(extracted_href) == true)
 
+-- Test 11: Wiki markdown images resolve to raw wiki URL
+local html_wiki_img = GitHubClient.markdownToHtml("![Plugin List](img/plugin_list.png)", "ultimatejimmy", "storefront.koplugin", true)
+check("Wiki markdown image converted to raw wiki URL", html_wiki_img:find('<img src="https://raw.githubusercontent.com/wiki/ultimatejimmy/storefront.koplugin/img/plugin_list.png" alt="Plugin List"/>') ~= nil)
+
+-- Test 12: Wiki raw HTML img tags resolve to raw wiki URL
+local html_wiki_raw_img = GitHubClient.markdownToHtml('<img src="img/plugin_list.png" alt="List">', "ultimatejimmy", "storefront.koplugin", true)
+check("Wiki raw HTML img tag converted to raw wiki URL", html_wiki_raw_img:find('src="https://raw.githubusercontent.com/wiki/ultimatejimmy/storefront.koplugin/img/plugin_list.png"') ~= nil)
+
+-- Test 13: Gollum wiki image syntax [[img/plugin_list.png]] resolves to raw wiki URL
+local html_gollum_img = GitHubClient.markdownToHtml('[[img/plugin_list.png]]', "ultimatejimmy", "storefront.koplugin", true)
+check("Gollum wiki image syntax converted to raw wiki URL", html_gollum_img:find('src="https://raw.githubusercontent.com/wiki/ultimatejimmy/storefront.koplugin/img/plugin_list.png"') ~= nil)
+
 if failures > 0 then
     print(string.format("README TESTS FAILED: %d errors", failures))
     os.exit(1)

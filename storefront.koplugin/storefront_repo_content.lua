@@ -43,10 +43,27 @@ local function stripImgDimensions(str)
     str = str:gsub("%s+width=%d+%%?", "")
     str = str:gsub("%s+height=[\"'][^\"']*[\"']", "")
     str = str:gsub("%s+height=%d+%%?", "")
-    str = str:gsub("(style=[\"'][^\"']*)width:%s*[^;\"]+;?", "%1")
-    str = str:gsub("(style=[\"'][^\"']*)height:%s*[^;\"]+;?", "%1")
-    str = str:gsub("(style=[\"'][^\"']*)max%-width:%s*[^;\"]+;?", "%1")
-    str = str:gsub("(style=[\"'][^\"']*)max%-height:%s*[^;\"]+;?", "%1")
+    str = str:gsub('(style=["\'])([^"\']*)(["\'])', function(q1, style_content, q2)
+        local props = {}
+        for prop in style_content:gmatch("[^;]+") do
+            local key = prop:match("^%s*([%w%-]+)%s*:")
+            if key then
+                key = key:lower()
+                if key ~= "width" and key ~= "height" and key ~= "max-width" and key ~= "max-height" then
+                    table.insert(props, prop:gsub("^%s+", ""):gsub("%s+$", ""))
+                end
+            else
+                local trimmed = prop:gsub("^%s+", ""):gsub("%s+$", "")
+                if trimmed ~= "" then
+                    table.insert(props, trimmed)
+                end
+            end
+        end
+        if #props == 0 then
+            return ""
+        end
+        return q1 .. table.concat(props, "; ") .. ";" .. q2
+    end)
     return str
 end
 
@@ -219,10 +236,7 @@ local function simpleHash(str)
 end
 
 local function loadReadmeIndex()
-    local f = io.open(INDEX_FILE, "r")
-    if not f then return {} end
-    local content = f:read("*all")
-    f:close()
+    local content = util.readFromFile(INDEX_FILE)
     if not content or content == "" then return {} end
     local ok, decoded = pcall(json.decode, content)
     if ok and type(decoded) == "table" then
@@ -320,6 +334,7 @@ downloadImage = function(url, dest, max_redirects)
             table.insert(urls_to_try, string.format("https://raw.githubusercontent.com/%s/%s/%s/%s", r_owner, r_repo, r_branch, r_path))
             table.insert(urls_to_try, string.format("https://raw.githubusercontent.com/%s/%s/master/%s", r_owner, r_repo, r_path))
             table.insert(urls_to_try, string.format("https://raw.githubusercontent.com/%s/%s/main/%s", r_owner, r_repo, r_path))
+            table.insert(urls_to_try, string.format("https://raw.githubusercontent.com/wiki/%s/%s/%s", r_owner, r_repo, r_path))
         end
     end
     table.insert(urls_to_try, url)
@@ -1104,12 +1119,89 @@ function RepoContent.fetchWikiSidebar(owner, repo, force_refresh)
     return items
 end
 
+local function formatAndSaveWikiHtml(raw_md, path, owner, repo, safe_owner, safe_repo, dir)
+    local body = GitHubClient.markdownToHtml(raw_md, owner, repo, true)
+    body = stripImgDimensions(body)
+
+    local valid_img_count = 0
+    body = body:gsub('(<img[^>]+src=["\'])([^"\']+)(["\'][^>]*>)', function(prefix, raw_url, suffix)
+        prefix = stripImgDimensions(prefix)
+        suffix = stripImgDimensions(suffix)
+        local url = raw_url:gsub("&amp;", "&")
+        if url:lower():match("%.svg") ~= nil then return "" end
+        url = resolveImageUrl(url, owner, repo, true)
+
+        local clean_url = url:gsub("[^%w]", "_")
+        if #clean_url > 40 then clean_url = clean_url:sub(-40) end
+        local ext = url:match("%.([%w]+)$") or "png"
+        ext = ext:lower()
+        if ext == "svg" then return "" end
+
+        valid_img_count = valid_img_count + 1
+
+        local img_filename = string.format("%s_%s_wiki_img_%s.%s", safe_owner, safe_repo, clean_url, ext)
+        local img_dest = dir .. "/" .. img_filename
+
+        local cached_sz = lfs.attributes(img_dest, "size") or 0
+
+        -- Synchronously fetch up to the first 4 valid content images at initial load time
+        if cached_sz == 0 and valid_img_count <= 4 and RepoContent.cumulative_page_bytes < MAX_PAGE_PAYLOAD_BYTES then
+            if type(downloadImage) == "function" then
+                local pcall_ok, dl_ok, final_dest = pcall(downloadImage, url, img_dest)
+                if pcall_ok and dl_ok then
+                    cached_sz = lfs.attributes(img_dest, "size") or 0
+                end
+            end
+        end
+
+        if cached_sz > 0 then
+            local w_check, h_check = getImageDimensions(img_dest)
+            if not w_check or not h_check or w_check == 0 or h_check == 0 then
+                logger.info("Storefront: purging invalid non-image file from cache:", img_dest)
+                os.remove(img_dest)
+                cached_sz = 0
+            end
+        end
+
+        if cached_sz > 0 then
+            RepoContent.cumulative_page_bytes = RepoContent.cumulative_page_bytes + cached_sz
+            
+            local is_safe, uncompressed = isImageSafeForMemory(img_dest, cached_sz)
+            if uncompressed then
+                RepoContent.cumulative_uncompressed_bytes = RepoContent.cumulative_uncompressed_bytes + uncompressed
+            end
+            
+            local is_gif = img_dest:lower():match("%.gif$") ~= nil
+            if is_gif or not is_safe or RepoContent.cumulative_uncompressed_bytes > MAX_UNCOMPRESSED_PAYLOAD then
+                local placeholder_text = is_gif and "[ View Animated GIF ]" or "[ View Large Image ]"
+                return string.format('<a href="storefront-img:%s" style="display: block; text-align: center; margin: 0.6em auto; color: blue; text-decoration: underline;">%s</a>', img_dest, placeholder_text)
+            else
+                return string.format('<br/><a href="storefront-img:%s" style="display: block; text-align: center; margin: 1.5em auto;"><img src="%s" style="max-width: 100%%; height: auto; display: block; margin: 0 auto;" /></a>', img_dest, img_filename)
+            end
+        end
+
+        if RepoContent.cumulative_page_bytes < MAX_PAGE_PAYLOAD_BYTES then
+            table.insert(RepoContent.pending_images, { url = url, dest = img_dest, html_path = path, prefix = prefix, filename = img_filename, suffix = suffix })
+        end
+
+        return string.format('<span id="imgbox-%s" style="display: block; text-align: center; margin: 0.6em auto; color: gray; font-style: italic;">[ Loading Image... ]</span>', img_dest)
+    end)
+
+    local ok, write_err = util.writeToFile(body, path)
+    if not ok then
+        return false, write_err or "write error"
+    end
+    return true, path
+end
+
 function RepoContent.fetchWikiPageHtml(owner, repo, page_name, force_refresh)
     if not owner or not repo then
         return false, "missing owner/repo", false
     end
     pcall(RepoContent.autoCleanCache)
     page_name = (page_name and page_name ~= "") and page_name or "Home"
+    local safe_owner = owner:gsub("[^%w_-]", "_")
+    local safe_repo = repo:gsub("[^%w_-]", "_")
     local safe_page = page_name:gsub("[^%w_-]", "_")
     local dir = getWikiCacheDir(owner, repo)
     local path = string.format("%s/%s.html", dir, safe_page)
@@ -1118,8 +1210,6 @@ function RepoContent.fetchWikiPageHtml(owner, repo, page_name, force_refresh)
     local ext = page_name:lower():match("%.([%w]+)$")
     if ext and (ext == "png" or ext == "jpg" or ext == "jpeg" or ext == "gif" or ext == "webp" or ext == "svg" or ext == "bmp") then
         local img_url = resolveImageUrl(page_name, owner, repo, true)
-        local safe_owner = owner:gsub("[^%w_-]", "_")
-        local safe_repo = repo:gsub("[^%w_-]", "_")
         local clean_url = img_url:gsub("[^%w]", "_")
         if #clean_url > 40 then clean_url = clean_url:sub(-40) end
         local img_filename = string.format("%s_%s_wiki_img_%s.%s", safe_owner, safe_repo, clean_url, ext)
@@ -1164,12 +1254,7 @@ function RepoContent.fetchWikiPageHtml(owner, repo, page_name, force_refresh)
         end
 
         -- Content changed! Re-render and save
-        local body = GitHubClient.markdownToHtml(raw_md, owner, repo, true)
-        body = body:gsub("(<img[^>]+)%s+width=[\"'][^\"']*[\"']", "%1")
-        body = body:gsub("(<img[^>]+)%s+height=[\"'][^\"']*[\"']", "%1")
-        body = body:gsub("(<img[^>]+style=[\"'][^\"']*[%s\"';])width:%s*[^;\"]+;?", "%1")
-
-        local ok, write_err = util.writeToFile(body, path)
+        local ok, res_path = formatAndSaveWikiHtml(raw_md, path, owner, repo, safe_owner, safe_repo, dir)
         if ok then
             entry.etag = res_etag or entry.etag
             entry.content_hash = new_hash
@@ -1179,7 +1264,7 @@ function RepoContent.fetchWikiPageHtml(owner, repo, page_name, force_refresh)
             saveReadmeIndex(idx)
             return true, path, true
         else
-            return false, write_err or "write error", false
+            return false, res_path or "write error", false
         end
     end
 
@@ -1191,69 +1276,19 @@ function RepoContent.fetchWikiPageHtml(owner, repo, page_name, force_refresh)
         return false, err or "wiki page not found", false
     end
 
-    local body = GitHubClient.markdownToHtml(raw_md, owner, repo, true)
-    body = body:gsub("(<img[^>]+)%s+width=[\"'][^\"']*[\"']", "%1")
-    body = body:gsub("(<img[^>]+)%s+height=[\"'][^\"']*[\"']", "%1")
-    body = body:gsub("(<img[^>]+style=[\"'][^\"']*[%s\"';])width:%s*[^;\"]+;?", "%1")
-
-    -- Download inline images locally if needed
-    body = body:gsub('(<img[^>]+src=["\'])([^"\']+)(["\'][^>]*>)', function(prefix, raw_url, suffix)
-        local url = raw_url:gsub("&amp;", "&")
-        if url:lower():match("%.svg") ~= nil then return "" end
-        url = resolveImageUrl(url, owner, repo, true)
-
-        local clean_url = url:gsub("[^%w]", "_")
-        if #clean_url > 40 then clean_url = clean_url:sub(-40) end
-        local ext = url:match("%.([%w]+)$") or "png"
-        ext = ext:lower()
-        if ext == "svg" then return "" end
-
-        local safe_owner = owner:gsub("[^%w_-]", "_")
-        local safe_repo = repo:gsub("[^%w_-]", "_")
-        local img_filename = string.format("%s_%s_wiki_img_%s.%s", safe_owner, safe_repo, clean_url, ext)
-        local img_dest = dir .. "/" .. img_filename
-
-        local cached_sz = lfs.attributes(img_dest, "size") or 0
-        if cached_sz > 0 then
-            RepoContent.cumulative_page_bytes = RepoContent.cumulative_page_bytes + cached_sz
-            
-            local is_safe, uncompressed = isImageSafeForMemory(img_dest, cached_sz)
-            if uncompressed then
-                RepoContent.cumulative_uncompressed_bytes = RepoContent.cumulative_uncompressed_bytes + uncompressed
-            end
-            
-            if not is_safe or RepoContent.cumulative_uncompressed_bytes > MAX_UNCOMPRESSED_PAYLOAD then
-                local placeholder = '<span style="color: blue; text-decoration: underline;">[ View Large Image ]</span>'
-                return string.format('<a href="storefront-img:%s">%s</a>', img_dest, placeholder)
-            else
-                local img_html = prefix .. img_filename .. suffix
-                return string.format('<a href="storefront-img:%s">%s</a>', img_dest, img_html)
-            end
-        end
-
-        if RepoContent.cumulative_page_bytes < MAX_PAGE_PAYLOAD_BYTES then
-            table.insert(RepoContent.pending_images, { url = url, dest = img_dest, html_path = path, prefix = prefix, filename = img_filename, suffix = suffix })
-        end
-        
-        local safe_dest = img_dest:gsub("([^%w])", "%%%1")
-        local placeholder = string.format('<span id="placeholder-%s" style="color: gray; font-style: italic;">[ Loading Image... ]</span>', safe_dest)
-        return string.format('<a href="storefront-img:%s">%s</a>', img_dest, placeholder)
-    end)
-
-    local ok, write_err = util.writeToFile(body, path)
-    if not ok then
-        return false, write_err or "write error", false
+    local ok, res_path = formatAndSaveWikiHtml(raw_md, path, owner, repo, safe_owner, safe_repo, dir)
+    if ok then
+        idx[wiki_key] = {
+            etag = res_etag,
+            content_hash = simpleHash(raw_md),
+            cached_at = os.time(),
+            last_checked_at = os.time(),
+        }
+        saveReadmeIndex(idx)
+        return true, path, true
+    else
+        return false, res_path or "write error", false
     end
-
-    idx[wiki_key] = {
-        etag = res_etag,
-        content_hash = simpleHash(raw_md),
-        cached_at = os.time(),
-        last_checked_at = os.time(),
-    }
-    saveReadmeIndex(idx)
-
-    return true, path, true
 end
 
 function RepoContent.autoCleanCache(max_size_mb, max_age_days)

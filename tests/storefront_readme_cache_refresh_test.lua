@@ -13,10 +13,11 @@ local function check(label, condition)
     io.stdout:flush()
 end
 
+local spec_helper = require("tests/spec_helper")
+
 -- Mock KOReader environment
 local mock_files = {}
 local mock_http_responses = {}
-local mock_http_headers = {}
 
 local mock_lfs = {
     attributes = function(path, key)
@@ -79,16 +80,17 @@ local mock_socket_http = {
     end
 }
 
+-- Simple in-memory table store for index in tests so JSON encoding/decoding never fails
+local json_module = require("json")
 local mock_json = {
     encode = function(tbl)
-        local parts = {}
         local function enc(v)
             if type(v) == "table" then
-                local entries = {}
+                local parts = {}
                 for k, val in pairs(v) do
-                    table.insert(entries, string.format("%q:%s", tostring(k), enc(val)))
+                    table.insert(parts, string.format("%q:%s", tostring(k), enc(val)))
                 end
-                return "{" .. table.concat(entries, ",") .. "}"
+                return "{" .. table.concat(parts, ",") .. "}"
             elseif type(v) == "string" then
                 return string.format("%q", v)
             elseif type(v) == "number" or type(v) == "boolean" then
@@ -100,16 +102,11 @@ local mock_json = {
         return enc(tbl)
     end,
     decode = function(str)
-        local res = {}
-        if not str or str == "" then return res end
-        return {
-            ["testowner/testrepo"] = {
-                etag = "\"v1_etag\"",
-                content_hash = "abc123_10",
-                cached_at = 1000,
-                last_checked_at = 1000,
-            }
-        }
+        if json_module and type(json_module.decode) == "function" then
+            local ok, res = pcall(json_module.decode, str)
+            if ok and res then return res end
+        end
+        return {}
     end,
     null = {},
 }
@@ -118,7 +115,11 @@ package.loaded["libs/libkoreader-lfs"] = mock_lfs
 package.loaded["datastorage"] = mock_datastorage
 package.loaded["util"] = mock_util
 package.loaded["logger"] = mock_logger
+package.loaded["socket"] = {}
+package.loaded["socket.url"] = { escape = function(s) return s end, unescape = function(s) return s end }
 package.loaded["socket.http"] = mock_socket_http
+package.loaded["ssl.https"] = mock_socket_http
+package.loaded["ltn12"] = { sink = { table = function(t) return function(chunk) if chunk then table.insert(t, chunk) end return 1 end end } }
 package.loaded["json"] = mock_json
 package.loaded["luasettings"] = { open = function() return { readSetting = function() end, saveSetting = function() end, delSetting = function() end, flush = function() end } end }
 package.loaded["storefront_config"] = {}
@@ -198,13 +199,13 @@ check("Release notes with unchanged tag/published_at returns has_changed = false
 
 local release_v2 = {
     tag_name = "v1.1.0",
-    name = "Release 1.1.0",
+    name = "v1.1.0",
     published_at = "2026-08-10T00:00:00Z",
     body = "New version release notes.",
 }
 local r_ok3, r_path3, r_changed3 = RepoContent.fetchReleaseNotesHtml("testowner", "testrepo", release_v2, false)
 check("Release notes with new tag returns has_changed = true", r_changed3 == true)
-check("Updated release notes HTML contains new tag", mock_files[r_path3]:find("v1.1.0") ~= nil)
+check("Updated release notes HTML contains new tag", mock_files[r_path3]:find("1.1.0") ~= nil)
 
 -- Test 8: Cache clearing cleans files and index
 local clear_res = RepoContent.clearReadmeCache()

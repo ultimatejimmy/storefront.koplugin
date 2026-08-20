@@ -6967,6 +6967,7 @@ function Storefront:paginateEntries(items, tab_name, available_list_height)
     local current_page = {}
     local current_h = 0
     local cached_standard_h = nil
+    local cached_compact_h = nil
     local cached_update_h = nil
 
     for i, entry in ipairs(items) do
@@ -6991,7 +6992,7 @@ function Storefront:paginateEntries(items, tab_name, available_list_height)
                         cached_update_h = sample_widget:getSize().h
                     end
                     item_h = cached_update_h
-                else
+                elseif entry.description and entry.description ~= "" then
                     if not cached_standard_h then
                         local sample_entry = {
                             name = "Sample Plugin Name",
@@ -7009,6 +7010,23 @@ function Storefront:paginateEntries(items, tab_name, available_list_height)
                         cached_standard_h = sample_widget:getSize().h
                     end
                     item_h = cached_standard_h
+                else
+                    if not cached_compact_h then
+                        local sample_compact = {
+                            name = "Sample Plugin Name",
+                            owner = "sample_owner",
+                            stars_fmt = "100",
+                            updated = "2026-07-27",
+                            kind_label = "Plugin",
+                            is_entry = true,
+                        }
+                        local sample_widget = StorefrontListItem:new{
+                            entry = sample_compact,
+                            width = item_w,
+                        }
+                        cached_compact_h = sample_widget:getSize().h
+                    end
+                    item_h = cached_compact_h
                 end
                 entry._measured_h = item_h
             elseif entry.is_clear_button then
