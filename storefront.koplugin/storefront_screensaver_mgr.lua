@@ -29,6 +29,17 @@ local function getReaderSettings()
     return nil
 end
 
+local function getStorefrontSettings()
+    local ok_ds, DataStorage = pcall(require, "datastorage")
+    local settings_dir = (ok_ds and DataStorage and DataStorage.getSettingsDir) and DataStorage:getSettingsDir() or "/tmp/koreader/settings"
+    local settings_file = settings_dir .. "/Storefront.lua"
+    local ok_ls, LuaSettings = pcall(require, "luasettings")
+    if ok_ls and LuaSettings and LuaSettings.open then
+        return LuaSettings:open(settings_file)
+    end
+    return nil
+end
+
 local function isTrueSetting(settings, key)
     if not settings then return false end
     if type(settings.isTrue) == "function" then
@@ -62,10 +73,86 @@ local function flushSafe(settings)
     end
 end
 
-function StorefrontScreensaverMgr.getScreensaverFolder()
+function StorefrontScreensaverMgr.getDefaultScreensaverFolder()
     local ok_ds, DataStorage = pcall(require, "datastorage")
     local data_dir = (ok_ds and DataStorage and DataStorage.getDataDir) and DataStorage:getDataDir() or "/tmp/koreader"
-    local dir = data_dir .. "/screensavers"
+    return data_dir .. "/screensavers"
+end
+
+function StorefrontScreensaverMgr.getCustomScreensaverFolder()
+    local sf_settings = getStorefrontSettings()
+    local custom_dir = readSettingSafe(sf_settings, "screensaver_custom_folder", nil)
+    if not custom_dir or custom_dir == "" then
+        local r_settings = getReaderSettings()
+        local r_custom = readSettingSafe(r_settings, "screensaver_custom_dir", nil)
+        if r_custom and r_custom ~= "" then
+            custom_dir = r_custom
+        end
+    end
+    if custom_dir and custom_dir ~= "" then
+        local default_dir = StorefrontScreensaverMgr.getDefaultScreensaverFolder()
+        if custom_dir:gsub("[/\\]+$", "") ~= default_dir:gsub("[/\\]+$", "") then
+            return custom_dir:gsub("[/\\]+$", "")
+        end
+    end
+    return nil
+end
+
+function StorefrontScreensaverMgr.isCustomScreensaverFolder()
+    return StorefrontScreensaverMgr.getCustomScreensaverFolder() ~= nil
+end
+
+function StorefrontScreensaverMgr.setCustomScreensaverFolder(path)
+    local sf_settings = getStorefrontSettings()
+    local r_settings = getReaderSettings()
+    local default_dir = StorefrontScreensaverMgr.getDefaultScreensaverFolder()
+
+    if not path or path:match("^%s*$") then
+        return StorefrontScreensaverMgr.resetCustomScreensaverFolder()
+    end
+
+    local clean_path = path:match("^%s*(.-)%s*$"):gsub("[/\\]+$", "")
+    if clean_path == "" or clean_path == default_dir:gsub("[/\\]+$", "") then
+        return StorefrontScreensaverMgr.resetCustomScreensaverFolder()
+    end
+
+    local lfs = getLfs()
+    if lfs and lfs.attributes and not lfs.attributes(clean_path) then
+        pcall(function() lfs.mkdir(clean_path) end)
+    end
+
+    saveSettingSafe(sf_settings, "screensaver_custom_folder", clean_path)
+    flushSafe(sf_settings)
+
+    saveSettingSafe(r_settings, "screensaver_dir", clean_path)
+    saveSettingSafe(r_settings, "screensaver_random_dir", clean_path)
+    saveSettingSafe(r_settings, "screensaver_images_dir", clean_path)
+    saveSettingSafe(r_settings, "screensaver_folder", clean_path)
+    saveSettingSafe(r_settings, "screensaver_custom_dir", clean_path)
+    flushSafe(r_settings)
+    return true
+end
+
+function StorefrontScreensaverMgr.resetCustomScreensaverFolder()
+    local sf_settings = getStorefrontSettings()
+    local r_settings = getReaderSettings()
+    local default_dir = StorefrontScreensaverMgr.getDefaultScreensaverFolder()
+
+    saveSettingSafe(sf_settings, "screensaver_custom_folder", nil)
+    flushSafe(sf_settings)
+
+    saveSettingSafe(r_settings, "screensaver_dir", default_dir)
+    saveSettingSafe(r_settings, "screensaver_random_dir", default_dir)
+    saveSettingSafe(r_settings, "screensaver_images_dir", default_dir)
+    saveSettingSafe(r_settings, "screensaver_folder", default_dir)
+    saveSettingSafe(r_settings, "screensaver_custom_dir", nil)
+    flushSafe(r_settings)
+    return true
+end
+
+function StorefrontScreensaverMgr.getScreensaverFolder()
+    local custom_dir = StorefrontScreensaverMgr.getCustomScreensaverFolder()
+    local dir = custom_dir or StorefrontScreensaverMgr.getDefaultScreensaverFolder()
     local lfs = getLfs()
     if lfs and lfs.attributes and not lfs.attributes(dir) then
         pcall(function() lfs.mkdir(dir) end)
@@ -80,11 +167,7 @@ function StorefrontScreensaverMgr.getScreensaverSettings()
     local s_file = readSettingSafe(settings, "screensaver_document_cover", nil)
         or readSettingSafe(settings, "screensaver_file", nil)
         or readSettingSafe(settings, "screensaver_image", "")
-    local s_dir = readSettingSafe(settings, "screensaver_dir", nil)
-        or readSettingSafe(settings, "screensaver_random_dir", nil)
-        or readSettingSafe(settings, "screensaver_images_dir", nil)
-        or readSettingSafe(settings, "screensaver_folder", nil)
-        or StorefrontScreensaverMgr.getScreensaverFolder()
+    local s_dir = StorefrontScreensaverMgr.getScreensaverFolder()
     
     local banner = readSettingSafe(settings, "screensaver_banner", nil)
     local is_banner = (banner == true or (type(banner) == "table" and banner.enabled ~= false))

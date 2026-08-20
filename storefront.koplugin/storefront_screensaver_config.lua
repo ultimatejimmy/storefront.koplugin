@@ -344,7 +344,150 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
         -- Reading Progress Mode
         table.insert(scroll_vg, create_mode_row("book_status", _("Reading Progress / Summary"), _("Shows reading stats, percentage, and chapter progress"), nil, nil))
 
-        -- SECTION 2: DISPLAY OPTIONS
+        -- SECTION 2: SCREENSAVER FOLDER
+        table.insert(scroll_vg, create_section_header(_("Screensaver Folder")))
+
+        local current_folder = StorefrontScreensaverMgr.getScreensaverFolder()
+        local is_custom = StorefrontScreensaverMgr.isCustomScreensaverFolder()
+        local folder_status_label = is_custom and _("Custom folder") or _("Default folder")
+
+        local function openFolderChooser()
+            UIManager:nextTick(function()
+                local ok, err = pcall(function()
+                    if overlay then
+                        local ov = overlay
+                        overlay = nil
+                        ov.onClose = nil
+                        UIManager:close(ov, "ui")
+                    end
+                    local StorefrontFolderPicker = require("storefront_folder_picker")
+                    StorefrontFolderPicker.show{
+                        title = _("Select Screensaver Folder"),
+                        initial_path = StorefrontScreensaverMgr.getScreensaverFolder(),
+                        on_confirm = function(chosen_path)
+                            if chosen_path and chosen_path ~= "" then
+                                StorefrontScreensaverMgr.setCustomScreensaverFolder(chosen_path)
+                                local StorefrontToast = require("storefront_toast")
+                                StorefrontToast.show(string.format(_("Screensaver folder set to '%s'"), chosen_path), 2)
+                            end
+                            UIManager:nextTick(function()
+                                StorefrontScreensaverConfig.show(Storefront, on_close_callback)
+                            end)
+                        end,
+                        on_cancel = function()
+                            UIManager:nextTick(function()
+                                StorefrontScreensaverConfig.show(Storefront, on_close_callback)
+                            end)
+                        end,
+                    }
+                end)
+                if not ok then
+                    local logger = require("logger")
+                    logger.err("openFolderChooser error: " .. tostring(err))
+                    StorefrontScreensaverConfig.show(Storefront, on_close_callback)
+                end
+            end)
+        end
+
+        local folder_title_text = TextWidget:new{
+            text = folder_status_label,
+            face = Font:getFace("cfont", ui_font_size),
+            bold = true,
+            fgcolor = Blitbuffer.COLOR_BLACK,
+        }
+
+        local folder_browse_btn = Button:new{
+            text = _("Change..."),
+            text_font_size = btn_font_size,
+            bold = true,
+            bordersize = sc(1),
+            radius = sc(3),
+            padding = sc(2),
+            padding_h = sc(6),
+            background = Blitbuffer.COLOR_WHITE,
+            callback = openFolderChooser,
+        }
+
+        local folder_btn_w = folder_browse_btn:getSize().w
+        local folder_desc_w = dialog_w - sc(36) - folder_btn_w
+        local folder_path_desc = TextBoxWidget:new{
+            text = current_folder,
+            face = Font:getFace("cfont", subtext_font_size),
+            fgcolor = storefront_theme.color_label_dim,
+            width = folder_desc_w,
+        }
+
+        local folder_left_vg = VerticalGroup:new{
+            align = "left",
+            folder_title_text,
+            VerticalSpan:new{ width = sc(1) },
+            folder_path_desc,
+        }
+
+        local folder_left_frame = FrameContainer:new{
+            padding = 0,
+            bordersize = 0,
+            width = folder_desc_w,
+            folder_left_vg,
+        }
+
+        local folder_left_item = make_row_item(folder_left_frame, openFolderChooser)
+
+        local folder_row_hg = HorizontalGroup:new{
+            folder_left_item,
+            HorizontalSpan:new{ width = sc(8) },
+            folder_browse_btn,
+        }
+
+        table.insert(scroll_vg, FrameContainer:new{
+            padding = row_pad_v,
+            padding_left = sc(10),
+            padding_right = sc(8),
+            bordersize = 0,
+            width = dialog_w - sc(4),
+            folder_row_hg,
+        })
+
+        if is_custom then
+            table.insert(scroll_vg, LineWidget:new{
+                dimen = Geom:new{ w = dialog_w - sc(4), h = Size.line.thin },
+                background = Blitbuffer.COLOR_LIGHT_GRAY,
+            })
+
+            local reset_title = TextWidget:new{
+                text = _("Reset to Default Folder"),
+                face = Font:getFace("cfont", ui_font_size),
+                bold = false,
+                fgcolor = Blitbuffer.COLOR_BLACK,
+            }
+            local reset_desc = TextWidget:new{
+                text = string.format(_("Restore: %s"), StorefrontScreensaverMgr.getDefaultScreensaverFolder()),
+                face = Font:getFace("cfont", subtext_font_size),
+                fgcolor = storefront_theme.color_label_dim,
+            }
+            local reset_left_vg = VerticalGroup:new{
+                align = "left",
+                reset_title,
+                VerticalSpan:new{ width = sc(1) },
+                reset_desc,
+            }
+            local reset_frame = FrameContainer:new{
+                padding = row_pad_v,
+                padding_left = sc(10),
+                padding_right = sc(8),
+                bordersize = 0,
+                width = dialog_w - sc(4),
+                reset_left_vg,
+            }
+            table.insert(scroll_vg, make_row_item(reset_frame, function()
+                StorefrontScreensaverMgr.resetCustomScreensaverFolder()
+                refresh()
+                local StorefrontToast = require("storefront_toast")
+                StorefrontToast.show(_("Reset to default screensaver folder"), 2)
+            end))
+        end
+
+        -- SECTION 3: DISPLAY OPTIONS
         table.insert(scroll_vg, create_section_header(_("Display Options")))
 
         -- Border Fill & Background (Black / White / No Fill)
