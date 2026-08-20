@@ -902,11 +902,11 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
         return tostring(a):lower() < tostring(b):lower()
     end)
 
-    local sort_order = { "popular", "downloads", "recent", "az", "za" }
+    local sort_order = { "downloads", "recent", "popular", "az", "za" }
     local sort_labels = {
-        popular   = _("Most Popular"),
         downloads = _("Most Downloaded"),
         recent    = _("Recently Added"),
+        popular   = _("Most Popular"),
         az        = _("A -> Z"),
         za        = _("Z -> A"),
     }
@@ -1354,14 +1354,14 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
         table.insert(content_vg, make_section_header_local(_("Sorting")))
 
         -- Sort row
-        local cur_sort = state.screensaver_sort or "popular"
+        local cur_sort = state.screensaver_sort or "downloads"
         local sort_widget = TextWidget:new{
-            text = sort_labels[cur_sort] or sort_labels.popular,
+            text = sort_labels[cur_sort] or sort_labels.downloads,
             face = Font:getFace("cfont", subtext_font_size),
             fgcolor = storefront_theme.color_label_dim,
         }
         table.insert(content_vg, create_setting_row(_("Sort mode"), sort_widget, function()
-            local next_s = "popular"
+            local next_s = "downloads"
             for idx, s in ipairs(sort_order) do
                 if cur_sort == s then next_s = sort_order[(idx % #sort_order) + 1]; break end
             end
@@ -1380,7 +1380,7 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
         table.insert(content_vg, create_setting_row(_("Reset filters"), reset_widget, function()
             state.screensaver_category = ""
             state.screensaver_categories = nil
-            state.screensaver_sort = "popular"
+            state.screensaver_sort = "downloads"
             state.screensaver_search = ""
             state.search_text = ""
             state.owner = ""

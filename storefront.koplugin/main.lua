@@ -7536,11 +7536,11 @@ function Storefront:hasActiveFilters(tab)
         local cat = (self.browser_state and self.browser_state.screensaver_category or ""):lower()
         local cats = self.browser_state and self.browser_state.screensaver_categories
         local has_cats = type(cats) == "table" and next(cats) and not cats["all"]
-        local sort = self.browser_state and self.browser_state.screensaver_sort or "popular"
+        local sort = self.browser_state and self.browser_state.screensaver_sort or "downloads"
         local st = util.trim(self.browser_state and self.browser_state.search_text or "")
         local ow = util.trim(self.browser_state and self.browser_state.owner or "")
         local srch = (self.browser_state and self.browser_state.screensaver_search or ""):lower()
-        return has_cats or (cat ~= "" and cat ~= "all") or (sort ~= "popular") or (st ~= "") or (ow ~= "") or (srch ~= "")
+        return has_cats or (cat ~= "" and cat ~= "all") or (sort ~= "downloads") or (st ~= "") or (ow ~= "") or (srch ~= "")
     elseif tab == "Updates" then
         return false
     else
@@ -7650,7 +7650,7 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
     self:ensureBrowserState()
     local ss_cat  = (self.browser_state.screensaver_category or ""):lower()
     local ss_cats = self.browser_state.screensaver_categories
-    local ss_sort = self.browser_state.screensaver_sort or "popular"  -- "popular" | "az" | "za" | "downloads" | "recent"
+    local ss_sort = self.browser_state.screensaver_sort or "downloads"  -- "downloads" | "recent" | "popular" | "az" | "za"
     local raw_search = util.trim((self.browser_state.search_text and self.browser_state.search_text ~= "") and self.browser_state.search_text or (self.browser_state.screensaver_search or ""))
     local raw_owner  = util.trim(self.browser_state.owner or "")
     local search_terms = extractSearchTerms(raw_search)
@@ -8799,7 +8799,7 @@ function Storefront:showBrowser(kind)
                     local effective_ss_owner  = util.trim(self.browser_state.owner or "")
                     local ss_cat  = self.browser_state.screensaver_category or ""
                     local ss_cats = self.browser_state.screensaver_categories
-                    local ss_sort = self.browser_state.screensaver_sort or "popular"
+                    local ss_sort = self.browser_state.screensaver_sort or "downloads"
 
                     if effective_ss_search ~= "" then
                         table.insert(toolbar_buttons, {
@@ -8817,9 +8817,9 @@ function Storefront:showBrowser(kind)
                     end
 
                     local active_cat_names = {}
-                    if ss_cats and not ss_cats["all"] then
+                    if type(ss_cats) == "table" and next(ss_cats) and not ss_cats["all"] then
                         for k, v in pairs(ss_cats) do
-                            if v then
+                            if v and k ~= "all" then
                                 local c_name = k:sub(1,1):upper() .. k:sub(2)
                                 if k == "scifi" or k == "sci-fi" then c_name = "Sci-Fi" end
                                 if k == "fine art" then c_name = "Fine Art" end
@@ -8841,18 +8841,18 @@ function Storefront:showBrowser(kind)
                         })
                     end
                     local sort_labels = {
-                        popular   = _("Most Popular"),
                         downloads = _("Most Downloaded"),
                         recent    = _("Recently Added"),
+                        popular   = _("Most Popular"),
                         az        = _("A → Z"),
                         za        = _("Z → A"),
                     }
-                    local sort_cycle = { "popular", "downloads", "recent", "az", "za" }
+                    local sort_cycle = { "downloads", "recent", "popular", "az", "za" }
                     table.insert(toolbar_buttons, {
                         id = "ss_sort",
-                        text = sort_labels[ss_sort] or _("Most Popular"),
+                        text = sort_labels[ss_sort] or _("Most Downloaded"),
                         callback = function()
-                            local next_sort = "popular"
+                            local next_sort = "downloads"
                             for idx, s in ipairs(sort_cycle) do
                                 if ss_sort == s then
                                     next_sort = sort_cycle[(idx % #sort_cycle) + 1]

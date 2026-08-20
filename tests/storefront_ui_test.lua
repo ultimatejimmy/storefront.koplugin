@@ -1290,7 +1290,7 @@ if ok_browser then
         MainStorefront.browser_state.screensaver_category = ""
         MainStorefront.browser_state.screensaver_categories = nil
         MainStorefront.browser_state.screensaver_search = ""
-        MainStorefront.browser_state.screensaver_sort = "popular"
+        MainStorefront.browser_state.screensaver_sort = "downloads"
         check("hasActiveFilters Screensavers returns false when default", MainStorefront:hasActiveFilters("Screensavers"), false)
 
         MainStorefront.browser_state.screensaver_category = "Nature"
@@ -1304,7 +1304,7 @@ if ok_browser then
         MainStorefront.browser_state.screensaver_sort = "az"
         check("hasActiveFilters Screensavers returns true when sort changed", MainStorefront:hasActiveFilters("Screensavers"), true)
 
-        MainStorefront.browser_state.screensaver_sort = "popular"
+        MainStorefront.browser_state.screensaver_sort = "downloads"
         MainStorefront.browser_state.screensaver_search = "mountain"
         check("hasActiveFilters Screensavers returns true when search active", MainStorefront:hasActiveFilters("Screensavers"), true)
         MainStorefront.browser_state.screensaver_search = ""

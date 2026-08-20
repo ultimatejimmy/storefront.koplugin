@@ -233,7 +233,7 @@ local function resetState()
     Storefront.browser_state.screensaver_search = ""
     Storefront.browser_state.screensaver_category = ""
     Storefront.browser_state.screensaver_categories = nil
-    Storefront.browser_state.screensaver_sort = "popular"
+    Storefront.browser_state.screensaver_sort = "downloads"
     Storefront.browser_state.page = 1
 end
 
