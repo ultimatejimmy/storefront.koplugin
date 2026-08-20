@@ -5,6 +5,11 @@ local UIManager = require("ui/uimanager")
 local Localization = require("localization_storefront")
 local _ = function(key, ...) return Localization:t(key, ...) end
 
+local ok_log, StorefrontLogger = pcall(require, "storefront_logger")
+if not ok_log or not StorefrontLogger then
+    StorefrontLogger = { info = function() end, warn = function() end, err = function() end, action = function() end, debug = function() end }
+end
+
 local StorefrontScreensavers = {}
 
 local DEFAULT_SCREENSAVER_CATALOG_URL = "https://raw.githubusercontent.com/ultimatejimmy/storefront-screensavers/main/screensavers.json"
@@ -17,51 +22,122 @@ local function getHttpModule(url)
     return require("socket.http")
 end
 
+local function isNetworkOnline()
+    local ok_nm, NetworkMgr = pcall(require, "ui/network/manager")
+    if ok_nm and NetworkMgr then
+        if type(NetworkMgr.isOnline) == "function" then
+            local online = NetworkMgr:isOnline()
+            if online == false or online == 0 then return false end
+        end
+        if type(NetworkMgr.isWifiOn) == "function" and not NetworkMgr:isWifiOn() then
+            return false
+        end
+    end
+    return true
+end
+
 local function requestWithRedirects(target_url, sink_fn)
     local ltn12 = require("ltn12")
+    local ok_su, socketutil = pcall(require, "socketutil")
     local current_url = target_url
     local max_redirects = 5
     local redirect_count = 0
 
     while redirect_count < max_redirects do
-        local is_https = current_url:match("^https://") ~= nil
-        local http_req = getHttpModule(current_url)
-        local headers = {
-            ["User-Agent"] = "KOReader-Storefront",
-        }
+        local max_retries = 3
+        local attempt = 0
+        local last_res_code, last_headers_res, last_ok_req, last_err
 
-        local sink = sink_fn()
-        if not sink then return false, 0, nil end
+        while attempt < max_retries do
+            attempt = attempt + 1
+            local is_https = current_url:match("^https://") ~= nil
+            local http_req = getHttpModule(current_url)
+            local headers = {
+                ["User-Agent"] = (ok_su and socketutil and socketutil.USER_AGENT) or "Mozilla/5.0 (compatible; KOReader-Storefront/1.0)",
+                ["Accept"] = "*/*",
+            }
 
-        local params = {
-            url = current_url,
-            method = "GET",
-            headers = headers,
-            sink = sink,
-        }
-        if not is_https then params.redirect = true end
+            local sink = sink_fn()
+            if not sink then
+                StorefrontLogger.err("requestWithRedirects: Failed to create sink for " .. tostring(current_url))
+                return false, "failed to create sink", nil
+            end
 
-        local ok_req, res_code, response_headers = pcall(function()
-            local _, c, h = http_req.request(params)
-            return c, h
-        end)
+            if ok_su and socketutil and socketutil.set_timeout then
+                socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT or 15, socketutil.FILE_TOTAL_TIMEOUT or 180)
+            end
 
-        local code = tonumber(res_code) or 0
-        if ok_req and code == 200 then
-            return true, 200, response_headers
-        elseif ok_req and (code == 301 or code == 302 or code == 303 or code == 307 or code == 308) then
-            local loc = response_headers and (response_headers.location or response_headers.Location)
-            if loc and loc ~= "" then
-                current_url = loc
-                redirect_count = redirect_count + 1
-            else
+            local ok_req, res_code, response_headers = pcall(function()
+                local params = {
+                    url = current_url,
+                    method = "GET",
+                    headers = headers,
+                    sink = sink,
+                }
+                if not is_https then params.redirect = true end
+                local _, c, h = http_req.request(params)
+                return c, h
+            end)
+
+            if ok_su and socketutil and socketutil.reset_timeout then
+                socketutil:reset_timeout()
+            end
+
+            last_ok_req = ok_req
+            last_res_code = res_code
+            last_headers_res = response_headers
+            if not ok_req then
+                last_err = tostring(res_code)
+            end
+
+            local code = tonumber(res_code) or 0
+            if ok_req and code == 200 then
+                StorefrontLogger.info(string.format("requestWithRedirects: SUCCESS (200) url=%s (attempt %d)", current_url, attempt))
+                return true, 200, response_headers
+            elseif ok_req and (code == 301 or code == 302 or code == 303 or code == 307 or code == 308) then
                 break
+            else
+                StorefrontLogger.warn(string.format("requestWithRedirects: attempt %d/%d failed (ok=%s, code=%s, err=%s) url=%s",
+                    attempt, max_retries, tostring(ok_req), tostring(res_code), tostring(last_err), current_url))
+            end
+
+            if attempt < max_retries then
+                local ok_sec, socket = pcall(require, "socket")
+                if ok_sec and socket and socket.sleep then socket.sleep(0.15) end
+            end
+        end
+
+        local code = tonumber(last_res_code) or 0
+        if last_ok_req and (code == 301 or code == 302 or code == 303 or code == 307 or code == 308) then
+            local location = (type(last_headers_res) == "table") and (last_headers_res.location or last_headers_res.Location)
+            if location and location ~= "" then
+                if not location:match("^https?://") then
+                    local scheme_host = current_url:match("^(https?://[^/]+)")
+                    if scheme_host then
+                        if location:sub(1,1) == "/" then
+                            current_url = scheme_host .. location
+                        else
+                            current_url = scheme_host .. "/" .. location
+                        end
+                    else
+                        current_url = location
+                    end
+                else
+                    current_url = location
+                end
+                redirect_count = redirect_count + 1
+                StorefrontLogger.info(string.format("requestWithRedirects: redirecting (%d) to %s", code, current_url))
+            else
+                StorefrontLogger.warn("requestWithRedirects: redirect status without Location header")
+                return false, "redirect missing location", last_headers_res
             end
         else
-            break
+            local err_desc = last_err or last_res_code or "Unknown network error"
+            return false, err_desc, last_headers_res
         end
     end
-    return false, 0, nil
+    StorefrontLogger.warn("requestWithRedirects: exceeded max redirects for " .. tostring(target_url))
+    return false, "too many redirects", nil
 end
 
 local cached_catalog_mem = nil
@@ -94,6 +170,7 @@ function StorefrontScreensavers.getCachedCatalog()
 end
 
 function StorefrontScreensavers.fetchCatalog(callback)
+    StorefrontLogger.info("Storefront: fetching screensavers catalog from " .. DEFAULT_SCREENSAVER_CATALOG_URL)
     local ltn12 = require("ltn12")
     local response_body = {}
     local sink_fn = function()
@@ -101,12 +178,13 @@ function StorefrontScreensavers.fetchCatalog(callback)
         return ltn12.sink.table(response_body)
     end
 
-    local ok, code = requestWithRedirects(DEFAULT_SCREENSAVER_CATALOG_URL, sink_fn)
-    if ok and code == 200 then
+    local ok, code_or_err = requestWithRedirects(DEFAULT_SCREENSAVER_CATALOG_URL, sink_fn)
+    if ok and code_or_err == 200 then
         local body_str = table.concat(response_body)
         local parsed_ok, data = pcall(json.decode, body_str)
         if parsed_ok and type(data) == "table" then
             cached_catalog_mem = data
+            StorefrontLogger.info(string.format("Storefront: screensavers catalog fetched successfully (%d items)", #data))
             pcall(function()
                 local ok_ds, DataStorage = pcall(require, "datastorage")
                 if ok_ds and DataStorage and DataStorage.getDataDir then
@@ -120,16 +198,22 @@ function StorefrontScreensavers.fetchCatalog(callback)
             end)
             callback(true, data)
             return
+        else
+            StorefrontLogger.warn("Storefront: failed to parse screensavers catalog JSON: " .. tostring(data))
         end
+    else
+        StorefrontLogger.warn(string.format("Storefront: failed to fetch screensavers catalog (err=%s)", tostring(code_or_err)))
     end
 
     local local_cached = StorefrontScreensavers.getCachedCatalog()
     if local_cached then
+        StorefrontLogger.info(string.format("Storefront: using disk cached screensavers catalog (%d items)", #local_cached))
         callback(true, local_cached)
         return
     end
 
     -- Fallback dummy data if offline / initial test
+    StorefrontLogger.warn("Storefront: using fallback dummy screensavers catalog")
     local fallback = {
         {
             id = "foggy-forest-pines",
@@ -187,8 +271,8 @@ function StorefrontScreensavers.fetchThumbnail(item, callback)
         return ltn12.sink.table(img_data)
     end
 
-    local ok, code = requestWithRedirects(fetch_url, sink_fn)
-    if ok and code == 200 then
+    local ok, code_or_err = requestWithRedirects(fetch_url, sink_fn)
+    if ok and code_or_err == 200 then
         local tmp_path = thumb_path .. ".tmp"
         local file = io.open(tmp_path, "wb")
         if file then
@@ -204,10 +288,41 @@ function StorefrontScreensavers.fetchThumbnail(item, callback)
     end
 
     item._thumb_failed = true
+    StorefrontLogger.warn(string.format("fetchThumbnail failed for item '%s' (id=%s, url=%s, err=%s)",
+        tostring(item.title or item.name), tostring(item.id), tostring(fetch_url), tostring(code_or_err)))
     return nil
 end
 
 StorefrontScreensavers.requestWithRedirects = requestWithRedirects
+
+local function formatDownloadError(item, err_detail)
+    local title_str = item and (item.title or item.name) or ""
+    local err_str = tostring(err_detail or "")
+    local code_num = tonumber(err_str:match("(%d%d%d)")) or tonumber(err_detail)
+
+    local reason = nil
+    if not isNetworkOnline() then
+        reason = _("No internet connection. Please check your Wi-Fi.")
+    elseif err_str:lower():find("timeout") or err_str:find("SINK_TIMEOUT") or code_num == 0 then
+        reason = _("Connection timed out. Please try again.")
+    elseif code_num == 404 then
+        reason = _("Image file not found on server (404).")
+    elseif code_num == 403 or code_num == 429 then
+        reason = string.format(_("Server rate limit or access denied (%s)."), tostring(code_num))
+    elseif code_num and code_num >= 500 and code_num < 600 then
+        reason = string.format(_("Server error (%s)."), tostring(code_num))
+    elseif err_str ~= "" then
+        reason = err_str
+    else
+        reason = _("Network error occurred.")
+    end
+
+    if title_str ~= "" then
+        return string.format(_("Failed to download '%s': %s"), title_str, reason)
+    else
+        return string.format(_("Failed to download screensaver: %s"), reason)
+    end
+end
 
 function StorefrontScreensavers.downloadAsSingle(item, callback)
     local StorefrontScreensaverMgr = require("storefront_screensaver_mgr")
@@ -227,7 +342,8 @@ function StorefrontScreensavers.downloadAsSingle(item, callback)
             StorefrontToast.show(_("Wallpaper set as active KOReader screensaver!"), 3)
             if callback then callback(true, result) end
         else
-            StorefrontToast.show(_("Failed to download screensaver."), 3)
+            local error_msg = formatDownloadError(item, result)
+            StorefrontToast.show(error_msg, 4)
             if callback then callback(false, result) end
         end
     end)
@@ -245,7 +361,8 @@ function StorefrontScreensavers.downloadToShufflePool(item, callback)
             StorefrontToast.show(_("Added to shuffle pool & Folder Shuffle enabled!"), 3)
             if callback then callback(true, result) end
         else
-            StorefrontToast.show(_("Failed to download screensaver."), 3)
+            local error_msg = formatDownloadError(item, result)
+            StorefrontToast.show(error_msg, 4)
             if callback then callback(false, result) end
         end
     end)
@@ -262,7 +379,8 @@ function StorefrontScreensavers.downloadOnly(item, callback)
             StorefrontToast.show(_("Wallpaper saved to collection!"), 3)
             if callback then callback(true, result) end
         else
-            StorefrontToast.show(_("Failed to download screensaver."), 3)
+            local error_msg = formatDownloadError(item, result)
+            StorefrontToast.show(error_msg, 4)
             if callback then callback(false, result) end
         end
     end)

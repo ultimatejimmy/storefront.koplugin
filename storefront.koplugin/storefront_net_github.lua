@@ -664,28 +664,68 @@ end
 
 GitHubClient.markdownToHtml = markdownToHtml
 
--- Fetch the HTML representation of README.
--- Returns raw HTML string, or nil + error.
-function GitHubClient.fetchReadmeHtml(owner, repo)
+-- Fetch raw README markdown directly with optional ETag / If-None-Match conditional request.
+-- Returns: raw_md, err, etag, is_modified (boolean), http_code
+function GitHubClient.fetchReadmeRaw(owner, repo, etag, last_modified)
     if not owner or not repo then
-        return nil, "missing parameters"
+        return nil, "missing parameters", nil, false, 0
     end
 
-    -- Fast CDN First: fetch raw README markdown and parse locally in <100ms
     local raw_url = string.format("https://raw.githubusercontent.com/%s/%s/HEAD/README.md", owner, repo)
     local raw_response = {}
-    local _, raw_code = http.request{
+    local req_headers = {
+        ["User-Agent"] = USER_AGENT,
+        ["Accept"] = "text/plain",
+    }
+    if etag and etag ~= "" then
+        req_headers["If-None-Match"] = etag
+    end
+    if last_modified and last_modified ~= "" then
+        req_headers["If-Modified-Since"] = last_modified
+    end
+
+    local _, raw_code, res_headers = http.request{
         url = raw_url,
-        headers = { ["User-Agent"] = USER_AGENT },
+        headers = req_headers,
         sink = newTableSink(raw_response),
     }
+
+    local code_num = tonumber(raw_code) or 0
+    local res_etag = res_headers and (res_headers["etag"] or res_headers["ETag"])
+    if type(res_etag) == "string" then
+        res_etag = res_etag:gsub('^W/"', '"') -- normalize weak etags if any
+    end
+
+    if code_num == 304 then
+        return nil, nil, res_etag or etag, false, 304
+    end
+
     local raw_md = table.concat(raw_response)
-    if tonumber(raw_code) == 200 and raw_md ~= "" then
+    if code_num == 200 and raw_md ~= "" then
         if #raw_md > MAX_README_MARKDOWN_BYTES then
             raw_md = raw_md:sub(1, MAX_README_MARKDOWN_BYTES)
                 .. "\n\n(Readme truncated to protect device memory.)"
         end
-        return markdownToHtml(raw_md, owner, repo), nil
+        return raw_md, nil, res_etag, true, 200
+    end
+
+    return nil, string.format("HTTP %s", tostring(raw_code)), res_etag, false, code_num
+end
+
+-- Fetch the HTML representation of README with conditional request support.
+-- Returns: html_string, err, etag, is_modified
+function GitHubClient.fetchReadmeHtml(owner, repo, etag, last_modified)
+    if not owner or not repo then
+        return nil, "missing parameters", nil, false
+    end
+
+    -- Fast CDN First: fetch raw README markdown conditionally
+    local raw_md, err, res_etag, is_modified, code_num = GitHubClient.fetchReadmeRaw(owner, repo, etag, last_modified)
+    if code_num == 304 then
+        return nil, nil, res_etag or etag, false
+    end
+    if code_num == 200 and raw_md then
+        return markdownToHtml(raw_md, owner, repo), nil, res_etag, true
     end
 
     -- Secondary Fallback: GitHub REST API HTML endpoint
@@ -696,17 +736,30 @@ function GitHubClient.fetchReadmeHtml(owner, repo)
         ["Accept"] = "application/vnd.github.html",
         ["User-Agent"] = USER_AGENT,
     }
+    if etag and etag ~= "" then
+        headers["If-None-Match"] = etag
+    end
+    if last_modified and last_modified ~= "" then
+        headers["If-Modified-Since"] = last_modified
+    end
     local auth_headers = getAuthHeaders()
     if auth_headers then
         for key, value in pairs(auth_headers) do headers[key] = value end
     end
-    local _, code = http.request{
+    local _, code, api_headers = http.request{
         url = target,
         headers = headers,
         sink = newTableSink(response_body),
     }
+    local api_code = tonumber(code) or 0
+    local api_etag = api_headers and (api_headers["etag"] or api_headers["ETag"])
+
+    if api_code == 304 then
+        return nil, nil, api_etag or etag, false
+    end
+
     local body = table.concat(response_body)
-    if tonumber(code) == 200 and body ~= "" then
+    if api_code == 200 and body ~= "" then
         
         -- 1. Nuke massive Base64 strings using a fast C-level pattern match
         body = body:gsub('src=["\']data:[^"\']+["\']', 'src=""')
@@ -727,17 +780,17 @@ function GitHubClient.fetchReadmeHtml(owner, repo)
             end
             return string.format('src="%s"', src)
         end)
-        return body, nil
+        return body, nil, api_etag, true
     end
 
-    return nil, string.format("HTTP %s", tostring(raw_code or code))
+    return nil, string.format("HTTP %s", tostring(code_num ~= 0 and code_num or api_code)), nil, false
 end
 
 GitHubClient.markdownToHtml = markdownToHtml
 
-function GitHubClient.fetchWikiPageRaw(owner, repo, page_name)
+function GitHubClient.fetchWikiPageRaw(owner, repo, page_name, etag)
     if not owner or not repo then
-        return nil, "missing owner/repo"
+        return nil, "missing owner/repo", nil, false
     end
     page_name = (page_name and page_name ~= "") and page_name or "Home"
     local clean_page = page_name:gsub("%.md$", "")
@@ -763,24 +816,32 @@ function GitHubClient.fetchWikiPageRaw(owner, repo, page_name)
 
             for _, wiki_url in ipairs(urls_to_try) do
                 local response_body = {}
-                local res, code = http.request{
+                local req_headers = {
+                    ["Accept"] = "text/plain",
+                    ["User-Agent"] = USER_AGENT,
+                }
+                if etag and etag ~= "" then
+                    req_headers["If-None-Match"] = etag
+                end
+                local res, code, w_headers = http.request{
                     url = wiki_url,
-                    headers = {
-                        ["Accept"] = "text/plain",
-                        ["User-Agent"] = USER_AGENT,
-                    },
+                    headers = req_headers,
                     sink = newTableSink(response_body),
                 }
                 code = tonumber(code)
+                local res_etag = w_headers and (w_headers["etag"] or w_headers["ETag"])
+                if code == 304 then
+                    return nil, nil, res_etag or etag, false
+                end
                 local body = table.concat(response_body)
                 if code == 200 and body and body ~= "" then
-                    return body, nil
+                    return body, nil, res_etag, true
                 end
             end
         end
     end
 
-    return nil, "HTTP 404: wiki page not found"
+    return nil, "HTTP 404: wiki page not found", nil, false
 end
 
 return GitHubClient

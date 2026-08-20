@@ -2253,29 +2253,35 @@ tr:nth-child(even) td { background-color: #f5f5f5 !important; }
             -- Perform network fetch asynchronously without blocking the UI main loop
             UIManager:scheduleIn(0.05, function()
                 if self.is_closed or self.active_tab ~= tab_name then return end
-                local ok, path
+                local ok, path, has_changed
                 if tab_name == "release_notes" then
                     local rel_data = (self.update_item and (self.update_item.remote or self.update_item.remote_entry)) or self.repo.latest_release
                     if RepoContent and type(RepoContent.fetchReleaseNotesHtml) == "function" then
-                        local ok_pcall, res_ok, res_path = pcall(RepoContent.fetchReleaseNotesHtml, owner, repo_name, rel_data, force_refresh)
-                        if ok_pcall then ok, path = res_ok, res_path end
+                        local ok_pcall, res_ok, res_path, res_changed = pcall(RepoContent.fetchReleaseNotesHtml, owner, repo_name, rel_data, force_refresh)
+                        if ok_pcall then ok, path, has_changed = res_ok, res_path, res_changed end
                     end
                 elseif tab_name == "wiki" then
                     if RepoContent and type(RepoContent.fetchWikiSidebar) == "function" then
                         pcall(function() self.wiki_sidebar_items = RepoContent.fetchWikiSidebar(owner, repo_name, force_refresh) end)
                     end
                     if RepoContent and type(RepoContent.fetchWikiPageHtml) == "function" then
-                        local ok_pcall, res_ok, res_path = pcall(RepoContent.fetchWikiPageHtml, owner, repo_name, self.active_wiki_page, force_refresh)
-                        if ok_pcall then ok, path = res_ok, res_path end
+                        local ok_pcall, res_ok, res_path, res_changed = pcall(RepoContent.fetchWikiPageHtml, owner, repo_name, self.active_wiki_page, force_refresh)
+                        if ok_pcall then ok, path, has_changed = res_ok, res_path, res_changed end
                     end
                 else
                     if RepoContent and type(RepoContent.fetchReadmeHtml) == "function" then
-                        local ok_pcall, res_ok, res_path = pcall(RepoContent.fetchReadmeHtml, owner, repo_name, force_refresh)
-                        if ok_pcall then ok, path = res_ok, res_path end
+                        local ok_pcall, res_ok, res_path, res_changed = pcall(RepoContent.fetchReadmeHtml, owner, repo_name, force_refresh)
+                        if ok_pcall then ok, path, has_changed = res_ok, res_path, res_changed end
                     end
                 end
 
                 if ok and path then
+                    -- If content was already displayed from disk cache and remote did not change, skip re-rendering
+                    if cached_html and has_changed == false then
+                        logger.info("Storefront Details: remote content unchanged for", tab_name, "(skipped re-render)")
+                        return
+                    end
+
                     local fresh_html = util.readFromFile(path)
                     if fresh_html and fresh_html ~= "" and self.active_tab == tab_name and self._html_box then
                         pcall(function()

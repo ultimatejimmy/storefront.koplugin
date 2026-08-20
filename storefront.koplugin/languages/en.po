@@ -23,6 +23,9 @@ msgstr "%d plugins"
 msgid "%d wallpapers"
 msgstr "%d wallpapers"
 
+msgid "%d wallpapers found in this folder"
+msgstr "%d wallpapers found in this folder"
+
 msgid "%d wallpapers stored on device"
 msgstr "%d wallpapers stored on device"
 
@@ -61,6 +64,12 @@ msgstr "(showing %d of %d commits)"
 
 msgid "+ Add to Shuffle Pool"
 msgstr "+ Add to Shuffle Pool"
+
+msgid "+ New"
+msgstr "+ New"
+
+msgid ".. (Parent Folder)"
+msgstr ".. (Parent Folder)"
 
 msgid "1 / 1"
 msgstr "1 / 1"
@@ -173,6 +182,9 @@ msgstr "Author"
 msgid "Back"
 msgstr "Back"
 
+msgid "Batch update cancelled."
+msgstr "Batch update cancelled."
+
 msgid "Beta"
 msgstr "Beta"
 
@@ -271,6 +283,9 @@ msgstr "Changelog for %s\n%s → %s"
 
 msgid "Changelog for %s\\\n%s \\\\xE2\\\\x86\\\\x92 %s"
 msgstr "Changelog for %s\\\n%s \\\\xE2\\\\x86\\\\x92 %s"
+
+msgid "Changelog for %s\\n%s \\xE2\\x86\\x92 %s"
+msgstr "Changelog for %s\\n%s \\xE2\\x86\\x92 %s"
 
 msgid "Changelog: %s"
 msgstr "Changelog: %s"
@@ -392,6 +407,9 @@ msgstr "Commit diff: %s → %s"
 msgid "Commits: %s \\\\xE2\\\\x86\\\\x92 %s"
 msgstr "Commits: %s \\\\xE2\\\\x86\\\\x92 %s"
 
+msgid "Commits: %s \\xE2\\x86\\x92 %s"
+msgstr "Commits: %s \\xE2\\x86\\x92 %s"
+
 msgid "Commits: %s → %s"
 msgstr "Commits: %s → %s"
 
@@ -418,6 +436,15 @@ msgstr "Connecting to GitHub…\n\nPlease wait."
 
 msgid "Connecting to GitHub…\\\n\\\nPlease wait."
 msgstr "Connecting to GitHub…\\\n\\\nPlease wait."
+
+msgid "Connecting to GitHub…\\n\\nPlease wait."
+msgstr "Connecting to GitHub…\\n\\nPlease wait."
+
+msgid "Connecting…"
+msgstr "Connecting…"
+
+msgid "Connection timed out. Please try again."
+msgstr "Connection timed out. Please try again."
 
 msgid "Continue"
 msgstr "Continue"
@@ -455,8 +482,29 @@ msgstr "Could not locate plugin folder (_meta.lua) in archive."
 msgid "Could not open target file for writing"
 msgstr "Could not open target file for writing"
 
+msgid "Create"
+msgstr "Create"
+
+msgid "Create subfolder in "
+msgstr "Create subfolder in "
+
+msgid "Create subfolder in '%s':"
+msgstr "Create subfolder in '%s':"
+
+msgid "Created "
+msgstr "Created "
+
+msgid "Created '%s'"
+msgstr "Created '%s'"
+
+msgid "Custom folder"
+msgstr "Custom folder"
+
 msgid "Default"
 msgstr "Default"
+
+msgid "Default folder"
+msgstr "Default folder"
 
 msgid "Default only"
 msgstr "Default only"
@@ -560,6 +608,9 @@ msgstr "Download Only"
 msgid "Download Only (Save to Device)"
 msgstr "Download Only (Save to Device)"
 
+msgid "Download cancelled."
+msgstr "Download cancelled."
+
 msgid "Download failed: "
 msgstr "Download failed: "
 
@@ -575,20 +626,44 @@ msgstr "Download options — %s (%s)"
 msgid "Downloading "
 msgstr "Downloading "
 
+msgid "Downloading %s%s…\nTap screen to cancel."
+msgstr "Downloading %s%s…\nTap screen to cancel."
+
 msgid "Downloading %s%s…\nThis may take a moment."
 msgstr "Downloading %s%s…\nThis may take a moment."
 
 msgid "Downloading %s%s…\\\nThis may take a moment."
 msgstr "Downloading %s%s…\\\nThis may take a moment."
 
+msgid "Downloading %s%s…\\nTap screen to cancel."
+msgstr "Downloading %s%s…\\nTap screen to cancel."
+
 msgid "Downloading %s…"
 msgstr "Downloading %s…"
+
+msgid "Downloading %s…\nTap screen to cancel."
+msgstr "Downloading %s…\nTap screen to cancel."
+
+msgid "Downloading %s…\\nTap screen to cancel."
+msgstr "Downloading %s…\\nTap screen to cancel."
 
 msgid "Downloading '%s'..."
 msgstr "Downloading '%s'..."
 
 msgid "Downloading patch \"%s\"…"
 msgstr "Downloading patch \"%s\"…"
+
+msgid "Downloading patch %s%s…\nPlease wait."
+msgstr "Downloading patch %s%s…\nPlease wait."
+
+msgid "Downloading patch %s%s…\nTap screen to cancel."
+msgstr "Downloading patch %s%s…\nTap screen to cancel."
+
+msgid "Downloading patch %s%s…\\nPlease wait."
+msgstr "Downloading patch %s%s…\\nPlease wait."
+
+msgid "Downloading patch %s%s…\\nTap screen to cancel."
+msgstr "Downloading patch %s%s…\\nTap screen to cancel."
 
 msgid "Downloading patch %s…"
 msgstr "Downloading patch %s…"
@@ -601,6 +676,9 @@ msgstr "Downloading screensaver..."
 
 msgid "Downloading to shuffle pool..."
 msgstr "Downloading to shuffle pool..."
+
+msgid "Downloading…"
+msgstr "Downloading…"
 
 msgid "Edit"
 msgstr "Edit"
@@ -632,11 +710,17 @@ msgstr "Extracting and installing plugin…\nPlease wait."
 msgid "Extracting and installing plugin…\\\nPlease wait."
 msgstr "Extracting and installing plugin…\\\nPlease wait."
 
+msgid "Extracting and installing plugin…\\nPlease wait."
+msgstr "Extracting and installing plugin…\\nPlease wait."
+
 msgid "Failed to check %s: %s"
 msgstr "Failed to check %s: %s"
 
 msgid "Failed to check for Storefront updates: %s"
 msgstr "Failed to check for Storefront updates: %s"
+
+msgid "Failed to create folder."
+msgstr "Failed to create folder."
 
 msgid "Failed to create patches directory: %s"
 msgstr "Failed to create patches directory: %s"
@@ -656,11 +740,20 @@ msgstr "Failed to disable patch "
 msgid "Failed to disable patch '%s'."
 msgstr "Failed to disable patch '%s'."
 
+msgid "Failed to download "
+msgstr "Failed to download "
+
+msgid "Failed to download '%s': %s"
+msgstr "Failed to download '%s': %s"
+
 msgid "Failed to download patch: %s"
 msgstr "Failed to download patch: %s"
 
 msgid "Failed to download screensaver."
 msgstr "Failed to download screensaver."
+
+msgid "Failed to download screensaver: %s"
+msgstr "Failed to download screensaver: %s"
 
 msgid "Failed to enable patch "
 msgstr "Failed to enable patch "
@@ -688,6 +781,9 @@ msgstr "Failed to open downloaded archive."
 
 msgid "Failed to prepare patches directory."
 msgstr "Failed to prepare patches directory."
+
+msgid "Failed to save downloaded file"
+msgstr "Failed to save downloaded file"
 
 msgid "Failed to toggle patch status."
 msgstr "Failed to toggle patch status."
@@ -761,6 +857,9 @@ msgstr "Filters: "
 msgid "Filters: (none)"
 msgstr "Filters: (none)"
 
+msgid "Folder"
+msgstr "Folder"
+
 msgid "Folder Shuffle"
 msgstr "Folder Shuffle"
 
@@ -833,6 +932,9 @@ msgstr "Ignored"
 msgid "Image View"
 msgstr "Image View"
 
+msgid "Image file not found on server (404)."
+msgstr "Image file not found on server (404)."
+
 msgid "Include 0-star forks"
 msgstr "Include 0-star forks"
 
@@ -881,11 +983,17 @@ msgstr "Installed Plugins Settings"
 msgid "Installed Regular font style offline for \"%s\". Full font family queued for download when reconnected."
 msgstr "Installed Regular font style offline for \"%s\". Full font family queued for download when reconnected."
 
+msgid "Installed Regular font style offline for \\\"%s\\\". Full font family queued for download when reconnected."
+msgstr "Installed Regular font style offline for \\\"%s\\\". Full font family queued for download when reconnected."
+
 msgid "Installed Regular font style offline for \\\\\"%s\\\\\". Full font family queued for download when reconnected."
 msgstr "Installed Regular font style offline for \\\\\"%s\\\\\". Full font family queued for download when reconnected."
 
 msgid "Installed font \"%s\" (%d file(s))."
 msgstr "Installed font \"%s\" (%d file(s))."
+
+msgid "Installed font \\\"%s\\\" (%d file(s))."
+msgstr "Installed font \\\"%s\\\" (%d file(s))."
 
 msgid "Installed font \\\\\"%s\\\\\" (%d file(s))."
 msgstr "Installed font \\\\\"%s\\\\\" (%d file(s))."
@@ -893,11 +1001,17 @@ msgstr "Installed font \\\\\"%s\\\\\" (%d file(s))."
 msgid "Installed full font family \"%s\" (%d file(s))."
 msgstr "Installed full font family \"%s\" (%d file(s))."
 
+msgid "Installed full font family \\\"%s\\\" (%d file(s))."
+msgstr "Installed full font family \\\"%s\\\" (%d file(s))."
+
 msgid "Installed full font family \\\\\"%s\\\\\" (%d file(s))."
 msgstr "Installed full font family \\\\\"%s\\\\\" (%d file(s))."
 
 msgid "Installed patch \"%s\"."
 msgstr "Installed patch \"%s\"."
+
+msgid "Installed patch \\\"%s\\\"."
+msgstr "Installed patch \\\"%s\\\"."
 
 msgid "Installed patch \\\\\"%s\\\\\"."
 msgstr "Installed patch \\\\\"%s\\\\\"."
@@ -992,6 +1106,9 @@ msgstr "Manage plugin paths\n\nHiding a path only affects what Storefront shows/
 msgid "Manage plugin paths\\\n\\\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
 msgstr "Manage plugin paths\\\n\\\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
 
+msgid "Manage plugin paths\\n\\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
+msgstr "Manage plugin paths\\n\\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
+
 msgid "Match"
 msgstr "Match"
 
@@ -1082,6 +1199,9 @@ msgstr "Missing repository metadata for releases."
 msgid "Missing repository metadata for remote fetch."
 msgstr "Missing repository metadata for remote fetch."
 
+msgid "Missing target path"
+msgstr "Missing target path"
+
 msgid "Modify Patch"
 msgstr "Modify Patch"
 
@@ -1118,8 +1238,14 @@ msgstr "Needs update"
 msgid "Needs update: %d"
 msgstr "Needs update: %d"
 
+msgid "Network error occurred."
+msgstr "Network error occurred."
+
 msgid "Never"
 msgstr "Never"
+
+msgid "New Folder"
+msgstr "New Folder"
 
 msgid "New filename"
 msgstr "New filename"
@@ -1174,6 +1300,9 @@ msgstr "No entries match current filters."
 
 msgid "No installed items found."
 msgstr "No installed items found."
+
+msgid "No internet connection. Please check your Wi-Fi."
+msgstr "No internet connection. Please check your Wi-Fi."
 
 msgid "No items found."
 msgstr "No items found."
@@ -1232,6 +1361,12 @@ msgstr "No screensavers match this filter."
 msgid "No stable releases found — uncheck filter to show all releases"
 msgstr "No stable releases found — uncheck filter to show all releases"
 
+msgid "No subfolders in this directory.\nTap 'Select Folder' below to use it, or '+ New' to create a subfolder."
+msgstr "No subfolders in this directory.\nTap 'Select Folder' below to use it, or '+ New' to create a subfolder."
+
+msgid "No subfolders in this directory.\\nTap "
+msgstr "No subfolders in this directory.\\nTap "
+
 msgid "No tracked plugins to check."
 msgstr "No tracked plugins to check."
 
@@ -1240,6 +1375,9 @@ msgstr "No wallpapers found in your screensavers folder.\n\nBrowse the Screensav
 
 msgid "No wallpapers found in your screensavers folder.\\\n\\\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
 msgstr "No wallpapers found in your screensavers folder.\\\n\\\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
+
+msgid "No wallpapers found in your screensavers folder.\\n\\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
+msgstr "No wallpapers found in your screensavers folder.\\n\\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
 
 msgid "None selected"
 msgstr "None selected"
@@ -1541,6 +1679,12 @@ msgstr "Repository: %s"
 msgid "Reset filters"
 msgstr "Reset filters"
 
+msgid "Reset to Default Folder"
+msgstr "Reset to Default Folder"
+
+msgid "Reset to default screensaver folder"
+msgstr "Reset to default screensaver folder"
+
 msgid "Reset to defaults"
 msgstr "Reset to defaults"
 
@@ -1549,6 +1693,9 @@ msgstr "Restart later"
 
 msgid "Restart now"
 msgstr "Restart now"
+
+msgid "Restore: %s"
+msgstr "Restore: %s"
 
 msgid "Sample Text"
 msgstr "Sample Text"
@@ -1565,11 +1712,20 @@ msgstr "Screensaver & Wallpapers"
 msgid "Screensaver Details"
 msgstr "Screensaver Details"
 
+msgid "Screensaver Folder"
+msgstr "Screensaver Folder"
+
 msgid "Screensaver Mode"
 msgstr "Screensaver Mode"
 
 msgid "Screensaver Settings"
 msgstr "Screensaver Settings"
+
+msgid "Screensaver folder set to "
+msgstr "Screensaver folder set to "
+
+msgid "Screensaver folder set to '%s'"
+msgstr "Screensaver folder set to '%s'"
 
 msgid "Screensaver mode"
 msgstr "Screensaver mode"
@@ -1592,6 +1748,9 @@ msgstr "Search & API"
 msgid "Search filter (\"%s\") is not applied to Updates."
 msgstr "Search filter (\"%s\") is not applied to Updates."
 
+msgid "Search filter (\\\"%s\\\") is not applied to Updates."
+msgstr "Search filter (\\\"%s\\\") is not applied to Updates."
+
 msgid "Search filter (\\\\\"%s\\\\\") is not applied to Updates."
 msgstr "Search filter (\\\\\"%s\\\\\") is not applied to Updates."
 
@@ -1606,6 +1765,12 @@ msgstr "Select All"
 
 msgid "Select Categories"
 msgstr "Select Categories"
+
+msgid "Select Folder"
+msgstr "Select Folder"
+
+msgid "Select Screensaver Folder"
+msgstr "Select Screensaver Folder"
 
 msgid "Select a repository patch entry to match with the chosen file."
 msgstr "Select a repository patch entry to match with the chosen file."
@@ -1627,6 +1792,12 @@ msgstr "Select plugin to match"
 
 msgid "Select repository"
 msgstr "Select repository"
+
+msgid "Server error (%s)."
+msgstr "Server error (%s)."
+
+msgid "Server rate limit or access denied (%s)."
+msgstr "Server rate limit or access denied (%s)."
 
 msgid "Set"
 msgstr "Set"
@@ -1799,6 +1970,9 @@ msgstr "This action cannot be undone.\n\nChanges will take effect after restart.
 msgid "This action cannot be undone.\\\n\\\nChanges will take effect after restart."
 msgstr "This action cannot be undone.\\\n\\\nChanges will take effect after restart."
 
+msgid "This action cannot be undone.\\n\\nChanges will take effect after restart."
+msgstr "This action cannot be undone.\\n\\nChanges will take effect after restart."
+
 msgid "This wallpaper is currently set as your active screensaver."
 msgstr "This wallpaper is currently set as your active screensaver."
 
@@ -1907,6 +2081,9 @@ msgstr "Updated patch \"%s\"."
 msgid "Updated patch %s."
 msgstr "Updated patch %s."
 
+msgid "Updated patch \\\"%s\\\"."
+msgstr "Updated patch \\\"%s\\\"."
+
 msgid "Updated patch \\\\\"%s\\\\\"."
 msgstr "Updated patch \\\\\"%s\\\\\"."
 
@@ -1915,6 +2092,12 @@ msgstr "Updated plugin \"%s\" to version %s."
 
 msgid "Updated plugin \"%s\"."
 msgstr "Updated plugin \"%s\"."
+
+msgid "Updated plugin \\\"%s\\\" to version %s."
+msgstr "Updated plugin \\\"%s\\\" to version %s."
+
+msgid "Updated plugin \\\"%s\\\"."
+msgstr "Updated plugin \\\"%s\\\"."
 
 msgid "Updated plugin \\\\\"%s\\\\\" to version %s."
 msgstr "Updated plugin \\\\\"%s\\\\\" to version %s."
@@ -1951,6 +2134,9 @@ msgstr "View README"
 
 msgid "View commits (%s \\\\xE2\\\\x86\\\\x92 %s)"
 msgstr "View commits (%s \\\\xE2\\\\x86\\\\x92 %s)"
+
+msgid "View commits (%s \\xE2\\x86\\x92 %s)"
+msgstr "View commits (%s \\xE2\\x86\\x92 %s)"
 
 msgid "View commits (%s → %s)"
 msgstr "View commits (%s → %s)"
@@ -2012,11 +2198,17 @@ msgstr "[draft]"
 msgid "[pre]"
 msgstr "[pre]"
 
+msgid "\\\"My dear Mr. Bennet,\\\" said his lady to him one day, \\\"have you heard that Netherfield Park is let at last?\\\" Mr. Bennet replied that he had not. \\\"But it is,\\\" returned she; \\\"for Mrs. Long has just been here, and she told me all about it.\\\" Mr. Bennet made no answer."
+msgstr "\\\"My dear Mr. Bennet,\\\" said his lady to him one day, \\\"have you heard that Netherfield Park is let at last?\\\" Mr. Bennet replied that he had not. \\\"But it is,\\\" returned she; \\\"for Mrs. Long has just been here, and she told me all about it.\\\" Mr. Bennet made no answer."
+
 msgid "\\\\\"My dear Mr. Bennet,\\\\\" said his lady to him one day, \\\\\"have you heard that Netherfield Park is let at last?\\\\\" Mr. Bennet replied that he had not. \\\\\"But it is,\\\\\" returned she; \\\\\"for Mrs. Long has just been here, and she told me all about it.\\\\\" Mr. Bennet made no answer."
 msgstr "\\\\\"My dear Mr. Bennet,\\\\\" said his lady to him one day, \\\\\"have you heard that Netherfield Park is let at last?\\\\\" Mr. Bennet replied that he had not. \\\\\"But it is,\\\\\" returned she; \\\\\"for Mrs. Long has just been here, and she told me all about it.\\\\\" Mr. Bennet made no answer."
 
 msgid "\\\\xC2\\\\xB7"
 msgstr "\\\\xC2\\\\xB7"
+
+msgid "\\xC2\\xB7"
+msgstr "\\xC2\\xB7"
 
 msgid "about_text"
 msgstr "Storefront is an in-app package manager for KOReader plugins, patches, and fonts."
@@ -2275,16 +2467,4 @@ msgstr "⚙ Settings..."
 
 msgid "✓ Current"
 msgstr "✓ Current"
-
-msgid "Downloading…"
-msgstr "Downloading…"
-
-msgid "Download cancelled."
-msgstr "Download cancelled."
-
-msgid "Batch update cancelled."
-msgstr "Batch update cancelled."
-
-msgid "Connecting…"
-msgstr "Connecting…"
 

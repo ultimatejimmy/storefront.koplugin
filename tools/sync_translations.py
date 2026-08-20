@@ -169,13 +169,26 @@ def validate_translations(lang_code, requested, translated):
         return [f"{lang_code}: provider did not return a translations object"]
 
     errors = []
+    allowed_same = {
+        '1 / 1', '[pre]', '·', '\xc2\xb7', '\\xc2\\xb7', '\\xC2\\xB7', 'README', 'tab_readme',
+        '≥ %s ⭐', 'ghp_...', '?', 'Beta', 'Default', 'Go', 'Ignore', 'Match', 'Version', 'Author',
+        'Font', 'Filters', 'Copy', 'Clear', 'Edit', 'Enabled', 'Disabled', 'A → Z', 'Z → A',
+        'A -> Z', 'Z -> A', 'Options ▾', 'Collection', 'Screensaver', 'Folder',
+        'Commits: %s → %s', 'Commits: %s \\xE2\\x86\\x92 %s', 'Commits: %s \u2192 %s',
+    }
     for key, english in requested.items():
         value = translated.get(key)
         if not isinstance(value, str) or not value.strip():
             errors.append(f"{lang_code}: missing translation for {key!r}")
         elif "???" in value or (key in REPAIR_TRANSLATION_KEYS and "?" in value):
             errors.append(f"{lang_code}: placeholder/corrupt translation for {key!r}")
-        elif value == english and key not in {'1 / 1', '[pre]', '·', '\xc2\xb7', 'README', 'tab_readme', '≥ %s ⭐', 'ghp_...', '?', 'Beta', 'Default', 'Go', 'Ignore', 'Match', 'Version', 'Author', 'Font', 'Filters', 'Copy', 'Clear', 'Edit', 'Enabled', 'Disabled', 'A → Z', 'Z → A', 'A -> Z', 'Z -> A', 'Options ▾', 'Collection', 'Screensaver'}:
+        elif value.strip() == english.strip() and not (
+            not re.search(r'[A-Za-z]', english)
+            or key in allowed_same
+            or english in allowed_same
+            or len(english.strip()) <= 6
+            or "Commits:" in english
+        ):
             errors.append(f"{lang_code}: English fallback returned for {key!r}")
         elif format_specifiers(value) != format_specifiers(english):
             errors.append(f"{lang_code}: format specifiers differ for {key!r}")
@@ -189,7 +202,7 @@ def call_gemini(prompt):
     key = get_gemini_key()
     if not key: return None
     
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key={key}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={key}"
     headers = {"Content-Type": "application/json"}
     data = {
         "contents": [{"parts": [{"text": prompt}]}],
@@ -215,13 +228,13 @@ def call_gemini(prompt):
             if e.code in (429, 500, 502, 503, 504) and attempt < max_retries - 1:
                 retry_after = e.headers.get('Retry-After')
                 sleep_time = int(retry_after) if retry_after else 10 * (attempt + 1)
-                print(f"  - HTTP {e.code}, waiting {sleep_time}s before retry {attempt + 1}/{max_retries - 1}...")
+                print(f"  - HTTP {e.code}, waiting {sleep_time}s before retry {attempt + 1}/{max_retries - 1}...", flush=True)
                 time.sleep(sleep_time)
             else:
-                print(f"API Error calling Gemini: {e}")
+                print(f"API Error calling Gemini: {e}", flush=True)
                 return None
         except Exception as e:
-            print(f"API Error: {e}")
+            print(f"API Error: {e}", flush=True)
             return None
     return None
 
@@ -229,9 +242,10 @@ def translate_language_gemini(lang_code, lang_name, untranslated_keys):
     if not untranslated_keys:
         return {}
         
-    strings_list = [{"key": k, "english": v} for k, v in untranslated_keys.items()]
+    keys_list = list(untranslated_keys.keys())
+    items_list = [{"id": i + 1, "text": untranslated_keys[k]} for i, k in enumerate(keys_list)]
     
-    prompt = f"""You are a professional translator and localization expert. Translate the following English key-value pairs for a KOReader Storefront e-reader plugin UI into {lang_name} ({lang_code}).
+    prompt = f"""You are a professional translator and localization expert. Translate the following English UI texts for a KOReader Storefront e-reader plugin UI into {lang_name} ({lang_code}).
 
 CRITICAL rules:
 1. Retain all format specifiers such as %s, %d, %1$s, %2$d, etc. exactly in the translated output.
@@ -239,20 +253,28 @@ CRITICAL rules:
 3. Keep translations concise, natural, and suited for a mobile e-reader display.
 4. Respect these maximum character limits for fixed-width UI labels:
 {json.dumps(TRANSLATION_MAX_LENGTHS, ensure_ascii=False)}
-5. Return ONLY a valid JSON object matching this exact schema:
+5. Return ONLY a valid JSON object where keys are the item ID numbers (as strings) and values are the translated text:
 {{
   "translations": {{
-    "key_name": "translated_value"
+    "1": "translated_text_1",
+    "2": "translated_text_2"
   }}
 }}
 
-Input to translate:
-{json.dumps(strings_list, indent=2, ensure_ascii=False)}
+Input items to translate:
+{json.dumps(items_list, indent=2, ensure_ascii=False)}
 """
     res = call_gemini(prompt)
+    out = {}
     if res and isinstance(res, dict) and "translations" in res:
-        return res["translations"]
-    return {}
+        tr_obj = res["translations"]
+        for i, k in enumerate(keys_list):
+            str_id = str(i + 1)
+            if str_id in tr_obj:
+                out[k] = tr_obj[str_id]
+            elif k in tr_obj:
+                out[k] = tr_obj[k]
+    return out
 
 def sync():
     print("--- Synchronizing Storefront Translation Files ---")
@@ -352,26 +374,27 @@ def sync():
             if not gemini_key:
                 failures.append(f"{lang_name} ({lang_code}): {len(untranslated)} translations need the Gemini API key")
                 continue
-            print(f"Translating {len(untranslated)} keys for {lang_name} ({lang_code})...")
+            print(f"Translating {len(untranslated)} keys for {lang_name} ({lang_code})...", flush=True)
             new_translations = translate_language_gemini(lang_code, lang_name, untranslated)
             errors = validate_translations(lang_code, untranslated, new_translations)
             if errors:
                 failures.extend(errors)
-                print(f"  - Skipping {lang_name}; provider response failed validation.")
+                print(f"  - Skipping {lang_name}; provider response failed validation: {errors[:2]}", flush=True)
                 continue
             for k, v in new_translations.items():
                 tr_map[k] = str(v)
-            time.sleep(3) # Short pause between languages to stay under 15 RPM
-            
+            print(f"  ✓ {lang_name} ({lang_code}) translated successfully.", flush=True)
+            time.sleep(1) # Short pause between languages
+
         save_po(po_path, LANG_NAMES.get(lang_code, lang_code), lang_code, all_keys, tr_map, fallback_map, en_final)
 
     if failures:
-        print("\nSync failed without overwriting affected locale files:")
+        print("\nSync failed without overwriting affected locale files:", flush=True)
         for failure in failures:
-            print(f"  - {failure}")
+            print(f"  - {failure}", flush=True)
         return 1
 
-    print("\nSync completed successfully.")
+    print("\nSync completed successfully.", flush=True)
     return 0
 
 if __name__ == "__main__":

@@ -79,6 +79,13 @@ function Run-Workflow {
         Write-Host "README Tests FAILED." -ForegroundColor Red
         return $false
     }
+    Write-Host "Running README Cache Refresh & Change Detection unit tests..."
+    $ReadmeRefreshTestCmd = "cd $AppDir && LUA_PATH='{0}/?.lua;./?.lua;./?/init.lua;frontend/?.lua;frontend/?/init.lua;libs/?.lua;common/?.lua;common/?/init.lua;;' ./luajit {0}/tests/storefront_readme_cache_refresh_test.lua" -f $WSLDest
+    wsl bash -c `"$ReadmeRefreshTestCmd`"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "README Cache Refresh Tests FAILED." -ForegroundColor Red
+        return $false
+    }
     Write-Host "Running Release Notes unit tests..."
     $ReleaseNotesTestCmd = "cd $AppDir && LUA_PATH='{0}/?.lua;./?.lua;./?/init.lua;frontend/?.lua;frontend/?/init.lua;libs/?.lua;common/?.lua;common/?/init.lua;;' ./luajit {0}/tests/storefront_release_notes_test.lua" -f $WSLDest
     wsl bash -c `"$ReleaseNotesTestCmd`"

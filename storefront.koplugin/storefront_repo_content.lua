@@ -198,6 +198,8 @@ function RepoContent.processPendingImages(on_update_cb)
 end
 
 
+local INDEX_FILE = DataStorage:getDataDir() .. "/cache/Storefront/readme/readme_index.json"
+
 local function getCacheDir()
     local dir = DataStorage:getDataDir() .. "/cache/Storefront/readme"
     local ok, err = util.makePath(dir)
@@ -205,6 +207,36 @@ local function getCacheDir()
         logger.warn("Storefront README cache dir failure", err)
     end
     return dir
+end
+
+local function simpleHash(str)
+    if not str or str == "" then return "0" end
+    local h = 0
+    for i = 1, #str do
+        h = (h * 31 + str:byte(i)) % 2147483647
+    end
+    return string.format("%x_%d", h, #str)
+end
+
+local function loadReadmeIndex()
+    local f = io.open(INDEX_FILE, "r")
+    if not f then return {} end
+    local content = f:read("*all")
+    f:close()
+    if not content or content == "" then return {} end
+    local ok, decoded = pcall(json.decode, content)
+    if ok and type(decoded) == "table" then
+        return decoded
+    end
+    return {}
+end
+
+local function saveReadmeIndex(idx)
+    getCacheDir()
+    local ok, enc = pcall(json.encode, idx or {})
+    if ok and enc then
+        util.writeToFile(enc, INDEX_FILE)
+    end
 end
 
 local function buildRawUrl(owner, repo)
@@ -476,50 +508,12 @@ function RepoContent.fetchReadme(owner, repo)
     return true, path
 end
 
-function RepoContent.fetchReadmeHtml(owner, repo, force_refresh)
-    if not owner or not repo then
-        return false, "missing owner/repo"
-    end
-    local dir = getCacheDir()
-    local safe_owner = owner:gsub("[^%w_-]", "_")
-    local safe_repo = repo:gsub("[^%w_-]", "_")
-    local path = string.format("%s/%s_%s_README.html", dir, safe_owner, safe_repo)
-
-    -- 1. Check disk cache first for instant opening (if not forced and < 7 days old)
-    local attrs = lfs.attributes(path)
-    local is_fresh = attrs and attrs.mode == "file" and (not force_refresh) and ((os.time() - (attrs.modification or 0)) < 604800)
-    if is_fresh or (attrs and attrs.mode == "file" and force_refresh == nil and false) then
-        local cached_content = util.readFromFile(path)
-        if cached_content and cached_content ~= "" then
-            if cached_content:find("<img") then
-                cached_content = stripImgDimensions(cached_content)
-                if not cached_content:find("storefront%-img:") then
-                    cached_content = cached_content:gsub('(<img[^>]+src=["\'])([^"\']+)(["\'][^>]*>)', function(prefix, filename, suffix)
-                        local full_img_path = dir .. "/" .. filename
-                        if lfs.attributes(full_img_path, "mode") == "file" then
-                            local img_tag = string.format('<img src="%s" style="display:block; margin: 0 auto;" />', filename)
-                            return string.format('<div style="page-break-before: always; text-align:center;"><a href="storefront-img:%s">%s</a></div>', full_img_path, img_tag)
-                        end
-                        return stripImgDimensions(prefix) .. filename .. stripImgDimensions(suffix)
-                    end)
-                end
-                util.writeToFile(cached_content, path)
-            end
-            return true, path
-        end
-    end
-
-    -- 2. Fetch HTML content
-    local body, err = GitHubClient.fetchReadmeHtml(owner, repo)
-    if not body then
-        return false, err or "fetch error"
-    end
-    
+local function formatAndSaveReadmeHtml(body, path, owner, repo, safe_owner, safe_repo, dir)
     if countCJKCharacters(body) > 20 then
         logger.info("Storefront: CJK text detected, displaying safe placeholder to protect device memory.")
         body = string.format('<div class="markdown-body"><p style="text-align:center; padding: 2.5em; color: gray;"><i>%s</i></p></div>', _("Can't load readme...."))
         local ok, write_err = util.writeToFile(body, path)
-        return true, path
+        return ok, (ok and path or write_err)
     end
 
     -- Hard-cap length before doing expensive regex formatting 
@@ -619,6 +613,109 @@ function RepoContent.fetchReadmeHtml(owner, repo, force_refresh)
     return true, path
 end
 
+function RepoContent.fetchReadmeHtml(owner, repo, force_refresh)
+    if not owner or not repo then
+        return false, "missing owner/repo", false
+    end
+    local dir = getCacheDir()
+    local safe_owner = owner:gsub("[^%w_-]", "_")
+    local safe_repo = repo:gsub("[^%w_-]", "_")
+    local path = string.format("%s/%s_%s_README.html", dir, safe_owner, safe_repo)
+    local repo_key = string.format("%s/%s", owner:lower(), repo:lower())
+
+    local idx = loadReadmeIndex()
+    local entry = idx[repo_key] or {}
+
+    local repo_obj = nil
+    local ok_cache, Cache = pcall(require, "storefront_cache")
+    if ok_cache and Cache then
+        Cache.init()
+        repo_obj = Cache.getRepoByName(owner, repo)
+    end
+    local catalog_pushed_at = (repo_obj and repo_obj.data and repo_obj.data.pushed_at) or (repo_obj and repo_obj.pushed_at)
+
+    local attrs = lfs.attributes(path)
+    local cached_exists = attrs and attrs.mode == "file"
+
+    -- 1. If cached content exists and not force_refresh:
+    if cached_exists and not force_refresh then
+        -- Fast match against catalog pushed_at if known and verified recently
+        local checked_age = os.time() - (entry.last_checked_at or 0)
+        if catalog_pushed_at and entry.pushed_at and entry.pushed_at == catalog_pushed_at and checked_age < 3600 then
+            return true, path, false
+        end
+
+        -- Conditional check against remote
+        local body, err, res_etag, is_modified = GitHubClient.fetchReadmeHtml(owner, repo, entry.etag, entry.last_modified)
+        
+        -- If remote is unchanged (304 Not Modified)
+        if is_modified == false or (not body and not err) then
+            entry.last_checked_at = os.time()
+            if catalog_pushed_at then entry.pushed_at = catalog_pushed_at end
+            if res_etag then entry.etag = res_etag end
+            idx[repo_key] = entry
+            saveReadmeIndex(idx)
+            return true, path, false
+        end
+
+        -- If network error occurred during conditional check, gracefully fall back to cached content
+        if not body then
+            return true, path, false
+        end
+
+        -- Remote returned 200 with content: verify if content hash is different
+        local new_hash = simpleHash(body)
+        if entry.content_hash and entry.content_hash == new_hash then
+            -- Identical content
+            entry.last_checked_at = os.time()
+            if res_etag then entry.etag = res_etag end
+            if catalog_pushed_at then entry.pushed_at = catalog_pushed_at end
+            idx[repo_key] = entry
+            saveReadmeIndex(idx)
+            return true, path, false
+        end
+
+        -- Content changed! Format, save, and update index
+        local ok, res_path = formatAndSaveReadmeHtml(body, path, owner, repo, safe_owner, safe_repo, dir)
+        if ok then
+            entry.etag = res_etag or entry.etag
+            entry.content_hash = new_hash
+            entry.pushed_at = catalog_pushed_at or entry.pushed_at
+            entry.cached_at = os.time()
+            entry.last_checked_at = os.time()
+            idx[repo_key] = entry
+            saveReadmeIndex(idx)
+            return true, path, true
+        else
+            return false, res_path or "write error", false
+        end
+    end
+
+    -- 2. Fresh download (no cache exists or force_refresh requested)
+    local body, err, res_etag = GitHubClient.fetchReadmeHtml(owner, repo)
+    if not body then
+        if cached_exists then
+            return true, path, false
+        end
+        return false, err or "fetch error", false
+    end
+
+    local ok, res_path = formatAndSaveReadmeHtml(body, path, owner, repo, safe_owner, safe_repo, dir)
+    if ok then
+        idx[repo_key] = {
+            etag = res_etag,
+            content_hash = simpleHash(body),
+            pushed_at = catalog_pushed_at,
+            cached_at = os.time(),
+            last_checked_at = os.time(),
+        }
+        saveReadmeIndex(idx)
+        return true, path, true
+    else
+        return false, res_path or "write error", false
+    end
+end
+
 local function getDirStats(dir_path)
     local files = 0
     local bytes = 0
@@ -696,6 +793,7 @@ function RepoContent.clearReadmeCache()
     local rel_dir = DataStorage:getDataDir() .. "/cache/Storefront/release_notes"
     local r1, b1, e1 = cleanDirRecursive(readme_dir)
     local r2, b2, e2 = cleanDirRecursive(rel_dir)
+    os.remove(INDEX_FILE)
     local errors = {}
     for _, e in ipairs(e1) do table.insert(errors, e) end
     for _, e in ipairs(e2) do table.insert(errors, e) end
@@ -719,9 +817,9 @@ function RepoContent.openReadme(path)
     })
 end
 
-function RepoContent.fetchReleaseNotesHtml(owner, repo, release_override)
+function RepoContent.fetchReleaseNotesHtml(owner, repo, release_override, force_refresh)
     if type(owner) ~= "string" or type(repo) ~= "string" or owner == "" or repo == "" or owner == json_null or repo == json_null then
-        return false, "missing owner/repo"
+        return false, "missing owner/repo", false
     end
 
     local clean_repo = repo:gsub("%.koplugin$", "")
@@ -734,6 +832,7 @@ function RepoContent.fetchReleaseNotesHtml(owner, repo, release_override)
     local safe_owner = owner:gsub("[^%w_-]", "_")
     local safe_repo  = clean_repo:gsub("[^%w_-]", "_")
     local path = string.format("%s/%s_%s_RELEASENOTES.html", cache_dir, safe_owner, safe_repo)
+    local rel_key = "rel:" .. owner:lower() .. "/" .. clean_repo:lower()
 
     local rel_data = (type(release_override) == "table" and release_override ~= json_null) and release_override or nil
     if not rel_data then
@@ -760,19 +859,28 @@ function RepoContent.fetchReleaseNotesHtml(owner, repo, release_override)
     local published_at = is_rel_table and safeString(rel_data.published_at or rel_data.created_at)
     local body         = is_rel_table and safeString(rel_data.body)
 
+    local attrs = lfs.attributes(path)
+    local cached_exists = attrs and attrs.mode == "file"
+
+    local idx = loadReadmeIndex()
+    local entry = idx[rel_key] or {}
+
+    -- Check if cached release notes are already up to date
+    if cached_exists and not force_refresh then
+        if tag_name and published_at and entry.tag_name == tag_name and entry.published_at == published_at then
+            return true, path, false
+        end
+    end
+
     -- If release notes body is missing from catalog/cache data, fetch live from GitHub API.
-    -- If we already know the specific tag (e.g. from update scan), fetch THAT release, not
-    -- fetchLatestRelease which always returns the latest stable.
     if not body or body == "" then
         local fetched_rel, err
         if tag_name and tag_name ~= "" and GitHubClient.fetchReleaseByTag then
-            -- Known tag: fetch the specific release (handles prereleases correctly)
             fetched_rel, err = GitHubClient.fetchReleaseByTag(owner, repo, tag_name)
             if not fetched_rel and repo ~= clean_repo then
                 fetched_rel, err = GitHubClient.fetchReleaseByTag(owner, clean_repo, tag_name)
             end
         end
-        -- Fall back to latest release only when we have no specific tag to look up
         if not fetched_rel then
             fetched_rel, err = GitHubClient.fetchLatestRelease(owner, repo)
             if not fetched_rel and repo ~= clean_repo then
@@ -785,6 +893,11 @@ function RepoContent.fetchReleaseNotesHtml(owner, repo, release_override)
             published_at = published_at or safeString(fetched_rel.published_at or fetched_rel.created_at)
             body         = safeString(fetched_rel.body)
         end
+    end
+
+    -- Check again if fetched metadata matches cached
+    if cached_exists and not force_refresh and tag_name and published_at and entry.tag_name == tag_name and entry.published_at == published_at and entry.body_hash == simpleHash(body or "") then
+        return true, path, false
     end
 
     local clean_tag = tag_name and tag_name:gsub("^[vV]", "") or ""
@@ -826,9 +939,19 @@ function RepoContent.fetchReleaseNotesHtml(owner, repo, release_override)
     local full_html = table.concat(html_parts, "\n")
     local ok, write_err = util.writeToFile(full_html, path)
     if not ok then
-        return false, write_err or "write error"
+        return false, write_err or "write error", false
     end
-    return true, path
+
+    idx[rel_key] = {
+        tag_name = tag_name,
+        published_at = published_at,
+        body_hash = simpleHash(body or ""),
+        cached_at = os.time(),
+        last_checked_at = os.time(),
+    }
+    saveReadmeIndex(idx)
+
+    return true, path, true
 end
 
 local function getWikiCacheDir(owner, repo)
@@ -983,13 +1106,14 @@ end
 
 function RepoContent.fetchWikiPageHtml(owner, repo, page_name, force_refresh)
     if not owner or not repo then
-        return false, "missing owner/repo"
+        return false, "missing owner/repo", false
     end
     pcall(RepoContent.autoCleanCache)
     page_name = (page_name and page_name ~= "") and page_name or "Home"
     local safe_page = page_name:gsub("[^%w_-]", "_")
     local dir = getWikiCacheDir(owner, repo)
     local path = string.format("%s/%s.html", dir, safe_page)
+    local wiki_key = "wiki:" .. owner:lower() .. "/" .. repo:lower() .. ":" .. safe_page:lower()
 
     local ext = page_name:lower():match("%.([%w]+)$")
     if ext and (ext == "png" or ext == "jpg" or ext == "jpeg" or ext == "gif" or ext == "webp" or ext == "svg" or ext == "bmp") then
@@ -1008,45 +1132,66 @@ function RepoContent.fetchWikiPageHtml(owner, repo, page_name, force_refresh)
         end
         local html = string.format('<div class="markdown-body"><p><b>%s</b></p><hr/><a href="storefront-img:%s"><img src="%s"/></a></div>', page_name, img_dest, img_filename)
         util.writeToFile(html, path)
-        return true, path
+        return true, path, true
     end
 
+    local idx = loadReadmeIndex()
+    local entry = idx[wiki_key] or {}
     local attrs = lfs.attributes(path)
-    local is_fresh = attrs and attrs.mode == "file" and (not force_refresh) and ((os.time() - (attrs.modification or 0)) < 604800)
-    if is_fresh then
-        local cached_content = util.readFromFile(path)
-        if cached_content and cached_content ~= "" then
-            if cached_content:find("/HEAD/") then
-                cached_content = cached_content:gsub("/HEAD/", "/main/")
-            end
-            if cached_content:find("<img") then
-                cached_content = cached_content:gsub("(<img[^>]+style=[\"'][^\"']*[%s\"';])width:%s*[^;\"]+;?", "%1")
-                if not cached_content:find("storefront%-img:") then
-                    cached_content = cached_content:gsub('(<img[^>]+src=["\'])([^"\']+)(["\'][^>]*>)', function(prefix, filename, suffix)
-                        local full_img_path = dir .. "/" .. filename
-                        if lfs.attributes(full_img_path, "mode") == "file" then
-                            return string.format('<a href="storefront-img:%s">%s%s%s</a>', full_img_path, prefix, filename, suffix)
-                        end
-                        return prefix .. filename .. suffix
-                    end)
-                end
-                util.writeToFile(cached_content, path)
-            end
-            return true, path
+    local cached_exists = attrs and attrs.mode == "file"
+
+    if cached_exists and not force_refresh then
+        local raw_md, err, res_etag, is_modified = GitHubClient.fetchWikiPageRaw(owner, repo, page_name, entry.etag)
+        if is_modified == false or (not raw_md and not err) then
+            entry.last_checked_at = os.time()
+            if res_etag then entry.etag = res_etag end
+            idx[wiki_key] = entry
+            saveReadmeIndex(idx)
+            return true, path, false
+        end
+
+        if not raw_md then
+            return true, path, false
+        end
+
+        local new_hash = simpleHash(raw_md)
+        if entry.content_hash and entry.content_hash == new_hash then
+            entry.last_checked_at = os.time()
+            if res_etag then entry.etag = res_etag end
+            idx[wiki_key] = entry
+            saveReadmeIndex(idx)
+            return true, path, false
+        end
+
+        -- Content changed! Re-render and save
+        local body = GitHubClient.markdownToHtml(raw_md, owner, repo, true)
+        body = body:gsub("(<img[^>]+)%s+width=[\"'][^\"']*[\"']", "%1")
+        body = body:gsub("(<img[^>]+)%s+height=[\"'][^\"']*[\"']", "%1")
+        body = body:gsub("(<img[^>]+style=[\"'][^\"']*[%s\"';])width:%s*[^;\"]+;?", "%1")
+
+        local ok, write_err = util.writeToFile(body, path)
+        if ok then
+            entry.etag = res_etag or entry.etag
+            entry.content_hash = new_hash
+            entry.cached_at = os.time()
+            entry.last_checked_at = os.time()
+            idx[wiki_key] = entry
+            saveReadmeIndex(idx)
+            return true, path, true
+        else
+            return false, write_err or "write error", false
         end
     end
 
-    local raw_md, err = GitHubClient.fetchWikiPageRaw(owner, repo, page_name)
+    local raw_md, err, res_etag = GitHubClient.fetchWikiPageRaw(owner, repo, page_name)
     if not raw_md or raw_md == "" then
-        if attrs and attrs.mode == "file" then
-            return true, path
+        if cached_exists then
+            return true, path, false
         end
-        return false, err or "wiki page not found"
+        return false, err or "wiki page not found", false
     end
 
     local body = GitHubClient.markdownToHtml(raw_md, owner, repo, true)
-
-    -- Strip explicit width and height attributes so images expand to full width
     body = body:gsub("(<img[^>]+)%s+width=[\"'][^\"']*[\"']", "%1")
     body = body:gsub("(<img[^>]+)%s+height=[\"'][^\"']*[\"']", "%1")
     body = body:gsub("(<img[^>]+style=[\"'][^\"']*[%s\"';])width:%s*[^;\"]+;?", "%1")
@@ -1087,11 +1232,9 @@ function RepoContent.fetchWikiPageHtml(owner, repo, page_name, force_refresh)
         end
 
         if RepoContent.cumulative_page_bytes < MAX_PAGE_PAYLOAD_BYTES then
-            -- Pass the prefix, filename, and suffix so we can rebuild the image tag later
             table.insert(RepoContent.pending_images, { url = url, dest = img_dest, html_path = path, prefix = prefix, filename = img_filename, suffix = suffix })
         end
         
-        -- Default to a text placeholder so MuPDF doesn't OOM on missing/partial image files
         local safe_dest = img_dest:gsub("([^%w])", "%%%1")
         local placeholder = string.format('<span id="placeholder-%s" style="color: gray; font-style: italic;">[ Loading Image... ]</span>', safe_dest)
         return string.format('<a href="storefront-img:%s">%s</a>', img_dest, placeholder)
@@ -1099,9 +1242,18 @@ function RepoContent.fetchWikiPageHtml(owner, repo, page_name, force_refresh)
 
     local ok, write_err = util.writeToFile(body, path)
     if not ok then
-        return false, write_err or "write error"
+        return false, write_err or "write error", false
     end
-    return true, path
+
+    idx[wiki_key] = {
+        etag = res_etag,
+        content_hash = simpleHash(raw_md),
+        cached_at = os.time(),
+        last_checked_at = os.time(),
+    }
+    saveReadmeIndex(idx)
+
+    return true, path, true
 end
 
 function RepoContent.autoCleanCache(max_size_mb, max_age_days)

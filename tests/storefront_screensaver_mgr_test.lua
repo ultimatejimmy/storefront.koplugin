@@ -238,4 +238,65 @@ describe("StorefrontScreensaverMgr", function()
             assert.is_false(StorefrontScreensaverMgr.isCustomScreensaverFolder())
         end)
     end)
+
+    describe("downloadWallpaper", function()
+        it("fails gracefully when item has no download URL", function()
+            local called = false
+            StorefrontScreensaverMgr.downloadWallpaper({ id = "no-url-item" }, function(ok, err)
+                called = true
+                assert.is_false(ok)
+                assert.are.same("No download URL available", err)
+            end)
+            assert.is_true(called)
+        end)
+
+        it("fails and returns error reason when requestWithRedirects fails", function()
+            package.loaded["storefront_screensavers_ui"] = {
+                requestWithRedirects = function(url, sink_fn)
+                    return false, "timeout", nil
+                end
+            }
+
+            local called = false
+            StorefrontScreensaverMgr.downloadWallpaper({
+                id = "great-wave-test",
+                title = "The Great Wave Crest",
+                fullUrl = "https://example.com/great-wave.png",
+            }, function(ok, err)
+                called = true
+                assert.is_false(ok)
+                assert.are.same("timeout", err)
+            end)
+            assert.is_true(called)
+        end)
+
+        it("succeeds when requestWithRedirects returns 200 and saves file", function()
+            package.loaded["storefront_screensavers_ui"] = {
+                requestWithRedirects = function(url, sink_fn)
+                    local sink = sink_fn()
+                    sink("fake-image-bytes")
+                    return true, 200, {}
+                end
+            }
+
+            local called = false
+            local downloaded_path = nil
+            StorefrontScreensaverMgr.downloadWallpaper({
+                id = "great-wave-success",
+                title = "The Great Wave Crest",
+                fullUrl = "https://example.com/great-wave.png",
+            }, function(ok, result)
+                called = true
+                assert.is_true(ok)
+                downloaded_path = result
+            end)
+            assert.is_true(called)
+            assert.is_not_nil(downloaded_path)
+            assert.is_true(downloaded_path:find("great%-wave%-success%.png") ~= nil)
+
+            -- Clean up test file
+            pcall(os.remove, downloaded_path)
+            pcall(os.remove, downloaded_path .. ".tmp")
+        end)
+    end)
 end)

@@ -2,6 +2,11 @@ local DataStorage = require("datastorage")
 local LuaSettings = require("luasettings")
 local logger = require("logger")
 
+local ok_log, StorefrontLogger = pcall(require, "storefront_logger")
+if not ok_log or not StorefrontLogger then
+    StorefrontLogger = { info = function() end, warn = function() end, err = function() end, action = function() end, debug = function() end }
+end
+
 local StorefrontScreensaverMgr = {}
 
 local function getLfs()
@@ -210,6 +215,8 @@ function StorefrontScreensaverMgr.setScreensaverMode(mode, params)
     params = params or {}
     local settings = getReaderSettings()
     local default_dir = StorefrontScreensaverMgr.getScreensaverFolder()
+
+    StorefrontLogger.action(string.format("SCREENSAVER MODE changed to '%s'%s", tostring(mode), params.file and (" (file: " .. tostring(params.file) .. ")") or ""))
 
     if mode == "single" then
         local target_file = params.file
@@ -424,6 +431,7 @@ function StorefrontScreensaverMgr.deleteLocalScreensaver(filepath)
 
         local ok, err = os.remove(filepath)
         if ok then
+            StorefrontLogger.action(string.format("SCREENSAVER DELETED: %s", tostring(filepath)))
             if is_active and current_settings.effective_mode == "single" then
                 local remaining = StorefrontScreensaverMgr.listLocalScreensavers()
                 if #remaining > 0 then
@@ -434,6 +442,7 @@ function StorefrontScreensaverMgr.deleteLocalScreensaver(filepath)
             end
             return true
         else
+            StorefrontLogger.err(string.format("SCREENSAVER DELETE failed for %s: %s", tostring(filepath), tostring(err)))
             return false, err
         end
     end
@@ -443,6 +452,7 @@ end
 function StorefrontScreensaverMgr.downloadWallpaper(item, callback)
     local StorefrontScreensavers = require("storefront_screensavers_ui")
     local dir = StorefrontScreensaverMgr.getScreensaverFolder()
+    local title_str = item and (item.title or item.name or item.id) or "Unknown"
 
     local cat_str = type(item.category) == "table" and table.concat(item.category, " ") or tostring(item.category or "")
     local is_transparent = cat_str:lower():find("transparent", 1, true) ~= nil
@@ -452,9 +462,12 @@ function StorefrontScreensaverMgr.downloadWallpaper(item, callback)
     local filename = dir .. "/" .. tostring(item.id) .. ext
     local target_url = item.fullUrl or item.thumbnailUrl
     if not target_url or target_url == "" then
+        StorefrontLogger.warn(string.format("SCREENSAVER DOWNLOAD: No download URL available for item '%s' (id=%s)", title_str, tostring(item and item.id)))
         if callback then callback(false, "No download URL available") end
         return
     end
+
+    StorefrontLogger.action(string.format("SCREENSAVER DOWNLOAD starting: '%s' (id=%s) from %s -> %s", title_str, tostring(item.id), tostring(target_url), filename))
 
     local ltn12 = require("ltn12")
     local img_data = {}
@@ -463,27 +476,43 @@ function StorefrontScreensaverMgr.downloadWallpaper(item, callback)
         return ltn12.sink.table(img_data)
     end
 
-    local ok, code = StorefrontScreensavers.requestWithRedirects(target_url, sink_fn)
-    if ok and code == 200 then
+    local start_time = os.time()
+    local ok, code_or_err, headers = StorefrontScreensavers.requestWithRedirects(target_url, sink_fn)
+    local elapsed = os.difftime and os.difftime(os.time(), start_time) or 0
+
+    if ok and code_or_err == 200 then
+        local content = table.concat(img_data)
+        local total_bytes = #content
         local tmp_file = filename .. ".tmp"
-        local file = io.open(tmp_file, "wb")
+        local file, err_open = io.open(tmp_file, "wb")
         if file then
-            file:write(table.concat(img_data))
+            file:write(content)
             file:close()
             os.remove(filename)
-            local ok_ren = os.rename(tmp_file, filename)
+            local ok_ren, err_ren = os.rename(tmp_file, filename)
             if ok_ren then
+                StorefrontLogger.action(string.format("SCREENSAVER DOWNLOAD success: '%s' saved to %s (%d bytes in %ds)", title_str, filename, total_bytes, elapsed))
                 local ok_r, StorefrontRatings = pcall(require, "storefront_ratings")
                 if ok_r and StorefrontRatings and StorefrontRatings.trackDownload then
                     StorefrontRatings.trackDownload(item, "screensaver")
                 end
                 if callback then callback(true, filename) end
                 return filename
+            else
+                StorefrontLogger.err(string.format("SCREENSAVER DOWNLOAD failed to rename %s to %s: %s", tmp_file, filename, tostring(err_ren)))
+                if callback then callback(false, "Failed to save file") end
+                return nil
             end
+        else
+            StorefrontLogger.err(string.format("SCREENSAVER DOWNLOAD failed to write %s: %s", tmp_file, tostring(err_open)))
+            if callback then callback(false, "Failed to write file") end
+            return nil
         end
     end
 
-    if callback then callback(false, "Download failed (code " .. tostring(code) .. ")") end
+    local err_reason = tostring(code_or_err or "Unknown error")
+    StorefrontLogger.warn(string.format("SCREENSAVER DOWNLOAD failed: '%s' (id=%s, url=%s, err=%s, elapsed=%ds)", title_str, tostring(item.id), tostring(target_url), err_reason, elapsed))
+    if callback then callback(false, err_reason) end
     return nil
 end
 
