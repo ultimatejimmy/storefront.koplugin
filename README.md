@@ -2,7 +2,7 @@
 ![Platform](https://img.shields.io/badge/platform-KOReader-green.svg)
 ![License](https://img.shields.io/badge/license-GPL_3.0-yellow.svg)
 ![Status](https://img.shields.io/badge/status-active-brightgreen.svg)
-![liberapay](https://img.shields.io/liberapay/patrons/ultimatejimmy.svg?logo=liberapay) 
+[![liberapay](https://img.shields.io/liberapay/patrons/ultimatejimmy.svg?logo=liberapay)](https://liberapay.com/ultimatejimmy)
 [!["Buy Me A Coffee"](https://img.shields.io/badge/-buy_me_a%C2%A0coffee-gray?logo=buy-me-a-coffee)](https://www.buymeacoffee.com/ultimatejimmy)
 
 Discover, install, and update community-created KOReader plugins, user patches, and fonts without leaving your device. 
