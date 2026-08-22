@@ -21,6 +21,21 @@ FONTS = [
         "file": "MerriweatherSans-Regular.ttf",
         "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/merriweathersans/MerriweatherSans%5Bwght%5D.ttf",
     },
+    {
+        "name": "Fast Sans",
+        "file": "Fast_Sans.otf",
+        "url": "https://raw.githubusercontent.com/jloutsch/fast-fonts-for-kindle/main/Fast_Sans/Fast_Sans.otf",
+    },
+    {
+        "name": "Fast Sans Dotted",
+        "file": "Fast_Sans_Dotted.otf",
+        "url": "https://raw.githubusercontent.com/jloutsch/fast-fonts-for-kindle/main/Fast_Sans_Dotted/Fast_Sans_Dotted.otf",
+    },
+    {
+        "name": "Fast Serif",
+        "file": "Fast_Serif.otf",
+        "url": "https://raw.githubusercontent.com/jloutsch/fast-fonts-for-kindle/main/Fast_Serif/Fast_Serif.otf",
+    },
 ]
 
 def main():

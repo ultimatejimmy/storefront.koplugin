@@ -5,7 +5,7 @@
   "stats": {
     "total_plugins": 509,
     "total_patches": 0,
-    "total_fonts": 18
+    "total_fonts": 21
   },
   "fonts": [
     {
@@ -346,6 +346,63 @@
       "stargazers_count": 650,
       "download_url": "https://ultimatejimmy.github.io/storefront.koplugin/fonts/Merriweather-Sans.zip",
       "html_url": "https://fonts.google.com/specimen/Merriweather+Sans",
+      "user_thumbs_up": 0,
+      "user_thumbs_down": 0,
+      "wilson_score": 0.0
+    },
+    {
+      "id": 900119,
+      "repo_id": 900119,
+      "name": "Fast Sans",
+      "font_family": "Fast Sans",
+      "font_file": "Fast_Sans.otf",
+      "owner": "jloutsch",
+      "full_name": "jloutsch/fast-fonts-for-kindle",
+      "description": "Speed-reading font optimized for e-readers. Automatically bolds the initial letters of words to guide eye fixation.",
+      "category": "Sans-Serif",
+      "license": "MIT License",
+      "stars": 120,
+      "stargazers_count": 120,
+      "download_url": "https://ultimatejimmy.github.io/storefront.koplugin/fonts/Fast-Sans.zip",
+      "html_url": "https://github.com/jloutsch/fast-fonts-for-kindle",
+      "user_thumbs_up": 0,
+      "user_thumbs_down": 0,
+      "wilson_score": 0.0
+    },
+    {
+      "id": 900120,
+      "repo_id": 900120,
+      "name": "Fast Sans Dotted",
+      "font_family": "Fast Sans Dotted",
+      "font_file": "Fast_Sans_Dotted.otf",
+      "owner": "jloutsch",
+      "full_name": "jloutsch/fast-fonts-for-kindle",
+      "description": "Speed-reading font with centered dots between words for space-reading techniques and bold initial letters.",
+      "category": "Sans-Serif",
+      "license": "MIT License",
+      "stars": 115,
+      "stargazers_count": 115,
+      "download_url": "https://ultimatejimmy.github.io/storefront.koplugin/fonts/Fast-Sans-Dotted.zip",
+      "html_url": "https://github.com/jloutsch/fast-fonts-for-kindle",
+      "user_thumbs_up": 0,
+      "user_thumbs_down": 0,
+      "wilson_score": 0.0
+    },
+    {
+      "id": 900121,
+      "repo_id": 900121,
+      "name": "Fast Serif",
+      "font_family": "Fast Serif",
+      "font_file": "Fast_Serif.otf",
+      "owner": "jloutsch",
+      "full_name": "jloutsch/fast-fonts-for-kindle",
+      "description": "Traditional serif speed-reading font with bold initial letters for comfortable long-form reading sessions.",
+      "category": "Serif",
+      "license": "MIT License",
+      "stars": 110,
+      "stargazers_count": 110,
+      "download_url": "https://ultimatejimmy.github.io/storefront.koplugin/fonts/Fast-Serif.zip",
+      "html_url": "https://github.com/jloutsch/fast-fonts-for-kindle",
       "user_thumbs_up": 0,
       "user_thumbs_down": 0,
       "wilson_score": 0.0
