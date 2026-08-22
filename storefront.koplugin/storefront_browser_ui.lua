@@ -495,6 +495,9 @@ function StorefrontBrowserDialog:init()
         bordersize = 0,
         background = nil,
         callback = function()
+            if self.current_tab == "Updates" then
+                return
+            end
             if self.on_search then
                 self.on_search()
             elseif self.on_filter then

@@ -20,11 +20,13 @@ function StorefrontUpdatesUi:init(StorefrontClass)
         local remote_key = self.updates_state and self.updates_state.last_checked
         local patch_remote_key = self.patch_updates_state and self.patch_updates_state.last_checked
         local filter_outdated = self.updates_state and self.updates_state.filter_only_outdated
-        local search_text = util.trim(self.browser_state and self.browser_state.search_text or ""):lower()
-        local filter_owner = util.trim(self.browser_state and self.browser_state.owner or ""):lower()
-        local filter_min_stars = tonumber(self.browser_state and self.browser_state.min_stars) or 0
+        -- Search/filter from browser_state is intentionally ignored on the Updates tab;
+        -- those fields belong to the catalog tabs and should not suppress update entries.
+        local search_text = ""
+        local filter_owner = ""
+        local filter_min_stars = 0
 
-        local cache_key = string.format("%s|%s|%s|%s|%s|%s|%s", tostring(gen), tostring(remote_key), tostring(patch_remote_key), tostring(filter_outdated), search_text, filter_owner, tostring(filter_min_stars))
+        local cache_key = string.format("%s|%s|%s|%s", tostring(gen), tostring(remote_key), tostring(patch_remote_key), tostring(filter_outdated))
 
         local merged
         if self._merged_updates_cache and self._merged_updates_cache.key == cache_key then
