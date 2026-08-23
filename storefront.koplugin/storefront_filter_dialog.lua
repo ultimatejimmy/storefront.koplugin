@@ -151,11 +151,14 @@ function StorefrontFilterDialog.showInstalledFilter(arg1, arg2)
             apply_h = sc(24)
         end
 
-        local title_label = TextWidget:new{
-            text = _("Filter & Sort Installed"),
-            face = Font:getFace("NotoSerif-Regular.ttf", title_font_size),
+        local title_text = _("Filter & Sort Installed")
+        local dynamic_title_size = StorefrontUtils.calcDynamicFontSize(title_text, dialog_w - sc(24), "NotoSerif-Regular.ttf", title_font_size, 11, true)
+        local title_label = TextBoxWidget:new{
+            text = title_text,
+            face = Font:getFace("NotoSerif-Regular.ttf", dynamic_title_size),
             bold = true,
             fgcolor = Blitbuffer.COLOR_BLACK,
+            width = dialog_w - sc(24),
         }
 
         local title_container = FrameContainer:new{
@@ -507,11 +510,13 @@ function StorefrontFilterDialog.showCatalogFilter(arg1, arg2)
         end
 
         local title_text = (state.tab == "Patches") and _("Filter & Sort Patches") or ((state.tab == "Fonts") and _("Filter & Sort Fonts") or _("Filter & Sort Plugins"))
-        local title_label = TextWidget:new{
+        local dynamic_title_size = StorefrontUtils.calcDynamicFontSize(title_text, dialog_w - sc(24), "NotoSerif-Regular.ttf", title_font_size, 11, true)
+        local title_label = TextBoxWidget:new{
             text = title_text,
-            face = Font:getFace("NotoSerif-Regular.ttf", title_font_size),
+            face = Font:getFace("NotoSerif-Regular.ttf", dynamic_title_size),
             bold = true,
             fgcolor = Blitbuffer.COLOR_BLACK,
+            width = dialog_w - sc(24),
         }
 
         local title_container = FrameContainer:new{
@@ -1026,10 +1031,13 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
                 btn_pad_h = sc(6)
             end
 
-            local title_label = TextWidget:new{
-                text = _("Select Categories"),
-                face = Font:getFace("NotoSerif-Regular.ttf", title_font_size),
+            local title_text = _("Select Categories")
+            local dynamic_title_size = StorefrontUtils.calcDynamicFontSize(title_text, dialog_w - sc(24), "NotoSerif-Regular.ttf", title_font_size, 11, true)
+            local title_label = TextBoxWidget:new{
+                text = title_text,
+                face = Font:getFace("NotoSerif-Regular.ttf", dynamic_title_size),
                 bold = true, fgcolor = Blitbuffer.COLOR_BLACK,
+                width = dialog_w - sc(24),
             }
             local title_container = FrameContainer:new{ padding = title_pad_v, padding_left = sc(10), bordersize = 0, title_label }
             local content = VerticalGroup:new{
@@ -1284,10 +1292,13 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
             apply_h = sc(24)
         end
 
-        local title_label = TextWidget:new{
-            text = _("Filter & Sort Screensavers"),
-            face = Font:getFace("NotoSerif-Regular.ttf", title_font_size),
+        local title_text = _("Filter & Sort Screensavers")
+        local dynamic_title_size = StorefrontUtils.calcDynamicFontSize(title_text, dialog_w - sc(24), "NotoSerif-Regular.ttf", title_font_size, 11, true)
+        local title_label = TextBoxWidget:new{
+            text = title_text,
+            face = Font:getFace("NotoSerif-Regular.ttf", dynamic_title_size),
             bold = true, fgcolor = Blitbuffer.COLOR_BLACK,
+            width = dialog_w - sc(24),
         }
         local title_container = FrameContainer:new{ padding = title_pad_v, padding_left = sc(10), bordersize = 0, title_label }
         local content_vg = VerticalGroup:new{

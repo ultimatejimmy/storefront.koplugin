@@ -320,9 +320,11 @@ function StorefrontScreensaverDetail:init()
             local dialog_w = math.min(sw - sc(20), sc(380))
             local inner_w = dialog_w - (card_padding * 2) - (card_border * 2)
 
+            local title_text = item.title or item.name or _("Wallpaper Options")
+            local dynamic_title_size = StorefrontUtils.calcDynamicFontSize(title_text, inner_w, "NotoSerif-Regular.ttf", storefront_theme.title_font_size or 22, 12, true)
             local title_label = TextBoxWidget:new{
-                text = item.title or item.name or _("Wallpaper Options"),
-                face = Font:getFace("NotoSerif-Regular.ttf", storefront_theme.title_font_size or 22),
+                text = title_text,
+                face = Font:getFace("NotoSerif-Regular.ttf", dynamic_title_size),
                 bold = true,
                 fgcolor = Blitbuffer.COLOR_BLACK,
                 width = inner_w,

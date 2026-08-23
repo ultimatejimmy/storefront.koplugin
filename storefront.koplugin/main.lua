@@ -306,9 +306,9 @@ local function showRestartConfirmation(message, force)
 
     local function calcRestartBtnFontSize(texts, total_avail_width, gap, padding_per_item)
         local num = #texts
-        if num == 0 then return 16 end
+        if num == 0 then return 18 end
         local gaps_total = gap * math.max(0, num - 1)
-        for _, sz in ipairs({ 16, 15, 14, 13, 12, 11, 10 }) do
+        for _, sz in ipairs({ 18, 17, 16, 15, 14, 13, 12, 11, 10 }) do
             local total_w = gaps_total
             for _, text in ipairs(texts) do
                 total_w = total_w + getTextWidth(text, sz) + padding_per_item
@@ -452,20 +452,24 @@ function Storefront:showConfirmDialog(opts)
     local sh = Device.screen:getHeight()
     local card_padding = sc(12)
     local card_border = storefront_theme.border_window or sc(2)
-    local dialog_w = math.min(sw - sc(20), sc(360))
+    local dialog_w = math.min(sw - sc(20), sc(380))
     local inner_w = dialog_w - (card_padding * 2) - (card_border * 2)
 
     local ui_font_size = storefront_theme.face_label_size or 18
     local title_font_size = storefront_theme.title_font_size or 22
 
     local overlay
+    local StorefrontUtils = require("storefront_utils")
 
     local title_text = opts.title or _("Confirm Update")
-    local title_label = TextWidget:new{
+    local dynamic_title_size = StorefrontUtils.calcDynamicFontSize(title_text, inner_w, "cfont", title_font_size, 12, true)
+    local title_label = TextBoxWidget:new{
         text = title_text,
-        face = Font:getFace("cfont", title_font_size),
+        face = Font:getFace("cfont", dynamic_title_size),
         bold = true,
         fgcolor = Blitbuffer.COLOR_BLACK,
+        width = inner_w,
+        alignment = "center",
     }
 
     local title_container = FrameContainer:new{
@@ -489,10 +493,9 @@ function Storefront:showConfirmDialog(opts)
     }
 
     local btn_gap = sc(12)
-    local StorefrontUtils = require("storefront_utils")
     local cancel_text = opts.cancel_text or _("Cancel")
     local ok_text = opts.ok_text or _("Update All")
-    local btn_font_size = StorefrontUtils.calcGroupFontSize({ cancel_text, ok_text }, inner_w, btn_gap, "cfont", sc(16))
+    local btn_font_size = StorefrontUtils.calcGroupFontSize({ cancel_text, ok_text }, inner_w, btn_gap, "cfont", sc(16), 18, 10)
     local btn_widths = StorefrontUtils.calcProportionalBtnWidths({ cancel_text, ok_text }, inner_w, btn_gap, btn_font_size, "cfont")
 
     local cancel_btn = StorefrontUtils.createButton{
@@ -593,17 +596,23 @@ local function showFetchingProgress(message)
 
     local sw = Device.screen:getWidth()
     local sh = Device.screen:getHeight()
-    local dialog_w = math.min(sw - sc(20), sc(340))
+    local dialog_w = math.min(sw - sc(20), sc(360))
+    local card_padding = sc(6)
+    local card_border = storefront_theme.border_window or sc(2)
+    local inner_w = dialog_w - (card_padding * 2) - (card_border * 2)
 
     local ui_font_size = storefront_theme.face_label_size or 18
     local title_font_size = storefront_theme.title_font_size or 22
+    local progress_title = _("progress_please_wait")
+    local StorefrontUtils = require("storefront_utils")
+    local dynamic_title_size = StorefrontUtils.calcDynamicFontSize(progress_title, inner_w, "NotoSerif-Regular.ttf", title_font_size, 12, true)
 
     local title_label = TextBoxWidget:new{
-        text = _("progress_please_wait"),
-        face = Font:getFace("NotoSerif-Regular.ttf", title_font_size),
+        text = progress_title,
+        face = Font:getFace("NotoSerif-Regular.ttf", dynamic_title_size),
         bold = true,
         fgcolor = Blitbuffer.COLOR_BLACK,
-        width = dialog_w - sc(40),
+        width = inner_w,
         alignment = "center",
     }
 

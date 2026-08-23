@@ -564,17 +564,27 @@ function StorefrontFolderPicker.show(options)
             local new_folder_str = _("+ New")
             local select_str = _("Select Folder")
 
+            local dyn_btn_font_size = StorefrontUtils.calcGroupFontSize(
+                { cancel_str, new_folder_str, select_str },
+                total_btns_w,
+                btn_gap,
+                "cfont",
+                sc(16),
+                btn_font_size,
+                10
+            )
+
             local btn_widths = StorefrontUtils.calcProportionalBtnWidths(
                 { cancel_str, new_folder_str, select_str },
                 total_btns_w,
                 btn_gap,
-                btn_font_size,
+                dyn_btn_font_size,
                 "cfont"
             )
 
             local cancel_btn = StorefrontUtils.createButton{
                 text = cancel_str,
-                text_font_size = btn_font_size,
+                text_font_size = dyn_btn_font_size,
                 bold = true,
                 bordersize = storefront_theme.border_btn or sc(1),
                 radius = sc(4),
@@ -587,7 +597,7 @@ function StorefrontFolderPicker.show(options)
 
             local new_btn = StorefrontUtils.createButton{
                 text = new_folder_str,
-                text_font_size = btn_font_size,
+                text_font_size = dyn_btn_font_size,
                 bold = true,
                 bordersize = storefront_theme.border_btn or sc(1),
                 radius = sc(4),
@@ -600,7 +610,7 @@ function StorefrontFolderPicker.show(options)
 
             local select_btn = StorefrontUtils.createButton{
                 text = select_str,
-                text_font_size = btn_font_size,
+                text_font_size = dyn_btn_font_size,
                 bold = true,
                 bordersize = storefront_theme.border_btn or sc(1),
                 radius = sc(4),

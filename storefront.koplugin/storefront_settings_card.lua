@@ -25,6 +25,7 @@ local _ = function(key, ...) return Localization:t(key, ...) end
 local Cache = require("storefront_cache")
 local GitHubClient = require("storefront_net_github")
 local storefront_theme = require("storefront_theme")
+local StorefrontUtils = require("storefront_utils")
 
 local StorefrontSettingsCard = {}
 
@@ -105,11 +106,14 @@ function StorefrontSettingsCard.show(Storefront)
         end
 
         -- Title Widget
-        local title_label = TextWidget:new{
-            text = _("Settings"),
-            face = Font:getFace("NotoSerif-Regular.ttf", title_font_size),
+        local title_text = _("Settings")
+        local dynamic_title_size = StorefrontUtils.calcDynamicFontSize(title_text, dialog_w - sc(24), "NotoSerif-Regular.ttf", title_font_size, 12, true)
+        local title_label = TextBoxWidget:new{
+            text = title_text,
+            face = Font:getFace("NotoSerif-Regular.ttf", dynamic_title_size),
             bold = true,
             fgcolor = Blitbuffer.COLOR_BLACK,
+            width = dialog_w - sc(24),
         }
 
         local title_container = FrameContainer:new{

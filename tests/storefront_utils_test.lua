@@ -102,4 +102,33 @@ describe("storefront_utils", function()
             assert.is_false(storefront_utils.repoIsFork(nil))
         end)
     end)
+
+    describe("calcDynamicFontSize", function()
+        it("returns max_font_size for nil or empty string", function()
+            assert.are.same(22, storefront_utils.calcDynamicFontSize(nil, 300))
+            assert.are.same(22, storefront_utils.calcDynamicFontSize("", 300))
+            assert.are.same(18, storefront_utils.calcDynamicFontSize("", 300, "NotoSerif-Regular.ttf", 18, 10))
+        end)
+
+        it("returns a valid font size within specified range", function()
+            local sz = storefront_utils.calcDynamicFontSize("Potwierdź aktualizację wszystkiego", 300, "NotoSerif-Regular.ttf", 22, 11)
+            assert.is_number(sz)
+            assert.is_true(sz >= 11 and sz <= 22)
+        end)
+    end)
+
+    describe("calcGroupFontSize and calcProportionalBtnWidths", function()
+        it("returns valid button widths summing to usable width", function()
+            local texts = { "Anuluj", "Aktualizuj wszystko" }
+            local total_w = 340
+            local gap = 12
+            local sz = storefront_utils.calcGroupFontSize(texts, total_w, gap, "cfont", 16, 18, 10)
+            assert.is_number(sz)
+            assert.is_true(sz >= 10 and sz <= 18)
+
+            local widths = storefront_utils.calcProportionalBtnWidths(texts, total_w, gap, sz, "cfont")
+            assert.are.same(2, #widths)
+            assert.are.same(total_w - gap, widths[1] + widths[2])
+        end)
+    end)
 end)

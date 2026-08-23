@@ -93,7 +93,7 @@ local function calcGroupFontSize(texts, total_avail_width, gap, face_name, paddi
     local num = #texts
     if num == 0 then return 18 end
     local gaps_total = gap * math.max(0, num - 1)
-    for _, sz in ipairs({ 18, 17, 16, 15, 14 }) do
+    for _, sz in ipairs({ 18, 17, 16, 15, 14, 13, 12, 11, 10 }) do
         local face = Font:getFace(face_name, sz)
         local total_w = gaps_total
         for _, text in ipairs(texts) do
@@ -104,7 +104,7 @@ local function calcGroupFontSize(texts, total_avail_width, gap, face_name, paddi
             return sz
         end
     end
-    return 14
+    return 10
 end
 
 -- Distribute total_avail_width proportionally across buttons, using a uniform

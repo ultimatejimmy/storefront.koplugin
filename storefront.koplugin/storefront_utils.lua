@@ -274,7 +274,29 @@ function storefront_utils.getMappedScreensaverCategories(cat_input)
     return result
 end
 
-function storefront_utils.calcGroupFontSize(texts, total_avail_width, gap, face_name, padding_per_item)
+function storefront_utils.calcDynamicFontSize(text, max_width, face_name, max_font_size, min_font_size, bold)
+    if not text or text == "" or not max_width or max_width <= 0 then
+        return max_font_size or 22
+    end
+    face_name = face_name or "NotoSerif-Regular.ttf"
+    max_font_size = max_font_size or 22
+    min_font_size = min_font_size or 11
+    if bold == nil then bold = true end
+
+    local Font = require("ui/font")
+    local TextWidget = require("ui/widget/textwidget")
+
+    for sz = max_font_size, min_font_size, -1 do
+        local face = Font:getFace(face_name, sz)
+        local tw = TextWidget:new{ text = text, face = face, bold = bold }
+        if tw:getSize().w <= max_width then
+            return sz
+        end
+    end
+    return min_font_size
+end
+
+function storefront_utils.calcGroupFontSize(texts, total_avail_width, gap, face_name, padding_per_item, max_font_size, min_font_size)
     face_name = face_name or "cfont"
     local Device = require("device")
     local Font = require("ui/font")
@@ -283,10 +305,12 @@ function storefront_utils.calcGroupFontSize(texts, total_avail_width, gap, face_
         return (Device and Device.screen and Device.screen.scaleBySize and Device.screen:scaleBySize(val)) or val
     end
     padding_per_item = padding_per_item or sc(16)
+    max_font_size = max_font_size or 18
+    min_font_size = min_font_size or 10
     local num = #texts
-    if num == 0 then return 18 end
+    if num == 0 then return max_font_size end
     local gaps_total = gap * math.max(0, num - 1)
-    for _, sz in ipairs({ 18, 17, 16, 15, 14, 13, 12, 11, 10 }) do
+    for sz = max_font_size, min_font_size, -1 do
         local face = Font:getFace(face_name, sz)
         local total_w = gaps_total
         for _, text in ipairs(texts) do
@@ -297,7 +321,7 @@ function storefront_utils.calcGroupFontSize(texts, total_avail_width, gap, face_
             return sz
         end
     end
-    return 10
+    return min_font_size
 end
 
 function storefront_utils.calcProportionalBtnWidths(button_texts, total_avail_width, gap, font_size, face_name)
@@ -440,7 +464,7 @@ function storefront_utils.showConfirmDialog(opts)
     local sh = Device.screen:getHeight()
     local card_padding = sc(14)
     local card_border = storefront_theme.border_window or sc(2)
-    local dialog_w = math.min(sw - sc(20), sc(360))
+    local dialog_w = math.min(sw - sc(20), sc(380))
     local inner_w = dialog_w - (card_padding * 2) - (card_border * 2)
 
     local ui_font_size = storefront_theme.face_label_size or 18
@@ -449,9 +473,10 @@ function storefront_utils.showConfirmDialog(opts)
     local overlay
 
     local title_text = opts.title or _("Confirm")
+    local dynamic_title_size = storefront_utils.calcDynamicFontSize(title_text, inner_w, "NotoSerif-Regular.ttf", title_font_size, 12, true)
     local title_label = TextBoxWidget:new{
         text = title_text,
-        face = Font:getFace("NotoSerif-Regular.ttf", title_font_size),
+        face = Font:getFace("NotoSerif-Regular.ttf", dynamic_title_size),
         bold = true,
         fgcolor = Blitbuffer.COLOR_BLACK,
         width = inner_w,
@@ -475,7 +500,7 @@ function storefront_utils.showConfirmDialog(opts)
     local btn_gap = sc(12)
     local cancel_text = opts.cancel_text or _("Cancel")
     local ok_text = opts.ok_text or _("OK")
-    local btn_font_size = storefront_utils.calcGroupFontSize({ cancel_text, ok_text }, inner_w, btn_gap, "cfont", sc(16))
+    local btn_font_size = storefront_utils.calcGroupFontSize({ cancel_text, ok_text }, inner_w, btn_gap, "cfont", sc(16), 18, 10)
     local btn_widths = storefront_utils.calcProportionalBtnWidths({ cancel_text, ok_text }, inner_w, btn_gap, btn_font_size, "cfont")
 
     local cancel_btn = storefront_utils.createButton{
