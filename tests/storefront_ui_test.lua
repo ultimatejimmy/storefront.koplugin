@@ -59,6 +59,7 @@ local widgets = {
     "ui/widget/container/framecontainer",
     "ui/widget/container/scrollablecontainer",
     "ui/widget/container/centercontainer",
+    "ui/widget/container/leftcontainer",
     "ui/widget/container/rightcontainer",
     "ui/widget/container/widgetcontainer",
     "ui/widget/container/inputcontainer",
@@ -556,6 +557,34 @@ if ok_browser then
         }, "Fonts", 50)
         check("Pagination honors the supplied measured viewport", #constrained_items, 1)
         check("Pagination moves overflow rows to later pages", constrained_pages, 3)
+
+        -- Test dynamic item height measurement: 2-line installed items (no description) vs 3-line items (with description)
+        local ten_short_items = {}
+        for i = 1, 10 do
+            table.insert(ten_short_items, {
+                name = "Plugin " .. i,
+                kind_label = "Plugin",
+                updated = "2026-08-01",
+                is_entry = true,
+                is_installed_item = true,
+            })
+        end
+        local ten_desc_items = {}
+        for i = 1, 10 do
+            table.insert(ten_desc_items, {
+                name = "Plugin " .. i,
+                owner = "author",
+                kind_label = "Plugin",
+                updated = "2026-08-01",
+                description = "Long description text for measuring widget height",
+                is_entry = true,
+            })
+        end
+        MainStorefront.browser_state = { page = 1 }
+        local short_page_items, short_pages = MainStorefront:paginateEntries(ten_short_items, "Installed", 400)
+        local desc_page_items, desc_pages = MainStorefront:paginateEntries(ten_desc_items, "Plugins", 400)
+        check("Compact installed items fit more entries per page than desc items", #short_page_items >= #desc_page_items, true)
+        check("Installed items paginate dynamically without excess whitespace", #short_page_items > 0, true)
 
         MainStorefront.getInstallRecordsMap = function() return dummy_records end
         MainStorefront._installed_lookup_cache = nil

@@ -11,7 +11,7 @@ local StorefrontUpdatesUi = {}
 function StorefrontUpdatesUi:init(StorefrontClass)
     -- Mixin methods to Storefront class
 
-    function StorefrontClass:buildUpdatesEntries()
+    function StorefrontClass:buildUpdatesEntries(available_list_height)
         self:ensureUpdatesState()
         self:ensurePatchUpdatesState()
 
@@ -268,7 +268,7 @@ function StorefrontUpdatesUi:init(StorefrontClass)
             return items, 1
         end
 
-        return self:paginateEntries(merged, "Updates")
+        return self:paginateEntries(merged, "Updates", available_list_height)
     end
 
     function StorefrontClass:maybeAutoCheckUpdates()

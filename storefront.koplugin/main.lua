@@ -6976,53 +6976,24 @@ function Storefront:paginateEntries(items, tab_name, available_list_height)
     local pad = Size.padding.default
     local thin = Size.line.thin
     local item_w = screen_w - 2 * pad
-
     local pages = {}
     local current_page = {}
     local current_h = 0
-    local cached_standard_h = nil
-    local cached_update_h = nil
 
     for i, entry in ipairs(items) do
         local item_h = entry._measured_h
         if not item_h then
             if entry.is_entry then
-                if entry.is_update_item then
-                    if not cached_update_h then
-                        local sample_update = {
-                            name = "Sample Plugin Name",
-                            updated = "2026-07-27",
-                            kind_label = "Plugin · Default",
-                            is_entry = true,
-                            is_update_item = true,
-                            version_transition = "1.0.0 -> 2.0.0",
-                            badge = _("Update"),
-                        }
-                        local sample_widget = StorefrontListItem:new{
-                            entry = sample_update,
-                            width = item_w,
-                        }
-                        cached_update_h = sample_widget:getSize().h
-                    end
-                    item_h = cached_update_h
+                local ok, widget = pcall(function()
+                    return StorefrontListItem:new{
+                        entry = entry,
+                        width = item_w,
+                    }
+                end)
+                if ok and widget and widget.getSize then
+                    item_h = widget:getSize().h
                 else
-                    if not cached_standard_h then
-                        local sample_entry = {
-                            name = "Sample Plugin Name",
-                            owner = "sample_owner",
-                            stars_fmt = "100",
-                            updated = "2026-07-27",
-                            kind_label = "Plugin",
-                            description = "Sample plugin description text for measuring widget height",
-                            is_entry = true,
-                        }
-                        local sample_widget = StorefrontListItem:new{
-                            entry = sample_entry,
-                            width = item_w,
-                        }
-                        cached_standard_h = sample_widget:getSize().h
-                    end
-                    item_h = cached_standard_h
+                    item_h = Device.screen:scaleBySize(60)
                 end
                 entry._measured_h = item_h
             elseif entry.is_clear_button then

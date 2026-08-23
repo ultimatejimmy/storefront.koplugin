@@ -17,6 +17,11 @@ end
 package.loaded["socket.http"] = {}
 package.loaded["ssl.https"] = {}
 package.loaded["socket"] = {}
+package.loaded["libs/libkoreader-lfs"] = {
+    attributes = function() return nil end,
+    mkdir = function() return true end,
+    dir = function() return function() return nil end end,
+}
 package.loaded["socketutil"] = {
     set_timeout = function() end,
     reset_timeout = function() end,
