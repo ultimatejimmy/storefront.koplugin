@@ -241,3 +241,19 @@ Storefront uses vector SVG icons from the **Feather Icons** library stored under
 3. **Icon Sizing Standard**:
    - Header logos / major icons: `sc(24)`
    - Setting row & button icons: `sc(20)`
+
+---
+
+## 7. E-Ink Lifecycle, Toasts, and Batch Progress Operations
+
+### 7.1 Toast Lifecycle on E-Ink Devices
+To guarantee instant and glitch-free rendering across e-ink screens:
+1. **Dirty Rectangle Registration**: Custom toast widgets (`StorefrontToastWidget`) must implement `onShow` and `onCloseWidget` methods calling `UIManager:setDirty(self, ...)` with the precise card bounding geometry.
+2. **Immediate Paint Invocations**: `StorefrontToast.show(...)` and `StorefrontToastWidget:show()` must call `UIManager:forceRePaint()` to push the rasterized frame immediately to the e-ink display controller rather than waiting for an ambient event tick.
+
+### 7.2 Zero-Flash Rule for Batch Operations
+When executing multi-step or queue-based operations (such as "Update All", multi-plugin downloads, or bulk scans):
+- **Never recreate modals per item**: Creating, displaying, closing, and destroying separate toast/dialog windows for each queue item causes violent full-screen e-ink refresh flashes.
+- **Single Persistent Progress Toast**: Show a single `StorefrontToast` instance at the start of the queue with `timeout = 0, dismissable = false`.
+- **In-Place Label Updates**: For each queue item (and intermediate steps like downloading and extracting), update progress text in-place using `batch_toast:setText(...)`. `setText` invalidates only the inner text bounding area, resulting in smooth text changes without screen-tearing or full-screen flashing.
+- **Single Completion Dismissal**: Close the persistent batch toast only once when the queue reaches completion or is cancelled.

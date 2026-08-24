@@ -1416,6 +1416,117 @@ if ok_browser then
             MainStorefront:_checkAllUpdatesInternal({})
         end)
         check("MainStorefront:_checkAllUpdatesInternal executes without error", internal_check_ok, true)
+
+        -- ----------------------------------------------------
+        -- BATCH UPDATE & ASSET RESOLUTION UNIT TESTS
+        -- ----------------------------------------------------
+        -- 1. Test update asset auto-resolution when matching variant exists
+        do
+            local matched_selected_asset = nil
+            local orig_install_asset = MainStorefront.installPluginFromReleaseAsset
+            MainStorefront.installPluginFromReleaseAsset = function(self_sf, r, rel, asset)
+                matched_selected_asset = asset
+            end
+
+            local test_repo = { name = "my_custom_plugin", owner = "testowner" }
+            local release_with_variants = {
+                tag_name = "v2.0.0",
+                assets = {
+                    { name = "my_custom_plugin-v2.0.0-arm.zip", browser_download_url = "http://example.com/arm.zip" },
+                    { name = "my_custom_plugin-v2.0.0-x86.zip", browser_download_url = "http://example.com/x86.zip" },
+                }
+            }
+
+            local InstallStore = require("storefront_installs")
+            InstallStore.upsert("my_custom_plugin.koplugin", {
+                owner = "testowner",
+                repo = "my_custom_plugin",
+                asset_filename = "my_custom_plugin-v1.0.0-arm.zip",
+            })
+
+            MainStorefront.pending_install_context = {
+                mode = "update",
+                plugin = { dirname = "my_custom_plugin.koplugin" },
+            }
+
+            local picker_called = false
+            local orig_picker = MainStorefront.renderAssetPickerModal
+            MainStorefront.renderAssetPickerModal = function()
+                picker_called = true
+            end
+
+            MainStorefront:promptPluginInstallOptions(test_repo, release_with_variants, false)
+
+            check("Update with matching variant auto-selects matching asset", matched_selected_asset and matched_selected_asset.name, "my_custom_plugin-v2.0.0-arm.zip")
+            check("Update with matching variant does not open asset picker modal", picker_called, false)
+
+            -- 2. Test update when NO matching variant exists -> opens asset picker
+            matched_selected_asset = nil
+            picker_called = false
+            InstallStore.setPreferredAsset("my_custom_plugin", nil)
+            InstallStore.setPreferredAsset("my_custom_plugin.koplugin", nil)
+            InstallStore.upsert("my_custom_plugin.koplugin", {
+                owner = "testowner",
+                repo = "my_custom_plugin",
+                asset_filename = "my_custom_plugin-v1.0.0-mips.zip",
+            })
+            MainStorefront.pending_install_context = {
+                mode = "update",
+                plugin = { dirname = "my_custom_plugin.koplugin" },
+            }
+            MainStorefront:promptPluginInstallOptions(test_repo, release_with_variants, false)
+            check("Update without matching variant opens asset picker modal", picker_called, true)
+
+            MainStorefront.installPluginFromReleaseAsset = orig_install_asset
+            MainStorefront.renderAssetPickerModal = orig_picker
+        end
+
+        -- 3. Test _processBatchUpdateQueue single persistent toast progression
+        do
+            local toast_instances = 0
+            local toast_text_updates = {}
+            local toast_closed = false
+
+            local MockToast = {
+                setText = function(self, txt)
+                    table.insert(toast_text_updates, txt)
+                end,
+                close = function(self)
+                    toast_closed = true
+                end
+            }
+
+            local ToastModule = require("storefront_toast")
+            local orig_toast_show = ToastModule.show
+            ToastModule.show = function(txt, timeout, opts)
+                toast_instances = toast_instances + 1
+                return MockToast
+            end
+
+            local orig_prompt = MainStorefront.promptPluginInstallOptions
+            local processed_items = {}
+            MainStorefront.promptPluginInstallOptions = function(sf, descriptor, release_override)
+                table.insert(processed_items, descriptor.name)
+                if sf.pending_install_context and sf.pending_install_context.batch_callback then
+                    local cb = sf.pending_install_context.batch_callback
+                    sf.pending_install_context.batch_callback = nil
+                    cb(true)
+                end
+            end
+
+            local test_queue = {
+                { kind = "plugin", name = "PluginOne", record = { repo = "PluginOne", dirname = "p1.koplugin" } },
+                { kind = "plugin", name = "PluginTwo", record = { repo = "PluginTwo", dirname = "p2.koplugin" } },
+            }
+
+            MainStorefront:_processBatchUpdateQueue(test_queue, 1, { success = 0, failed = 0 })
+
+            check("Batch update creates only 1 persistent toast instance", toast_instances, 1)
+            check("Batch update updates toast text in-place across queue", #toast_text_updates >= 1, true)
+
+            ToastModule.show = orig_toast_show
+            MainStorefront.promptPluginInstallOptions = orig_prompt
+        end
     end
 end
 

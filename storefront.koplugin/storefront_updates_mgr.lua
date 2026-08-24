@@ -96,13 +96,17 @@ function UpdatesMgr:init(Storefront)
         }
     end
 
-    Storefront._processBatchUpdateQueue = function(sf, queue, index, stats)
+    Storefront._processBatchUpdateQueue = function(sf, queue, index, stats, batch_toast)
         stats = stats or { success = 0, failed = 0 }
         _G.G_storefront_batch_updating = true
         if index > #queue then
             _G.G_storefront_batch_updating = false
             sf.pending_install_context = nil
             sf.pending_patch_install = nil
+
+            if batch_toast and batch_toast.close then
+                batch_toast:close()
+            end
 
             if sf.invalidateInstalledPluginsCache then
                 sf:invalidateInstalledPluginsCache()
@@ -132,23 +136,26 @@ function UpdatesMgr:init(Storefront)
         end
 
         local item = queue[index]
+        local item_title = item.name or ""
+        local progress_text = string.format(_("Updating [%d/%d]: %s…"), index, #queue, item_title)
 
         local StorefrontToast = require("storefront_toast")
-        local progress_msg = StorefrontToast.show(
-            string.format(_("Updating [%d/%d]: %s…"), index, #queue, item.name or ""),
-            0,
-            { dismissable = false }
-        )
-        UIManager:forceRePaint()
+        if not batch_toast then
+            batch_toast = StorefrontToast.show(progress_text, 0, { dismissable = false })
+        else
+            if batch_toast.setText then
+                batch_toast:setText(progress_text)
+            end
+        end
 
         local next_step = function(success, err)
-            if progress_msg and progress_msg.close then
-                progress_msg:close()
-            end
-            if err == "Cancelled by user" then
+            if err == "Cancelled by user" or err == "Cancelled asset selection" then
                 _G.G_storefront_batch_updating = false
                 sf.pending_install_context = nil
                 sf.pending_patch_install = nil
+                if batch_toast and batch_toast.close then
+                    batch_toast:close()
+                end
                 if sf.invalidateInstalledPluginsCache then
                     sf:invalidateInstalledPluginsCache()
                 end
@@ -163,7 +170,7 @@ function UpdatesMgr:init(Storefront)
                 StorefrontLogger.err(string.format("Batch update failed for item %s: %s", item.name, tostring(err)))
             end
             UIManager:nextTick(function()
-                sf:_processBatchUpdateQueue(queue, index + 1, stats)
+                sf:_processBatchUpdateQueue(queue, index + 1, stats, batch_toast)
             end)
         end
 
@@ -187,6 +194,7 @@ function UpdatesMgr:init(Storefront)
                 plugin = plugin,
                 is_batch = true,
                 batch_callback = next_step,
+                batch_toast = batch_toast,
             }
             local descriptor = {
                 kind = "plugin",
@@ -226,6 +234,7 @@ function UpdatesMgr:init(Storefront)
                 patch = installed_patch,
                 is_batch = true,
                 batch_callback = next_step,
+                batch_toast = batch_toast,
             }
             sf:installPatchFromRepo(repo, patch_entry)
         else

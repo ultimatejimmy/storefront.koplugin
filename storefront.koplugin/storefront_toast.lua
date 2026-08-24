@@ -167,7 +167,23 @@ function StorefrontToastWidget:setText(text)
     self.text = text or ""
     if self.label_widget then
         self.label_widget:setText(self.text)
-        UIManager:setDirty(self, "ui")
+        if self.card and self.card.init then
+            pcall(function() self.card:init() end)
+        end
+        if self[1] and self[1].init then
+            pcall(function() self[1]:init() end)
+        end
+        if UIManager.isShown and not UIManager:isShown(self) then
+            UIManager:show(self)
+        end
+        UIManager:setDirty(self, function()
+            return "ui", (self.card and self.card.dimen) or self.dimen
+        end)
+        if type(UIManager.forceRePaint) == "function" then
+            UIManager:forceRePaint()
+        elseif type(UIManager.forceRepaint) == "function" then
+            UIManager:forceRepaint()
+        end
     end
 end
 

@@ -131,7 +131,7 @@ local function isRecordEqual(a, b)
        and a.full_installed == b.full_installed
        and a.download_url == b.download_url
        and a.failed_attempts == b.failed_attempts
-       and a.last_attempt_ts == b.last_attempt_ts
+       and a.asset_filename == b.asset_filename
        and a.download_error == b.download_error
 end
 

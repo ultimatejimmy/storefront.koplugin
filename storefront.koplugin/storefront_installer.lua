@@ -49,6 +49,48 @@ local function ensureCacheDir()
     return base
 end
 
+local function normalizeAssetVariantKey(filename)
+    if not filename or filename == "" then return "" end
+    local clean = filename:lower()
+    clean = clean:gsub("%.zip$", "")
+    -- Strip semver tags e.g. -v1.2.3, _v1.2.3, -1.2.3, .1.2.3, -2026.07
+    -- Only match digits and dots in the version segment so variant suffixes (e.g. -arm, -x86) are preserved
+    clean = clean:gsub("[%-_%.][vV]?%d+[%d%.]*", "")
+    return clean
+end
+
+local function findMatchingAssetForUpdate(installed_asset_name, candidate_assets)
+    if not candidate_assets or #candidate_assets == 0 then
+        return nil
+    end
+    if #candidate_assets == 1 then
+        return candidate_assets[1]
+    end
+    if not installed_asset_name or installed_asset_name == "" then
+        return nil
+    end
+
+    local installed_clean = installed_asset_name:lower()
+    -- 1. Exact filename match
+    for _, asset in ipairs(candidate_assets) do
+        if asset.name and asset.name:lower() == installed_clean then
+            return asset
+        end
+    end
+
+    -- 2. Version-stripped variant matching
+    local installed_key = normalizeAssetVariantKey(installed_asset_name)
+    if installed_key ~= "" then
+        for _, asset in ipairs(candidate_assets) do
+            if asset.name and normalizeAssetVariantKey(asset.name) == installed_key then
+                return asset
+            end
+        end
+    end
+
+    return nil
+end
+
 local function downloadToFile(url, target_path)
     if not url or url == "" then
         return false, _("Missing URL")
@@ -57,24 +99,31 @@ local function downloadToFile(url, target_path)
     local redirect_count = 0
     local max_redirects = 5
     while redirect_count < max_redirects do
-        local response_body = {}
         local is_https = current_url:match("^https://") ~= nil
         local http_req = is_https and (pcall(require, "ssl.https") and require("ssl.https") or http) or http
-        socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+        
+        local target_file = io.open(target_path, "wb")
+        if not target_file then
+            return false, _("Could not open target file for writing")
+        end
+
+        socketutil:set_timeout(15, 300)
         local params = {
             url = current_url,
             method = "GET",
             headers = {
                 ["User-Agent"] = "Mozilla/5.0 (compatible; KOReader-Storefront/1.0)",
             },
-            sink = ltn12.sink.table(response_body),
+            sink = ltn12.sink.file(target_file),
         }
-        if not is_https then params.redirect = true end
+        if not is_https then params.redirect = false end
         local ok_pcall, req_ok, code, headers_res = pcall(http_req.request, params)
         socketutil:reset_timeout()
+        target_file:close()
 
         local res_code = tonumber(code) or 0
         if ok_pcall and req_ok and (res_code == 301 or res_code == 302 or res_code == 303 or res_code == 307 or res_code == 308) then
+            util.removeFile(target_path)
             local location = (type(headers_res) == "table") and (headers_res.location or headers_res.Location)
             if location and location ~= "" then
                 current_url = location
@@ -83,20 +132,15 @@ local function downloadToFile(url, target_path)
                 break
             end
         elseif ok_pcall and req_ok and res_code == 200 then
-            local target = io.open(target_path, "wb")
-            if not target then
-                return false, _("Could not open target file for writing")
-            end
-            for _, chunk in ipairs(response_body) do
-                target:write(chunk)
-            end
-            target:close()
             return true
         else
-            break
+            util.removeFile(target_path)
+            local err_msg = tostring(code or req_ok or "HTTP request failed")
+            return false, err_msg
         end
     end
-    return false, _("HTTP request failed")
+    util.removeFile(target_path)
+    return false, _("Too many redirects or download failed")
 end
 
 local function extractReleaseNameFallback(repo)
@@ -575,48 +619,35 @@ function M:init(Storefront)
                 end
             end
 
-            if release_override then
-                force_show_picker = true
+            local is_update = saved_ctx and saved_ctx.mode == "update"
+            local target_candidates = (#koplugin_assets > 0) and koplugin_assets or custom_assets
+
+            if #target_candidates == 1 then
+                self.pending_install_context = saved_ctx
+                self:installPluginFromReleaseAsset(repo, release, target_candidates[1])
+                return
             end
 
-            local item_key = repo.name
-            local preferred_asset = InstallStore.getPreferredAsset(item_key)
-
-            if preferred_asset and not force_show_picker then
-                local matched_asset = nil
-                local target_list = (#koplugin_assets > 0) and koplugin_assets or custom_assets
-                for _, asset in ipairs(target_list) do
-                    if asset.name and (asset.name == preferred_asset or asset.name:lower() == preferred_asset:lower()) then
-                        matched_asset = asset
-                        break
-                    end
+            if #target_candidates > 1 then
+                local prev_asset = nil
+                if is_update then
+                    local plugin_dir = saved_ctx.plugin and saved_ctx.plugin.dirname
+                    local rec = plugin_dir and InstallStore.get and InstallStore.get(plugin_dir)
+                    prev_asset = (rec and rec.asset_filename)
+                        or (plugin_dir and InstallStore.getPreferredAsset(plugin_dir))
+                        or InstallStore.getPreferredAsset(repo.name)
+                else
+                    prev_asset = InstallStore.getPreferredAsset(repo.name)
                 end
+
+                local matched_asset = findMatchingAssetForUpdate(prev_asset, target_candidates)
                 if matched_asset then
                     self.pending_install_context = saved_ctx
                     self:installPluginFromReleaseAsset(repo, release, matched_asset)
                     return
                 end
-            end
 
-            if #koplugin_assets == 1 then
-                self.pending_install_context = saved_ctx
-                self:installPluginFromReleaseAsset(repo, release, koplugin_assets[1])
-                return
-            end
-
-            if #koplugin_assets > 1 then
-                self:renderAssetPickerModal(repo, release, koplugin_assets, saved_ctx)
-                return
-            end
-
-            if #custom_assets > 1 then
-                self:renderAssetPickerModal(repo, release, custom_assets, saved_ctx)
-                return
-            end
-
-            if #custom_assets == 1 then
-                self.pending_install_context = saved_ctx
-                self:installPluginFromReleaseAsset(repo, release, custom_assets[1])
+                self:renderAssetPickerModal(repo, release, target_candidates, saved_ctx)
                 return
             end
 
@@ -745,9 +776,17 @@ function M:init(Storefront)
 
             local function proceedWithInstall(dest_root)
                 local install_display_name = info and info.plugin_name or (repo and repo.name) or "plugin"
-                local Toast = require("storefront_toast")
-                local install_progress = Toast.show(string.format(_("Installing %s…"), install_display_name), 0)
-                if UIManager.forceRePaint then UIManager:forceRePaint() end
+                local batch_toast = self.pending_install_context and self.pending_install_context.batch_toast
+                local install_progress
+                if batch_toast then
+                    if batch_toast.setText then
+                        batch_toast:setText(string.format(_("Installing %s…"), install_display_name))
+                    end
+                elseif not is_batch then
+                    local Toast = require("storefront_toast")
+                    install_progress = Toast.show(string.format(_("Installing %s…"), install_display_name), 0)
+                    if UIManager.forceRePaint then UIManager:forceRePaint() end
+                end
 
                 local ok_extract, dest_or_err = extractPluginToUserDir(reader, info, dest_root)
                 reader:close()
@@ -801,37 +840,45 @@ function M:init(Storefront)
             end
         end
 
-        if is_repo_batch then
-            local Toast = require("storefront_toast")
-            local progress = Toast.show(string.format(_("Downloading %s…"), plugin_display_name), 0)
-            if UIManager.forceRePaint then UIManager:forceRePaint() end
-            local ok, err = downloadToFile(url, zip_path)
-            if progress and progress.close then progress:close() end
-            doInstall(ok, err)
+        local batch_toast = self.pending_install_context and self.pending_install_context.batch_toast
+        local dl_msg = is_repo_batch and string.format(_("Downloading %s…"), plugin_display_name)
+            or string.format(_("Downloading %s…\nTap screen to cancel."), plugin_display_name)
+
+        local trap_widget
+        if batch_toast then
+            if batch_toast.setText then
+                batch_toast:setText(dl_msg)
+            end
+            trap_widget = nil
         else
-            local Trapper = require("ui/trapper")
             local Toast = require("storefront_toast")
-            local dl_msg = string.format(_("Downloading %s…\nTap screen to cancel."), plugin_display_name)
-            local progress_toast = Toast.show(dl_msg, 0)
-            Trapper:wrap(function()
-                local completed, res = Trapper:dismissableRunInSubprocess(function()
-                    local dl_ok, dl_err = downloadToFile(url, zip_path)
-                    return { ok = dl_ok, err = dl_err }
-                end, progress_toast)
-                if progress_toast and progress_toast.close then progress_toast:close() end
-                if not completed then
-                    util.removeFile(zip_path)
-                    Toast.show(_("Download cancelled."), 3)
-                    if self.pending_install_context and self.pending_install_context.batch_callback then
-                        local cb = self.pending_install_context.batch_callback
-                        self.pending_install_context.batch_callback = nil
-                        cb(false, "Cancelled by user")
-                    end
-                    return
-                end
-                doInstall(res and res.ok, res and res.err)
-            end)
+            trap_widget = Toast.show(dl_msg, 0)
         end
+
+        local Trapper = require("ui/trapper")
+        Trapper:wrap(function()
+            local completed, res = Trapper:dismissableRunInSubprocess(function()
+                local dl_ok, dl_err = downloadToFile(url, zip_path)
+                return { ok = dl_ok, err = dl_err }
+            end, trap_widget)
+
+            if trap_widget and trap_widget.close then
+                trap_widget:close()
+            end
+
+            if not completed then
+                util.removeFile(zip_path)
+                local Toast = require("storefront_toast")
+                Toast.show(_("Download cancelled."), 3)
+                if self.pending_install_context and self.pending_install_context.batch_callback then
+                    local cb = self.pending_install_context.batch_callback
+                    self.pending_install_context.batch_callback = nil
+                    cb(false, "Cancelled by user")
+                end
+                return
+            end
+            doInstall(res and res.ok, res and res.err)
+        end)
     end
 
     function Storefront:installPluginFromReleaseAsset(repo, release, asset)
@@ -919,10 +966,15 @@ function M:init(Storefront)
             end
 
             local function proceedWithInstall(dest_root)
-                local Toast = require("storefront_toast")
+                local pname = info and info.plugin_name or (repo and repo.name) or "plugin"
+                local batch_toast = self.pending_install_context and self.pending_install_context.batch_toast
                 local install_progress
-                if not is_batch then
-                    local pname = info and info.plugin_name or (repo and repo.name) or "plugin"
+                if batch_toast then
+                    if batch_toast.setText then
+                        batch_toast:setText(string.format(_("Installing %s…"), pname))
+                    end
+                elseif not is_batch then
+                    local Toast = require("storefront_toast")
                     install_progress = Toast.show(string.format(_("Installing %s…"), pname), 0)
                     if UIManager.forceRePaint then UIManager:forceRePaint() end
                 end
@@ -985,37 +1037,45 @@ function M:init(Storefront)
             end
         end
 
-        if is_batch then
-            local Toast = require("storefront_toast")
-            local progress_b = Toast.show(string.format(_("Downloading %s…"), display_name), 0)
-            if UIManager.forceRePaint then UIManager:forceRePaint() end
-            local ok, err = downloadToFile(asset.browser_download_url, zip_path)
-            if progress_b and progress_b.close then progress_b:close() end
-            doInstall(ok, err)
+        local batch_toast = self.pending_install_context and self.pending_install_context.batch_toast
+        local dl_msg = is_batch and string.format(_("Downloading %s…"), display_name)
+            or string.format(_("Downloading %s%s…\nTap screen to cancel."), display_name, size_str)
+
+        local trap_widget
+        if batch_toast then
+            if batch_toast.setText then
+                batch_toast:setText(dl_msg)
+            end
+            trap_widget = nil
         else
-            local Trapper = require("ui/trapper")
             local Toast = require("storefront_toast")
-            local dl_msg = string.format(_("Downloading %s%s…\nTap screen to cancel."), display_name, size_str)
-            local progress_toast = Toast.show(dl_msg, 0)
-            Trapper:wrap(function()
-                local completed, res = Trapper:dismissableRunInSubprocess(function()
-                    local dl_ok, dl_err = downloadToFile(asset.browser_download_url, zip_path)
-                    return { ok = dl_ok, err = dl_err }
-                end, progress_toast)
-                if progress_toast and progress_toast.close then progress_toast:close() end
-                if not completed then
-                    util.removeFile(zip_path)
-                    Toast.show(_("Download cancelled."), 3)
-                    if self.pending_install_context and self.pending_install_context.batch_callback then
-                        local cb = self.pending_install_context.batch_callback
-                        self.pending_install_context.batch_callback = nil
-                        cb(false, "Cancelled by user")
-                    end
-                    return
-                end
-                doInstall(res and res.ok, res and res.err)
-            end)
+            trap_widget = Toast.show(dl_msg, 0)
         end
+
+        local Trapper = require("ui/trapper")
+        Trapper:wrap(function()
+            local completed, res = Trapper:dismissableRunInSubprocess(function()
+                local dl_ok, dl_err = downloadToFile(asset.browser_download_url, zip_path)
+                return { ok = dl_ok, err = dl_err }
+            end, trap_widget)
+
+            if trap_widget and trap_widget.close then
+                trap_widget:close()
+            end
+
+            if not completed then
+                util.removeFile(zip_path)
+                local Toast = require("storefront_toast")
+                Toast.show(_("Download cancelled."), 3)
+                if self.pending_install_context and self.pending_install_context.batch_callback then
+                    local cb = self.pending_install_context.batch_callback
+                    self.pending_install_context.batch_callback = nil
+                    cb(false, "Cancelled by user")
+                end
+                return
+            end
+            doInstall(res and res.ok, res and res.err)
+        end)
     end
 end
 
