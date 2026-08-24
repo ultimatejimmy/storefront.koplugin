@@ -74,6 +74,8 @@ function StorefrontToastWidget:init()
         row,
     }
 
+    self.card = card
+
     self.dimen = Geom:new{ w = sw, h = sh }
 
     self[1] = CenterContainer:new{
@@ -100,6 +102,23 @@ function StorefrontToastWidget:init()
             self:close()
         end)
     end
+end
+
+function StorefrontToastWidget:onShow()
+    UIManager:setDirty(self, function()
+        return "ui", (self.card and self.card.dimen) or self.dimen
+    end)
+    return true
+end
+
+function StorefrontToastWidget:onCloseWidget()
+    if self._timer then
+        UIManager:unschedule(self._timer)
+        self._timer = nil
+    end
+    UIManager:setDirty(nil, function()
+        return "ui", (self.card and self.card.dimen) or self.dimen
+    end)
 end
 
 function StorefrontToastWidget:onTapDismiss()
@@ -136,6 +155,11 @@ end
 
 function StorefrontToastWidget:show()
     UIManager:show(self)
+    if type(UIManager.forceRePaint) == "function" then
+        UIManager:forceRePaint()
+    elseif type(UIManager.forceRepaint) == "function" then
+        UIManager:forceRepaint()
+    end
     return self
 end
 
@@ -161,6 +185,11 @@ function StorefrontToast.show(text, timeout, opts)
         dismissable = dismissable,
     }
     UIManager:show(toast)
+    if type(UIManager.forceRePaint) == "function" then
+        UIManager:forceRePaint()
+    elseif type(UIManager.forceRepaint) == "function" then
+        UIManager:forceRepaint()
+    end
     return toast
 end
 
