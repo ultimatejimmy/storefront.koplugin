@@ -78,7 +78,6 @@ local widgets = {
     "ui/widget/iconwidget",
     "ui/widget/iconbutton",
     "ui/renderimage",
-    "ui/trapper",
     "storefront_list_item",
     "ui/network/manager",
     "ui/widget/scrolltextwidget",
@@ -103,6 +102,22 @@ local widgets = {
     "ffi/sha2",
     "socketutil",
     "socket",
+}
+
+package.loaded["ui/trapper"] = {
+    wrap = function(self, fn)
+        if type(self) == "function" then fn = self end
+        if fn then fn() end
+    end,
+    dismissableRunInSubprocess = function(self, fn, info)
+        if type(self) == "function" then fn = self end
+        if fn then
+            local res = fn()
+            return true, res
+        end
+        return true, nil
+    end,
+    reset = function() end,
 }
 
 local _mock_json_store = { plugins = {}, patches = {}, item_options = {} }
@@ -175,6 +190,9 @@ package.loaded["storefront_net_github"] = {
         return {
             { tag_name = "26.7.23", body = "Release notes text", published_at = "2026-07-23" }
         }, nil
+    end,
+    fetchLatestRelease = function(owner, repo)
+        return { tag_name = "26.7.23", body = "Release notes text", published_at = "2026-07-23" }, nil
     end,
     markdownToHtml = function(md)
         return "<p>" .. tostring(md) .. "</p>"
@@ -1385,6 +1403,19 @@ if ok_browser then
 
         StorefrontScreensaverMgr.listLocalScreensavers = orig_list_ss
         MainStorefront.installed_state.filter_type = "all"
+
+        -- Test StorefrontAboutDialog.checkForUpdates executes without error
+        local StorefrontAboutDialog = require("storefront_about_dialog")
+        local about_check_ok = pcall(function()
+            StorefrontAboutDialog.checkForUpdates(MainStorefront)
+        end)
+        check("StorefrontAboutDialog.checkForUpdates triggers non-blocking check without error", about_check_ok, true)
+
+        -- Test MainStorefront:_checkAllUpdatesInternal executes and delegates without blocking
+        local internal_check_ok = pcall(function()
+            MainStorefront:_checkAllUpdatesInternal({})
+        end)
+        check("MainStorefront:_checkAllUpdatesInternal executes without error", internal_check_ok, true)
     end
 end
 

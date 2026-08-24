@@ -4,6 +4,15 @@ local url = require("socket.url")
 local logger = require("logger")
 local DataStorage = require("datastorage")
 local LuaSettings = require("luasettings")
+local ok_su, socketutil = pcall(require, "socketutil")
+if not ok_su or not socketutil then
+    socketutil = {
+        FILE_BLOCK_TIMEOUT = 15,
+        FILE_TOTAL_TIMEOUT = 30,
+        set_timeout = function() end,
+        reset_timeout = function() end,
+    }
+end
 
 local ok_cfg, StorefrontConfig = pcall(require, "storefront_config")
 if not ok_cfg then
@@ -11,6 +20,14 @@ if not ok_cfg then
 end
 if not ok_cfg then
     StorefrontConfig = {}
+end
+
+local function getHttpModule(url_str)
+    if url_str and url_str:match("^https://") then
+        local ok, https = pcall(require, "ssl.https")
+        if ok and https then return https end
+    end
+    return require("socket.http")
 end
 
 local GitHubClient = {}
@@ -33,6 +50,22 @@ local function joinQueryParts(parts)
         return ""
     end
     return table.concat(parts, " ")
+end
+
+local function safeJsonDecode(body)
+    if not body or body == "" then return false, nil end
+    local decode_simple = (type(json.decode) == "table" and json.decode.simple)
+    if decode_simple then
+        local ok, parsed = pcall(json.decode, body, decode_simple)
+        if ok and parsed ~= nil then
+            return true, parsed
+        end
+    end
+    local ok, parsed = pcall(json.decode, body)
+    if ok and parsed ~= nil then
+        return true, parsed
+    end
+    return false, parsed
 end
 
 local function newTableSink(target)
@@ -112,7 +145,6 @@ local function getAuthHeaders()
 end
 
 local function request(path, query)
-    pcall(function() http.TIMEOUT = 4 end)
     local response_body = {}
     local target = BASE_URL .. path
     if query and query ~= "" then
@@ -129,15 +161,17 @@ local function request(path, query)
             headers[key] = value
         end
     end
+    local http_mod = getHttpModule(target)
     local code
+    socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
     pcall(function()
-        _, code = http.request{
+        _, code = http_mod.request{
             url = target,
             headers = headers,
             sink = newTableSink(response_body),
-            timeout = 4,
         }
     end)
+    socketutil:reset_timeout()
     local body = table.concat(response_body)
     return tonumber(code) or 0, body
 end
@@ -193,7 +227,7 @@ function GitHubClient.searchRepositories(opts)
         }
         return nil, err_info
     end
-    local ok, parsed = pcall(json.decode, body)
+    local ok, parsed = safeJsonDecode(body)
     if not ok then
         logger.warn("GitHub search decode error", parsed)
         return nil, { code = 0, body = "decode", is_rate_limit = false }
@@ -226,7 +260,7 @@ function GitHubClient.fetchRepoTree(owner, repo, ref)
         logger.warn("GitHub fetch tree error", owner .. "/" .. repo, ref, code, body)
         return nil, { code = code, body = body }
     end
-    local ok, parsed = pcall(json.decode, body)
+    local ok, parsed = safeJsonDecode(body)
     if not ok then
         logger.warn("GitHub fetch tree decode error", parsed)
         return nil, "decode"
@@ -244,7 +278,7 @@ function GitHubClient.fetchRepoMetadata(owner, repo)
         logger.warn("GitHub fetch repo metadata error", owner .. "/" .. repo, code, body)
         return nil, { code = code, body = body }
     end
-    local ok, parsed = pcall(json.decode, body)
+    local ok, parsed = safeJsonDecode(body)
     if not ok then
         logger.warn("GitHub fetch repo metadata decode error", parsed)
         return nil, "decode"
@@ -262,7 +296,7 @@ function GitHubClient.fetchLatestRelease(owner, repo)
         logger.warn("GitHub fetch latest release error", owner .. "/" .. repo, code, body)
         return nil, { code = code, body = body }
     end
-    local ok, parsed = pcall(json.decode, body)
+    local ok, parsed = safeJsonDecode(body)
     if not ok then
         logger.warn("GitHub fetch latest release decode error", parsed)
         return nil, "decode"
@@ -280,7 +314,7 @@ function GitHubClient.fetchReleaseByTag(owner, repo, tag)
         logger.warn("GitHub fetch release by tag error", owner .. "/" .. repo, tag, code, body)
         return nil, { code = code, body = body }
     end
-    local ok, parsed = pcall(json.decode, body)
+    local ok, parsed = safeJsonDecode(body)
     if not ok then
         logger.warn("GitHub fetch release by tag decode error", parsed)
         return nil, "decode"
@@ -310,7 +344,7 @@ function GitHubClient.fetchReleases(owner, repo, opts)
             end
             return nil, { code = code, body = body }
         end
-        local ok, parsed = pcall(json.decode, body)
+        local ok, parsed = safeJsonDecode(body)
         if not ok or type(parsed) ~= "table" then
             logger.warn("GitHub fetch releases decode error", parsed)
             if #results > 0 then
@@ -344,7 +378,7 @@ function GitHubClient.fetchCompareCommits(owner, repo, base, head)
         logger.warn("GitHub compare error", owner .. "/" .. repo, base .. "..." .. head, code, body)
         return nil, { code = code, body = body }
     end
-    local ok, parsed = pcall(json.decode, body)
+    local ok, parsed = safeJsonDecode(body)
     if not ok then
         logger.warn("GitHub compare decode error", parsed)
         return nil, "decode"
@@ -674,11 +708,17 @@ function GitHubClient.fetchReadmeHtml(owner, repo)
     -- Fast CDN First: fetch raw README markdown and parse locally in <100ms
     local raw_url = string.format("https://raw.githubusercontent.com/%s/%s/HEAD/README.md", owner, repo)
     local raw_response = {}
-    local _, raw_code = http.request{
-        url = raw_url,
-        headers = { ["User-Agent"] = USER_AGENT },
-        sink = newTableSink(raw_response),
-    }
+    local raw_http_mod = getHttpModule(raw_url)
+    local raw_code
+    socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+    pcall(function()
+        _, raw_code = raw_http_mod.request{
+            url = raw_url,
+            headers = { ["User-Agent"] = USER_AGENT },
+            sink = newTableSink(raw_response),
+        }
+    end)
+    socketutil:reset_timeout()
     local raw_md = table.concat(raw_response)
     if tonumber(raw_code) == 200 and raw_md ~= "" then
         if #raw_md > MAX_README_MARKDOWN_BYTES then
@@ -700,11 +740,17 @@ function GitHubClient.fetchReadmeHtml(owner, repo)
     if auth_headers then
         for key, value in pairs(auth_headers) do headers[key] = value end
     end
-    local _, code = http.request{
-        url = target,
-        headers = headers,
-        sink = newTableSink(response_body),
-    }
+    local target_http_mod = getHttpModule(target)
+    local code
+    socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+    pcall(function()
+        _, code = target_http_mod.request{
+            url = target,
+            headers = headers,
+            sink = newTableSink(response_body),
+        }
+    end)
+    socketutil:reset_timeout()
     local body = table.concat(response_body)
     if tonumber(code) == 200 and body ~= "" then
         
@@ -763,14 +809,20 @@ function GitHubClient.fetchWikiPageRaw(owner, repo, page_name)
 
             for _, wiki_url in ipairs(urls_to_try) do
                 local response_body = {}
-                local res, code = http.request{
-                    url = wiki_url,
-                    headers = {
-                        ["Accept"] = "text/plain",
-                        ["User-Agent"] = USER_AGENT,
-                    },
-                    sink = newTableSink(response_body),
-                }
+                local wiki_http_mod = getHttpModule(wiki_url)
+                local code
+                socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+                pcall(function()
+                    _, code = wiki_http_mod.request{
+                        url = wiki_url,
+                        headers = {
+                            ["Accept"] = "text/plain",
+                            ["User-Agent"] = USER_AGENT,
+                        },
+                        sink = newTableSink(response_body),
+                    }
+                end)
+                socketutil:reset_timeout()
                 code = tonumber(code)
                 local body = table.concat(response_body)
                 if code == 200 and body and body ~= "" then

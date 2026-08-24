@@ -485,33 +485,14 @@ function RepoContent.fetchReadmeHtml(owner, repo, force_refresh)
     local safe_repo = repo:gsub("[^%w_-]", "_")
     local path = string.format("%s/%s_%s_README.html", dir, safe_owner, safe_repo)
 
-    -- 1. Check disk cache first for instant opening (if not forced and < 7 days old)
     local attrs = lfs.attributes(path)
-    local is_fresh = attrs and attrs.mode == "file" and (not force_refresh) and ((os.time() - (attrs.modification or 0)) < 604800)
-    if is_fresh or (attrs and attrs.mode == "file" and force_refresh == nil and false) then
-        local cached_content = util.readFromFile(path)
-        if cached_content and cached_content ~= "" then
-            if cached_content:find("<img") then
-                cached_content = stripImgDimensions(cached_content)
-                if not cached_content:find("storefront%-img:") then
-                    cached_content = cached_content:gsub('(<img[^>]+src=["\'])([^"\']+)(["\'][^>]*>)', function(prefix, filename, suffix)
-                        local full_img_path = dir .. "/" .. filename
-                        if lfs.attributes(full_img_path, "mode") == "file" then
-                            local img_tag = string.format('<img src="%s" style="display:block; margin: 0 auto;" />', filename)
-                            return string.format('<div style="page-break-before: always; text-align:center;"><a href="storefront-img:%s">%s</a></div>', full_img_path, img_tag)
-                        end
-                        return stripImgDimensions(prefix) .. filename .. stripImgDimensions(suffix)
-                    end)
-                end
-                util.writeToFile(cached_content, path)
-            end
-            return true, path
-        end
-    end
 
-    -- 2. Fetch HTML content
+    -- Fetch HTML content
     local body, err = GitHubClient.fetchReadmeHtml(owner, repo)
     if not body then
+        if attrs and attrs.mode == "file" then
+            return true, path
+        end
         return false, err or "fetch error"
     end
     
@@ -1012,29 +993,6 @@ function RepoContent.fetchWikiPageHtml(owner, repo, page_name, force_refresh)
     end
 
     local attrs = lfs.attributes(path)
-    local is_fresh = attrs and attrs.mode == "file" and (not force_refresh) and ((os.time() - (attrs.modification or 0)) < 604800)
-    if is_fresh then
-        local cached_content = util.readFromFile(path)
-        if cached_content and cached_content ~= "" then
-            if cached_content:find("/HEAD/") then
-                cached_content = cached_content:gsub("/HEAD/", "/main/")
-            end
-            if cached_content:find("<img") then
-                cached_content = cached_content:gsub("(<img[^>]+style=[\"'][^\"']*[%s\"';])width:%s*[^;\"]+;?", "%1")
-                if not cached_content:find("storefront%-img:") then
-                    cached_content = cached_content:gsub('(<img[^>]+src=["\'])([^"\']+)(["\'][^>]*>)', function(prefix, filename, suffix)
-                        local full_img_path = dir .. "/" .. filename
-                        if lfs.attributes(full_img_path, "mode") == "file" then
-                            return string.format('<a href="storefront-img:%s">%s%s%s</a>', full_img_path, prefix, filename, suffix)
-                        end
-                        return prefix .. filename .. suffix
-                    end)
-                end
-                util.writeToFile(cached_content, path)
-            end
-            return true, path
-        end
-    end
 
     local raw_md, err = GitHubClient.fetchWikiPageRaw(owner, repo, page_name)
     if not raw_md or raw_md == "" then

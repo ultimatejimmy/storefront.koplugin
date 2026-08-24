@@ -2951,9 +2951,25 @@ function Storefront:_scanUpdatesForDirectApi(tracked)
         end)
 
         local Trapper = require("ui/trapper")
-        local http = require("socket.http")
         local ltn12 = require("ltn12")
         local GitHub = require("storefront_net_github")
+        local ok_su, socketutil = pcall(require, "socketutil")
+        if not ok_su or not socketutil then
+            socketutil = {
+                FILE_BLOCK_TIMEOUT = 15,
+                FILE_TOTAL_TIMEOUT = 30,
+                set_timeout = function() end,
+                reset_timeout = function() end,
+            }
+        end
+
+        local function getHttpModule(url_str)
+            if url_str and url_str:match("^https://") then
+                local ok_https, https = pcall(require, "ssl.https")
+                if ok_https and https then return https end
+            end
+            return require("socket.http")
+        end
 
         local function parseGitHubTimestampWorker(ts)
             if type(ts) ~= "string" or ts == "" then
@@ -2980,14 +2996,20 @@ function Storefront:_scanUpdatesForDirectApi(tracked)
             branch = branch or "HEAD"
             local url = string.format("https://raw.githubusercontent.com/%s/%s/%s/%s", owner, repo_name, branch, path)
             local response = {}
-            local _, code = http.request{
-                url = url,
-                sink = ltn12.sink.table(response),
-                headers = {
-                    ["User-Agent"] = "KOReader-Storefront",
-                    ["Accept"] = "text/plain",
-                },
-            }
+            local http_mod = getHttpModule(url)
+            local code
+            socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+            pcall(function()
+                _, code = http_mod.request{
+                    url = url,
+                    sink = ltn12.sink.table(response),
+                    headers = {
+                        ["User-Agent"] = "KOReader-Storefront",
+                        ["Accept"] = "text/plain",
+                    },
+                }
+            end)
+            socketutil:reset_timeout()
             code = tonumber(code)
             if code ~= 200 then
                 return nil, string.format("HTTP %s", tostring(code))
@@ -3252,11 +3274,11 @@ function Storefront:_scanUpdatesForDirectApi(tracked)
 
                 if dirname and dirname ~= "" then
                     result[dirname] = {
-                        remote_version = remote_version,
-                        remote_repo_ts = remote_repo_ts,
-                        release_tag_name = release_tag_name,
-                        release_published_at = release_published_at,
-                        error = last_err,
+                        remote_version = (type(remote_version) == "string") and remote_version or nil,
+                        remote_repo_ts = tonumber(remote_repo_ts) or 0,
+                        release_tag_name = (type(release_tag_name) == "string") and release_tag_name or nil,
+                        release_published_at = (type(release_published_at) == "string") and release_published_at or nil,
+                        error = (type(last_err) == "string") and last_err or (last_err and tostring(last_err) or nil),
                         last_checked = os.time(),
                     }
                 end
@@ -3264,93 +3286,67 @@ function Storefront:_scanUpdatesForDirectApi(tracked)
             return result
         end
 
-        local info = InfoMessage:new{
-            text = _("Checking plugin updates…"),
-            timeout = 0,
-            dismissable = false,
-        }
-        UIManager:show(info)
-        UIManager:forceRePaint()
+        local Toast = require("storefront_toast")
+        local progress_toast = Toast.show(_("Checking plugin updates…"), 0)
 
-        local completed, remote_info_result = Trapper:dismissableRunInSubprocess(function()
-            return runCheckAllUpdatesWorker(tracked)
-        end, info)
+        Trapper:wrap(function()
+            local completed, remote_info_result = Trapper:dismissableRunInSubprocess(function()
+                local ok, res = pcall(runCheckAllUpdatesWorker, tracked)
+                if ok and type(res) == "table" then
+                    return res
+                end
+                return {}
+            end, progress_toast)
 
-        UIManager:close(info)
-
-        if not completed then
-            UIManager:show(InfoMessage:new{
-                text = _("Update check was cancelled"),
-                timeout = 4,
-            })
-            return
-        end
-
-        self:ensureUpdatesState()
-        local remote_info = self.updates_state.remote_info or {}
-        for dirname, data in pairs(remote_info_result) do
-            remote_info[dirname] = data
-        end
-        self.updates_state.remote_info = remote_info
-        self.updates_state.last_checked = os.time()
-        
-        StorefrontLogger.action(string.format("REMOTE UPDATE CHECK FINISHED: %d records processed", #tracked))
-        for dirname, data in pairs(remote_info_result) do
-            local msg = string.format(
-                "REMOTE UPDATE CHECK RECORD: %s -> tag=%s, remote_version=%s, err=%s",
-                tostring(dirname),
-                tostring(data.release_tag_name or "-"),
-                tostring(data.remote_version or "-"),
-                tostring(data.error or "none")
-            )
-            if data.error then
-                StorefrontLogger.warn(msg)
-            else
-                StorefrontLogger.debug(msg)
+            if progress_toast and progress_toast.close then
+                progress_toast:close()
             end
-        end
 
-        invalidateInstalledPluginsCache()
-        self._cached_plugin_summary = nil
-        self._merged_updates_cache = nil
-        self:updateUpdatesDialog()
-        self:saveUpdatesState()
-        UIManager:setDirty(nil, "full")
+            if not completed then
+                Toast.show(_("Update check was cancelled."), 3)
+                return
+            end
+
+            self:ensureUpdatesState()
+            local remote_info = self.updates_state.remote_info or {}
+            for dirname, data in pairs(remote_info_result or {}) do
+                remote_info[dirname] = data
+            end
+            self.updates_state.remote_info = remote_info
+            self.updates_state.last_checked = os.time()
+            
+            StorefrontLogger.action(string.format("REMOTE UPDATE CHECK FINISHED: %d records processed", #tracked))
+            for dirname, data in pairs(remote_info_result or {}) do
+                local msg = string.format(
+                    "REMOTE UPDATE CHECK RECORD: %s -> tag=%s, remote_version=%s, err=%s",
+                    tostring(dirname),
+                    tostring(data.release_tag_name or "-"),
+                    tostring(data.remote_version or "-"),
+                    tostring(data.error or "none")
+                )
+                if data.error then
+                    StorefrontLogger.warn(msg)
+                else
+                    StorefrontLogger.debug(msg)
+                end
+            end
+
+            invalidateInstalledPluginsCache()
+            self._cached_plugin_summary = nil
+            self._merged_updates_cache = nil
+            self:updateUpdatesDialog()
+            self:refreshCurrentBrowserTab()
+            self:saveUpdatesState()
+            
+            local checked_count = #tracked
+            Toast.show(string.format(_("Checked %d plugin(s) for updates."), checked_count), 3)
+        end)
     end)
 end
 
 function Storefront:_checkAllUpdatesInternal(records)
     if not self.browser_menu then return end
-    self:ensureUpdatesState()
-    local progress = self:showProgressMessage(_("Checking plugin updates…"))
-    local remote_info = self.updates_state.remote_info or {}
-    for _, record in ipairs(records) do
-        if not self.browser_menu then break end
-        local remote_version, remote_repo_ts, err, release_tag_name = self:fetchRemoteVersionForRecord(record)
-        local prev = remote_info[record.dirname] or {}
-        remote_info[record.dirname] = {
-            remote_version = remote_version or prev.remote_version,
-            remote_repo_ts = remote_repo_ts or prev.remote_repo_ts or 0,
-            release_tag_name = release_tag_name or prev.release_tag_name,
-            error = err,
-            last_checked = os.time(),
-        }
-    end
-    self:dismissProgressMessage(progress)
-    if not self.browser_menu then return end
-    self.updates_state.remote_info = remote_info
-    self.updates_state.last_checked = os.time()
-    invalidateInstalledPluginsCache()
-    self._cached_plugin_summary = nil
-    self._merged_updates_cache = nil
-    self:updateUpdatesDialog()           -- refreshes legacy standalone dialog if open
-    self:refreshCurrentBrowserTab()      -- rebuilds browser if on Updates tab
-    self:saveUpdatesState()
-    UIManager:setDirty(nil, "full")
-    -- Show completion toast
-    local checked_count = #records
-    local Toast = require("storefront_toast")
-    Toast.show(string.format(_("Checked %d plugin(s) for updates."), checked_count), 3)
+    return self:_scanUpdatesForDirectApi(records)
 end
 
 
@@ -4381,84 +4377,77 @@ end
 function Storefront:_checkSinglePluginInternal(record)
     self:ensureUpdatesState()
     local plugin_name = record.dirname or _("plugin")
-    -- Runs the actual network fetching in a forked subprocess (same pattern
-    -- as checkAllUpdates) instead of calling fetchRemoteVersionForRecord
-    -- directly: that used to block KOReader's whole UI thread -- often for
-    -- several seconds, across multiple sequential GitHub requests -- for a
-    -- repo with a slow/unreachable connection, which looked like a freeze
-    -- or crash rather than a slow check.
     local Trapper = require("ui/trapper")
-    local progress = InfoMessage:new{
-        text = string.format(_("Checking %s…"), plugin_name),
-        timeout = 0,
-        dismissable = false,
-    }
-    UIManager:show(progress)
-    UIManager:forceRePaint()
+    local Toast = require("storefront_toast")
+    local progress_toast = Toast.show(string.format(_("Checking %s…"), plugin_name), 0)
 
-    local completed, result = Trapper:dismissableRunInSubprocess(function()
-        local remote_version, remote_repo_ts, err, release_tag_name, updated_meta_path, updated_branch =
-            fetchRemoteVersionCore(record)
-        return {
-            remote_version = remote_version,
-            remote_repo_ts = remote_repo_ts,
-            err = err,
-            release_tag_name = release_tag_name,
-            updated_meta_path = updated_meta_path,
-            updated_branch = updated_branch,
-        }
-    end, progress)
+    Trapper:wrap(function()
+        local completed, result = Trapper:dismissableRunInSubprocess(function()
+            local remote_version, remote_repo_ts, err, release_tag_name, updated_meta_path, updated_branch =
+                fetchRemoteVersionCore(record)
+            return {
+                remote_version = (type(remote_version) == "string") and remote_version or nil,
+                remote_repo_ts = tonumber(remote_repo_ts) or 0,
+                err = (type(err) == "string") and err or (err and tostring(err) or nil),
+                release_tag_name = (type(release_tag_name) == "string") and release_tag_name or nil,
+                updated_meta_path = (type(updated_meta_path) == "string") and updated_meta_path or nil,
+                updated_branch = (type(updated_branch) == "string") and updated_branch or nil,
+            }
+        end, progress_toast)
 
-    UIManager:close(progress)
-
-    if not completed then
-        UIManager:show(InfoMessage:new{ text = _("Update check was cancelled"), timeout = 4 })
-        return
-    end
-    if type(result) ~= "table" then
-        return
-    end
-
-    local remote_version = result.remote_version
-    local remote_repo_ts = result.remote_repo_ts
-    local err = result.err
-    local release_tag_name = result.release_tag_name
-    self:applyRemoteVersionResult(record, remote_repo_ts, release_tag_name, result.updated_meta_path, result.updated_branch)
-
-    local cached = self.updates_state.remote_info[record.dirname] or {}
-    cached.remote_version = remote_version
-    cached.remote_repo_ts = remote_repo_ts
-    cached.release_tag_name = release_tag_name
-    cached.error = err
-    cached.last_checked = os.time()
-    self.updates_state.remote_info[record.dirname] = cached
-    -- Fix 4: bust summary cache (remote_info mutated in-place; reference unchanged)
-    self._cached_plugin_summary = nil
-    self:updateUpdatesDialog()
-    self:saveUpdatesState()
-
-    local message
-    local plugin = findInstalledPlugin(record.dirname)
-    local display_name = (plugin and (plugin.name or plugin.dirname)) or record.plugin_name or plugin_name
-    local installed_version = plugin and plugin.version
-
-    if err then
-        message = string.format(_("Failed to check %s: %s"), display_name, err)
-    elseif remote_version and installed_version then
-        if isVersionNewer(remote_version, installed_version) then
-            message = string.format(_("Update available for %s: remote %s, installed %s."), display_name, remote_version, installed_version)
-        else
-            message = string.format(_("%s is up to date (version %s)."), display_name, installed_version)
+        if progress_toast and progress_toast.close then
+            progress_toast:close()
         end
-    elseif remote_version then
-        message = string.format(_("Remote version for %s: %s."), display_name, remote_version)
-    else
-        message = string.format(_("No remote version info for %s."), display_name)
-    end
 
-    if message then
-        UIManager:show(InfoMessage:new{ text = message, timeout = 5 })
-    end
+        if not completed then
+            Toast.show(_("Update check was cancelled."), 3)
+            return
+        end
+        if type(result) ~= "table" then
+            return
+        end
+
+        local remote_version = result.remote_version
+        local remote_repo_ts = result.remote_repo_ts
+        local err = result.err
+        local release_tag_name = result.release_tag_name
+        self:applyRemoteVersionResult(record, remote_repo_ts, release_tag_name, result.updated_meta_path, result.updated_branch)
+
+        local cached = self.updates_state.remote_info[record.dirname] or {}
+        cached.remote_version = remote_version
+        cached.remote_repo_ts = remote_repo_ts
+        cached.release_tag_name = release_tag_name
+        cached.error = err
+        cached.last_checked = os.time()
+        self.updates_state.remote_info[record.dirname] = cached
+        -- Fix 4: bust summary cache (remote_info mutated in-place; reference unchanged)
+        self._cached_plugin_summary = nil
+        self:updateUpdatesDialog()
+        self:saveUpdatesState()
+
+        local message
+        local plugin = findInstalledPlugin(record.dirname)
+        local display_name = (plugin and (plugin.name or plugin.dirname)) or record.plugin_name or plugin_name
+        local installed_version = plugin and plugin.version
+
+        if err then
+            message = string.format(_("Failed to check %s: %s"), display_name, err)
+        elseif remote_version and installed_version then
+            if isVersionNewer(remote_version, installed_version) then
+                message = string.format(_("Update available for %s: remote %s, installed %s."), display_name, remote_version, installed_version)
+            else
+                message = string.format(_("%s is up to date (version %s)."), display_name, installed_version)
+            end
+        elseif remote_version then
+            message = string.format(_("Remote version for %s: %s."), display_name, remote_version)
+        else
+            message = string.format(_("No remote version info for %s."), display_name)
+        end
+
+        if message then
+            UIManager:show(InfoMessage:new{ text = message, timeout = 5 })
+        end
+    end)
 end
 
 function Storefront:updatePluginFromRecord(record)

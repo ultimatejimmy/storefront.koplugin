@@ -80,6 +80,64 @@ local link_obj = { uri = "storefront-img:/cache/readme/test.png" }
 local extracted_href = (type(link_obj) == "table" and (link_obj.uri or link_obj.url)) or (type(link_obj) == "string" and link_obj) or ""
 check("link object uri extracted correctly", mock_details_dialog:onLinkTap(extracted_href) == true)
 
+-- Test 11: RepoContent.fetchReadmeHtml automatic refresh and fallback
+package.loaded["gettext"] = function(s) return s end
+local ok_lfs, lfs_mod = pcall(require, "lfs")
+local mock_files = {}
+package.loaded["libs/libkoreader-lfs"] = {
+    attributes = function(path, req)
+        if mock_files[path] then
+            if req == "mode" then return "file" end
+            return { mode = "file", size = #mock_files[path], modification = os.time() }
+        end
+        return nil
+    end,
+    dir = function() return function() return nil end end
+}
+package.loaded["util"] = {
+    makePath = function() return true end,
+    writeToFile = function(content, path)
+        mock_files[path] = content
+        return true
+    end,
+    readFromFile = function(path)
+        return mock_files[path]
+    end,
+}
+package.loaded["datastorage"] = {
+    getDataDir = function() return "/tmp" end,
+    getSettingsDir = function() return "/tmp" end,
+}
+
+local RepoContent = require("storefront_repo_content")
+
+-- Test 11a: Live fetch updates cache content
+GitHubClient.fetchReadmeHtml = function(owner, repo)
+    return "<h1>Updated Live README Content</h1>"
+end
+
+local ok_fetch, path_res = RepoContent.fetchReadmeHtml("testowner", "testrepo")
+check("fetchReadmeHtml returns success on live fetch", ok_fetch == true)
+check("fetchReadmeHtml writes updated HTML to file", mock_files[path_res] ~= nil and mock_files[path_res]:find("Updated Live README Content") ~= nil)
+
+-- Test 11b: Fallback to existing cache if network fails
+GitHubClient.fetchReadmeHtml = function(owner, repo)
+    return nil, "Network offline"
+end
+
+local ok_cached_fallback, path_cached = RepoContent.fetchReadmeHtml("testowner", "testrepo")
+check("fetchReadmeHtml falls back to existing cached HTML on network error", ok_cached_fallback == true)
+check("Cached content is preserved on network failure", mock_files[path_cached]:find("Updated Live README Content") ~= nil)
+
+-- Test 11c: Live update overwrites old cached content
+GitHubClient.fetchReadmeHtml = function(owner, repo)
+    return "<h1>Newest V2 README Content</h1>"
+end
+
+local ok_update, path_updated = RepoContent.fetchReadmeHtml("testowner", "testrepo")
+check("fetchReadmeHtml fetches live update even when cached file already exists", ok_update == true)
+check("Cached file contains new content", mock_files[path_updated]:find("Newest V2 README Content") ~= nil)
+
 if failures > 0 then
     print(string.format("README TESTS FAILED: %d errors", failures))
     os.exit(1)
