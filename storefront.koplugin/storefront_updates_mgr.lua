@@ -129,19 +129,36 @@ function UpdatesMgr:init(Storefront)
                 summary_msg = string.format(_("Updated %d of %d item(s) (%d failed)."), stats.success, #queue, stats.failed)
             end
 
-            if sf.showRestartConfirmation then
-                sf:showRestartConfirmation(summary_msg)
+            if stats.success > 0 then
+                if sf.showRestartConfirmation then
+                    sf:showRestartConfirmation(summary_msg)
+                end
+            else
+                local StorefrontToast = require("storefront_toast")
+                StorefrontToast.show(summary_msg, 4)
             end
             return
         end
 
         local item = queue[index]
         local item_title = item.name or ""
-        local progress_text = string.format(_("Updating [%d/%d]: %s…"), index, #queue, item_title)
+        local progress_text = string.format(_("Updating [%d/%d]: %s…\nTap screen to cancel."), index, #queue, item_title)
 
         local StorefrontToast = require("storefront_toast")
         if not batch_toast then
-            batch_toast = StorefrontToast.show(progress_text, 0, { dismissable = false })
+            batch_toast = StorefrontToast.show(progress_text, 0, {
+                dismissable = true,
+                dismiss_callback = function()
+                    _G.G_storefront_batch_updating = false
+                    sf.pending_install_context = nil
+                    sf.pending_patch_install = nil
+                    if sf.invalidateInstalledPluginsCache then
+                        sf:invalidateInstalledPluginsCache()
+                    end
+                    sf:softRefreshCurrentBrowserView()
+                    StorefrontToast.show(_("Batch update cancelled."), 3)
+                end,
+            })
         else
             if batch_toast.setText then
                 batch_toast:setText(progress_text)
@@ -167,78 +184,84 @@ function UpdatesMgr:init(Storefront)
                 stats.success = stats.success + 1
             else
                 stats.failed = stats.failed + 1
-                StorefrontLogger.err(string.format("Batch update failed for item %s: %s", item.name, tostring(err)))
+                StorefrontLogger.err(string.format("Batch update failed for item %s: %s", tostring(item.name), tostring(err)))
             end
             UIManager:nextTick(function()
                 sf:_processBatchUpdateQueue(queue, index + 1, stats, batch_toast)
             end)
         end
 
-        if item.kind == "plugin" then
-            local record = item.record
-            local plugin = item.plugin
-            if not plugin and sf.listInstalledPlugins then
-                for _, p in ipairs(sf:listInstalledPlugins()) do
-                    if p.dirname == record.dirname then
-                        plugin = p
-                        break
+        local ok_dispatch, dispatch_err = pcall(function()
+            if item.kind == "plugin" then
+                local record = item.record
+                local plugin = item.plugin
+                if not plugin and sf.listInstalledPlugins then
+                    for _, p in ipairs(sf:listInstalledPlugins()) do
+                        if p.dirname == record.dirname then
+                            plugin = p
+                            break
+                        end
                     end
                 end
+                if not plugin or not record then
+                    next_step(false, "Missing local plugin or record")
+                    return
+                end
+                sf.pending_install_context = {
+                    mode = "update",
+                    plugin = plugin,
+                    is_batch = true,
+                    batch_callback = next_step,
+                    batch_toast = batch_toast,
+                }
+                local descriptor = {
+                    kind = "plugin",
+                    name = record.repo,
+                    owner = record.owner,
+                    full_name = record.repo_full_name or (record.owner and record.repo and (record.owner .. "/" .. record.repo)),
+                    id = record.repo_id,
+                    description = record.repo_description,
+                    default_branch = record.branch or "main",
+                }
+                local release_override = item.remote or (record.tag_name and { tag_name = record.tag_name })
+                sf:promptPluginInstallOptions(descriptor, release_override)
+            elseif item.kind == "patch" then
+                local record = item.record
+                local installed_patch = item.patch
+                if not record or not installed_patch then
+                    next_step(false, "Missing local patch or record")
+                    return
+                end
+                local repo = {
+                    kind = "patch",
+                    name = record.repo,
+                    owner = record.owner,
+                    full_name = record.repo_full_name or (record.owner and record.repo and (record.owner .. "/" .. record.repo)),
+                    id = record.repo_id,
+                    description = record.repo_description,
+                }
+                local patch_entry = {
+                    filename = record.filename,
+                    path = record.path,
+                    branch = record.branch or "HEAD",
+                    download_url = record.download_url,
+                    sha = record.sha,
+                }
+                sf.pending_patch_install = {
+                    mode = "update",
+                    patch = installed_patch,
+                    is_batch = true,
+                    batch_callback = next_step,
+                    batch_toast = batch_toast,
+                }
+                sf:installPatchFromRepo(repo, patch_entry)
+            else
+                next_step(false, "Unknown item kind")
             end
-            if not plugin or not record then
-                next_step(false, "Missing local plugin or record")
-                return
-            end
-            sf.pending_install_context = {
-                mode = "update",
-                plugin = plugin,
-                is_batch = true,
-                batch_callback = next_step,
-                batch_toast = batch_toast,
-            }
-            local descriptor = {
-                kind = "plugin",
-                name = record.repo,
-                owner = record.owner,
-                full_name = record.repo_full_name or (record.owner and record.repo and (record.owner .. "/" .. record.repo)),
-                id = record.repo_id,
-                description = record.repo_description,
-                default_branch = record.branch or "main",
-            }
-            local release_override = item.remote or (record.tag_name and { tag_name = record.tag_name })
-            sf:promptPluginInstallOptions(descriptor, release_override)
-        elseif item.kind == "patch" then
-            local record = item.record
-            local installed_patch = item.patch
-            if not record or not installed_patch then
-                next_step(false, "Missing local patch or record")
-                return
-            end
-            local repo = {
-                kind = "patch",
-                name = record.repo,
-                owner = record.owner,
-                full_name = record.repo_full_name or (record.owner and record.repo and (record.owner .. "/" .. record.repo)),
-                id = record.repo_id,
-                description = record.repo_description,
-            }
-            local patch_entry = {
-                filename = record.filename,
-                path = record.path,
-                branch = record.branch or "HEAD",
-                download_url = record.download_url,
-                sha = record.sha,
-            }
-            sf.pending_patch_install = {
-                mode = "update",
-                patch = installed_patch,
-                is_batch = true,
-                batch_callback = next_step,
-                batch_toast = batch_toast,
-            }
-            sf:installPatchFromRepo(repo, patch_entry)
-        else
-            next_step(false, "Unknown item kind")
+        end)
+
+        if not ok_dispatch then
+            next_step(false, "Dispatch error: " .. tostring(dispatch_err))
         end
     end
 

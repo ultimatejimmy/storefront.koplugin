@@ -598,20 +598,42 @@ function M:init(Storefront)
     end
 
     function Storefront:_installPatchFromRepoInternal(repo, patch)
+        local is_batch = (_G.G_storefront_batch_updating == true) or (self.pending_patch_install and self.pending_patch_install.is_batch == true)
         local owner = extractRepoOwner(repo)
         if not owner or not repo.name then
-            UIManager:show(InfoMessage:new{ text = _("Missing repository metadata for patch install."), timeout = 4 })
+            if not is_batch then
+                UIManager:show(InfoMessage:new{ text = _("Missing repository metadata for patch install."), timeout = 4 })
+            end
+            if self.pending_patch_install and self.pending_patch_install.batch_callback then
+                local cb = self.pending_patch_install.batch_callback
+                self.pending_patch_install = nil
+                cb(false, "Missing repository metadata for patch install")
+            end
             return
         end
         local raw_url = patch.download_url or string.format("https://raw.githubusercontent.com/%s/%s/%s/%s", owner, repo.name, patch.branch or "HEAD", patch.path or patch.filename)
         local target_filename = patch.filename or (patch.path and patch.path:match("([^/]+)$"))
         if not target_filename or target_filename == "" then
-            UIManager:show(InfoMessage:new{ text = _("Invalid patch target filename."), timeout = 4 })
+            if not is_batch then
+                UIManager:show(InfoMessage:new{ text = _("Invalid patch target filename."), timeout = 4 })
+            end
+            if self.pending_patch_install and self.pending_patch_install.batch_callback then
+                local cb = self.pending_patch_install.batch_callback
+                self.pending_patch_install = nil
+                cb(false, "Invalid patch target filename")
+            end
             return
         end
         local ok_dir, err_dir = util.makePath(PATCHES_ROOT)
         if not ok_dir then
-            UIManager:show(InfoMessage:new{ text = string.format(_("Failed to create patches directory: %s"), tostring(err_dir)), timeout = 5 })
+            if not is_batch then
+                UIManager:show(InfoMessage:new{ text = string.format(_("Failed to create patches directory: %s"), tostring(err_dir)), timeout = 5 })
+            end
+            if self.pending_patch_install and self.pending_patch_install.batch_callback then
+                local cb = self.pending_patch_install.batch_callback
+                self.pending_patch_install = nil
+                cb(false, tostring(err_dir))
+            end
             return
         end
         local target_path = PATCHES_ROOT .. "/" .. target_filename
@@ -619,21 +641,47 @@ function M:init(Storefront)
             and string.format(" (%d KB)", math.floor(patch.size / 1024))
             or ""
 
-        local progress = (not is_batch) and InfoMessage:new{
-            text = string.format(_("Downloading patch %s%s…\nPlease wait."), target_filename, size_str),
-            timeout = 0,
-        } or nil
+        local batch_toast = self.pending_patch_install and self.pending_patch_install.batch_toast
+        local dl_msg = string.format(_("Downloading patch %s%s…\nTap screen to cancel."), target_filename, size_str)
 
-        if progress then
-            UIManager:show(progress)
-            UIManager:forceRePaint()
+        local trap_widget
+        if batch_toast then
+            if batch_toast.setText then
+                batch_toast:setText(dl_msg)
+            end
+            trap_widget = batch_toast
+        else
+            local Toast = require("storefront_toast")
+            trap_widget = Toast.show(dl_msg, 0)
         end
 
-        local ok_dl, dl_err = storefront_installer.downloadToFile(raw_url, target_path)
+        local Trapper = require("ui/trapper")
+        local completed, res
+        Trapper:wrap(function()
+            completed, res = Trapper:dismissableRunInSubprocess(function()
+                local dl_ok, dl_err = storefront_installer.downloadToFile(raw_url, target_path)
+                return { ok = dl_ok, err = dl_err }
+            end, trap_widget)
+        end)
 
-        if progress then
-            UIManager:close(progress)
+        if trap_widget and trap_widget ~= batch_toast and trap_widget.close then
+            trap_widget:close()
         end
+
+        if not completed then
+            util.removeFile(target_path)
+            local Toast = require("storefront_toast")
+            Toast.show(_("Download cancelled."), 3)
+            if self.pending_patch_install and self.pending_patch_install.batch_callback then
+                local cb = self.pending_patch_install.batch_callback
+                self.pending_patch_install = nil
+                cb(false, "Cancelled by user")
+            end
+            return
+        end
+
+        local ok_dl = res and res.ok
+        local dl_err = res and res.err
 
         if not ok_dl then
             util.removeFile(target_path)

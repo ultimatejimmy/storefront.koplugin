@@ -374,6 +374,7 @@ function Cache.storePatchFiles(repo_id, entries, source_pushed_at, skip_save)
         end
     end
     repo.patch_files = patch_files
+    repo._sorted_patch_files = nil
     if not skip_save then
         writeJsonFile(PATCHES_FILE, _data.patch)
     end
@@ -414,6 +415,9 @@ function Cache.listPatchFiles(repo_id)
     if not repo or not repo.patch_files then
         return {}
     end
+    if repo._sorted_patch_files then
+        return repo._sorted_patch_files
+    end
     local copy = {}
     for _, file in ipairs(repo.patch_files) do
         table.insert(copy, file)
@@ -421,6 +425,7 @@ function Cache.listPatchFiles(repo_id)
     table.sort(copy, function(a, b)
         return tostring(a.filename):lower() < tostring(b.filename):lower()
     end)
+    repo._sorted_patch_files = copy
     return copy
 end
 

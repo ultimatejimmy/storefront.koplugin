@@ -34,7 +34,7 @@ local ffiutil = require("ffi/util")
 local http = require("socket.http")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
-local ltn12 = require("ltn12")
+local socket = require("socket")
 local socketutil = require("socketutil")
 local util = require("util")
 
@@ -91,56 +91,78 @@ local function findMatchingAssetForUpdate(installed_asset_name, candidate_assets
     return nil
 end
 
-local function downloadToFile(url, target_path)
+local function downloadToFile(url, local_path)
     if not url or url == "" then
         return false, _("Missing URL")
     end
-    local current_url = url
-    local redirect_count = 0
-    local max_redirects = 5
-    while redirect_count < max_redirects do
-        local is_https = current_url:match("^https://") ~= nil
-        local http_req = is_https and (pcall(require, "ssl.https") and require("ssl.https") or http) or http
-        
-        local target_file = io.open(target_path, "wb")
-        if not target_file then
-            return false, _("Could not open target file for writing")
-        end
-
-        socketutil:set_timeout(15, 300)
-        local params = {
-            url = current_url,
-            method = "GET",
-            headers = {
-                ["User-Agent"] = "Mozilla/5.0 (compatible; KOReader-Storefront/1.0)",
-            },
-            sink = ltn12.sink.file(target_file),
-        }
-        if not is_https then params.redirect = false end
-        local ok_pcall, req_ok, code, headers_res = pcall(http_req.request, params)
-        socketutil:reset_timeout()
-        target_file:close()
-
-        local res_code = tonumber(code) or 0
-        if ok_pcall and req_ok and (res_code == 301 or res_code == 302 or res_code == 303 or res_code == 307 or res_code == 308) then
-            util.removeFile(target_path)
-            local location = (type(headers_res) == "table") and (headers_res.location or headers_res.Location)
-            if location and location ~= "" then
-                current_url = location
-                redirect_count = redirect_count + 1
-            else
-                break
-            end
-        elseif ok_pcall and req_ok and res_code == 200 then
-            return true
-        else
-            util.removeFile(target_path)
-            local err_msg = tostring(code or req_ok or "HTTP request failed")
-            return false, err_msg
-        end
+    if not local_path or local_path == "" then
+        return false, _("Missing target path")
     end
-    util.removeFile(target_path)
-    return false, _("Too many redirects or download failed")
+
+    local dir = local_path:match("^(.*)/")
+    if dir and dir ~= "" then
+        util.makePath(dir)
+    end
+
+    local temp_path = local_path .. ".tmp"
+    pcall(os.remove, temp_path)
+
+    local file, err = io.open(temp_path, "wb")
+    if not file then
+        return false, err or "failed to open file for writing"
+    end
+
+    socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT or 15, socketutil.FILE_TOTAL_TIMEOUT or 180)
+    local request = {
+        url = url,
+        method = "GET",
+        sink = socketutil.file_sink(file),
+        redirect = true,
+        headers = {
+            ["User-Agent"] = socketutil.USER_AGENT or "Mozilla/5.0 (compatible; KOReader-Storefront/1.0)",
+            ["Accept"] = "application/zip, application/octet-stream, */*",
+        },
+    }
+    local code, headers, status = socket.skip(1, http.request(request))
+    socketutil:reset_timeout()
+
+    pcall(function() file:close() end)
+
+    if code == socketutil.TIMEOUT_CODE
+        or code == socketutil.SSL_HANDSHAKE_CODE
+        or code == socketutil.SINK_TIMEOUT_CODE then
+        pcall(os.remove, temp_path)
+        return false, status or code or "timeout"
+    end
+
+    if not headers then
+        pcall(os.remove, temp_path)
+        return false, status or code or "network error"
+    end
+
+    local res_code = tonumber(code) or 0
+    if res_code ~= 200 then
+        pcall(os.remove, temp_path)
+        return false, status or ("HTTP " .. tostring(code))
+    end
+
+    pcall(os.remove, local_path)
+    local rename_ok = os.rename(temp_path, local_path)
+    if not rename_ok then
+        local in_f = io.open(temp_path, "rb")
+        local out_f = io.open(local_path, "wb")
+        if in_f and out_f then
+            out_f:write(in_f:read("*all"))
+            in_f:close()
+            out_f:close()
+            pcall(os.remove, temp_path)
+            return true, nil
+        end
+        pcall(os.remove, temp_path)
+        return false, _("Failed to save downloaded file")
+    end
+
+    return true, nil
 end
 
 local function extractReleaseNameFallback(repo)
@@ -263,36 +285,69 @@ local function extractPluginToUserDir(reader, info, dest_root)
 end
 
 function M:init(Storefront)
-    function Storefront:resolveNewInstallDestination(on_select, on_cancel)
-        local lookup_paths = PluginPaths.getLookupPaths()
-        local valid_roots = {}
-        for _, path in ipairs(lookup_paths) do
-            if lfs.attributes(path, "mode") == "directory" then
-                table.insert(valid_roots, path)
-            end
+    function Storefront:resolveNewInstallDestination(callback, on_cancel)
+        local REMEMBERED_PLUGIN_INSTALL_PATH_KEY = "remembered_plugin_install_path"
+        local ok_cfg, StorefrontConfig = pcall(require, "storefront_config")
+        if not ok_cfg then
+            ok_cfg, StorefrontConfig = pcall(require, "storefront_configuration")
+        end
+        if not ok_cfg then
+            StorefrontConfig = {}
         end
 
-        if #valid_roots == 0 then
-            local def_root = PluginPaths.getDefaultPluginsRoot()
-            util.makePath(def_root)
-            table.insert(valid_roots, def_root)
-        end
+        local ok_settings, LuaSettings = pcall(require, "luasettings")
+        local StorefrontSettings = ok_settings and LuaSettings:open(DataStorage:getSettingsDir() .. "/Storefront.lua")
 
-        if #valid_roots == 1 then
-            on_select(valid_roots[1])
+        local config_override = StorefrontConfig.plugin_install_path
+        local remembered_path = StorefrontSettings and StorefrontSettings:readSetting(REMEMBERED_PLUGIN_INSTALL_PATH_KEY)
+        local hidden_paths = (StorefrontSettings and StorefrontSettings:readSetting(PluginPaths.HIDDEN_PLUGIN_PATHS_KEY)) or {}
+
+        local dest_root, needs_prompt, candidates, all_hidden =
+            PluginPaths.resolveInstallDestination(config_override, remembered_path, hidden_paths)
+
+        if all_hidden then
+            self:showConfirmDialog{
+                title = _("Install to Default?"),
+                text = _("All of your custom plugin folders are currently hidden (see Manage plugin paths). Install to the default plugin folder anyway?"),
+                ok_text = _("Install to default"),
+                cancel_text = _("Cancel"),
+                ok_callback = function()
+                    callback(PluginPaths.getDefaultPluginsRoot())
+                end,
+                cancel_callback = function()
+                    if on_cancel then on_cancel() end
+                end,
+            }
             return
         end
 
+        if not needs_prompt then
+            callback(dest_root)
+            return
+        end
+
+        local options = {}
+        for _, p in ipairs(candidates or {}) do
+            table.insert(options, p)
+        end
+        table.insert(options, PluginPaths.getDefaultPluginsRoot())
+
+        local remember_choice = false
+        local dialog
         local buttons = {}
-        for _, root_path in ipairs(valid_roots) do
-            local p = root_path
+        for _, path_option in ipairs(options) do
+            local chosen_path = path_option
             table.insert(buttons, {
                 {
-                    text = p,
+                    text = chosen_path,
                     background = Blitbuffer.COLOR_WHITE,
                     callback = function()
                         UIManager:close(dialog)
-                        on_select(p)
+                        if remember_choice and StorefrontSettings then
+                            StorefrontSettings:saveSetting(REMEMBERED_PLUGIN_INSTALL_PATH_KEY, chosen_path)
+                            StorefrontSettings:flush()
+                        end
+                        callback(chosen_path)
                     end,
                 },
             })
@@ -309,10 +364,23 @@ function M:init(Storefront)
             },
         })
 
-        local dialog = ButtonDialog:new{
-            title = _("Select installation directory"),
+        dialog = ButtonDialog:new{
+            title = _("Multiple custom plugin folders are configured. Where should this plugin be installed?"),
+            title_align = "center",
             buttons = buttons,
         }
+
+        local CheckButton = require("ui/widget/checkbutton")
+        local remember_checkbox = CheckButton:new{
+            text = _("Always install here (don't ask again)"),
+            checked = false,
+            parent = dialog,
+            callback = function()
+                remember_choice = not remember_choice
+            end,
+        }
+        dialog:addWidget(remember_checkbox)
+
         UIManager:show(dialog)
     end
 
@@ -522,6 +590,13 @@ function M:init(Storefront)
 
         overlay.onClose = function()
             UIManager:close(overlay, "ui")
+            if saved_ctx and saved_ctx.batch_callback then
+                local cb = saved_ctx.batch_callback
+                saved_ctx.batch_callback = nil
+                cb(false, "Cancelled asset selection")
+            else
+                self.pending_install_context = nil
+            end
             return true
         end
 
@@ -530,12 +605,22 @@ function M:init(Storefront)
 
     function Storefront:promptPluginInstallOptions(repo, release_override, force_show_picker)
         if not repo then
+            if self.pending_install_context and self.pending_install_context.batch_callback then
+                local cb = self.pending_install_context.batch_callback
+                self.pending_install_context.batch_callback = nil
+                cb(false, "Missing repository metadata")
+            end
             return
         end
 
         local owner = repo.owner or (repo.data and repo.data.owner and (type(repo.data.owner) == "string" and repo.data.owner or repo.data.owner.login))
         if not owner or not repo.name then
             UIManager:show(InfoMessage:new{ text = _("Missing repository metadata for installation."), timeout = 4 })
+            if self.pending_install_context and self.pending_install_context.batch_callback then
+                local cb = self.pending_install_context.batch_callback
+                self.pending_install_context.batch_callback = nil
+                cb(false, "Missing repository metadata for installation")
+            end
             return
         end
 
@@ -543,127 +628,137 @@ function M:init(Storefront)
 
         NetworkMgr:runWhenOnline(function()
             self.pending_install_context = saved_ctx
-            local release, release_err
-            if release_override and type(release_override) == "table" then
-                release = release_override
-                local override_tag = release.tag_name or release.release_tag_name
-                if (not release.assets or #release.assets == 0) and override_tag then
-                    local full_release = GitHub.fetchReleaseByTag and GitHub.fetchReleaseByTag(owner, repo.name, override_tag)
-                    if full_release and type(full_release) == "table" and full_release.assets and #full_release.assets > 0 then
-                        release = full_release
+            local ok_run, run_err = pcall(function()
+                local release, release_err
+                if release_override and type(release_override) == "table" then
+                    release = release_override
+                    local override_tag = release.tag_name or release.release_tag_name
+                    if (not release.assets or #release.assets == 0) and override_tag then
+                        local full_release = GitHub.fetchReleaseByTag and GitHub.fetchReleaseByTag(owner, repo.name, override_tag)
+                        if full_release and type(full_release) == "table" and full_release.assets and #full_release.assets > 0 then
+                            release = full_release
+                        end
                     end
-                end
-            else
-                local ctx_record = saved_ctx and saved_ctx.plugin and InstallStore.get(saved_ctx.plugin.dirname)
-                local allow_prerelease = self.isPreReleaseAllowedForPlugin and self:isPreReleaseAllowedForPlugin(repo, ctx_record, saved_ctx and saved_ctx.plugin and saved_ctx.plugin.dirname)
-
-                local catalog_mode = GitHub.getCatalogMode and GitHub.getCatalogMode() or "static"
-                local catalog_repo = Cache.getRepo and (
-                    Cache.getRepo("plugin", repo.full_name or repo.name)
-                    or (repo.owner and repo.name and Cache.getRepo("plugin", repo.owner .. "/" .. repo.name))
-                )
-                local catalog_release = (catalog_mode == "static" and not allow_prerelease) and (
-                    (repo and repo.latest_release)
-                    or (repo and repo.data and repo.data.latest_release)
-                    or (catalog_repo and catalog_repo.latest_release)
-                    or (catalog_repo and catalog_repo.data and catalog_repo.data.latest_release)
-                ) or nil
-
-                local has_catalog_assets = catalog_release and type(catalog_release) == "table"
-                    and catalog_release.assets and type(catalog_release.assets) == "table" and #catalog_release.assets > 0
-
-                if has_catalog_assets then
-                    release = catalog_release
                 else
-                    local progress = self:showFetchingProgress(_("Fetching release info…"))
-                    if allow_prerelease then
-                        local rels, err = GitHub.fetchReleases(owner, repo.name, { per_page = 10, max_pages = 1 })
-                        if rels and #rels > 0 then
-                            for _, rel in ipairs(rels) do
-                                if not rel.draft then
-                                    release = rel
-                                    break
+                    local ctx_record = saved_ctx and saved_ctx.plugin and InstallStore.get(saved_ctx.plugin.dirname)
+                    local allow_prerelease = self.isPreReleaseAllowedForPlugin and self:isPreReleaseAllowedForPlugin(repo, ctx_record, saved_ctx and saved_ctx.plugin and saved_ctx.plugin.dirname)
+
+                    local catalog_mode = GitHub.getCatalogMode and GitHub.getCatalogMode() or "static"
+                    local catalog_repo = Cache.getRepo and (
+                        Cache.getRepo("plugin", repo.full_name or repo.name)
+                        or (repo.owner and repo.name and Cache.getRepo("plugin", repo.owner .. "/" .. repo.name))
+                    )
+                    local catalog_release = (catalog_mode == "static" and not allow_prerelease) and (
+                        (repo and repo.latest_release)
+                        or (repo and repo.data and repo.data.latest_release)
+                        or (catalog_repo and catalog_repo.latest_release)
+                        or (catalog_repo and catalog_repo.data and catalog_repo.data.latest_release)
+                    ) or nil
+
+                    local has_catalog_assets = catalog_release and type(catalog_release) == "table"
+                        and catalog_release.assets and type(catalog_release.assets) == "table" and #catalog_release.assets > 0
+
+                    if has_catalog_assets then
+                        release = catalog_release
+                    else
+                        local progress = self:showFetchingProgress(_("Fetching release info…"))
+                        if allow_prerelease then
+                            local rels, err = GitHub.fetchReleases(owner, repo.name, { per_page = 10, max_pages = 1 })
+                            if rels and #rels > 0 then
+                                for _, rel in ipairs(rels) do
+                                    if not rel.draft then
+                                        release = rel
+                                        break
+                                    end
+                                end
+                            end
+                            if release and (not release.assets or #release.assets == 0) and release.tag_name then
+                                local full_rel = GitHub.fetchReleaseByTag and GitHub.fetchReleaseByTag(owner, repo.name, release.tag_name)
+                                if full_rel and type(full_rel) == "table" and full_rel.assets and #full_rel.assets > 0 then
+                                    release = full_rel
                                 end
                             end
                         end
-                        if release and (not release.assets or #release.assets == 0) and release.tag_name then
-                            local full_rel = GitHub.fetchReleaseByTag and GitHub.fetchReleaseByTag(owner, repo.name, release.tag_name)
-                            if full_rel and type(full_rel) == "table" and full_rel.assets and #full_rel.assets > 0 then
-                                release = full_rel
+                        if not release then
+                            release, release_err = GitHub.fetchLatestRelease(owner, repo.name)
+                        end
+                        if progress and progress.close then
+                            progress.close()
+                        end
+                    end
+                end
+
+                local assets = release and release.assets
+                local custom_assets = {}
+                local koplugin_assets = {}
+
+                if type(assets) == "table" then
+                    for _, asset in ipairs(assets) do
+                        local name = asset and asset.name
+                        local url = asset and asset.browser_download_url
+                        if name and url and name:lower():match("%.zip$") then
+                            table.insert(custom_assets, asset)
+                            if name:lower():find("koplugin", 1, true) then
+                                table.insert(koplugin_assets, asset)
                             end
                         end
                     end
-                    if not release then
-                        release, release_err = GitHub.fetchLatestRelease(owner, repo.name)
-                    end
-                    if progress and progress.close then
-                        progress.close()
-                    end
-                end
-            end
-
-            local assets = release and release.assets
-            local custom_assets = {}
-            local koplugin_assets = {}
-
-            if type(assets) == "table" then
-                for _, asset in ipairs(assets) do
-                    local name = asset and asset.name
-                    local url = asset and asset.browser_download_url
-                    if name and url and name:lower():match("%.zip$") then
-                        table.insert(custom_assets, asset)
-                        if name:lower():find("koplugin", 1, true) then
-                            table.insert(koplugin_assets, asset)
-                        end
-                    end
-                end
-            end
-
-            local is_update = saved_ctx and saved_ctx.mode == "update"
-            local target_candidates = (#koplugin_assets > 0) and koplugin_assets or custom_assets
-
-            if #target_candidates == 1 then
-                self.pending_install_context = saved_ctx
-                self:installPluginFromReleaseAsset(repo, release, target_candidates[1])
-                return
-            end
-
-            if #target_candidates > 1 then
-                local prev_asset = nil
-                if is_update then
-                    local plugin_dir = saved_ctx.plugin and saved_ctx.plugin.dirname
-                    local rec = plugin_dir and InstallStore.get and InstallStore.get(plugin_dir)
-                    prev_asset = (rec and rec.asset_filename)
-                        or (plugin_dir and InstallStore.getPreferredAsset(plugin_dir))
-                        or InstallStore.getPreferredAsset(repo.name)
-                else
-                    prev_asset = InstallStore.getPreferredAsset(repo.name)
                 end
 
-                local matched_asset = findMatchingAssetForUpdate(prev_asset, target_candidates)
-                if matched_asset then
+                local is_update = saved_ctx and saved_ctx.mode == "update"
+                local target_candidates = (#koplugin_assets > 0) and koplugin_assets or custom_assets
+
+                if #target_candidates == 1 then
                     self.pending_install_context = saved_ctx
-                    self:installPluginFromReleaseAsset(repo, release, matched_asset)
+                    self:installPluginFromReleaseAsset(repo, release, target_candidates[1])
                     return
                 end
 
-                self:renderAssetPickerModal(repo, release, target_candidates, saved_ctx)
-                return
-            end
+                if #target_candidates > 1 then
+                    local prev_asset = nil
+                    if is_update then
+                        local plugin_dir = saved_ctx.plugin and saved_ctx.plugin.dirname
+                        local rec = plugin_dir and InstallStore.get and InstallStore.get(plugin_dir)
+                        prev_asset = (rec and rec.asset_filename)
+                            or (plugin_dir and InstallStore.getPreferredAsset(plugin_dir))
+                            or InstallStore.getPreferredAsset(repo.name)
+                    else
+                        prev_asset = InstallStore.getPreferredAsset(repo.name)
+                    end
 
-            local tag_name = (release and release.tag_name and release.tag_name ~= "") and release.tag_name or nil
-            local download_url = (release and release.zipball_url) or (tag_name and string.format("https://github.com/%s/%s/archive/refs/tags/%s.zip", owner, repo.name, tag_name))
-            
-            if download_url then
-                local source_code_name = string.format("Source code (%s.zip)", tag_name or "latest")
-                self.pending_install_context = saved_ctx
-                self:installPluginFromReleaseAsset(repo, release or { tag_name = tag_name }, {
-                    name = source_code_name,
-                    browser_download_url = download_url,
-                })
-            else
-                self.pending_install_context = saved_ctx
-                self:_installPluginFromRepoInternal(repo)
+                    local matched_asset = findMatchingAssetForUpdate(prev_asset, target_candidates)
+                    if matched_asset then
+                        self.pending_install_context = saved_ctx
+                        self:installPluginFromReleaseAsset(repo, release, matched_asset)
+                        return
+                    end
+
+                    self:renderAssetPickerModal(repo, release, target_candidates, saved_ctx)
+                    return
+                end
+
+                local tag_name = (release and release.tag_name and release.tag_name ~= "") and release.tag_name or nil
+                local download_url = (release and release.zipball_url) or (tag_name and string.format("https://github.com/%s/%s/archive/refs/tags/%s.zip", owner, repo.name, tag_name))
+                
+                if download_url then
+                    local source_code_name = string.format("Source code (%s.zip)", tag_name or "latest")
+                    self.pending_install_context = saved_ctx
+                    self:installPluginFromReleaseAsset(repo, release or { tag_name = tag_name }, {
+                        name = source_code_name,
+                        browser_download_url = download_url,
+                    })
+                else
+                    self.pending_install_context = saved_ctx
+                    self:_installPluginFromRepoInternal(repo)
+                end
+            end)
+            if not ok_run then
+                StorefrontLogger.err(string.format("promptPluginInstallOptions error: %s", tostring(run_err)))
+                if saved_ctx and saved_ctx.batch_callback then
+                    local cb = saved_ctx.batch_callback
+                    saved_ctx.batch_callback = nil
+                    cb(false, tostring(run_err))
+                end
             end
         end)
     end
@@ -676,20 +771,36 @@ function M:init(Storefront)
     end
 
     function Storefront:_installPluginFromRepoInternal(repo)
+        local is_repo_batch = (_G.G_storefront_batch_updating == true) or (self.pending_install_context and self.pending_install_context.is_batch)
+
         if (repo.kind or "plugin") ~= "plugin" then
-            UIManager:show(InfoMessage:new{
-                text = _("Installation is currently only supported for plugins."),
-                timeout = 4,
-            })
+            if not is_repo_batch then
+                UIManager:show(InfoMessage:new{
+                    text = _("Installation is currently only supported for plugins."),
+                    timeout = 4,
+                })
+            end
+            if self.pending_install_context and self.pending_install_context.batch_callback then
+                local cb = self.pending_install_context.batch_callback
+                self.pending_install_context.batch_callback = nil
+                cb(false, "Installation is currently only supported for plugins")
+            end
             return
         end
 
         local owner = repo.owner or (repo.data and repo.data.owner and repo.data.owner.login)
         if not owner or not repo.name then
-            UIManager:show(InfoMessage:new{
-                text = _("Missing repository metadata for installation."),
-                timeout = 4,
-            })
+            if not is_repo_batch then
+                UIManager:show(InfoMessage:new{
+                    text = _("Missing repository metadata for installation."),
+                    timeout = 4,
+                })
+            end
+            if self.pending_install_context and self.pending_install_context.batch_callback then
+                local cb = self.pending_install_context.batch_callback
+                self.pending_install_context.batch_callback = nil
+                cb(false, "Missing repository metadata for installation")
+            end
             return
         end
 
@@ -734,25 +845,38 @@ function M:init(Storefront)
         end
         local zip_path = string.format("%s/%s-%d.zip", downloads_dir, repo.name, os.time())
         local plugin_display_name = repo and (repo.name or repo.full_name) or "plugin"
-        local is_repo_batch = (_G.G_storefront_batch_updating == true) or (self.pending_install_context and self.pending_install_context.is_batch)
 
         local function doInstall(ok, err)
             if not ok then
                 util.removeFile(zip_path)
-                UIManager:show(InfoMessage:new{
-                    text = _("Download failed: ") .. tostring(err),
-                    timeout = 6,
-                })
+                if not is_repo_batch then
+                    UIManager:show(InfoMessage:new{
+                        text = _("Download failed: ") .. tostring(err),
+                        timeout = 6,
+                    })
+                end
+                if self.pending_install_context and self.pending_install_context.batch_callback then
+                    local cb = self.pending_install_context.batch_callback
+                    self.pending_install_context.batch_callback = nil
+                    cb(false, tostring(err))
+                end
                 return
             end
 
             local reader = Archiver.Reader:new()
             if not reader:open(zip_path) then
                 util.removeFile(zip_path)
-                UIManager:show(InfoMessage:new{
-                    text = _("Failed to open downloaded archive."),
-                    timeout = 6,
-                })
+                if not is_repo_batch then
+                    UIManager:show(InfoMessage:new{
+                        text = _("Failed to open downloaded archive."),
+                        timeout = 6,
+                    })
+                end
+                if self.pending_install_context and self.pending_install_context.batch_callback then
+                    local cb = self.pending_install_context.batch_callback
+                    self.pending_install_context.batch_callback = nil
+                    cb(false, "Failed to open downloaded archive")
+                end
                 return
             end
 
@@ -760,10 +884,17 @@ function M:init(Storefront)
             if not info then
                 reader:close()
                 util.removeFile(zip_path)
-                UIManager:show(InfoMessage:new{
-                    text = detect_err or _("Could not detect plugin inside archive."),
-                    timeout = 6,
-                })
+                if not is_repo_batch then
+                    UIManager:show(InfoMessage:new{
+                        text = detect_err or _("Could not detect plugin inside archive."),
+                        timeout = 6,
+                    })
+                end
+                if self.pending_install_context and self.pending_install_context.batch_callback then
+                    local cb = self.pending_install_context.batch_callback
+                    self.pending_install_context.batch_callback = nil
+                    cb(false, detect_err or "Could not detect plugin inside archive")
+                end
                 return
             end
 
@@ -782,7 +913,7 @@ function M:init(Storefront)
                     if batch_toast.setText then
                         batch_toast:setText(string.format(_("Installing %s…"), install_display_name))
                     end
-                elseif not is_batch then
+                elseif not is_repo_batch then
                     local Toast = require("storefront_toast")
                     install_progress = Toast.show(string.format(_("Installing %s…"), install_display_name), 0)
                     if UIManager.forceRePaint then UIManager:forceRePaint() end
@@ -795,10 +926,17 @@ function M:init(Storefront)
                 if install_progress and install_progress.close then install_progress:close() end
 
                 if not ok_extract then
-                    UIManager:show(InfoMessage:new{
-                        text = _("Installation failed: ") .. tostring(dest_or_err),
-                        timeout = 6,
-                    })
+                    if not is_repo_batch then
+                        UIManager:show(InfoMessage:new{
+                            text = _("Installation failed: ") .. tostring(dest_or_err),
+                            timeout = 6,
+                        })
+                    end
+                    if self.pending_install_context and self.pending_install_context.batch_callback then
+                        local cb = self.pending_install_context.batch_callback
+                        self.pending_install_context.batch_callback = nil
+                        cb(false, tostring(dest_or_err))
+                    end
                     return
                 end
 
@@ -836,20 +974,24 @@ function M:init(Storefront)
                 self:resolveNewInstallDestination(proceedWithInstall, function()
                     reader:close()
                     util.removeFile(zip_path)
+                    if self.pending_install_context and self.pending_install_context.batch_callback then
+                        local cb = self.pending_install_context.batch_callback
+                        self.pending_install_context.batch_callback = nil
+                        cb(false, "Cancelled destination selection")
+                    end
                 end)
             end
         end
 
         local batch_toast = self.pending_install_context and self.pending_install_context.batch_toast
-        local dl_msg = is_repo_batch and string.format(_("Downloading %s…"), plugin_display_name)
-            or string.format(_("Downloading %s…\nTap screen to cancel."), plugin_display_name)
+        local dl_msg = string.format(_("Downloading %s…\nTap screen to cancel."), plugin_display_name)
 
         local trap_widget
         if batch_toast then
             if batch_toast.setText then
                 batch_toast:setText(dl_msg)
             end
-            trap_widget = nil
+            trap_widget = batch_toast
         else
             local Toast = require("storefront_toast")
             trap_widget = Toast.show(dl_msg, 0)
@@ -862,7 +1004,7 @@ function M:init(Storefront)
                 return { ok = dl_ok, err = dl_err }
             end, trap_widget)
 
-            if trap_widget and trap_widget.close then
+            if trap_widget and trap_widget ~= batch_toast and trap_widget.close then
                 trap_widget:close()
             end
 
@@ -882,12 +1024,20 @@ function M:init(Storefront)
     end
 
     function Storefront:installPluginFromReleaseAsset(repo, release, asset)
+        local is_batch = (_G.G_storefront_batch_updating == true) or (self.pending_install_context and self.pending_install_context.is_batch == true)
+
         if not repo or not asset or not asset.browser_download_url then
-            UIManager:show(InfoMessage:new{ text = _("Missing asset download URL."), timeout = 4 })
+            if not is_batch then
+                UIManager:show(InfoMessage:new{ text = _("Missing asset download URL."), timeout = 4 })
+            end
+            if self.pending_install_context and self.pending_install_context.batch_callback then
+                local cb = self.pending_install_context.batch_callback
+                self.pending_install_context.batch_callback = nil
+                cb(false, "Missing asset download URL")
+            end
             return
         end
 
-        local is_batch = G_storefront_batch_updating == true or (self.pending_install_context and self.pending_install_context.is_batch == true)
         local asset_name = asset.name or _("release asset")
         StorefrontLogger.action(string.format("INSTALL release asset starting: %s (%s)", tostring(asset_name), tostring(repo.name)))
 
@@ -1033,20 +1183,24 @@ function M:init(Storefront)
                 self:resolveNewInstallDestination(proceedWithInstall, function()
                     reader:close()
                     util.removeFile(zip_path)
+                    if self.pending_install_context and self.pending_install_context.batch_callback then
+                        local cb = self.pending_install_context.batch_callback
+                        self.pending_install_context.batch_callback = nil
+                        cb(false, "Cancelled destination selection")
+                    end
                 end)
             end
         end
 
         local batch_toast = self.pending_install_context and self.pending_install_context.batch_toast
-        local dl_msg = is_batch and string.format(_("Downloading %s…"), display_name)
-            or string.format(_("Downloading %s%s…\nTap screen to cancel."), display_name, size_str)
+        local dl_msg = string.format(_("Downloading %s%s…\nTap screen to cancel."), display_name, size_str)
 
         local trap_widget
         if batch_toast then
             if batch_toast.setText then
                 batch_toast:setText(dl_msg)
             end
-            trap_widget = nil
+            trap_widget = batch_toast
         else
             local Toast = require("storefront_toast")
             trap_widget = Toast.show(dl_msg, 0)
@@ -1059,7 +1213,7 @@ function M:init(Storefront)
                 return { ok = dl_ok, err = dl_err }
             end, trap_widget)
 
-            if trap_widget and trap_widget.close then
+            if trap_widget and trap_widget ~= batch_toast and trap_widget.close then
                 trap_widget:close()
             end
 

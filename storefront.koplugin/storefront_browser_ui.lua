@@ -371,15 +371,10 @@ function StorefrontBrowserDialog:measureListViewport(options)
     options = options or {}
     local screen_w = Device.screen:getWidth()
     local screen_h = Device.screen:getHeight()
-    local cache_key = string.format("%dx%d|%s|%d|%s|%s|%s|%s|%s",
+    local has_toolbar = (options.toolbar_buttons and #options.toolbar_buttons > 0) == true
+    local cache_key = string.format("%dx%d|tb:%s",
         screen_w, screen_h,
-        tostring(options.current_tab or "Plugins"),
-        options.toolbar_buttons and #options.toolbar_buttons or 0,
-        tostring(options.show_filter_bar_plugins == true),
-        tostring(options.show_filter_bar_patches == true),
-        tostring(options.show_filter_bar_fonts == true),
-        tostring(options.show_filter_bar_screensavers ~= false),
-        tostring(options.show_filter_bar_installed ~= false)
+        tostring(has_toolbar)
     )
 
     if _viewport_measurement_cache[cache_key] then

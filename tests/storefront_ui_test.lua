@@ -493,6 +493,25 @@ if ok_browser then
             print("Versions tab navigation error was:", versions_test_err)
         end
 
+        -- Test long commit-hash tag in StorefrontVersionDetailsDialog
+        local long_tag_test_ok, long_tag_test_err = pcall(function()
+            local details = StorefrontDetailsDialog:new{
+                Storefront = full_dummy_storefront,
+                repo = dummy_repo,
+                kind = "plugin",
+                default_tab = "versions",
+            }
+            details:init()
+            details.cached_releases = {
+                { tag_name = "v1.0.47-9501072cd75accd629d97b3ac8a3b250737c540b", body = "Release with long hash", published_at = "2026-08-26" }
+            }
+            details:onLinkTap("storefront-select-version:1")
+        end)
+        check("Version details dialog with long commit-hash tag executes without error", long_tag_test_ok, true)
+        if not long_tag_test_ok then
+            print("Long tag version details dialog error was:", long_tag_test_err)
+        end
+
         -- Test page_number reset when switching tabs in details dialog
         local page_reset_ok = pcall(function()
             local details = StorefrontDetailsDialog:new{
@@ -749,17 +768,40 @@ if ok_browser then
 
         -- Test StorefrontListItem instantiation with badge_icon and badge_text
         local StorefrontListItem = require("storefront_list_item")
-        local item_ok, item_inst = pcall(function()
-            return StorefrontListItem:new{
-                entry = {
-                    name = "Test Item",
-                    kind_label = "Plugin",
-                    badge_icon = "assets/check-square.svg",
-                    badge = "Update",
-                }
+        local tapped = false
+        local badge_tapped = false
+        local item_inst = StorefrontListItem:new{
+            width = 600,
+            entry = {
+                name = "Test Item",
+                kind_label = "Plugin",
+                badge_icon = "assets/check-square.svg",
+                badge = "Update",
+                callback = function() tapped = true end,
+                on_badge_tap = function() badge_tapped = true end,
             }
-        end)
-        check("StorefrontListItem with badge_icon & badge_text instantiates without error", item_ok, true)
+        }
+        check("StorefrontListItem with badge_icon & badge_text instantiates without error", item_inst ~= nil, true)
+        if StorefrontListItem.init then
+            StorefrontListItem.init(item_inst)
+            -- Simulate widget being positioned in layout at y = 250
+            item_inst.dimen = { x = 10, y = 250, w = 580, h = 60 }
+            local tap_range_fn = item_inst.ges_events and item_inst.ges_events.StorefrontTap and item_inst.ges_events.StorefrontTap[1] and item_inst.ges_events.StorefrontTap[1].range
+                or (item_inst.ges_events and item_inst.ges_events.StorefrontTap and item_inst.ges_events.StorefrontTap.range)
+            check("StorefrontListItem gesture range is a dynamic evaluation function", type(tap_range_fn), "function")
+            if type(tap_range_fn) == "function" then
+                local computed_geom = tap_range_fn()
+                check("StorefrontListItem gesture range evaluates live layout y position", computed_geom and computed_geom.y, 250)
+            end
+
+            -- Test item body tap
+            StorefrontListItem.onStorefrontTap(item_inst, nil, { pos = { x = 100, y = 260 } })
+            check("StorefrontListItem onStorefrontTap executes entry.callback", tapped, true)
+
+            -- Test badge tap
+            StorefrontListItem.onStorefrontTap(item_inst, nil, { pos = { x = 585, y = 260 } })
+            check("StorefrontListItem onStorefrontTap on badge zone executes entry.on_badge_tap", badge_tapped, true)
+        end
 
         -- Test StorefrontFilterDialog showInstalledFilter & show methods
         local StorefrontFilterDialog = require("storefront_filter_dialog")
@@ -1486,6 +1528,7 @@ if ok_browser then
             local toast_instances = 0
             local toast_text_updates = {}
             local toast_closed = false
+            local restart_confirmed = false
 
             local MockToast = {
                 setText = function(self, txt)
@@ -1503,6 +1546,11 @@ if ok_browser then
                 return MockToast
             end
 
+            local orig_restart = MainStorefront.showRestartConfirmation
+            MainStorefront.showRestartConfirmation = function(sf, msg)
+                restart_confirmed = true
+            end
+
             local orig_prompt = MainStorefront.promptPluginInstallOptions
             local processed_items = {}
             MainStorefront.promptPluginInstallOptions = function(sf, descriptor, release_override)
@@ -1515,14 +1563,112 @@ if ok_browser then
             end
 
             local test_queue = {
-                { kind = "plugin", name = "PluginOne", record = { repo = "PluginOne", dirname = "p1.koplugin" } },
-                { kind = "plugin", name = "PluginTwo", record = { repo = "PluginTwo", dirname = "p2.koplugin" } },
+                { kind = "plugin", name = "PluginOne", plugin = { name = "PluginOne", dirname = "p1.koplugin" }, record = { repo = "PluginOne", dirname = "p1.koplugin" } },
+                { kind = "plugin", name = "PluginTwo", plugin = { name = "PluginTwo", dirname = "p2.koplugin" }, record = { repo = "PluginTwo", dirname = "p2.koplugin" } },
             }
 
             MainStorefront:_processBatchUpdateQueue(test_queue, 1, { success = 0, failed = 0 })
 
             check("Batch update creates only 1 persistent toast instance", toast_instances, 1)
             check("Batch update updates toast text in-place across queue", #toast_text_updates >= 1, true)
+            check("Batch update closes toast upon completion", toast_closed, true)
+            check("Batch update shows restart confirmation when items succeed", restart_confirmed, true)
+            check("Batch update resets global updating flag", _G.G_storefront_batch_updating, false)
+
+            ToastModule.show = orig_toast_show
+            MainStorefront.promptPluginInstallOptions = orig_prompt
+            MainStorefront.showRestartConfirmation = orig_restart
+        end
+
+        -- 4. Test _processBatchUpdateQueue handles download failures gracefully without freezing
+        do
+            local toast_instances = 0
+            local summary_toast_msg = nil
+            local toast_closed = false
+
+            local MockToast = {
+                setText = function(self, txt) end,
+                close = function(self)
+                    toast_closed = true
+                end
+            }
+
+            local ToastModule = require("storefront_toast")
+            local orig_toast_show = ToastModule.show
+            ToastModule.show = function(txt, timeout, opts)
+                toast_instances = toast_instances + 1
+                summary_toast_msg = txt
+                return MockToast
+            end
+
+            local orig_prompt = MainStorefront.promptPluginInstallOptions
+            local processed_items = {}
+            MainStorefront.promptPluginInstallOptions = function(sf, descriptor, release_override)
+                table.insert(processed_items, descriptor.name)
+                if sf.pending_install_context and sf.pending_install_context.batch_callback then
+                    local cb = sf.pending_install_context.batch_callback
+                    sf.pending_install_context.batch_callback = nil
+                    cb(false, "Connection timed out")
+                end
+            end
+
+            local test_queue = {
+                { kind = "plugin", name = "FailingPlugin1", plugin = { name = "FailingPlugin1", dirname = "f1.koplugin" }, record = { repo = "FailingPlugin1", dirname = "f1.koplugin" } },
+                { kind = "plugin", name = "FailingPlugin2", plugin = { name = "FailingPlugin2", dirname = "f2.koplugin" }, record = { repo = "FailingPlugin2", dirname = "f2.koplugin" } },
+            }
+
+            MainStorefront:_processBatchUpdateQueue(test_queue, 1, { success = 0, failed = 0 })
+
+            check("Failed batch update processes both items without freezing", #processed_items, 2)
+            check("Failed batch update closes progress toast", toast_closed, true)
+            check("Failed batch update shows summary toast on 0 success", summary_toast_msg ~= nil, true)
+            check("Failed batch update resets global updating flag", _G.G_storefront_batch_updating, false)
+
+            ToastModule.show = orig_toast_show
+            MainStorefront.promptPluginInstallOptions = orig_prompt
+        end
+
+        -- 5. Test _processBatchUpdateQueue tap-to-cancel / user cancellation
+        do
+            local toast_instances = 0
+            local cancel_toast_shown = false
+
+            local MockToast = {
+                setText = function(self, txt) end,
+                close = function(self) end
+            }
+
+            local ToastModule = require("storefront_toast")
+            local orig_toast_show = ToastModule.show
+            ToastModule.show = function(txt, timeout, opts)
+                toast_instances = toast_instances + 1
+                if txt and txt:find("cancelled") then
+                    cancel_toast_shown = true
+                end
+                return MockToast
+            end
+
+            local orig_prompt = MainStorefront.promptPluginInstallOptions
+            local processed_count = 0
+            MainStorefront.promptPluginInstallOptions = function(sf, descriptor, release_override)
+                processed_count = processed_count + 1
+                if sf.pending_install_context and sf.pending_install_context.batch_callback then
+                    local cb = sf.pending_install_context.batch_callback
+                    sf.pending_install_context.batch_callback = nil
+                    cb(false, "Cancelled by user")
+                end
+            end
+
+            local test_queue = {
+                { kind = "plugin", name = "CancelPlugin1", plugin = { name = "CancelPlugin1", dirname = "c1.koplugin" }, record = { repo = "CancelPlugin1", dirname = "c1.koplugin" } },
+                { kind = "plugin", name = "CancelPlugin2", plugin = { name = "CancelPlugin2", dirname = "c2.koplugin" }, record = { repo = "CancelPlugin2", dirname = "c2.koplugin" } },
+            }
+
+            MainStorefront:_processBatchUpdateQueue(test_queue, 1, { success = 0, failed = 0 })
+
+            check("Cancelled batch stops queue processing after first cancel", processed_count, 1)
+            check("Cancelled batch shows cancellation toast", cancel_toast_shown, true)
+            check("Cancelled batch resets global updating flag", _G.G_storefront_batch_updating, false)
 
             ToastModule.show = orig_toast_show
             MainStorefront.promptPluginInstallOptions = orig_prompt

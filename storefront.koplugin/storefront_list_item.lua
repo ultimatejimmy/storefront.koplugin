@@ -564,17 +564,19 @@ function StorefrontListItem:init()
     end
 
     if entry.callback or entry.hold_callback then
-        local rect = Geom:new{
-            x = self.dimen.x,
-            y = self.dimen.y,
-            w = self.dimen.w,
-            h = self.dimen.h,
-        }
+        local tap_range = function()
+            return Geom:new{
+                x = self.dimen.x,
+                y = self.dimen.y,
+                w = self.dimen.w,
+                h = self.dimen.h,
+            }
+        end
         self.ges_events = {
             StorefrontTap = {
                 GestureRange:new{
                     ges = "tap",
-                    range = rect,
+                    range = tap_range,
                 },
             },
         }
@@ -582,7 +584,7 @@ function StorefrontListItem:init()
             self.ges_events.StorefrontHold = {
                 GestureRange:new{
                     ges = "hold",
-                    range = rect,
+                    range = tap_range,
                 },
             }
         end

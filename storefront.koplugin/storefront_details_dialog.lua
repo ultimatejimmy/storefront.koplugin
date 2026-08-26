@@ -2656,23 +2656,34 @@ function StorefrontVersionDetailsDialog:init()
         fgcolor = Blitbuffer.COLOR_BLACK,
     }
 
+    local row_w = self.screen_w - sc(24)
+    local ignore_btn_w = math.floor(row_w * 0.32)
+    local primary_btn_w = row_w - ignore_btn_w - sc(12)
+
+    local MAX_TAG_DISPLAY = 24
+    local tag_display = tag
+    if #tag > MAX_TAG_DISPLAY then
+        tag_display = tag:sub(1, MAX_TAG_DISPLAY) .. "…"
+    end
+
     local meta_str = string.format("Version: %s%s%s", tag, is_pre and " (PRE-RELEASE)" or "", published ~= "" and ("  ·  Published: " .. published) or "")
-    local meta_label = TextWidget:new{
+    local meta_label = TextBoxWidget:new{
         text = meta_str,
         face = Font:getFace("cfont", 16),
         fgcolor = Blitbuffer.COLOR_BLACK,
+        width = row_w,
     }
 
     local item_key = self.patch and self.patch.filename or (self.repo and (self.repo.name or self.repo.full_name))
     local is_ignored = item_key and InstallStore.isReleaseIgnored(item_key, tag)
 
-    local row_w = self.screen_w - sc(24)
-    local ignore_btn_w = math.floor(row_w * 0.32)
-    local primary_btn_w = row_w - ignore_btn_w - sc(12)
+    local install_btn_text = string.format(_("Install %s"), tag_display)
+    local btn_font_size = calcGroupFontSize({ install_btn_text }, primary_btn_w, 0, "cfont", sc(22))
+    btn_font_size = math.max(btn_font_size, 11)
 
     local install_btn = Button:new{
-        text = string.format(_("Install %s"), tag),
-        text_font_size = 18,
+        text = install_btn_text,
+        text_font_size = btn_font_size,
         text_font_color = Blitbuffer.COLOR_WHITE,
         background = Blitbuffer.COLOR_BLACK,
         bordersize = 0,

@@ -1419,6 +1419,11 @@ local function invalidateInstalledPluginsCache()
     G_installed_plugins_cache = nil
     G_installed_patches_cache = nil
     G_installed_fonts_cache = nil
+    if Storefront and type(Storefront) == "table" then
+        Storefront._tab_menu_items_cache = nil
+        Storefront._installed_tab_items_cache = nil
+        Storefront._installed_lookup_cache = nil
+    end
     local ok_fm, font_mgr = pcall(require, "storefront_font_mgr")
     if ok_fm and font_mgr and type(font_mgr.invalidateInstalledFontsCache) == "function" then
         font_mgr.invalidateInstalledFontsCache()
@@ -1426,6 +1431,9 @@ local function invalidateInstalledPluginsCache()
 end
 
 function Storefront:invalidateInstalledPluginsCache()
+    self._tab_menu_items_cache = nil
+    self._installed_tab_items_cache = nil
+    self._installed_lookup_cache = nil
     invalidateInstalledPluginsCache()
 end
 
@@ -4729,128 +4737,6 @@ function Storefront:promptPatchAction(repo, patch)
     end
 end
 
-function Storefront:installPatchFromRepo(repo, patch)
-    NetworkMgr:runWhenOnline(function()
-        self:_installPatchFromRepoInternal(repo, patch)
-    end)
-end
-
-function Storefront:_installPatchFromRepoInternal(repo, patch)
-    local owner = extractRepoOwner(repo)
-    if not owner or not repo.name then
-        UIManager:show(InfoMessage:new{ text = _("Missing repository metadata for patch install."), timeout = 4 })
-        return
-    end
-    local url = patch.download_url or buildPatchDownloadUrl(owner, repo.name, patch.branch or "HEAD", patch.path)
-    StorefrontLogger.action(string.format("INSTALL patch starting: filename=%s (repo=%s/%s, url=%s)", tostring(patch and patch.filename), tostring(owner), tostring(repo.name), tostring(url)))
-    if not url then
-        UIManager:show(InfoMessage:new{ text = _("Unable to determine patch download URL."), timeout = 4 })
-        return
-    end
-    local patches_dir, err = ensurePatchesDir()
-    if not patches_dir then
-        UIManager:show(InfoMessage:new{ text = _("Failed to prepare patches directory."), timeout = 4 })
-        return
-    end
-    local target_path = patches_dir .. "/" .. patch.filename
-    local temp_path = target_path .. ".download"
-    local is_batch = (G_storefront_batch_updating == true) or (self.pending_patch_install and self.pending_patch_install.is_batch == true)
-    local target_filename = patch.filename or (patch.name .. ".lua")
-
-    local size_str = (patch.size and patch.size > 0)
-        and string.format(" (%d KB)", math.floor(patch.size / 1024))
-        or ""
-
-    local function doInstallPatch(ok, download_err)
-        if not ok then
-            util.removeFile(temp_path)
-            if not is_batch then
-                UIManager:show(InfoMessage:new{ text = _("Download failed: ") .. tostring(download_err), timeout = 6 })
-            end
-            if self.pending_patch_install and self.pending_patch_install.batch_callback then
-                local cb = self.pending_patch_install.batch_callback
-                self.pending_patch_install = nil
-                cb(false, download_err)
-            end
-            return
-        end
-
-        util.removeFile(target_path)
-        local rename_ok, rename_err = os.rename(temp_path, target_path)
-        if not rename_ok then
-            util.removeFile(temp_path)
-            if not is_batch then
-                UIManager:show(InfoMessage:new{ text = _("Failed to install patch: ") .. tostring(rename_err), timeout = 6 })
-            end
-            if self.pending_patch_install and self.pending_patch_install.batch_callback then
-                local cb = self.pending_patch_install.batch_callback
-                self.pending_patch_install = nil
-                cb(false, rename_err)
-            end
-            return
-        end
-
-        local actual_sha = computeFileSha1(target_path)
-        local patch_for_record = patch
-        if actual_sha and actual_sha ~= patch.sha then
-            patch_for_record = {}
-            for k, v in pairs(patch) do patch_for_record[k] = v end
-            patch_for_record.sha = actual_sha
-        end
-        local stored_record = self:rememberPatchInstall(patch.filename, repo, patch_for_record)
-        if self.pending_patch_install then
-            local context = self.pending_patch_install
-            self.pending_patch_install = nil
-            if not G_storefront_batch_updating then
-                if context.mode == "update" and context.patch then
-                    showRestartConfirmation(string.format(_("Updated patch %s."), context.patch.filename or _("patch")))
-                else
-                    showRestartConfirmation(string.format(_("Installed patch \"%s\"."), patch.filename))
-                end
-            end
-            if context.batch_callback then
-                context.batch_callback(true)
-            end
-        else
-            if not G_storefront_batch_updating then
-                showRestartConfirmation(string.format(_("Installed patch \"%s\"."), patch.filename))
-            end
-        end
-        if stored_record then
-            self:updateSinglePatchStatus(patch.filename, stored_record)
-        end
-    end
-
-    if is_batch then
-        local ok, download_err = downloadToFile(url, temp_path)
-        doInstallPatch(ok, download_err)
-    else
-        local Trapper = require("ui/trapper")
-        local Toast = require("storefront_toast")
-        local dl_msg = string.format(_("Downloading patch %s%s…\nTap screen to cancel."), target_filename, size_str)
-        local progress_toast = Toast.show(dl_msg, 0)
-        Trapper:wrap(function()
-            local completed, res = Trapper:dismissableRunInSubprocess(function()
-                local dl_ok, dl_err = downloadToFile(url, temp_path)
-                return { ok = dl_ok, err = dl_err }
-            end, progress_toast)
-            if progress_toast and progress_toast.close then progress_toast:close() end
-            if not completed then
-                util.removeFile(temp_path)
-                Toast.show(_("Download cancelled."), 3)
-                if self.pending_patch_install and self.pending_patch_install.batch_callback then
-                    local cb = self.pending_patch_install.batch_callback
-                    self.pending_patch_install = nil
-                    cb(false, "Cancelled by user")
-                end
-                return
-            end
-            doInstallPatch(res and res.ok, res and res.err)
-        end)
-    end
-end
-
-
 function StorefrontBrowserDialog:resetScroll()
     if self.list_scroller then
         self.list_scroller:setScrolledOffset({ x = 0, y = 0 })
@@ -5433,192 +5319,6 @@ function Storefront:renderReleaseListPage(repo, releases, page, current_release,
         buttons = button_rows,
     }
     UIManager:show(dialog)
-end
-
-function Storefront:installPluginFromReleaseAsset(repo, release, asset)
-    if not repo or not asset then
-        return
-    end
-
-    if asset.name and repo and repo.name then
-        InstallStore.setPreferredAsset(repo.name, asset.name)
-    end
-
-    local url = asset.browser_download_url
-    if not url or url == "" then
-        UIManager:show(InfoMessage:new{ text = _("Missing download URL for release asset."), timeout = 4 })
-        return
-    end
-
-    StorefrontLogger.action(string.format("DOWNLOAD asset: url=%s asset=%s repo=%s", url, tostring(asset.name), repo and (repo.full_name or repo.name) or "?"))
-
-    NetworkMgr:runWhenOnline(function()
-        local cache_dir = ensureCacheDir()
-        local downloads_dir = cache_dir .. "/downloads"
-        if lfs.attributes(downloads_dir, "mode") ~= "directory" then
-            lfs.mkdir(downloads_dir)
-        end
-
-        local safe_name = tostring(asset.name or (repo.name .. "-asset.zip")):gsub("[^%w_%-%.%s]", "_")
-        local zip_path = string.format("%s/%s-%d.zip", downloads_dir, safe_name, os.time())
-
-        local is_batch = (G_storefront_batch_updating == true) or (self.pending_install_context and self.pending_install_context.is_batch == true)
-        local display_name = repo and (repo.name or repo.full_name) or (asset and asset.name) or _("release asset")
-
-        local size_str = (asset.size and asset.size > 0)
-            and string.format(" (%d KB)", math.floor(asset.size / 1024))
-            or ""
-
-        local function notifyBatchError(err_msg)
-            if self.pending_install_context and self.pending_install_context.batch_callback then
-                local cb = self.pending_install_context.batch_callback
-                self.pending_install_context = nil
-                cb(false, err_msg)
-            end
-        end
-
-        local function doDownloadAndInstall(ok, err)
-            if not ok then
-                util.removeFile(zip_path)
-                StorefrontLogger.err(string.format("Download failed: %s (url=%s)", tostring(err), url))
-                if not is_batch then
-                    UIManager:show(InfoMessage:new{ text = _("Download failed: ") .. tostring(err), timeout = 6 })
-                end
-                notifyBatchError(err)
-                return
-            end
-
-            local reader = Archiver.Reader:new()
-            if not reader:open(zip_path) then
-                util.removeFile(zip_path)
-                StorefrontLogger.err(string.format("Failed to open archive for repo=%s", repo and repo.name or "?"))
-                if not is_batch then
-                    UIManager:show(InfoMessage:new{ text = _("Failed to open downloaded archive."), timeout = 6 })
-                end
-                notifyBatchError("Failed to open downloaded archive")
-                return
-            end
-
-            local info, detect_err = detectPluginFromArchiveWithFallback(reader, repo, release, asset)
-            if not info then
-                reader:close()
-                util.removeFile(zip_path)
-                StorefrontLogger.err(string.format("Plugin detection failed: %s", tostring(detect_err)))
-                if not is_batch then
-                    UIManager:show(InfoMessage:new{ text = detect_err or _("Could not detect plugin inside archive."), timeout = 6 })
-                end
-                notifyBatchError(detect_err or "Plugin detection failed")
-                return
-            end
-
-            StorefrontLogger.action(string.format("DETECTED plugin inside archive: dirname=%s, plugin_name=%s, version=%s", tostring(info.plugin_dirname), tostring(info.plugin_name), tostring(info.plugin_version)))
-
-            -- Store the release tag so it gets persisted in the install record.
-            if release and release.tag_name and release.tag_name ~= "" then
-                info.plugin_release_tag = release.tag_name
-            end
-            if (not info.plugin_version or info.plugin_version == "") and info.plugin_release_tag then
-                info.plugin_version = info.plugin_release_tag:gsub("^[vV]", "")
-            end
-
-            if self.pending_install_context and self.pending_install_context.mode == "update" then
-                local ctx_plugin = self.pending_install_context.plugin
-                if ctx_plugin and ctx_plugin.dirname and ctx_plugin.dirname ~= "" then
-                    info.plugin_dirname = ctx_plugin.dirname
-                end
-            end
-
-            local function proceedWithInstall(dest_root)
-                local install_progress = (not G_storefront_batch_updating) and InfoMessage:new{ text = _("Extracting and installing plugin…\nPlease wait."), timeout = 0 } or nil
-                if install_progress then UIManager:show(install_progress) end
-                local ok_extract, dest_or_err = extractPluginToUserDir(reader, info, dest_root)
-                reader:close()
-                util.removeFile(zip_path)
-
-                if not ok_extract then
-                    if not is_batch then
-                        UIManager:show(InfoMessage:new{ text = _("Installation failed: ") .. tostring(dest_or_err), timeout = 6 })
-                    end
-                    notifyBatchError(tostring(dest_or_err))
-                    return
-                end
-
-                -- Clean up duplicate directories on disk if any existed from prior bug
-                if info.duplicates then
-                    for _, dup in ipairs(info.duplicates) do
-                        if dup.dirname and dup.dirname ~= info.plugin_dirname then
-                            local dup_path = (dup.root or dest_root) .. "/" .. dup.dirname
-                            deleteDirectoryRecursive(dup_path)
-                            InstallStore.remove(dup.dirname)
-                        end
-                    end
-                end
-
-                if install_progress then UIManager:close(install_progress) end
-
-                -- Some plugins' _meta.lua only set `fullname` (often wrapped in _()), so
-                -- plugin_name parsing can come back nil; fall back to the directory name
-                -- to avoid showing "nil" in the success message.
-                info.plugin_name = info.plugin_name or ((info.plugin_dirname or "plugin"):gsub("%.koplugin$", ""))
-                local msg
-                if self.pending_install_context and self.pending_install_context.mode == "update" then
-                    if info.plugin_version and info.plugin_version ~= "" then
-                        msg = string.format(_("Updated plugin \"%s\" to version %s."), info.plugin_name, info.plugin_version)
-                    else
-                        msg = string.format(_("Updated plugin \"%s\"."), info.plugin_name)
-                    end
-                else
-                    if info.plugin_version and info.plugin_version ~= "" then
-                        msg = string.format(_("msg_installed_plugin_version"), info.plugin_name, info.plugin_version)
-                    else
-                        msg = string.format(_("msg_installed_plugin"), info.plugin_name)
-                    end
-                end
-
-                if not is_batch and not _G.G_storefront_batch_updating then
-                    showRestartConfirmation(msg)
-                end
-
-                self:handlePostInstall(info, repo)
-                if self.updates_menu then
-                    self:updateUpdatesDialog()
-                end
-            end
-
-            if self.pending_install_context and self.pending_install_context.mode == "update" then
-                proceedWithInstall(self.pending_install_context.plugin.root)
-            else
-                self:resolveNewInstallDestination(proceedWithInstall, function()
-                    reader:close()
-                    util.removeFile(zip_path)
-                end)
-            end
-        end
-
-        if is_batch then
-            local ok, err = downloadToFile(url, zip_path)
-            doDownloadAndInstall(ok, err)
-        else
-            local Trapper = require("ui/trapper")
-            local Toast = require("storefront_toast")
-            local dl_msg = string.format(_("Downloading %s%s…\nTap screen to cancel."), display_name, size_str)
-            local progress_toast = Toast.show(dl_msg, 0)
-            Trapper:wrap(function()
-                local completed, res = Trapper:dismissableRunInSubprocess(function()
-                    local dl_ok, dl_err = downloadToFile(url, zip_path)
-                    return { ok = dl_ok, err = dl_err }
-                end, progress_toast)
-                if progress_toast and progress_toast.close then progress_toast:close() end
-                if not completed then
-                    util.removeFile(zip_path)
-                    Toast.show(_("Download cancelled."), 3)
-                    notifyBatchError("Cancelled by user")
-                    return
-                end
-                doDownloadAndInstall(res and res.ok, res and res.err)
-            end)
-        end
-    end)
 end
 
 local function sanitizePluginDirname(name)
@@ -7078,31 +6778,46 @@ function Storefront:buildInstalledEntries(available_list_height)
 
     local installed_plugins = self:listInstalledPlugins()
     local installed_patches = self:listInstalledPatches()
-    local plugin_records = getInstallRecordsMap()
-    local patch_records = getPatchRecordsMap()
+    local p_count = #installed_plugins
+    local pt_count = #installed_patches
+    local p_sample = (p_count > 0 and (installed_plugins[1].fullname or installed_plugins[1].name or installed_plugins[1].dirname)) or ""
 
-    local update_summary = self:collectUpdateSummary()
-    local patch_update_summary = self:collectPatchUpdateSummary()
-    local plugin_updates_map = {}
-    for i, item in ipairs(update_summary.data or {}) do
-        if item.plugin and item.plugin.dirname then
-            plugin_updates_map[item.plugin.dirname] = item.has_update
+    local gen = InstallStore.getGeneration and InstallStore.getGeneration() or 0
+    local p_last_checked = tostring(self.updates_state and self.updates_state.last_checked or 0)
+    local pt_last_checked = tostring(self.patch_updates_state and self.patch_updates_state.last_checked or 0)
+    local cache_key = string.format("%s|%s|%s|%s|%s|%d|%s|%d|%s|%s|%d|%d|%s",
+        filter_type, filter_default, filter_status, search_text, filter_owner, filter_min_stars, sort_mode, gen, p_last_checked, pt_last_checked, p_count, pt_count, p_sample
+    )
+
+    local items
+    if self._installed_tab_items_cache and self._installed_tab_items_cache.key == cache_key then
+        items = self._installed_tab_items_cache.items
+    else
+        local plugin_records = getInstallRecordsMap()
+        local patch_records = getPatchRecordsMap()
+
+        local update_summary = self:collectUpdateSummary()
+        local patch_update_summary = self:collectPatchUpdateSummary()
+        local plugin_updates_map = {}
+        for i, item in ipairs(update_summary.data or {}) do
+            if item.plugin and item.plugin.dirname then
+                plugin_updates_map[item.plugin.dirname] = item.has_update
+            end
         end
-    end
-    local patch_updates_map = {}
-    for i, item in ipairs(patch_update_summary.data or {}) do
-        if item.patch and item.patch.filename then
-            patch_updates_map[item.patch.filename] = item.needs_update
+        local patch_updates_map = {}
+        for i, item in ipairs(patch_update_summary.data or {}) do
+            if item.patch and item.patch.filename then
+                patch_updates_map[item.patch.filename] = item.needs_update
+            end
         end
-    end
 
-    local items = {}
+        items = {}
 
-    local getAssetPath = function(filename)
-        local info = debug.getinfo(1, "S")
-        local dir = info.source:match("^@(.*[/\\])") or ""
-        return dir .. "assets/" .. filename
-    end
+        local getAssetPath = function(filename)
+            local info = debug.getinfo(1, "S")
+            local dir = info.source:match("^@(.*[/\\])") or ""
+            return dir .. "assets/" .. filename
+        end
 
     -- 1. Plugins
     if filter_type == "all" or filter_type == "plugin" then
@@ -7477,6 +7192,8 @@ function Storefront:buildInstalledEntries(available_list_height)
         end
         return na < nb
     end)
+        self._installed_tab_items_cache = { key = cache_key, items = items }
+    end
 
     if #items == 0 then
         local page_items = {}
@@ -8305,13 +8022,34 @@ function Storefront:buildBrowserEntries(available_list_height, available_list_wi
         })
         return items, 1
     else
-        if kind == "patch" then
-            for i = 1, display_total do
-                table.insert(items, self:makePatchMenuItem(patch_display_entries[i].repo, patch_display_entries[i].patch))
-            end
+        local gen = InstallStore.getGeneration and InstallStore.getGeneration() or 0
+        local fetched = Cache.getLastFetched and Cache.getLastFetched(kind) or 0
+        local items_cache_key = string.format("%s|%d|%d|%s|%s|%s|%s|%s|%d|%d",
+            kind, total, display_total,
+            tostring(self.browser_state.search_text or ""),
+            tostring(self.browser_state.owner or ""),
+            tostring(self.browser_state.min_stars or 0),
+            tostring(self.browser_state.font_category or ""),
+            tostring(self.browser_state.sort_mode or ""),
+            gen, fetched
+        )
+
+        local cached_tab = self._tab_menu_items_cache and self._tab_menu_items_cache[kind]
+        if cached_tab and cached_tab.key == items_cache_key and not self.match_context and not warning then
+            items = cached_tab.items
         else
-            for i = 1, display_total do
-                table.insert(items, self:makeRepoMenuItem(filtered[i], installed_lookup, installed_fonts_map))
+            if kind == "patch" then
+                for i = 1, display_total do
+                    table.insert(items, self:makePatchMenuItem(patch_display_entries[i].repo, patch_display_entries[i].patch))
+                end
+            else
+                for i = 1, display_total do
+                    table.insert(items, self:makeRepoMenuItem(filtered[i], installed_lookup, installed_fonts_map))
+                end
+            end
+            if not self.match_context and not warning then
+                self._tab_menu_items_cache = self._tab_menu_items_cache or {}
+                self._tab_menu_items_cache[kind] = { key = items_cache_key, items = items }
             end
         end
     end
@@ -8388,6 +8126,7 @@ function Storefront:reopenBrowser(kind, callback)
     if self.browser_state and self.browser_state.scroll_offset == nil then
         self:resetBrowserScrollState()
     end
+    self._browser_refresh_mode_hint = self._browser_refresh_mode_hint or "partial"
     UIManager:nextTick(function()
         self:showBrowser(kind)
         if callback then
@@ -8423,6 +8162,7 @@ function Storefront:browserSwitchTab(tab_name)
     self:saveBrowserState(true)
     self:resetBrowserScrollState()
     self:closeBrowserMenu()
+    self._browser_refresh_mode_hint = "partial"
     self:showBrowser()
 end
 
@@ -8494,6 +8234,9 @@ function Storefront:softRefreshCurrentBrowserView()
     self._filtered_screensavers_cache = nil
     self._cached_updates_count = nil
     self._cached_updates_gen = nil
+    self._tab_menu_items_cache = nil
+    self._installed_tab_items_cache = nil
+    self._installed_lookup_cache = nil
 
     if self.browser_menu then
         UIManager:setDirty(self.browser_menu)
@@ -8917,6 +8660,7 @@ function Storefront:showBrowser(kind)
             self.browser_state.page = 1
             self.browser_state.scroll_offset = nil
             self:saveBrowserState()
+            self._browser_refresh_mode_hint = "partial"
             self:reopenBrowser()
         end,
         on_tab_switch = function(tab_name)
@@ -8925,6 +8669,7 @@ function Storefront:showBrowser(kind)
             self.browser_state.page = 1
             self.browser_state.scroll_offset = nil
             self:saveBrowserState(true)
+            self._browser_refresh_mode_hint = "partial"
             self:reopenBrowser()
         end,
         on_settings_tap = function()
@@ -9907,99 +9652,6 @@ extractPluginToUserDir = function(reader, info, dest_root)
     end
 
     return true, target_dir
-end
-
--- NOTE: Storefront_config and the remembered-path settings key are
--- resolved locally (rather than as file-level locals like the other
--- *_KEY constants) because main.lua's chunk is already at LuaJIT's 200
--- local variable ceiling; scoping them to this function keeps them out of
--- that shared budget without changing behavior (require() is cached, so
--- repeat calls are cheap).
-function Storefront:resolveNewInstallDestination(callback, on_cancel)
-    local REMEMBERED_PLUGIN_INSTALL_PATH_KEY = "remembered_plugin_install_path"
-    local ok_cfg, StorefrontConfig = pcall(require, "storefront_config")
-    if not ok_cfg then
-        ok_cfg, StorefrontConfig = pcall(require, "storefront_configuration")
-    end
-    if not ok_cfg then
-        StorefrontConfig = {}
-    end
-
-    local config_override = StorefrontConfig.plugin_install_path
-    local remembered_path = StorefrontSettings:readSetting(REMEMBERED_PLUGIN_INSTALL_PATH_KEY)
-    local hidden_paths = StorefrontSettings:readSetting(PluginPaths.HIDDEN_PLUGIN_PATHS_KEY) or {}
-
-    local dest_root, needs_prompt, candidates, all_hidden =
-        PluginPaths.resolveInstallDestination(config_override, remembered_path, hidden_paths)
-
-    if all_hidden then
-        self:showConfirmDialog{
-            title = _("Install to Default?"),
-            text = _("All of your custom plugin folders are currently hidden (see Manage plugin paths). Install to the default plugin folder anyway?"),
-            ok_text = _("Install to default"),
-            cancel_text = _("Cancel"),
-            ok_callback = function()
-                callback(PluginPaths.getDefaultPluginsRoot())
-            end,
-            cancel_callback = function()
-                on_cancel()
-            end,
-        }
-        return
-    end
-
-    if not needs_prompt then
-        callback(dest_root)
-        return
-    end
-
-    local options = {}
-    for _, p in ipairs(candidates) do
-        table.insert(options, p)
-    end
-    table.insert(options, PluginPaths.getDefaultPluginsRoot())
-
-    local remember_choice = false
-    local dialog
-    local buttons = {}
-    for _, path_option in ipairs(options) do
-        local chosen_path = path_option -- upvalue capture per row
-        table.insert(buttons, {
-            {
-                text = chosen_path,
-                background = Blitbuffer.COLOR_WHITE,
-                callback = function()
-                    UIManager:close(dialog)
-                    if remember_choice then
-                        StorefrontSettings:saveSetting(REMEMBERED_PLUGIN_INSTALL_PATH_KEY, chosen_path)
-                        StorefrontSettings:flush()
-                    end
-                    callback(chosen_path)
-                end,
-            },
-        })
-    end
-
-    dialog = ButtonDialog:new{
-        title = _("Multiple custom plugin folders are configured. Where should this plugin be installed?"),
-        title_align = "center",
-        buttons = buttons,
-        dismissable = false, -- a destination choice is mandatory; the downloaded
-        -- archive and its reader handle are only cleaned up inside the button
-        -- callbacks above, so this dialog must not be dismissable without one.
-    }
-
-    local remember_checkbox = CheckButton:new{
-        text = _("Always install here (don't ask again)"),
-        checked = false,
-        parent = dialog,
-        callback = function()
-            remember_choice = not remember_choice
-        end,
-    }
-    dialog:addWidget(remember_checkbox)
-
-    UIManager:show(dialog)
 end
 
 function Storefront:promptRepoAction(repo)

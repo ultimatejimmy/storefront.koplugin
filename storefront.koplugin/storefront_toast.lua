@@ -199,6 +199,7 @@ function StorefrontToast.show(text, timeout, opts)
         text = text or "",
         timeout = timeout or 3,
         dismissable = dismissable,
+        dismiss_callback = opts.dismiss_callback,
     }
     UIManager:show(toast)
     if type(UIManager.forceRePaint) == "function" then
