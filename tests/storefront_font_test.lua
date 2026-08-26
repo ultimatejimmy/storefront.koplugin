@@ -143,13 +143,73 @@ if ok_fm and FontMgr then
     local user_dirs = FontMgr.getUserFontDirs and FontMgr.getUserFontDirs()
     check("getUserFontDirs returns table with at least 1 path", type(user_dirs) == "table" and #user_dirs >= 1)
     local has_primary = false
+    local has_kindle = false
     for _, d in ipairs(user_dirs or {}) do
         if d:find("fonts") then
             has_primary = true
-            break
+        end
+        if d == "/mnt/us/fonts" or d == "/mnt/base-us/fonts" then
+            has_kindle = true
         end
     end
-    check("getUserFontDirs includes font directory path", has_primary == true)
+    check("getUserFontDirs includes primary font directory path", has_primary == true)
+    check("getUserFontDirs includes Kindle /mnt/us/fonts directory", has_kindle == true)
+end
+
+-- Test 5: Font Installed Map & Stem / Alias Matching
+if ok_fm and FontMgr then
+    local mock_installed_map = {
+        ["nvbitter"] = true,
+        ["bitter"] = true,
+        ["gentiumbookplus"] = true,
+        ["literataregular"] = true,
+    }
+
+    check("isFontInstalled matches direct name 'Bitter'", FontMgr.isFontInstalled("Bitter", mock_installed_map) == true)
+    check("isFontInstalled matches alias 'NV Bitter' <-> 'bitter'", FontMgr.isFontInstalled("NV Bitter", mock_installed_map) == true)
+    check("isFontInstalled matches 'Gentium Plus' <-> 'gentiumbookplus'", FontMgr.isFontInstalled("Gentium Plus", mock_installed_map) == true)
+    check("isFontInstalled matches table repo with font_family", FontMgr.isFontInstalled({ name = "Literata", font_family = "Literata" }, mock_installed_map) == true)
+    check("isFontInstalled returns false for uninstalled 'OpenDyslexic'", FontMgr.isFontInstalled("OpenDyslexic", mock_installed_map) == false)
+end
+
+-- Test 6: Rejection of Phantom InstallStore Records without Files
+if ok_fm and FontMgr then
+    -- Add a phantom font into InstallStore
+    InstallStore.upsertFont("phantomfont", {
+        font_name = "PhantomFont",
+        owner = "nobody",
+        download_url = "https://example.com/phantom.zip",
+        full_installed = false,
+    })
+    local empty_map = {}
+    check("isFontInstalled rejects phantom font when not in installed map", FontMgr.isFontInstalled("PhantomFont", empty_map) == false)
+    InstallStore.removeFont("phantomfont")
+end
+
+-- Test 7: FontList Integration
+if ok_fm and FontMgr then
+    package.loaded["fontlist"] = {
+        fontnames = { ["Charis SIL"] = true, ["Libre Baskerville"] = true },
+        fontinfo = { ["/mnt/us/fonts/Charis.ttf"] = { family = "Charis SIL" } },
+    }
+    local dynamic_map = FontMgr.getInstalledFontsMap()
+    check("getInstalledFontsMap incorporates KOReader FontList fontnames", dynamic_map["charissil"] == true or dynamic_map["Charis SIL"] == true)
+    check("isFontInstalled detects font from FontList", FontMgr.isFontInstalled("Charis SIL", dynamic_map) == true)
+    check("isFontInstalled resolves NV Basker alias to Libre Baskerville in FontList", FontMgr.isFontInstalled("NV Basker", dynamic_map) == true)
+end
+
+-- Test 8: Storefront Mixin Method Invocation
+if ok_fm and FontMgr then
+    local mock_sf = { name = "storefront" }
+    FontMgr:init(mock_sf)
+    local mock_installed_map = {
+        ["nvbitter"] = true,
+        ["bitter"] = true,
+        ["gentiumbookplus"] = true,
+    }
+    check("Storefront:isFontInstalled method works with colon invocation for 'Bitter'", mock_sf:isFontInstalled({ name = "Bitter", font_family = "Bitter" }, mock_installed_map) == true)
+    check("Storefront:isFontInstalled method works with string 'Gentium Plus'", mock_sf:isFontInstalled("Gentium Plus", mock_installed_map) == true)
+    check("Storefront:isFontInstalled method returns false for uninstalled 'OpenDyslexic'", mock_sf:isFontInstalled("OpenDyslexic", mock_installed_map) == false)
 end
 
 print("=== Font System Unit Tests Summary ===")

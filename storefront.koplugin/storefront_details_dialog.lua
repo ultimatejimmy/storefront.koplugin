@@ -686,36 +686,17 @@ function StorefrontDetailsDialog:init()
     local has_update   = false
 
     if is_font then
-        is_installed = false
-        local font_map = InstallStore.listFonts and InstallStore.listFonts() or {}
-        local font_name = self.repo and (self.repo.name or self.repo.font_family)
-        local font_file = self.repo and self.repo.font_file
-        if font_name and (font_map[font_name:lower()] or font_map[font_name]) then
-            is_installed = true
-        end
-        -- Also check filesystem: font may have been manually installed or moved
-        if not is_installed and font_name then
-            local ok_ds, DataStorage = pcall(require, "datastorage")
-            local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
-            if ok_ds and ok_lfs then
-                local fonts_root = DataStorage:getDataDir() .. "/fonts"
-                -- Check named subfolder
-                local font_dir = fonts_root .. "/" .. font_name
-                if lfs.attributes(font_dir, "mode") == "directory" and not font_dir:match("%.deleted$") then
-                    -- Check if it has at least one font file
-                    for f in lfs.dir(font_dir) do
-                        if (f:match("%.ttf$") or f:match("%.otf$")) and not f:match("%.deleted$") then
-                            is_installed = true
-                            break
-                        end
-                    end
-                end
-                -- Check flat font_file in fonts_root
-                if not is_installed and font_file then
-                    local flat_path = fonts_root .. "/" .. font_file
-                    if lfs.attributes(flat_path, "mode") == "file" and not flat_path:match("%.deleted$") then
-                        is_installed = true
-                    end
+        if self.Storefront and self.Storefront.isFontInstalled then
+            is_installed = self.Storefront:isFontInstalled(self.repo or (self.repo and self.repo.name) or "")
+        else
+            local ok_fm, font_mgr = pcall(require, "storefront_font_mgr")
+            if ok_fm and font_mgr and font_mgr.isFontInstalled then
+                is_installed = font_mgr.isFontInstalled(self.repo or (self.repo and self.repo.name) or "")
+            else
+                local font_map = InstallStore.listFonts and InstallStore.listFonts() or {}
+                local font_name = self.repo and (self.repo.name or self.repo.font_family)
+                if font_name and (font_map[font_name:lower()] or font_map[font_name]) then
+                    is_installed = true
                 end
             end
         end

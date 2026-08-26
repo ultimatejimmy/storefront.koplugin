@@ -288,6 +288,38 @@ function Matcher:init(Storefront)
                 end
             end
         end
+
+        -- 3. Fonts
+        local font_records = (InstallStore.listFonts and InstallStore.listFonts()) or {}
+        local installed_fonts = (sf.listInstalledFonts and sf:listInstalledFonts()) or {}
+
+        for _, font in ipairs(installed_fonts) do
+            local font_name = font.font_name or font.name or font.repo or ""
+            if font_name ~= "" then
+                local record = font_records[font_name:lower()]
+                if not (record and record.owner and (record.download_url or record.repo)) then
+                    local cat_repo = Cache.getRepoByName(font.owner or "", font_name) or Cache.getRepoByName("", font_name)
+                    if cat_repo then
+                        local existing_font_rec = font_records[font_name:lower()]
+                        local matched_at = (existing_font_rec and existing_font_rec.matched_at) or os.time()
+                        local new_record = {
+                            font_name = cat_repo.font_family or cat_repo.name or font_name,
+                            owner = cat_repo.owner or font.owner,
+                            repo = cat_repo.name or font_name,
+                            full_name = cat_repo.full_name or font.full_name or font_name,
+                            download_url = cat_repo.download_url or (existing_font_rec and existing_font_rec.download_url),
+                            full_installed = true,
+                            matched_at = matched_at,
+                            is_auto_matched = true,
+                            version = cat_repo.version or (existing_font_rec and existing_font_rec.version) or "1.0",
+                            installed_at = (existing_font_rec and existing_font_rec.installed_at) or font.installed_at or os.time(),
+                        }
+                        InstallStore.upsertFont(font_name, new_record)
+                        StorefrontLogger.action(string.format("AUTO-MATCHED font %s -> %s", tostring(font_name), tostring(cat_repo.full_name or cat_repo.name)))
+                    end
+                end
+            end
+        end
     end
     
     Storefront.cancelMatchContext = function(sf)

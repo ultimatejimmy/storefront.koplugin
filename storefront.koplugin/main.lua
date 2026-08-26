@@ -1418,6 +1418,10 @@ local function invalidateInstalledPluginsCache()
     G_installed_plugins_cache = nil
     G_installed_patches_cache = nil
     G_installed_fonts_cache = nil
+    local ok_fm, font_mgr = pcall(require, "storefront_font_mgr")
+    if ok_fm and font_mgr and type(font_mgr.invalidateInstalledFontsCache) == "function" then
+        font_mgr.invalidateInstalledFontsCache()
+    end
 end
 
 function Storefront:invalidateInstalledPluginsCache()
@@ -6701,31 +6705,17 @@ function Storefront:makeRepoMenuItem(repo, installed_lookup, installed_fonts_map
     local is_installed = false
     local kind = repo.kind or (self.browser_state and self.browser_state.kind)
     if kind == "font" then
-        local font_name = repo.name or repo.font_family or repo.full_name or ""
-        local clean_name = font_name:lower():gsub("[%s%-_]+", "")
-        if installed_fonts_map then
-            is_installed = installed_fonts_map[clean_name] == true or installed_fonts_map[font_name] == true or installed_fonts_map[font_name:lower()] == true
+        if self.isFontInstalled then
+            is_installed = self:isFontInstalled(repo, installed_fonts_map)
         else
-            local installed_fonts = InstallStore.listFonts() or {}
-            for k, v in pairs(installed_fonts) do
-                if k:lower():gsub("[%s%-_]+", "") == clean_name then
-                    is_installed = true
-                    break
-                end
-            end
-            if not is_installed and font_name ~= "" then
-                local ok_ds, DataStorage = pcall(require, "datastorage")
-                local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
-                if ok_ds and DataStorage and ok_lfs and lfs and lfs.attributes then
-                    local ok_mgr, font_mgr = pcall(require, "storefront_font_mgr")
-                    local font_roots = (ok_mgr and font_mgr and font_mgr.getUserFontDirs) and font_mgr.getUserFontDirs() or { DataStorage:getDataDir() .. "/fonts" }
-                    for _, froot in ipairs(font_roots) do
-                        local fonts_dir = froot .. "/" .. font_name
-                        if lfs.attributes(fonts_dir, "mode") == "directory" then
-                            is_installed = true
-                            break
-                        end
-                    end
+            local ok_fm, font_mgr = pcall(require, "storefront_font_mgr")
+            if ok_fm and font_mgr and font_mgr.isFontInstalled then
+                is_installed = font_mgr.isFontInstalled(repo, installed_fonts_map)
+            else
+                local font_name = repo.name or repo.font_family or repo.full_name or ""
+                local clean_name = font_name:lower():gsub("[%s%-_]+", "")
+                if installed_fonts_map then
+                    is_installed = installed_fonts_map[clean_name] == true or installed_fonts_map[font_name] == true or installed_fonts_map[font_name:lower()] == true
                 end
             end
         end
@@ -8250,25 +8240,14 @@ function Storefront:buildBrowserEntries(available_list_height, available_list_wi
 
     local installed_fonts_map
     if kind == "font" then
-        installed_fonts_map = {}
-        local installed_fonts = InstallStore.listFonts() or {}
-        for k, v in pairs(installed_fonts) do
-            installed_fonts_map[k:lower():gsub("[%s%-_]+", "")] = true
-            installed_fonts_map[k] = true
-            installed_fonts_map[k:lower()] = true
-        end
-        local ok_ds, DataStorage = pcall(require, "datastorage")
-        local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
-        if ok_ds and DataStorage and ok_lfs and lfs and lfs.dir then
-            local fonts_root = DataStorage:getDataDir() .. "/fonts"
-            if lfs.attributes and lfs.attributes(fonts_root, "mode") == "directory" then
-                for folder in lfs.dir(fonts_root) do
-                    if folder ~= "." and folder ~= ".." then
-                        installed_fonts_map[folder:lower():gsub("[%s%-_]+", "")] = true
-                        installed_fonts_map[folder] = true
-                        installed_fonts_map[folder:lower()] = true
-                    end
-                end
+        if self.getInstalledFontsMap then
+            installed_fonts_map = self:getInstalledFontsMap()
+        else
+            local ok_fm, font_mgr = pcall(require, "storefront_font_mgr")
+            if ok_fm and font_mgr and font_mgr.getInstalledFontsMap then
+                installed_fonts_map = font_mgr.getInstalledFontsMap()
+            else
+                installed_fonts_map = {}
             end
         end
     end

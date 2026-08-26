@@ -134,6 +134,60 @@ local function purgeFontCacheFiles()
     StorefrontLogger.info("Storefront: font caches purged from disk")
 end
 
+local FONT_FAMILY_ALIASES = {
+    ["bitter"] = { "nv bitter", "bitter", "nv_bitter" },
+    ["nv bitter"] = { "nv bitter", "bitter", "nv_bitter" },
+    ["literata"] = { "nv literata", "literata", "nv_literata" },
+    ["nv literata"] = { "nv literata", "literata", "nv_literata" },
+    ["libre baskerville"] = { "nv basker", "libre baskerville", "librebaskerville", "baskerville", "basker" },
+    ["nv basker"] = { "nv basker", "libre baskerville", "librebaskerville", "baskerville", "basker" },
+    ["gentium plus"] = { "gentium book plus", "gentium plus", "gentiumbookplus", "gentium" },
+    ["gentium book plus"] = { "gentium book plus", "gentium plus", "gentiumbookplus", "gentium" },
+    ["opendyslexic"] = { "opendyslexic", "opendyslexic3", "open dyslexic" },
+    ["readerly"] = { "readerly", "newsreader", "nv newsreader" },
+    ["sourcerer"] = { "sourcerer", "source serif", "sourceserif", "sourceserifpro" },
+    ["merriweather"] = { "merriweather", "nv merriweather" },
+    ["merriweather sans"] = { "merriweather sans", "nv merriweather sans", "merriweathersans" },
+    ["charis"] = { "nv charis", "charis sil", "charis" },
+    ["nv charis"] = { "nv charis", "charis sil", "charis" },
+    ["garamond"] = { "nv garamond", "garamond", "eb garamond" },
+    ["nv garamond"] = { "nv garamond", "garamond", "eb garamond" },
+    ["jost"] = { "nv jost", "jost" },
+    ["nv jost"] = { "nv jost", "jost" },
+}
+
+local function cleanFontName(name)
+    if not name or type(name) ~= "string" then return "" end
+    local clean = name:gsub("%.ttf$", ""):gsub("%.otf$", ""):gsub("%.asset$", "")
+    clean = clean:gsub("[%-_]?[Rr]egular$", ""):gsub("[%-_]?[Bb]old$", ""):gsub("[%-_]?[Ii]talic$", ""):gsub("[%-_]?[Bb]old[Ii]talic$", "")
+    return clean:lower():gsub("[%s%-_]+", "")
+end
+
+local function getFontStems(font_name)
+    local stems = {}
+    if not font_name or type(font_name) ~= "string" or font_name == "" then
+        return stems
+    end
+
+    local low = font_name:lower()
+    local clean = cleanFontName(font_name)
+    if clean ~= "" then
+        stems[clean] = true
+    end
+    stems[low] = true
+
+    local aliases = FONT_FAMILY_ALIASES[low] or FONT_FAMILY_ALIASES[clean]
+    if aliases then
+        for _, alias in ipairs(aliases) do
+            local alias_clean = cleanFontName(alias)
+            if alias_clean ~= "" then stems[alias_clean] = true end
+            stems[alias:lower()] = true
+        end
+    end
+
+    return stems
+end
+
 local function getUserFontDirs()
     local ok_ds, DataStorage = pcall(require, "datastorage")
     local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
@@ -162,20 +216,43 @@ local function getUserFontDirs()
     local primary_data_dir = DataStorage:getDataDir() .. "/fonts"
     addDir(primary_data_dir)
 
-    -- 2. Check FontSettings / external font paths if available
-    local ok_fs, FontSettings = pcall(require, "ui/elements/font_settings")
-    if ok_fs and FontSettings and type(FontSettings.getPath) == "function" then
-        local ok_call, paths_str = pcall(FontSettings.getPath, FontSettings)
-        if ok_call and paths_str and type(paths_str) == "string" then
-            for dir in string.gmatch(paths_str, "[^;]+") do
+    -- 2. Kindle standard USB storage font directories
+    addDir("/mnt/us/fonts")
+    addDir("/mnt/base-us/fonts")
+
+    -- 3. Kobo, Android, PocketBook standard font directories
+    addDir("/mnt/onboard/fonts")
+    addDir("/mnt/onboard/.koreader/fonts")
+    addDir("/sdcard/fonts")
+    addDir("/sdcard/koreader/fonts")
+    addDir("/mnt/ext1/system/fonts")
+    addDir("/mnt/ext2/system/fonts")
+
+    -- 4. Check KOReader ReaderSettings font_dirs setting if configured
+    local ok_sett, ReaderSettings = pcall(function()
+        if G_reader_settings then return G_reader_settings end
+        local ok_rs, rs = pcall(require, "apps/reader/modules/readersettings")
+        if ok_rs and rs then return rs end
+        return nil
+    end)
+    if ok_sett and ReaderSettings and type(ReaderSettings.readSetting) == "function" then
+        local user_setting_dirs = ReaderSettings:readSetting("font_dirs") or ReaderSettings:readSetting("font_dir")
+        if type(user_setting_dirs) == "string" then
+            for dir in string.gmatch(user_setting_dirs, "[^;:]+") do
                 if dir ~= "" and not dir:find("^/usr/share") and not dir:find("^/system") and not dir:find("^/ebrmain") then
+                    addDir(dir)
+                end
+            end
+        elseif type(user_setting_dirs) == "table" then
+            for _, dir in ipairs(user_setting_dirs) do
+                if type(dir) == "string" and dir ~= "" then
                     addDir(dir)
                 end
             end
         end
     end
 
-    -- 3. Check desktop XDG/HOME standard font directories (Linux/WSL fallback)
+    -- 5. Check desktop XDG/HOME standard font directories (Linux/WSL fallback)
     local xdg_data = os.getenv("XDG_DATA_HOME")
     if xdg_data and xdg_data ~= "" then
         addDir(xdg_data .. "/fonts")
@@ -183,9 +260,11 @@ local function getUserFontDirs()
     local home = os.getenv("HOME")
     if home and home ~= "" then
         addDir(home .. "/.local/share/fonts")
+        addDir(home .. "/.fonts")
+        addDir(home .. "/.config/koreader/fonts")
     end
 
-    -- 4. Check relative CWD 'fonts' folder if it exists as a directory
+    -- 6. Check relative CWD 'fonts' folder if it exists as a directory
     if lfs.attributes and lfs.attributes("fonts", "mode") == "directory" then
         addDir("fonts")
     end
@@ -195,36 +274,185 @@ end
 
 local G_installed_fonts_cache = nil
 
+local function invalidateInstalledFontsCache()
+    G_installed_fonts_cache = nil
+end
+
+local function getInstalledFontsMap()
+    local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
+    local map = {}
+
+    local function registerFontName(name)
+        if not name or type(name) ~= "string" or name == "" then return end
+        local low = name:lower()
+        local clean = cleanFontName(name)
+        map[name] = true
+        map[low] = true
+        if clean ~= "" then
+            map[clean] = true
+        end
+        local stems = getFontStems(name)
+        for s in pairs(stems) do
+            map[s] = true
+        end
+    end
+
+    -- 1. Scan filesystem font directories (subdirectories + flat font files)
+    if ok_lfs and lfs and lfs.attributes and lfs.dir then
+        local search_roots = getUserFontDirs()
+        for _, fonts_root in ipairs(search_roots) do
+            if lfs.attributes(fonts_root, "mode") == "directory" then
+                for item in lfs.dir(fonts_root) do
+                    if item ~= "." and item ~= ".." and not item:match("%.deleted$") and not item:match("^%.") then
+                        local p = fonts_root .. "/" .. item
+                        local mode = lfs.attributes(p, "mode")
+                        if mode == "directory" then
+                            local has_font_file = false
+                            for subf in lfs.dir(p) do
+                                if (subf:match("%.ttf$") or subf:match("%.otf$")) and not subf:match("%.deleted$") then
+                                    has_font_file = true
+                                    registerFontName(subf)
+                                end
+                            end
+                            if has_font_file then
+                                registerFontName(item)
+                            end
+                        elseif mode == "file" then
+                            if (item:match("%.ttf$") or item:match("%.otf$")) and not item:match("%.deleted$") then
+                                registerFontName(item)
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    -- 2. Query KOReader FontList registry if present
+    local ok_fl, FontList = pcall(require, "fontlist")
+    if ok_fl and FontList then
+        if FontList.fontnames and type(FontList.fontnames) == "table" then
+            for family in pairs(FontList.fontnames) do
+                registerFontName(family)
+            end
+        end
+        if FontList.fontinfo and type(FontList.fontinfo) == "table" then
+            for _, info in pairs(FontList.fontinfo) do
+                if info and info.family then
+                    registerFontName(info.family)
+                end
+            end
+        end
+    end
+
+    return map
+end
+
+local function isFontInstalled(self_or_font, maybe_font_or_map, maybe_map)
+    local font_name_or_repo = self_or_font
+    local installed_fonts_map = maybe_font_or_map
+
+    -- Handle colon syntax invocation: self:isFontInstalled(repo, map)
+    if self_or_font and type(self_or_font) == "table" and (self_or_font == M or self_or_font.name == "storefront" or self_or_font.browser_state ~= nil or self_or_font.listInstalledFonts ~= nil or self_or_font.show ~= nil or self_or_font.dialog ~= nil or self_or_font.onInit ~= nil) then
+        font_name_or_repo = maybe_font_or_map
+        installed_fonts_map = maybe_map
+    end
+
+    if not font_name_or_repo then return false end
+    local font_name = font_name_or_repo
+    local font_family = nil
+    local font_file = nil
+
+    if type(font_name_or_repo) == "table" then
+        font_name = font_name_or_repo.name or font_name_or_repo.font_name or font_name_or_repo.repo or ""
+        font_family = font_name_or_repo.font_family
+        font_file = font_name_or_repo.font_file
+    end
+
+    if (not font_name or font_name == "") and font_family then
+        font_name = font_family
+    end
+
+    local map = (type(installed_fonts_map) == "table" and (installed_fonts_map.name ~= "storefront" and installed_fonts_map.browser_state == nil)) and installed_fonts_map or getInstalledFontsMap()
+
+    -- Direct and clean matches
+    if map[font_name] or map[font_name:lower()] or map[cleanFontName(font_name)] then
+        return true
+    end
+
+    if font_family and (map[font_family] or map[font_family:lower()] or map[cleanFontName(font_family)]) then
+        return true
+    end
+
+    if font_file and (map[font_file] or map[font_file:lower()] or map[cleanFontName(font_file)]) then
+        return true
+    end
+
+    -- Stems & aliases
+    local stems = getFontStems(font_name)
+    for s in pairs(stems) do
+        if map[s] then return true end
+    end
+
+    if font_family then
+        local family_stems = getFontStems(font_family)
+        for s in pairs(family_stems) do
+            if map[s] then return true end
+        end
+    end
+
+    -- Prefix/substring stem matching
+    local clean_target = cleanFontName(font_name)
+    if clean_target ~= "" and #clean_target >= 3 then
+        for k in pairs(map) do
+            if type(k) == "string" and #k >= 3 then
+                if k == clean_target or k:find(clean_target, 1, true) == 1 or clean_target:find(k, 1, true) == 1 then
+                    return true
+                end
+            end
+        end
+    end
+
+    return false
+end
+
 local function listInstalledFonts()
     local generation = InstallStore.getGeneration and InstallStore.getGeneration() or 0
     if G_installed_fonts_cache and G_installed_fonts_cache.generation == generation then
         return G_installed_fonts_cache.fonts
     end
-    local font_map = InstallStore.listFonts and InstallStore.listFonts() or {}
-    local result = {}
-    local seen = {}
 
-    for _, rec in pairs(font_map) do
-        local key = (rec.font_name or rec.repo or ""):lower()
-        if key ~= "" then
-            seen[key] = true
+    local installed_map = getInstalledFontsMap()
+    local font_records = InstallStore.listFonts and InstallStore.listFonts() or {}
+    local result = {}
+    local seen_clean = {}
+
+    -- 1. Check InstallStore records, but ONLY include if confirmed on disk or in FontList
+    for font_key, rec in pairs(font_records) do
+        local font_name = rec.font_name or rec.repo or font_key
+        if isFontInstalled(font_name, installed_map) or isFontInstalled(rec, installed_map) then
+            local clean = cleanFontName(font_name)
+            if clean ~= "" and not seen_clean[clean] then
+                seen_clean[clean] = true
+                table.insert(result, rec)
+            end
         end
-        table.insert(result, rec)
     end
 
+    -- 2. Scan discovered font directories for unmanaged / user-installed fonts
     local ok_ds, DataStorage = pcall(require, "datastorage")
     local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
-    if ok_ds and ok_lfs then
+    if ok_ds and ok_lfs and lfs and lfs.dir and lfs.attributes then
         local search_roots = getUserFontDirs()
         for _, fonts_root in ipairs(search_roots) do
             if lfs.attributes(fonts_root, "mode") == "directory" then
-                for file in lfs.dir(fonts_root) do
-                    if file ~= "." and file ~= ".." and not file:match("%.deleted$") then
-                        local p = fonts_root .. "/" .. file
+                for item in lfs.dir(fonts_root) do
+                    if item ~= "." and item ~= ".." and not item:match("%.deleted$") and not item:match("^%.") then
+                        local p = fonts_root .. "/" .. item
                         local mode = lfs.attributes(p, "mode")
                         if mode == "directory" then
-                            local key = file:lower()
-                            if not seen[key] then
+                            local clean = cleanFontName(item)
+                            if clean ~= "" and not seen_clean[clean] then
                                 local has_font = false
                                 for subf in lfs.dir(p) do
                                     if (subf:match("%.ttf$") or subf:match("%.otf$")) and not subf:match("%.deleted$") then
@@ -233,11 +461,29 @@ local function listInstalledFonts()
                                     end
                                 end
                                 if has_font then
-                                    seen[key] = true
+                                    seen_clean[clean] = true
                                     table.insert(result, {
-                                        font_name = file,
-                                        repo = file,
-                                        full_name = file,
+                                        font_name = item,
+                                        repo = item,
+                                        full_name = item,
+                                        font_family = item,
+                                        installed_at = os.time(),
+                                        version = "1.0",
+                                    })
+                                end
+                            end
+                        elseif mode == "file" then
+                            if (item:match("%.ttf$") or item:match("%.otf$")) and not item:match("%.deleted$") then
+                                local name_no_ext = item:gsub("%.[^%.]+$", "")
+                                local clean = cleanFontName(name_no_ext)
+                                if clean ~= "" and not seen_clean[clean] then
+                                    seen_clean[clean] = true
+                                    table.insert(result, {
+                                        font_name = name_no_ext,
+                                        repo = name_no_ext,
+                                        full_name = name_no_ext,
+                                        font_family = name_no_ext,
+                                        font_file = item,
                                         installed_at = os.time(),
                                         version = "1.0",
                                     })
@@ -258,7 +504,11 @@ local function listInstalledFonts()
 end
 
 function M:init(Storefront)
-    Storefront.listInstalledFonts = listInstalledFonts
+    Storefront.listInstalledFonts = function(sf) return listInstalledFonts() end
+    Storefront.getInstalledFontsMap = function(sf) return getInstalledFontsMap() end
+    Storefront.isFontInstalled = function(sf, font_target, map) return isFontInstalled(font_target, map) end
+    Storefront.getUserFontDirs = function(sf) return getUserFontDirs() end
+    Storefront.invalidateInstalledFontsCache = function(sf) return invalidateInstalledFontsCache() end
 
     function Storefront:syncPendingFontDownloads()
         if not isNetworkOnline() then
@@ -844,5 +1094,8 @@ M.downloadFileToPath = downloadFileToPath
 M.purgeFontCacheFiles = purgeFontCacheFiles
 M.listInstalledFonts = listInstalledFonts
 M.getUserFontDirs = getUserFontDirs
+M.getInstalledFontsMap = getInstalledFontsMap
+M.isFontInstalled = isFontInstalled
+M.invalidateInstalledFontsCache = invalidateInstalledFontsCache
 
 return M
