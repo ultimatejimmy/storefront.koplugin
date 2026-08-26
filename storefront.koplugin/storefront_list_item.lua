@@ -21,6 +21,7 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local Localization = require("localization_storefront")
 local _ = function(key, ...) return Localization:t(key, ...) end
+local function sc(val) return Device.screen:scaleBySize(val) end
 local DataStorage = require("datastorage")
 
 local _asset_path_cache = {}
@@ -233,7 +234,7 @@ function StorefrontListItem:init()
 
     if is_clear_button then
         -- Centered pill chip style matching toolbar chips
-        local sc = function(val) return Device.screen:scaleBySize(val) end
+        
         local btn = Button:new{
             text = entry.text or "",
             text_font_size = 14,
@@ -312,7 +313,7 @@ function StorefrontListItem:init()
 
         local badge_w
         local right_reserve = 0
-        local sc = function(val) return Device.screen:scaleBySize(val) end
+        
 
         if badge_icon or badge_text then
             local right_widgets = {}
@@ -442,7 +443,7 @@ function StorefrontListItem:init()
             local net_score = user_up - user_down
             if net_score ~= 0 or user_up > 0 or user_down > 0 then
                 add_sep()
-                local sc = function(val) return Device.screen:scaleBySize(val) end
+                
                 local icon_file = is_up_active and getAssetPath("thumbs-up-filled.svg") or getAssetPath("thumbs-up.svg")
                 table.insert(meta_items, ImageWidget:new{
                     file = icon_file,
@@ -563,19 +564,17 @@ function StorefrontListItem:init()
     end
 
     if entry.callback or entry.hold_callback then
-        local tap_range = function()
-            return Geom:new{
-                x = self.dimen.x,
-                y = self.dimen.y,
-                w = self.dimen.w,
-                h = self.dimen.h,
-            }
-        end
+        local rect = Geom:new{
+            x = self.dimen.x,
+            y = self.dimen.y,
+            w = self.dimen.w,
+            h = self.dimen.h,
+        }
         self.ges_events = {
             StorefrontTap = {
                 GestureRange:new{
                     ges = "tap",
-                    range = tap_range,
+                    range = rect,
                 },
             },
         }
@@ -583,7 +582,7 @@ function StorefrontListItem:init()
             self.ges_events.StorefrontHold = {
                 GestureRange:new{
                     ges = "hold",
-                    range = tap_range,
+                    range = rect,
                 },
             }
         end
@@ -592,7 +591,7 @@ end
 
 function StorefrontListItem:onStorefrontTap(arg, ges)
     if self.entry and self.entry.on_badge_tap and ges and ges.pos then
-        local sc = function(val) return Device.screen:scaleBySize(val) end
+        
         local right_edge = (self.dimen and self.dimen.x or 0) + (self.dimen and self.dimen.w or 0)
         local badge_width = sc(70)
         if ges.pos.x >= (right_edge - badge_width) then

@@ -98,7 +98,16 @@ local function isNetworkOnline()
     return true
 end
 
+local G_fonts_map_cache = nil   -- flat {name -> true} map used by getInstalledFontsMap
+local G_fonts_list_cache = nil  -- { generation=N, fonts={...} } used by listInstalledFonts
+
+local function invalidateInstalledFontsCache()
+    G_fonts_map_cache = nil
+    G_fonts_list_cache = nil
+end
+
 local function purgeFontCacheFiles()
+    invalidateInstalledFontsCache()
     local ok_ds, DataStorage = pcall(require, "datastorage")
     if not (ok_ds and DataStorage) then return end
     local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
@@ -135,32 +144,130 @@ local function purgeFontCacheFiles()
 end
 
 local FONT_FAMILY_ALIASES = {
-    ["bitter"] = { "nv bitter", "bitter", "nv_bitter" },
-    ["nv bitter"] = { "nv bitter", "bitter", "nv_bitter" },
-    ["literata"] = { "nv literata", "literata", "nv_literata" },
-    ["nv literata"] = { "nv literata", "literata", "nv_literata" },
-    ["libre baskerville"] = { "nv basker", "libre baskerville", "librebaskerville", "baskerville", "basker" },
-    ["nv basker"] = { "nv basker", "libre baskerville", "librebaskerville", "baskerville", "basker" },
-    ["gentium plus"] = { "gentium book plus", "gentium plus", "gentiumbookplus", "gentium" },
-    ["gentium book plus"] = { "gentium book plus", "gentium plus", "gentiumbookplus", "gentium" },
-    ["opendyslexic"] = { "opendyslexic", "opendyslexic3", "open dyslexic" },
-    ["readerly"] = { "readerly", "newsreader", "nv newsreader" },
-    ["sourcerer"] = { "sourcerer", "source serif", "sourceserif", "sourceserifpro" },
-    ["merriweather"] = { "merriweather", "nv merriweather" },
-    ["merriweather sans"] = { "merriweather sans", "nv merriweather sans", "merriweathersans" },
-    ["charis"] = { "nv charis", "charis sil", "charis" },
-    ["nv charis"] = { "nv charis", "charis sil", "charis" },
-    ["garamond"] = { "nv garamond", "garamond", "eb garamond" },
-    ["nv garamond"] = { "nv garamond", "garamond", "eb garamond" },
-    ["jost"] = { "nv jost", "jost" },
-    ["nv jost"] = { "nv jost", "jost" },
+    ["bitter"] = { "nv bitter", "bitter", "nv_bitter", "nvbitter" },
+    ["nv bitter"] = { "nv bitter", "bitter", "nv_bitter", "nvbitter" },
+    ["nvbitter"] = { "nv bitter", "bitter", "nv_bitter", "nvbitter" },
+
+    ["literata"] = { "nv literata", "literata", "nv_literata", "nvliterata" },
+    ["nv literata"] = { "nv literata", "literata", "nv_literata", "nvliterata" },
+    ["nvliterata"] = { "nv literata", "literata", "nv_literata", "nvliterata" },
+
+    ["libre baskerville"] = { "nv basker", "libre baskerville", "librebaskerville", "baskerville", "basker", "nv_basker", "nvbasker" },
+    ["nv basker"] = { "nv basker", "libre baskerville", "librebaskerville", "baskerville", "basker", "nv_basker", "nvbasker" },
+    ["nvbasker"] = { "nv basker", "libre baskerville", "librebaskerville", "baskerville", "basker", "nv_basker", "nvbasker" },
+    ["baskerville"] = { "nv basker", "libre baskerville", "librebaskerville", "baskerville", "basker", "nv_basker", "nvbasker" },
+
+    ["gentium plus"] = { "gentium book plus", "gentium plus", "gentiumbookplus", "gentium", "gentiumplus", "nv gentium", "nv_gentium", "nvgentium" },
+    ["gentium book plus"] = { "gentium book plus", "gentium plus", "gentiumbookplus", "gentium", "gentiumplus", "nv gentium", "nv_gentium", "nvgentium" },
+    ["gentium"] = { "gentium book plus", "gentium plus", "gentiumbookplus", "gentium", "gentiumplus", "nv gentium", "nv_gentium", "nvgentium" },
+    ["nv gentium"] = { "gentium book plus", "gentium plus", "gentiumbookplus", "gentium", "gentiumplus", "nv gentium", "nv_gentium", "nvgentium" },
+    ["nv_gentium"] = { "gentium book plus", "gentium plus", "gentiumbookplus", "gentium", "gentiumplus", "nv gentium", "nv_gentium", "nvgentium" },
+    ["nvgentium"] = { "gentium book plus", "gentium plus", "gentiumbookplus", "gentium", "gentiumplus", "nv gentium", "nv_gentium", "nvgentium" },
+
+    ["opendyslexic"] = { "opendyslexic", "opendyslexic3", "open dyslexic", "opendyslexic 3" },
+    ["opendyslexic3"] = { "opendyslexic", "opendyslexic3", "open dyslexic", "opendyslexic 3" },
+
+    ["readerly"] = { "readerly", "newsreader", "nv newsreader", "nv_newsreader", "nvnewsreader" },
+    ["newsreader"] = { "readerly", "newsreader", "nv newsreader", "nv_newsreader", "nvnewsreader" },
+    ["nv newsreader"] = { "readerly", "newsreader", "nv newsreader", "nv_newsreader", "nvnewsreader" },
+    ["nvnewsreader"] = { "readerly", "newsreader", "nv newsreader", "nv_newsreader", "nvnewsreader" },
+
+    ["sourcerer"] = { "sourcerer", "source serif", "sourceserif", "sourceserifpro", "sourceserif4", "source serif 4", "source serif pro" },
+    ["sourceserif"] = { "sourcerer", "source serif", "sourceserif", "sourceserifpro", "sourceserif4", "source serif 4", "source serif pro" },
+
+    ["merriweather"] = { "merriweather", "nv merriweather", "nv_merriweather", "nvmerriweather" },
+    ["nv merriweather"] = { "merriweather", "nv merriweather", "nv_merriweather", "nvmerriweather" },
+
+    ["merriweather sans"] = { "merriweather sans", "nv merriweather sans", "merriweathersans", "nv_merriweather_sans", "nvmerriweathersans" },
+
+    ["charis"] = { "nv charis", "charis sil", "charis", "charissil", "nv_charis", "nvcharis" },
+    ["nv charis"] = { "nv charis", "charis sil", "charis", "charissil", "nv_charis", "nvcharis" },
+    ["charis sil"] = { "nv charis", "charis sil", "charis", "charissil", "nv_charis", "nvcharis" },
+
+    ["garamond"] = { "nv garamond", "garamond", "eb garamond", "ebgaramond", "nv_garamond", "nvgaramond" },
+    ["nv garamond"] = { "nv garamond", "garamond", "eb garamond", "ebgaramond", "nv_garamond", "nvgaramond" },
+    ["eb garamond"] = { "nv garamond", "garamond", "eb garamond", "ebgaramond", "nv_garamond", "nvgaramond" },
+
+    ["jost"] = { "nv jost", "jost", "nv_jost", "nvjost" },
+    ["nv jost"] = { "nv jost", "jost", "nv_jost", "nvjost" },
+
+    ["lora"] = { "lora", "nv lora", "nv_lora", "nvlora" },
+    ["nv lora"] = { "lora", "nv lora", "nv_lora", "nvlora" },
 }
+
+local function stripFontStyleSuffix(name)
+    if not name or type(name) ~= "string" then return "" end
+    local clean = name:gsub("%.ttf$", ""):gsub("%.otf$", ""):gsub("%.asset$", "")
+
+    local style_patterns = {
+        "[%-_%s]?[Ee]xtra[%-_%s]?[Bb]old[%-_%s]?[Ii]talic$",
+        "[%-_%s]?[Ee]xtra[%-_%s]?[Bb]old[%-_%s]?[Oo]blique$",
+        "[%-_%s]?[Uu]ltra[%-_%s]?[Bb]old[%-_%s]?[Ii]talic$",
+        "[%-_%s]?[Uu]ltra[%-_%s]?[Bb]old[%-_%s]?[Oo]blique$",
+        "[%-_%s]?[Ss]emi[%-_%s]?[Bb]old[%-_%s]?[Ii]talic$",
+        "[%-_%s]?[Ss]emi[%-_%s]?[Bb]old[%-_%s]?[Oo]blique$",
+        "[%-_%s]?[Dd]emi[%-_%s]?[Bb]old[%-_%s]?[Ii]talic$",
+        "[%-_%s]?[Dd]emi[%-_%s]?[Bb]old[%-_%s]?[Oo]blique$",
+        "[%-_%s]?[Ee]xtra[%-_%s]?[Ll]ight[%-_%s]?[Ii]talic$",
+        "[%-_%s]?[Ee]xtra[%-_%s]?[Ll]ight[%-_%s]?[Oo]blique$",
+        "[%-_%s]?[Uu]ltra[%-_%s]?[Ll]ight[%-_%s]?[Ii]talic$",
+        "[%-_%s]?[Uu]ltra[%-_%s]?[Ll]ight[%-_%s]?[Oo]blique$",
+        "[%-_%s]?[Bb]old[%-_%s]?[Ii]talic$",
+        "[%-_%s]?[Bb]old[%-_%s]?[Oo]blique$",
+        "[%-_%s]?[Bb]lack[%-_%s]?[Ii]talic$",
+        "[%-_%s]?[Bb]lack[%-_%s]?[Oo]blique$",
+        "[%-_%s]?[Mm]edium[%-_%s]?[Ii]talic$",
+        "[%-_%s]?[Mm]edium[%-_%s]?[Oo]blique$",
+        "[%-_%s]?[Ll]ight[%-_%s]?[Ii]talic$",
+        "[%-_%s]?[Ll]ight[%-_%s]?[Oo]blique$",
+        "[%-_%s]?[Tt]hin[%-_%s]?[Ii]talic$",
+        "[%-_%s]?[Tt]hin[%-_%s]?[Oo]blique$",
+        "[%-_%s]?[Bb]ook[%-_%s]?[Ii]talic$",
+        "[%-_%s]?[Bb]ook[%-_%s]?[Oo]blique$",
+        "[%-_%s]?[Ee]xtra[%-_%s]?[Bb]old$",
+        "[%-_%s]?[Uu]ltra[%-_%s]?[Bb]old$",
+        "[%-_%s]?[Ss]emi[%-_%s]?[Bb]old$",
+        "[%-_%s]?[Dd]emi[%-_%s]?[Bb]old$",
+        "[%-_%s]?[Ee]xtra[%-_%s]?[Ll]ight$",
+        "[%-_%s]?[Uu]ltra[%-_%s]?[Ll]ight$",
+        "[%-_%s]?[Bb]old$",
+        "[%-_%s]?[Bb]lack$",
+        "[%-_%s]?[Hh]eavy$",
+        "[%-_%s]?[Mm]edium$",
+        "[%-_%s]?[Ll]ight$",
+        "[%-_%s]?[Tt]hin$",
+        "[%-_%s]?[Hh]airline$",
+        "[%-_%s]?[Bb]ook$",
+        "[%-_%s]?[Rr]oman$",
+        "[%-_%s]?[Nn]ormal$",
+        "[%-_%s]?[Rr]egular$",
+        "[%-_%s]?[Ii]talic$",
+        "[%-_%s]?[Oo]blique$",
+        "[%-_%s]?[Dd]isplay$",
+        "[%-_%s]?[Tt]ext$",
+        "[%-_%s]?[Cc]aption$",
+    }
+
+    local changed = true
+    while changed do
+        changed = false
+        for _, pat in ipairs(style_patterns) do
+            local new_clean = clean:gsub(pat, "")
+            if new_clean ~= clean and new_clean ~= "" then
+                clean = new_clean
+                changed = true
+                break
+            end
+        end
+    end
+
+    return clean
+end
 
 local function cleanFontName(name)
     if not name or type(name) ~= "string" then return "" end
-    local clean = name:gsub("%.ttf$", ""):gsub("%.otf$", ""):gsub("%.asset$", "")
-    clean = clean:gsub("[%-_]?[Rr]egular$", ""):gsub("[%-_]?[Bb]old$", ""):gsub("[%-_]?[Ii]talic$", ""):gsub("[%-_]?[Bb]old[Ii]talic$", "")
-    return clean:lower():gsub("[%s%-_]+", "")
+    local base = stripFontStyleSuffix(name)
+    return base:lower():gsub("[%s%-_]+", "")
 end
 
 local function getFontStems(font_name)
@@ -176,12 +283,39 @@ local function getFontStems(font_name)
     end
     stems[low] = true
 
+    local function addAlias(alias)
+        if not alias or alias == "" then return end
+        local ac = cleanFontName(alias)
+        if ac ~= "" then stems[ac] = true end
+        stems[alias:lower()] = true
+    end
+
     local aliases = FONT_FAMILY_ALIASES[low] or FONT_FAMILY_ALIASES[clean]
     if aliases then
         for _, alias in ipairs(aliases) do
-            local alias_clean = cleanFontName(alias)
-            if alias_clean ~= "" then stems[alias_clean] = true end
-            stems[alias:lower()] = true
+            addAlias(alias)
+        end
+    end
+
+    -- If name has NV prefix (e.g. NV_Gentium, NV_Bitter, NV_Literata, NV_Charis)
+    local without_nv = clean:gsub("^nv", "")
+    if without_nv ~= clean and #without_nv >= 3 then
+        stems[without_nv] = true
+        local nv_aliases = FONT_FAMILY_ALIASES[without_nv]
+        if nv_aliases then
+            for _, alias in ipairs(nv_aliases) do
+                addAlias(alias)
+            end
+        end
+    end
+
+    -- Also add "nv" + clean (e.g. if clean is "gentium", add "nvgentium")
+    local with_nv = "nv" .. clean
+    stems[with_nv] = true
+    local with_nv_aliases = FONT_FAMILY_ALIASES[with_nv]
+    if with_nv_aliases then
+        for _, alias in ipairs(with_nv_aliases) do
+            addAlias(alias)
         end
     end
 
@@ -273,12 +407,17 @@ local function getUserFontDirs()
 end
 
 local G_installed_fonts_cache = nil
+local G_fonts_map_cache = nil
 
 local function invalidateInstalledFontsCache()
+    G_fonts_map_cache = nil
     G_installed_fonts_cache = nil
 end
 
 local function getInstalledFontsMap()
+    if G_fonts_map_cache then
+        return G_fonts_map_cache
+    end
     local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
     local map = {}
 
@@ -345,6 +484,7 @@ local function getInstalledFontsMap()
         end
     end
 
+    G_fonts_map_cache = map
     return map
 end
 
@@ -427,13 +567,59 @@ local function listInstalledFonts()
     local result = {}
     local seen_clean = {}
 
+    local function markSeen(name, rec)
+        if not name or name == "" then return end
+        local clean = cleanFontName(name)
+        if clean ~= "" then seen_clean[clean] = true end
+        for s in pairs(getFontStems(name)) do seen_clean[s] = true end
+        if rec then
+            if rec.font_name then
+                seen_clean[cleanFontName(rec.font_name)] = true
+                for s in pairs(getFontStems(rec.font_name)) do seen_clean[s] = true end
+            end
+            if rec.font_family then
+                seen_clean[cleanFontName(rec.font_family)] = true
+                for s in pairs(getFontStems(rec.font_family)) do seen_clean[s] = true end
+            end
+            if rec.repo then
+                seen_clean[cleanFontName(rec.repo)] = true
+                for s in pairs(getFontStems(rec.repo)) do seen_clean[s] = true end
+            end
+        end
+    end
+
+    local function isAlreadySeen(name)
+        if not name or name == "" then return false end
+        local clean = cleanFontName(name)
+        if clean ~= "" and seen_clean[clean] then return true end
+        for s in pairs(getFontStems(name)) do
+            if seen_clean[s] then return true end
+        end
+        return false
+    end
+
+    local ok_cache, Cache = pcall(require, "storefront_cache")
+    local function findCatalogFont(name)
+        if not (ok_cache and Cache) then return nil end
+        local cat = Cache.getRepoByName("", name)
+        if cat then return cat end
+        local clean = cleanFontName(name)
+        local cat_fonts = Cache.listRepos("font") or {}
+        for _, cr in ipairs(cat_fonts) do
+            local cr_clean = cleanFontName(cr.font_family or cr.name or "")
+            if cr_clean == clean or (getFontStems(cr.font_family or cr.name or "")[clean]) then
+                return cr
+            end
+        end
+        return nil
+    end
+
     -- 1. Check InstallStore records, but ONLY include if confirmed on disk or in FontList
     for font_key, rec in pairs(font_records) do
         local font_name = rec.font_name or rec.repo or font_key
         if isFontInstalled(font_name, installed_map) or isFontInstalled(rec, installed_map) then
-            local clean = cleanFontName(font_name)
-            if clean ~= "" and not seen_clean[clean] then
-                seen_clean[clean] = true
+            if not isAlreadySeen(font_name) then
+                markSeen(font_name, rec)
                 table.insert(result, rec)
             end
         end
@@ -451,8 +637,8 @@ local function listInstalledFonts()
                         local p = fonts_root .. "/" .. item
                         local mode = lfs.attributes(p, "mode")
                         if mode == "directory" then
-                            local clean = cleanFontName(item)
-                            if clean ~= "" and not seen_clean[clean] then
+                            local base_name = stripFontStyleSuffix(item)
+                            if not isAlreadySeen(base_name) and not isAlreadySeen(item) then
                                 local has_font = false
                                 for subf in lfs.dir(p) do
                                     if (subf:match("%.ttf$") or subf:match("%.otf$")) and not subf:match("%.deleted$") then
@@ -461,31 +647,43 @@ local function listInstalledFonts()
                                     end
                                 end
                                 if has_font then
-                                    seen_clean[clean] = true
+                                    local cat = findCatalogFont(base_name) or findCatalogFont(item)
+                                    local display_name = cat and (cat.font_family or cat.name) or base_name
+                                    markSeen(display_name, cat)
                                     table.insert(result, {
-                                        font_name = item,
-                                        repo = item,
-                                        full_name = item,
-                                        font_family = item,
+                                        font_name = display_name,
+                                        repo = cat and cat.name or display_name,
+                                        full_name = cat and cat.full_name or display_name,
+                                        font_family = cat and cat.font_family or display_name,
+                                        owner = cat and cat.owner or "",
+                                        description = cat and cat.description or "",
+                                        stars = cat and cat.stars or 0,
+                                        download_url = cat and cat.download_url,
                                         installed_at = os.time(),
-                                        version = "1.0",
+                                        version = cat and cat.version or "1.0",
                                     })
                                 end
                             end
                         elseif mode == "file" then
                             if (item:match("%.ttf$") or item:match("%.otf$")) and not item:match("%.deleted$") then
                                 local name_no_ext = item:gsub("%.[^%.]+$", "")
-                                local clean = cleanFontName(name_no_ext)
-                                if clean ~= "" and not seen_clean[clean] then
-                                    seen_clean[clean] = true
+                                local base_name = stripFontStyleSuffix(name_no_ext)
+                                if not isAlreadySeen(base_name) and not isAlreadySeen(name_no_ext) then
+                                    local cat = findCatalogFont(base_name) or findCatalogFont(name_no_ext)
+                                    local display_name = cat and (cat.font_family or cat.name) or base_name
+                                    markSeen(display_name, cat)
                                     table.insert(result, {
-                                        font_name = name_no_ext,
-                                        repo = name_no_ext,
-                                        full_name = name_no_ext,
-                                        font_family = name_no_ext,
+                                        font_name = display_name,
+                                        repo = cat and cat.name or display_name,
+                                        full_name = cat and cat.full_name or display_name,
+                                        font_family = cat and cat.font_family or display_name,
                                         font_file = item,
+                                        owner = cat and cat.owner or "",
+                                        description = cat and cat.description or "",
+                                        stars = cat and cat.stars or 0,
+                                        download_url = cat and cat.download_url,
                                         installed_at = os.time(),
-                                        version = "1.0",
+                                        version = cat and cat.version or "1.0",
                                     })
                                 end
                             end
@@ -502,6 +700,8 @@ local function listInstalledFonts()
     }
     return result
 end
+
+M.stripFontStyleSuffix = stripFontStyleSuffix
 
 function M:init(Storefront)
     Storefront.listInstalledFonts = function(sf) return listInstalledFonts() end
@@ -1097,5 +1297,6 @@ M.getUserFontDirs = getUserFontDirs
 M.getInstalledFontsMap = getInstalledFontsMap
 M.isFontInstalled = isFontInstalled
 M.invalidateInstalledFontsCache = invalidateInstalledFontsCache
+M.stripFontStyleSuffix = stripFontStyleSuffix
 
 return M

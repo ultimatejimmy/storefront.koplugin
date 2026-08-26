@@ -215,12 +215,17 @@ function CatalogClient.updateCacheFromCatalog(catalog_data, is_bundled)
     Cache.storeRepos("font", fonts, custom_fetched_at)
     
     -- Store patch file metadata for patch repositories
+    local has_patch_files = false
     for _, repo in ipairs(patches) do
         local repo_id = tonumber(repo.repo_id or repo.id)
         if repo_id and repo.patch_files and type(repo.patch_files) == "table" then
             local pushed_at = repo.pushed_at or repo.updated_at or ""
-            Cache.storePatchFiles(repo_id, repo.patch_files, pushed_at)
+            Cache.storePatchFiles(repo_id, repo.patch_files, pushed_at, true)
+            has_patch_files = true
         end
+    end
+    if has_patch_files and Cache.savePatchFiles then
+        Cache.savePatchFiles()
     end
     
     return true, nil

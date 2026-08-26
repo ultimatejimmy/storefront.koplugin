@@ -1,3 +1,4 @@
+local Localization = require("localization_storefront")
 local R = {
     Device = require("device"),
     DataStorage = require("datastorage"),
@@ -34,8 +35,8 @@ local R = {
     CenterContainer = require("ui/widget/container/centercontainer"),
     RightContainer = require("ui/widget/container/rightcontainer"),
     OverlapGroup = require("ui/widget/overlapgroup"),
-    Localization = require("localization_storefront"),
-    _ = function(key, ...) return require("localization_storefront"):t(key, ...) end,
+    Localization = Localization,
+    _ = function(key, ...) return Localization:t(key, ...) end,
     Cache = require("storefront_cache"),
     GitHub = require("storefront_net_github"),
     RepoContent = require("storefront_repo_content"),
@@ -6959,20 +6960,38 @@ function Storefront:paginateEntries(items, tab_name, available_list_height)
     local current_page = {}
     local current_h = 0
 
+    local sample_entry_h = nil
+    local sample_update_h = nil
+    local sample_thumb_h = nil
+
     for i, entry in ipairs(items) do
         local item_h = entry._measured_h
         if not item_h then
             if entry.is_entry then
-                local ok, widget = pcall(function()
-                    return StorefrontListItem:new{
-                        entry = entry,
-                        width = item_w,
-                    }
-                end)
-                if ok and widget and widget.getSize then
-                    item_h = widget:getSize().h
+                if entry.thumbnail_file then
+                    if not sample_thumb_h then
+                        local ok, widget = pcall(function()
+                            return StorefrontListItem:new{ entry = entry, width = item_w }
+                        end)
+                        sample_thumb_h = (ok and widget and widget.getSize) and widget:getSize().h or (Device.screen:scaleBySize(80) + 2 * pad)
+                    end
+                    item_h = sample_thumb_h
+                elseif entry.is_update_item then
+                    if not sample_update_h then
+                        local ok, widget = pcall(function()
+                            return StorefrontListItem:new{ entry = entry, width = item_w }
+                        end)
+                        sample_update_h = (ok and widget and widget.getSize) and widget:getSize().h or Device.screen:scaleBySize(60)
+                    end
+                    item_h = sample_update_h
                 else
-                    item_h = Device.screen:scaleBySize(60)
+                    if not sample_entry_h then
+                        local ok, widget = pcall(function()
+                            return StorefrontListItem:new{ entry = entry, width = item_w }
+                        end)
+                        sample_entry_h = (ok and widget and widget.getSize) and widget:getSize().h or Device.screen:scaleBySize(60)
+                    end
+                    item_h = sample_entry_h
                 end
                 entry._measured_h = item_h
             elseif entry.is_clear_button then
@@ -9489,11 +9508,14 @@ function Storefront:getRepoDescriptors(kind)
     -- which is the dominant cost when flipping pages. Invalidate when the cache's
     -- last-fetched stamp changes (refresh) — see refreshCache resetting it too.
     local fetched = Cache.getLastFetched and Cache.getLastFetched(kind)
-    local entries = Cache.listRepos(kind)
     local cache = self._repo_descriptors_cache
-    if cache and cache[kind] and cache[kind].fetched == fetched and cache[kind].descriptors and #cache[kind].descriptors == #entries then
-        return cache[kind].descriptors
+    if cache and cache[kind] and cache[kind].fetched == fetched and cache[kind].descriptors then
+        local count = Cache.countRepos and Cache.countRepos(kind)
+        if count == nil or count == #cache[kind].descriptors then
+            return cache[kind].descriptors
+        end
     end
+    local entries = Cache.listRepos(kind)
     local descriptors = {}
     for _, repo in ipairs(entries) do
         local owner = repo.owner or (repo.data and repo.data.owner and repo.data.owner.login)

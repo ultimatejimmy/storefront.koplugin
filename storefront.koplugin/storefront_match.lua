@@ -164,6 +164,10 @@ function Matcher:init(Storefront)
         end
         sf._auto_matched_gen = current_gen
 
+        if InstallStore.beginBatch then
+            InstallStore.beginBatch()
+        end
+
         -- Scrub any stale auto-matched records for core bundled plugins
         for plugin_key, _ in pairs(Matcher.CORE_KOREADER_PLUGINS) do
             local clean = plugin_key:gsub("%.koplugin$", "")
@@ -319,6 +323,10 @@ function Matcher:init(Storefront)
                     end
                 end
             end
+        end
+
+        if InstallStore.endBatch then
+            InstallStore.endBatch()
         end
     end
     

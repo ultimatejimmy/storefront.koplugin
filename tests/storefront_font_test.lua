@@ -212,6 +212,33 @@ if ok_fm and FontMgr then
     check("Storefront:isFontInstalled method returns false for uninstalled 'OpenDyslexic'", mock_sf:isFontInstalled("OpenDyslexic", mock_installed_map) == false)
 end
 
+-- Test 9: Font Style Suffix Stripping & Consolidation
+if ok_fm and FontMgr and FontMgr.stripFontStyleSuffix then
+    check("stripFontStyleSuffix strips BoldItalic from Fast_Serif_BoldItalic", FontMgr.stripFontStyleSuffix("Fast_Serif_BoldItalic") == "Fast_Serif")
+    check("stripFontStyleSuffix strips Bold from Fast_Serif_Bold", FontMgr.stripFontStyleSuffix("Fast_Serif_Bold") == "Fast_Serif")
+    check("stripFontStyleSuffix strips Italic from Fast_Serif_Italic", FontMgr.stripFontStyleSuffix("Fast_Serif_Italic") == "Fast_Serif")
+    check("stripFontStyleSuffix strips Regular from Fast_Serif_Regular", FontMgr.stripFontStyleSuffix("Fast_Serif_Regular") == "Fast_Serif")
+    check("stripFontStyleSuffix strips BoldItalic from Fast_Sans_Dotted_BoldItalic.otf", FontMgr.stripFontStyleSuffix("Fast_Sans_Dotted_BoldItalic.otf") == "Fast_Sans_Dotted")
+    check("stripFontStyleSuffix handles Atkinson_Hyperlegible_BoldItalic.ttf", FontMgr.stripFontStyleSuffix("Atkinson_Hyperlegible_BoldItalic.ttf") == "Atkinson_Hyperlegible")
+    check("stripFontStyleSuffix handles NV_Bitter-BoldItalic.ttf", FontMgr.stripFontStyleSuffix("NV_Bitter-BoldItalic.ttf") == "NV_Bitter")
+    check("stripFontStyleSuffix handles SemiBoldItalic compound", FontMgr.stripFontStyleSuffix("OpenSans-SemiBoldItalic.ttf") == "OpenSans")
+end
+
+-- Test 10: NV_Gentium <-> Gentium Plus Bidirectional Stemming
+if ok_fm and FontMgr then
+    local mock_map = {
+        ["gentiumplus"] = true,
+    }
+    check("isFontInstalled matches 'NV_Gentium' when 'Gentium Plus' is installed", FontMgr.isFontInstalled("NV_Gentium", mock_map) == true)
+    check("isFontInstalled matches 'NV_Gentium-Regular.ttf' when 'Gentium Plus' is installed", FontMgr.isFontInstalled("NV_Gentium-Regular.ttf", mock_map) == true)
+
+    local mock_nv_map = {
+        ["nvgentium"] = true,
+    }
+    check("isFontInstalled matches 'Gentium Plus' when 'NV_Gentium' is on disk", FontMgr.isFontInstalled("Gentium Plus", mock_nv_map) == true)
+    check("isFontInstalled matches table repo Gentium Plus when nvgentium is on disk", FontMgr.isFontInstalled({ name = "Gentium Plus", font_family = "Gentium Plus" }, mock_nv_map) == true)
+end
+
 print("=== Font System Unit Tests Summary ===")
 print(string.format("Total Failures: %d", failures))
 if failures > 0 then

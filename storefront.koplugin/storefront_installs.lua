@@ -57,8 +57,17 @@ local function readStore()
     return cached_store_data
 end
 
+local in_batch = false
+local batch_dirty = false
+
 local function writeStore(data)
     local payload = normalizeData(data)
+    cached_store_data = payload
+    generation = generation + 1
+    if in_batch then
+        batch_dirty = true
+        return true
+    end
     local ok, encoded = pcall(function()
         return json.encode(payload)
     end)
@@ -68,9 +77,28 @@ local function writeStore(data)
     end
     settings:saveSetting(store_key, encoded)
     settings:flush()
-    cached_store_data = payload
-    generation = generation + 1
     return true
+end
+
+function InstallStore.beginBatch()
+    in_batch = true
+    batch_dirty = false
+end
+
+function InstallStore.endBatch()
+    in_batch = false
+    if batch_dirty and cached_store_data then
+        local ok, encoded = pcall(function()
+            return json.encode(cached_store_data)
+        end)
+        if ok then
+            settings:saveSetting(store_key, encoded)
+            settings:flush()
+        else
+            logger.warn("Storefront installs encode error", encoded)
+        end
+        batch_dirty = false
+    end
 end
 
 function InstallStore.list()

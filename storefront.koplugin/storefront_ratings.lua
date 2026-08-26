@@ -248,6 +248,9 @@ function StorefrontRatings.fetchRatings(callback, force_refresh)
 end
 
 local function getCandidateKeys(item_or_id)
+    if type(item_or_id) == "table" and item_or_id._candidate_keys then
+        return item_or_id._candidate_keys
+    end
     local keys = {}
     local seen = {}
 
@@ -346,6 +349,10 @@ local function getCandidateKeys(item_or_id)
     add_key_variants(item.dirname)
     add_key_variants(item.filename)
     add_key_variants(item.font_name)
+
+    if type(item_or_id) == "table" then
+        item_or_id._candidate_keys = keys
+    end
 
     return keys
 end

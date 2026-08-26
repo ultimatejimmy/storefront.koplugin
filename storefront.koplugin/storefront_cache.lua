@@ -21,6 +21,7 @@ local _data = {
 local _by_id = {}
 local _by_name = {}
 local _by_plugin_name = {}
+local _sorted_cache = {}
 
 local function ensureDirectory()
     local ok, err = util.makePath(DB_DIRECTORY)
@@ -74,6 +75,46 @@ end
 
 local _seeding_in_progress = false
 
+local function buildIndices()
+    _by_id = {}
+    _by_name = {}
+    _by_plugin_name = {}
+    
+    local function indexRepos(repos, kind)
+        for _, repo in ipairs(repos) do
+            local s = tonumber(repo.stars) or 0
+            if s == 0 and repo.data then
+                s = tonumber(repo.data.stargazers_count) or tonumber(repo.data.stars) or 0
+                repo.stars = s
+            end
+            if repo.repo_id then
+                _by_id[repo.repo_id] = repo
+            end
+            if repo.owner and repo.name then
+                local key = string.format("%s/%s", repo.owner:lower(), repo.name:lower())
+                _by_name[key] = repo
+            end
+            if kind == "plugin" and repo.name then
+                local clean = repo.name:gsub("%.koplugin$", ""):lower()
+                if not _by_plugin_name[clean] or (tonumber(repo.stars) or 0) > (tonumber(_by_plugin_name[clean].stars) or 0) then
+                    _by_plugin_name[clean] = repo
+                    _by_plugin_name[clean .. ".koplugin"] = repo
+                end
+            end
+        end
+    end
+    
+    if _data.plugin and _data.plugin.repos then
+        indexRepos(_data.plugin.repos, "plugin")
+    end
+    if _data.patch and _data.patch.repos then
+        indexRepos(_data.patch.repos, "patch")
+    end
+    if _data.font and _data.font.repos then
+        indexRepos(_data.font.repos, "font")
+    end
+end
+
 function Cache.init()
     if _seeding_in_progress then return end
     if _loaded then
@@ -113,44 +154,7 @@ function Cache.init()
         _seeding_in_progress = false
     end
 
-    _by_id = {}
-    _by_name = {}
-    _by_plugin_name = {}
-    
-    local function indexRepos(repos, kind)
-        for _, repo in ipairs(repos) do
-            local s = tonumber(repo.stars) or 0
-            if s == 0 and repo.data then
-                s = tonumber(repo.data.stargazers_count) or tonumber(repo.data.stars) or 0
-                repo.stars = s
-            end
-            if repo.repo_id then
-                _by_id[repo.repo_id] = repo
-            end
-            if repo.owner and repo.name then
-                local key = string.format("%s/%s", repo.owner:lower(), repo.name:lower())
-                _by_name[key] = repo
-            end
-            if kind == "plugin" and repo.name then
-                local clean = repo.name:gsub("%.koplugin$", ""):lower()
-                if not _by_plugin_name[clean] or (tonumber(repo.stars) or 0) > (tonumber(_by_plugin_name[clean].stars) or 0) then
-                    _by_plugin_name[clean] = repo
-                    _by_plugin_name[clean .. ".koplugin"] = repo
-                end
-            end
-        end
-    end
-    
-    if _data.plugin and _data.plugin.repos then
-        indexRepos(_data.plugin.repos, "plugin")
-    end
-    if _data.patch and _data.patch.repos then
-        indexRepos(_data.patch.repos, "patch")
-    end
-    if _data.font and _data.font.repos then
-        indexRepos(_data.font.repos, "font")
-    end
-    
+    buildIndices()
     _loaded = true
 end
 
@@ -243,8 +247,8 @@ function Cache.storeRepos(kind, repos, custom_fetched_at)
     local file_path = (kind == "plugin" and PLUGINS_FILE) or (kind == "patch" and PATCHES_FILE) or FONTS_FILE
     writeJsonFile(file_path, _data[kind])
     
-    _loaded = false
-    Cache.init()
+    _sorted_cache = {}
+    buildIndices()
 end
 
 function Cache.isLegacyFormat(kind)
@@ -267,6 +271,9 @@ end
 function Cache.listRepos(kind)
     kind = kind or "plugin"
     Cache.init()
+    if _sorted_cache[kind] then
+        return _sorted_cache[kind]
+    end
     local repos = _data[kind] and _data[kind].repos or {}
     local copy = {}
     for _, r in ipairs(repos) do
@@ -280,6 +287,7 @@ function Cache.listRepos(kind)
         end
         return tostring(a.name):lower() < tostring(b.name):lower()
     end)
+    _sorted_cache[kind] = copy
     return copy
 end
 
@@ -339,7 +347,7 @@ function Cache.countRepos(kind)
     return _data[kind] and _data[kind].repos and #_data[kind].repos or 0
 end
 
-function Cache.storePatchFiles(repo_id, entries, source_pushed_at)
+function Cache.storePatchFiles(repo_id, entries, source_pushed_at, skip_save)
     repo_id = tonumber(repo_id)
     if not repo_id then return end
     Cache.init()
@@ -366,7 +374,15 @@ function Cache.storePatchFiles(repo_id, entries, source_pushed_at)
         end
     end
     repo.patch_files = patch_files
-    writeJsonFile(PATCHES_FILE, _data.patch)
+    if not skip_save then
+        writeJsonFile(PATCHES_FILE, _data.patch)
+    end
+end
+
+function Cache.savePatchFiles()
+    if _data.patch then
+        writeJsonFile(PATCHES_FILE, _data.patch)
+    end
 end
 
 function Cache.getPatchFilePushedAt(repo_id)
@@ -478,9 +494,11 @@ end
 
 function Cache.invalidate()
     _loaded = false
+    _sorted_cache = {}
     _data = {
         plugin = { fetched_at = 0, repos = {} },
         patch = { fetched_at = 0, repos = {} },
+        font = { fetched_at = 0, repos = {} },
     }
     _by_id = {}
     _by_name = {}
@@ -488,15 +506,19 @@ function Cache.invalidate()
 end
 
 function Cache.clear()
+    _loaded = false
+    _sorted_cache = {}
     _data = {
         plugin = { fetched_at = 0, repos = {} },
         patch = { fetched_at = 0, repos = {} },
+        font = { fetched_at = 0, repos = {} },
     }
     _by_id = {}
     _by_name = {}
     _by_plugin_name = {}
     os.remove(PLUGINS_FILE)
     os.remove(PATCHES_FILE)
+    os.remove(FONTS_FILE)
 end
 
 return Cache

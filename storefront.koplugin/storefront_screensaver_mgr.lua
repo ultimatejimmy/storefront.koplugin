@@ -361,9 +361,6 @@ function StorefrontScreensaverMgr.listLocalScreensavers(custom_dir)
                             thumb_file = p_jpg
                         end
                     end
-                    if not thumb_file and matched and ok_ss and StorefrontScreensavers and StorefrontScreensavers.fetchThumbnail then
-                        thumb_file = StorefrontScreensavers.fetchThumbnail(matched)
-                    end
 
                     table.insert(result, {
                         filename = filename,
