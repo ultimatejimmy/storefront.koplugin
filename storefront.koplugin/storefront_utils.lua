@@ -315,7 +315,9 @@ function storefront_utils.calcGroupFontSize(texts, total_avail_width, gap, face_
         local total_w = gaps_total
         for _, text in ipairs(texts) do
             local tw = TextWidget:new{ text = text, face = face, bold = true }
-            total_w = total_w + tw:getSize().w + padding_per_item
+            local sz = tw.getSize and tw:getSize()
+            local tw_w = (sz and sz.w) or (#text * 8)
+            total_w = total_w + tw_w + padding_per_item
         end
         if total_w <= total_avail_width then
             return sz
@@ -347,7 +349,9 @@ function storefront_utils.calcProportionalBtnWidths(button_texts, total_avail_wi
 
     for i, text in ipairs(button_texts) do
         local tw = TextWidget:new{ text = text, face = face, bold = true }
-        local ideal = tw:getSize().w + padding_per_btn
+        local sz = tw.getSize and tw:getSize()
+        local tw_w = (sz and sz.w) or (#text * 8)
+        local ideal = tw_w + padding_per_btn
         ideal_widths[i] = ideal
         total_ideal = total_ideal + ideal
     end
@@ -375,7 +379,6 @@ function storefront_utils.createButton(opts)
     local Blitbuffer = require("ffi/blitbuffer")
     local Button = require("ui/widget/button")
     local TextWidget = require("ui/widget/textwidget")
-
     local sc = function(val)
         return (Device and Device.screen and Device.screen.scaleBySize and Device.screen:scaleBySize(val)) or val
     end
@@ -400,7 +403,9 @@ function storefront_utils.createButton(opts)
                 face = test_face,
                 bold = (opts.bold ~= false),
             }
-            if tw:getSize().w <= max_text_w then
+            local tw_sz = tw.getSize and tw:getSize()
+            local tw_w = (tw_sz and tw_sz.w) or (#opts.text * 8)
+            if tw_w <= max_text_w then
                 chosen_font_size = sz
                 break
             end

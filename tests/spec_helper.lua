@@ -230,8 +230,9 @@ package.loaded["ui/widget/table"] = {
 }
 package.loaded["ui/widget/textwidget"] = {
     new = function(a, b) 
-        local tw = { type = "TextWidget", args = b or a }
-        tw.getSize = function() return nil end
+        local args = b or a or {}
+        local tw = { type = "TextWidget", args = args, text = args.text or "" }
+        tw.getSize = function() return { w = #(tw.args and tw.args.text or tw.text or "") * 8, h = 20 } end
         return tw
     end
 }
