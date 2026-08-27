@@ -48,6 +48,36 @@ To guarantee high legibility across E-ink devices (e.g. Kindle, Kobo, Onyx Boox)
 
 ---
 
+## 1.2 Copywriting & Punctuation Standards (UI Text, Placeholders & Labels)
+
+To ensure clean, professional, and consistent typography across UI components, settings, and web catalog interfaces:
+
+1. **No Spaces Around Slashes (`/`)**:
+   - **Strict Rule**: NEVER place spaces around a slash in UI labels, option lists, button titles, headers, or technical copy.
+   - **Correct**: `Creator/Artist`, `Tags/Keywords`, `Import/Export`, `Enable/Disable`, `Ctrl+V/Cmd+V`, `Reason/Additional Notes`, `Report/Change Type`.
+   - **Incorrect**: `Creator / Artist`, `Tags / Keywords`, `Import / Export`.
+   - *Exception*: Spaces around slashes are reserved strictly for poetry line breaks (e.g. *"Roses are red / Violets are blue"*).
+
+2. **Colons & Key-Value Pairs**:
+   - Never place a space before a colon; place exactly one space after (`Key: Value`, never `Key : Value`).
+
+3. **Ellipses (`...`)**:
+   - Use three dots `...` (or `…`) directly attached to text in placeholders and truncation indicators (`e.g. anime, landscape, dark...`). Avoid trailing punctuation after an ellipsis.
+
+4. **Ampersands (`&`) vs. "and"**:
+   - Use `&` only in space-constrained UI badges, chips, or short button titles (`Edit & Crop`, `Save & Exit`).
+   - Use spelled-out `"and"` in full sentences, dialog prompts, confirmations, and error descriptions.
+
+5. **Dashes (Hyphen vs. En-Dash vs. Em-Dash)**:
+   - **Hyphen (`-`)**: Used for compound modifiers (`high-contrast`, `single-select`, `e-ink`).
+   - **Em-Dash (`—`) or Spaced En-Dash (` – `)**: Used for parenthetical pauses or catalog subtitles (e.g. `Storefront Screensavers — E-Reader Wallpaper Catalog`). Never use loose space-hyphen-space (` - `) in place of an em-dash.
+
+6. **Casing Conventions**:
+   - **Title Case**: Modal headers, section titles, table headers, and action button labels (`Batch Actions`, `Clear Queue`, `Submit All Wallpapers`).
+   - **Sentence Case**: Descriptive hints, tooltips, placeholders, and error messages (`Select all that apply to batch`, `Explain the change or infringement details...`).
+
+---
+
 ## 2. Modal Dialog & Card Architecture
 
 All dialog boxes and cards in Storefront follow a unified container structure:
