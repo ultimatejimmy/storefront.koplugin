@@ -6525,81 +6525,104 @@ local function getAssetPath(filename)
     return dir .. "assets/" .. filename
 end
 
-function Storefront:calculateDynamicPageSize(tab_name)
-    local screen_h = Device.screen:getHeight()
-    local screen_w = Device.screen:getWidth()
-    local sc = function(val) return Device.screen:scaleBySize(val) end
-    
+local _sample_height_cache = {}
+
+local function getSampleHeights(item_w)
+    local cached = _sample_height_cache[item_w]
+    if cached then return cached end
+
     local pad = Size.padding.default
-    local thin = Size.line.thin
-    local span = Size.span.vertical_default
+    local sc = function(val) return Device.screen:scaleBySize(val) end
 
-    -- Header height: header_group buttons are sc(48) high inside FrameContainer with pad top & bottom
-    local title_height = sc(48) + 2 * pad
-
-    -- Tab bar height: text font 18 (~sc(22)) + VerticalSpan(sc(4)) + underline(sc(3)) + padding_top(sc(12))
-    local tab_font_h = sc(22)
-    local tab_bar_height = sc(12) + tab_font_h + sc(4) + sc(3)
-
-    -- Footer height: CenterContainer h=sc(48) + padding_top(sc(4)) + padding_bottom(sc(4))
-    local footer_height = sc(48) + sc(8)
-
-    local has_toolbar = (tab_name == "Installed" and self.browser_state and self.browser_state.show_filter_bar_installed ~= false)
-        or (tab_name == "Plugins" and self.browser_state and self.browser_state.show_filter_bar_plugins == true)
-        or (tab_name == "Patches" and self.browser_state and self.browser_state.show_filter_bar_patches == true)
-        or (tab_name == "Fonts" and self.browser_state and self.browser_state.show_filter_bar_fonts == true)
-        or (tab_name == "Screensavers" and self.browser_state and self.browser_state.show_filter_bar_screensavers ~= false)
-
-    local toolbar_height = 0
-    local divider_height = thin + span
-    if has_toolbar then
-        local btn_font_h = sc(18)
-        toolbar_height = (btn_font_h + sc(26)) + span
-        divider_height = divider_height + thin + span
-    end
-
-    local body_height = screen_h - title_height - tab_bar_height - footer_height - toolbar_height - divider_height
-    if body_height < math.floor(screen_h * 0.5) then
-        body_height = math.floor(screen_h * 0.5)
-    end
-    -- Measure a sample StorefrontListItem widget dynamically for exact pixel height on current device/scaling
-    local item_w = screen_w - 2 * pad
-    local sample_entry
-    if tab_name == "Updates" or tab_name == "Installed" then
-        sample_entry = {
-            name = "Sample Plugin Name",
-            updated = "2026-07-27",
-            kind_label = "Plugin · Default",
-            is_entry = true,
-            is_installed_item = (tab_name == "Installed"),
-            is_update_item = (tab_name == "Updates"),
-            version_transition = (tab_name == "Updates") and "1.0.0 -> 2.0.0" or nil,
-            badge_icon = (tab_name == "Installed") and getAssetPath("check-square.svg") or nil,
-            badge = (tab_name == "Updates") and _("Update") or nil,
+    local thumb_h
+    local ok_t, widget_t = pcall(function()
+        return StorefrontListItem:new{
+            entry = {
+                name = "Sample Screensaver",
+                owner = "author",
+                updated = "2026-08-01",
+                kind_label = "Screensaver",
+                description = "Sample Description",
+                thumbnail_file = "sample.jpg",
+                is_entry = true,
+            },
+            width = item_w,
         }
-    else
-        sample_entry = {
-            name = "Sample Plugin Name",
-            owner = "sample_owner",
-            stars_fmt = "plugin",
-            updated = "2026-07-27",
-            kind_label = "Plugin",
-            description = "Sample plugin description text for measuring widget height",
-            is_entry = true,
-            badge_icon = getAssetPath and getAssetPath("check-square.svg") or nil,
-        }
-    end
+    end)
+    thumb_h = (ok_t and widget_t and widget_t.getSize) and widget_t:getSize().h or (sc(80) + 2 * pad)
 
-    local sample_widget = StorefrontListItem:new{
-        entry = sample_entry,
-        width = item_w,
+    local update_h
+    local ok_u, widget_u = pcall(function()
+        return StorefrontListItem:new{
+            entry = {
+                name = "Sample Plugin",
+                updated = "2026-08-01",
+                kind_label = "Plugin · Default",
+                version_transition = "1.0.0 -> 2.0.0",
+                badge = _("Update"),
+                is_entry = true,
+                is_update_item = true,
+            },
+            width = item_w,
+        }
+    end)
+    update_h = (ok_u and widget_u and widget_u.getSize) and widget_u:getSize().h or sc(60)
+
+    local desc_3line_h
+    local ok_3, widget_3 = pcall(function()
+        return StorefrontListItem:new{
+            entry = {
+                name = "Sample Plugin",
+                owner = "sample_author",
+                stars_fmt = "100",
+                updated = "2026-08-01",
+                kind_label = "Plugin",
+                description = "Sample plugin description text for measuring widget height",
+                is_entry = true,
+            },
+            width = item_w,
+        }
+    end)
+    desc_3line_h = (ok_3 and widget_3 and widget_3.getSize) and widget_3:getSize().h or sc(80)
+
+    local desc_2line_h
+    local ok_2, widget_2 = pcall(function()
+        return StorefrontListItem:new{
+            entry = {
+                name = "Sample Plugin",
+                owner = "sample_author",
+                stars_fmt = "100",
+                updated = "2026-08-01",
+                kind_label = "Plugin",
+                description = "",
+                is_entry = true,
+            },
+            width = item_w,
+        }
+    end)
+    desc_2line_h = (ok_2 and widget_2 and widget_2.getSize) and widget_2:getSize().h or sc(56)
+
+    local clear_h
+    local ok_c, widget_c = pcall(function()
+        return StorefrontListItem:new{
+            entry = {
+                text = _("Clear search/filters"),
+                is_clear_button = true,
+            },
+            width = item_w,
+        }
+    end)
+    clear_h = (ok_c and widget_c and widget_c.getSize) and widget_c:getSize().h or sc(36)
+
+    cached = {
+        thumb = thumb_h,
+        update = update_h,
+        three_line = desc_3line_h,
+        two_line = desc_2line_h,
+        clear = clear_h,
     }
-    local item_h = sample_widget:getSize().h
-    local container_padding = 2 * pad
-    local slot_total = item_h + thin
-    local avail_height = body_height - container_padding + thin
-
-    return math.max(1, math.floor(avail_height / slot_total))
+    _sample_height_cache[item_w] = cached
+    return cached
 end
 
 function Storefront:calculateAvailableListHeight(tab_name)
@@ -6656,46 +6679,28 @@ function Storefront:paginateEntries(items, tab_name, available_list_height)
     local pad = Size.padding.default
     local thin = Size.line.thin
     local item_w = screen_w - 2 * pad
+    local samples = getSampleHeights(item_w)
+
     local pages = {}
     local current_page = {}
     local current_h = 0
-
-    local sample_entry_h = nil
-    local sample_update_h = nil
-    local sample_thumb_h = nil
 
     for i, entry in ipairs(items) do
         local item_h = entry._measured_h
         if not item_h then
             if entry.is_entry then
                 if entry.thumbnail_file then
-                    if not sample_thumb_h then
-                        local ok, widget = pcall(function()
-                            return StorefrontListItem:new{ entry = entry, width = item_w }
-                        end)
-                        sample_thumb_h = (ok and widget and widget.getSize) and widget:getSize().h or (Device.screen:scaleBySize(80) + 2 * pad)
-                    end
-                    item_h = sample_thumb_h
+                    item_h = samples.thumb
                 elseif entry.is_update_item then
-                    if not sample_update_h then
-                        local ok, widget = pcall(function()
-                            return StorefrontListItem:new{ entry = entry, width = item_w }
-                        end)
-                        sample_update_h = (ok and widget and widget.getSize) and widget:getSize().h or Device.screen:scaleBySize(60)
-                    end
-                    item_h = sample_update_h
+                    item_h = samples.update
+                elseif entry.description and entry.description ~= "" then
+                    item_h = samples.three_line
                 else
-                    if not sample_entry_h then
-                        local ok, widget = pcall(function()
-                            return StorefrontListItem:new{ entry = entry, width = item_w }
-                        end)
-                        sample_entry_h = (ok and widget and widget.getSize) and widget:getSize().h or Device.screen:scaleBySize(60)
-                    end
-                    item_h = sample_entry_h
+                    item_h = samples.two_line
                 end
                 entry._measured_h = item_h
             elseif entry.is_clear_button then
-                item_h = Device.screen:scaleBySize(36)
+                item_h = samples.clear
                 entry._measured_h = item_h
             else
                 local face = Font:getFace("smallinfofont")

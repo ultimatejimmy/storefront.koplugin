@@ -495,7 +495,7 @@ function StorefrontListItem:init()
             }
 
             local group_items = { align = "left", name_w }
-            if meta_text ~= "" then
+            if meta_w then
                 table.insert(group_items, VerticalSpan:new{ width = 2 })
                 table.insert(group_items, meta_w)
             end

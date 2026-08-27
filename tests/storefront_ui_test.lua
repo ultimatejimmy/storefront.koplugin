@@ -30,7 +30,15 @@ local dummy_widget = {
         end
         return tbl
     end,
-    getSize = function() return { w = 100, h = 50 } end,
+    getSize = function(self)
+        if self and self.entry then
+            if self.entry.thumbnail_file then return { w = 100, h = 96 } end
+            if self.entry.is_update_item then return { w = 100, h = 60 } end
+            if self.entry.description and self.entry.description ~= "" then return { w = 100, h = 80 } end
+            return { w = 100, h = 56 }
+        end
+        return { w = 100, h = 50 }
+    end,
     enableDisable = function() end,
     isFocusable = function() return true end,
     open = function(self) return self or dummy_widget end,
@@ -622,6 +630,55 @@ if ok_browser then
         local desc_page_items, desc_pages = MainStorefront:paginateEntries(ten_desc_items, "Plugins", 400)
         check("Compact installed items fit more entries per page than desc items", #short_page_items >= #desc_page_items, true)
         check("Installed items paginate dynamically without excess whitespace", #short_page_items > 0, true)
+
+        -- Test heterogeneous mixed installed list: 1st item has 3-line description, remaining items are 2-line compact
+        local mixed_installed_items = {
+            {
+                name = "Plugin with description",
+                owner = "author",
+                kind_label = "Plugin",
+                updated = "2026-08-01",
+                description = "Detailed description text",
+                is_entry = true,
+                is_installed_item = true,
+            }
+        }
+        for i = 2, 10 do
+            table.insert(mixed_installed_items, {
+                name = "Patch or default plugin " .. i,
+                kind_label = "Patch",
+                updated = "2026-08-01",
+                is_entry = true,
+                is_installed_item = true,
+            })
+        end
+        MainStorefront.browser_state = { page = 1 }
+        local mixed_page_items, mixed_pages = MainStorefront:paginateEntries(mixed_installed_items, "Installed", 400)
+        check("Heterogeneous list does not overestimate subsequent compact rows", #mixed_page_items > #desc_page_items, true)
+        check("Heterogeneous list correctly paginates remaining items", mixed_pages >= 1, true)
+
+        -- Test heterogeneous list with screensaver cover thumbnail as first item
+        local ss_mixed_items = {
+            {
+                name = "Screensaver 1",
+                owner = "author",
+                kind_label = "Screensaver",
+                thumbnail_file = "cover.jpg",
+                is_entry = true,
+                is_installed_item = true,
+            }
+        }
+        for i = 2, 10 do
+            table.insert(ss_mixed_items, {
+                name = "Plugin " .. i,
+                kind_label = "Plugin",
+                updated = "2026-08-01",
+                is_entry = true,
+                is_installed_item = true,
+            })
+        end
+        local ss_mixed_page_items, ss_mixed_pages = MainStorefront:paginateEntries(ss_mixed_items, "Installed", 400)
+        check("Screensaver thumbnail first item does not force large height on compact rows", #ss_mixed_page_items > 1, true)
 
         MainStorefront.getInstallRecordsMap = function() return dummy_records end
         MainStorefront._installed_lookup_cache = nil
