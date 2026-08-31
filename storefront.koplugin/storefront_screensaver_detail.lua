@@ -18,6 +18,7 @@ local HorizontalGroup  = require("ui/widget/horizontalgroup")
 local HorizontalSpan   = require("ui/widget/horizontalspan")
 local ImageWidget  = require("ui/widget/imagewidget")
 local InputContainer   = require("ui/widget/container/inputcontainer")
+local FocusManager     = require("ui/widget/focusmanager")
 local LineWidget   = require("ui/widget/linewidget")
 local Size         = require("ui/size")
 local TextBoxWidget    = require("ui/widget/textboxwidget")
@@ -38,20 +39,21 @@ local function getAssetPath(filename)
     return dir .. "assets/" .. filename
 end
 
-local StorefrontScreensaverDetail = InputContainer:extend{
+local StorefrontScreensaverDetail = FocusManager:extend{
     covers_fullscreen = true,
     item   = nil,   -- screensaver catalog entry table
     parent = nil,   -- Storefront main object (for showRatingDialog)
 }
 
 function StorefrontScreensaverDetail:init()
-    local sc = function(val) return Device.screen:scaleBySize(val) end
     local sw = Device.screen:getWidth()
     local sh = Device.screen:getHeight()
-    self.dimen = Geom:new{ x = 0, y = 0, w = sw, h = sh }
-
-    if Device:hasKeys() then
-        self.key_events = { Close = { { "Back" } } }
+    local sc = function(val) return Device.screen:scaleBySize(val) end
+    local Device_input = Device and Device.input
+    self.key_events = self.key_events or {}
+    self.key_events.Close = { { "Back" }, { "Escape" } }
+    if Device_input and Device_input.group and Device_input.group.Back then
+        table.insert(self.key_events.Close, { Device_input.group.Back })
     end
 
     local item = self.item or {}
@@ -181,6 +183,8 @@ function StorefrontScreensaverDetail:init()
         end
 
         local up_ic = InputContainer:new{ up_img_frame }
+        up_ic.frame = up_img_frame
+        up_ic.show_parent = self
         up_ic.ges_events = { SfssUpTap = { GestureRange:new{ ges = "tap", range = function()
             local d = up_ic.dimen or up_img_frame:getSize()
             return Geom:new{ x = d.x or 0, y = d.y or 0, w = d.w or 0, h = d.h or 0 }
@@ -191,8 +195,22 @@ function StorefrontScreensaverDetail:init()
             refresh_rating()
             return true
         end
+        up_ic.isFocusable = function(self) return true end
+        up_ic.onFocus = function(self)
+            if self.frame then self.frame.invert = true; UIManager:setDirty(self.show_parent or self, "fast") end
+            return true
+        end
+        up_ic.onUnfocus = function(self)
+            if self.frame then self.frame.invert = false; UIManager:setDirty(self.show_parent or self, "fast") end
+            return true
+        end
+        up_ic.onTapSelect = function(self)
+            return self:onSfssUpTap()
+        end
 
         local down_ic = InputContainer:new{ down_img_frame }
+        down_ic.frame = down_img_frame
+        down_ic.show_parent = self
         down_ic.ges_events = { SfssDownTap = { GestureRange:new{ ges = "tap", range = function()
             local d = down_ic.dimen or down_img_frame:getSize()
             return Geom:new{ x = d.x or 0, y = d.y or 0, w = d.w or 0, h = d.h or 0 }
@@ -203,6 +221,21 @@ function StorefrontScreensaverDetail:init()
             refresh_rating()
             return true
         end
+        down_ic.isFocusable = function(self) return true end
+        down_ic.onFocus = function(self)
+            if self.frame then self.frame.invert = true; UIManager:setDirty(self.show_parent or self, "fast") end
+            return true
+        end
+        down_ic.onUnfocus = function(self)
+            if self.frame then self.frame.invert = false; UIManager:setDirty(self.show_parent or self, "fast") end
+            return true
+        end
+        down_ic.onTapSelect = function(self)
+            return self:onSfssDownTap()
+        end
+
+        self.up_ic_widget = up_ic
+        self.down_ic_widget = down_ic
 
         add_sep()
         table.insert(meta_items, up_ic)
@@ -512,15 +545,34 @@ function StorefrontScreensaverDetail:init()
                 content_vg,
             }
 
-            overlay = InputContainer:new{
+            local opt_layout = {
+                { single_btn },
+                { shuffle_btn },
+                { row3_left_btn, settings_btn },
+                { cancel_btn },
+            }
+            local opt_key_events = {
+                Close = { { "Back" }, { "Escape" } }
+            }
+            if Device_input and Device_input.group and Device_input.group.Back then
+                table.insert(opt_key_events.Close, { Device_input.group.Back })
+            end
+
+            overlay = FocusManager:new{
                 align = "center",
                 vertical_align = "center",
                 dimen = Geom:new{ w = sw, h = sh },
-                key_events = {
-                    Close = { { "Back" } }
-                },
+                layout = opt_layout,
+                selected = { x = 1, y = 1 },
+                key_events = opt_key_events,
                 card,
             }
+
+            single_btn.show_parent = overlay
+            shuffle_btn.show_parent = overlay
+            row3_left_btn.show_parent = overlay
+            settings_btn.show_parent = overlay
+            cancel_btn.show_parent = overlay
 
             overlay.onClose = function()
                 UIManager:close(overlay, "ui")
@@ -596,10 +648,13 @@ function StorefrontScreensaverDetail:init()
         preview_widget,
     }
 
+    local tap_wrapper
     -- Tap the image to open a full-screen image modal
     local ok_modal, StorefrontImageModal = pcall(require, "storefront_image_modal")
     if ok_modal and StorefrontImageModal and thumb_file then
-        local tap_wrapper = InputContainer:new{ image_container }
+        tap_wrapper = InputContainer:new{ image_container }
+        tap_wrapper.frame = image_container
+        tap_wrapper.show_parent = self
         tap_wrapper.ges_events = {
             SfssImgTap = {
                 GestureRange:new{
@@ -618,6 +673,18 @@ function StorefrontScreensaverDetail:init()
             }
             modal:show()
             return true
+        end
+        tap_wrapper.isFocusable = function(self) return true end
+        tap_wrapper.onFocus = function(self)
+            if self.frame then self.frame.invert = true; UIManager:setDirty(self.show_parent or self, "fast") end
+            return true
+        end
+        tap_wrapper.onUnfocus = function(self)
+            if self.frame then self.frame.invert = false; UIManager:setDirty(self.show_parent or self, "fast") end
+            return true
+        end
+        tap_wrapper.onTapSelect = function(self)
+            return self:onSfssImgTap()
         end
         image_container = tap_wrapper
     end
@@ -653,6 +720,18 @@ function StorefrontScreensaverDetail:init()
         height     = sh,
         content_group,
     }
+
+    self.layout = {
+        { back_btn },
+    }
+    if self.up_ic_widget and self.down_ic_widget then
+        table.insert(self.layout, { self.up_ic_widget, self.down_ic_widget })
+    end
+    table.insert(self.layout, { primary_btn, options_btn })
+    if tap_wrapper then
+        table.insert(self.layout, { tap_wrapper })
+    end
+    self.selected = { x = 1, y = 1 }
 end
 
 function StorefrontScreensaverDetail:onClose(callback)

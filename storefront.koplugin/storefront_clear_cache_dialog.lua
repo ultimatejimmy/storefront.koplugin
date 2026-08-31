@@ -15,6 +15,9 @@ local Button = require("ui/widget/button")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
+local OverlapGroup = require("ui/widget/overlapgroup")
+local LeftContainer = require("ui/widget/container/leftcontainer")
+local RightContainer = require("ui/widget/container/rightcontainer")
 local Localization = require("localization_storefront")
 local _ = function(key, ...) return Localization:t(key, ...) end
 local storefront_theme = require("storefront_theme")
@@ -155,21 +158,22 @@ function StorefrontClearCacheDialog.show(Storefront, on_close_callback)
             background = Blitbuffer.COLOR_LIGHT_GRAY,
         })
 
-        -- Helper to create cache row
-        local function create_cache_row(title_str, stats, on_clear, is_all)
-            local row_elements = {}
-            local has_items = (stats and stats.files and stats.files > 0) or false
-            local stats_str = formatStats(stats)
+        local FocusManager = require("ui/widget/focusmanager")
+        local focusable_rows = {}
+
+        local function create_cache_row(title_str, stats, on_clear, is_accent)
+            local has_items = stats and (stats.files > 0 or stats.bytes > 0)
+            local sub_str = formatStats(stats)
 
             local title_w = TextWidget:new{
                 text = title_str,
-                face = Font:getFace("cfont", ui_font_size),
-                bold = is_all,
+                face = Font:getFace("cfont", is_accent and (ui_font_size + 1) or ui_font_size),
+                bold = is_accent,
                 fgcolor = Blitbuffer.COLOR_BLACK,
             }
 
             local sub_w = TextWidget:new{
-                text = stats_str,
+                text = sub_str,
                 face = Font:getFace("cfont", subtext_font_size),
                 fgcolor = storefront_theme.color_label_dim,
             }
@@ -177,46 +181,56 @@ function StorefrontClearCacheDialog.show(Storefront, on_close_callback)
             local left_vg = VerticalGroup:new{
                 align = "left",
                 title_w,
-                VerticalSpan:new{ width = sc(2) },
+                VerticalSpan:new{ width = sc(3) },
                 sub_w,
             }
-            table.insert(row_elements, left_vg)
 
-            local left_w = math.max((title_w:getSize().w or 0), (sub_w:getSize().w or 0))
-
-            local clear_btn
-            if has_items then
-                clear_btn = Button:new{
-                    text = is_all and _("Clear All") or _("Clear"),
-                    face = Font:getFace("cfont", subtext_font_size),
-                    bold = is_all,
-                    bordersize = sc(1),
-                    padding = sc(6),
-                    callback = function()
-                        on_clear()
-                    end,
-                }
-            else
-                clear_btn = TextWidget:new{
-                    text = _("Clean"),
+            local right_action
+            if not has_items then
+                right_action = TextWidget:new{
+                    text = _("Empty"),
                     face = Font:getFace("cfont", subtext_font_size),
                     fgcolor = storefront_theme.color_label_dim,
                 }
+            else
+                local StorefrontUtils = require("storefront_utils")
+                right_action = StorefrontUtils.createButton{
+                    text = is_accent and _("Clear All") or _("Clear"),
+                    text_font_size = is_accent and (ui_font_size - 1) or (ui_font_size - 2),
+                    bold = true,
+                    bordersize = storefront_theme.border_btn or sc(1),
+                    radius = storefront_theme.radius_btn or sc(4),
+                    padding = sc(6),
+                    padding_h = sc(12),
+                    background = is_accent and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_WHITE,
+                    text_font_color = is_accent and Blitbuffer.COLOR_WHITE or Blitbuffer.COLOR_BLACK,
+                    callback = on_clear,
+                }
             end
 
-            local btn_w = (clear_btn:getSize() and clear_btn:getSize().w) or sc(60)
+            local row_h = math.max(left_vg:getSize().h, right_action:getSize().h)
             local avail_w = dialog_w - sc(24)
-            local spacer_w = math.max(sc(8), avail_w - left_w - btn_w)
 
-            table.insert(row_elements, HorizontalSpan:new{ width = spacer_w })
-            table.insert(row_elements, clear_btn)
+            local row_overlap = OverlapGroup:new{
+                dimen = Geom:new{ w = avail_w, h = row_h },
+                LeftContainer:new{
+                    dimen = Geom:new{ w = avail_w, h = row_h },
+                    left_vg,
+                },
+                RightContainer:new{
+                    dimen = Geom:new{ w = avail_w, h = row_h },
+                    right_action,
+                }
+            }
 
-            local row_hg = HorizontalGroup:new(row_elements)
             local frame = FrameContainer:new{
-                padding = sc(10),
+                padding = sc(8),
+                padding_left = sc(10),
+                padding_right = sc(10),
                 bordersize = 0,
+                background = is_accent and Blitbuffer.Color8(240) or Blitbuffer.COLOR_WHITE,
                 width = dialog_w - sc(4),
-                row_hg,
+                row_overlap,
             }
 
             if not has_items or not on_clear then
@@ -224,6 +238,8 @@ function StorefrontClearCacheDialog.show(Storefront, on_close_callback)
             end
 
             local item = InputContainer:new{ frame }
+            item.frame = frame
+            item.callback = on_clear
             item.ges_events = {
                 Tap = {
                     GestureRange:new{
@@ -247,6 +263,31 @@ function StorefrontClearCacheDialog.show(Storefront, on_close_callback)
                 on_clear()
                 return true
             end
+            item.isFocusable = function(self)
+                return true
+            end
+            item.onFocus = function(self)
+                if self.frame then
+                    self.frame.invert = true
+                    UIManager:setDirty(self.show_parent or self, "fast")
+                end
+                return true
+            end
+            item.onUnfocus = function(self)
+                if self.frame then
+                    self.frame.invert = false
+                    UIManager:setDirty(self.show_parent or self, "fast")
+                end
+                return true
+            end
+            item.onTapSelect = function(self)
+                if self.callback then
+                    self.callback()
+                end
+                return true
+            end
+
+            table.insert(focusable_rows, item)
             return item
         end
 
@@ -376,15 +417,34 @@ function StorefrontClearCacheDialog.show(Storefront, on_close_callback)
             content_vg,
         }
 
-        overlay = InputContainer:new{
+        local layout = {}
+        for _, row_item in ipairs(focusable_rows) do
+            table.insert(layout, { row_item })
+        end
+        table.insert(layout, { close_btn })
+
+        local Input = Device and Device.input
+        local key_events = {
+            Close = { { "Back" }, { "Escape" } }
+        }
+        if Input and Input.group and Input.group.Back then
+            table.insert(key_events.Close, { Input.group.Back })
+        end
+
+        overlay = FocusManager:new{
             align = "center",
             vertical_align = "center",
             dimen = Geom:new{ w = sw, h = sh },
-            key_events = {
-                Close = { { "Back" } }
-            },
+            layout = layout,
+            selected = { x = 1, y = 1 },
+            key_events = key_events,
             card_frame,
         }
+
+        for _, row_item in ipairs(focusable_rows) do
+            row_item.show_parent = overlay
+        end
+        close_btn.show_parent = overlay
 
         overlay.onClose = function()
             overlay = nil

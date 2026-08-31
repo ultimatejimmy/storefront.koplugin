@@ -132,6 +132,9 @@ function StorefrontSettingsCard.show(Storefront)
             }
         }
 
+        local FocusManager = require("ui/widget/focusmanager")
+        local focusable_rows = {}
+
         -- Helper to create setting row
         local function create_setting_row(icon_arg, left_text, right_widget, callback)
             local row_elements = {}
@@ -159,27 +162,29 @@ function StorefrontSettingsCard.show(Storefront)
                         fgcolor = Blitbuffer.COLOR_BLACK,
                     }
                 end
-                if icon_widget then
-                    icon_w = (icon_widget.getSize and icon_widget:getSize().w) or sc(18)
-                    icon_w = icon_w + sc(8)
-                    table.insert(row_elements, icon_widget)
-                    table.insert(row_elements, HorizontalSpan:new{ width = sc(8) })
-                end
             end
 
-            -- Measure right widget and available row width
-            local avail_w = dialog_w - (row_pad_h * 2) - sc(4)
+            if icon_widget then
+                icon_w = (icon_widget.getSize and icon_widget:getSize().w) or sc(20)
+                table.insert(row_elements, icon_widget)
+                table.insert(row_elements, HorizontalSpan:new{ width = sc(8) })
+            end
+
+            -- Measure dynamic right widget size
             local right_w = 0
             if right_widget then
                 right_w = (right_widget.getSize and right_widget:getSize().w) or sc(60)
             end
 
-            local max_left_w = avail_w - icon_w - right_w - sc(8)
+            -- Constrain left text width to guarantee it never wraps or pushes right_widget off-screen
+            local frame_padding_h = row_pad_h
+            local avail_w = dialog_w - (frame_padding_h * 2) - sc(4)
+            local max_left_w = avail_w - icon_w - (icon_widget and sc(8) or 0) - right_w - sc(8)
             if max_left_w < sc(60) then
                 max_left_w = sc(60)
             end
 
-            -- Left Text
+            -- Left Text Label (Strict high-contrast COLOR_BLACK)
             local txt = TextBoxWidget:new{
                 text = left_text,
                 face = Font:getFace("cfont", ui_font_size),
@@ -191,7 +196,7 @@ function StorefrontSettingsCard.show(Storefront)
 
             -- Flexible Spacer to right-align right_widget
             local left_used_w = (txt.getSize and txt:getSize().w) or max_left_w
-            local spacer_w = avail_w - icon_w - left_used_w - right_w
+            local spacer_w = avail_w - icon_w - (icon_widget and sc(8) or 0) - left_used_w - right_w
             if spacer_w < sc(8) then
                 spacer_w = sc(8)
             end
@@ -217,6 +222,8 @@ function StorefrontSettingsCard.show(Storefront)
             end
 
             local item = InputContainer:new{ frame }
+            item.frame = frame
+            item.callback = callback
             item.ges_events = {
                 Tap = {
                     GestureRange:new{
@@ -231,6 +238,31 @@ function StorefrontSettingsCard.show(Storefront)
                 callback()
                 return true
             end
+            item.isFocusable = function(self)
+                return true
+            end
+            item.onFocus = function(self)
+                if self.frame then
+                    self.frame.invert = true
+                    UIManager:setDirty(self.show_parent or self, "fast")
+                end
+                return true
+            end
+            item.onUnfocus = function(self)
+                if self.frame then
+                    self.frame.invert = false
+                    UIManager:setDirty(self.show_parent or self, "fast")
+                end
+                return true
+            end
+            item.onTapSelect = function(self)
+                if self.callback then
+                    self.callback()
+                end
+                return true
+            end
+
+            table.insert(focusable_rows, item)
             return item
         end
 
@@ -593,15 +625,35 @@ end
             content_vg
         }
 
-        overlay = InputContainer:new{
+        local layout = {}
+        for _, row_item in ipairs(focusable_rows) do
+            table.insert(layout, { row_item })
+        end
+        table.insert(layout, { close_btn })
+
+        local Device = require("device")
+        local Input = Device and Device.input
+        local key_events = {
+            Close = { { "Back" }, { "Escape" } }
+        }
+        if Input and Input.group and Input.group.Back then
+            table.insert(key_events.Close, { Input.group.Back })
+        end
+
+        overlay = FocusManager:new{
             align = "center",
             vertical_align = "center",
             dimen = Geom:new{ w = sw, h = sh },
-            key_events = {
-                Close = { { "Back" } }
-            },
+            layout = layout,
+            selected = { x = 1, y = 1 },
+            key_events = key_events,
             card
         }
+
+        for _, row_item in ipairs(focusable_rows) do
+            row_item.show_parent = overlay
+        end
+        close_btn.show_parent = overlay
 
         overlay.onClose = function()
             overlay = nil

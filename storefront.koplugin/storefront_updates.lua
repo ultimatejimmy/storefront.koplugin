@@ -135,14 +135,10 @@ function StorefrontUpdatesDialog:init()
     self.height = self.screen_h
     self.dimen = Geom:new{ x = 0, y = 0, w = self.screen_w, h = self.screen_h }
 
-    -- Key bindings for non-touch / D-pad devices.
-    -- FocusManager already wires Up/Down/Left/Right/Press/Hold from KEY_EVENTS;
-    -- we only need a Close shortcut here (no pagination on this dialog).
-    if Device:hasKeys() then
-        self.key_events.Close = { { Input.group.Back } }
-        if Device:hasFewKeys() then
-            self.key_events.Close = { { "Left" } }
-        end
+    self.key_events = self.key_events or {}
+    self.key_events.Close = { { "Back" }, { "Escape" } }
+    if Input and Input.group and Input.group.Back then
+        table.insert(self.key_events.Close, { Input.group.Back })
     end
 
     self.title_bar = TitleBar:new{

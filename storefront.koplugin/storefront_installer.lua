@@ -466,16 +466,18 @@ function M:init(Storefront)
             }
 
             local asset_ref = asset
-            table.insert(row_widgets, {
-                asset = asset_ref,
-                frame = row_frame,
-                text_widget = text_w,
-            })
-
             local item = InputContainer:new{
                 align = "center",
                 row_frame
             }
+            item.frame = row_frame
+            item.asset = asset_ref
+            table.insert(row_widgets, {
+                asset = asset_ref,
+                frame = row_frame,
+                text_widget = text_w,
+                item = item,
+            })
 
             item.ges_events = {
                 Tap = {
@@ -500,6 +502,28 @@ function M:init(Storefront)
                 update_rows()
                 return true
             end
+            item.isFocusable = function(self)
+                return true
+            end
+            item.onFocus = function(self)
+                if self.frame then
+                    self.frame.invert = true
+                    UIManager:setDirty(self.show_parent or self, "fast")
+                end
+                return true
+            end
+            item.onUnfocus = function(self)
+                if self.frame then
+                    self.frame.invert = false
+                    UIManager:setDirty(self.show_parent or self, "fast")
+                end
+                return true
+            end
+            item.onTapSelect = function(self)
+                selected_asset = asset_ref
+                update_rows()
+                return true
+            end
 
             table.insert(list_vg, item)
             table.insert(list_vg, VerticalSpan:new{ width = sc(6) })
@@ -513,7 +537,6 @@ function M:init(Storefront)
             radius = storefront_theme.radius_btn or sc(18),
             padding = sc(10),
             width = math.floor((inner_w - sc(12)) / 2),
-            show_parent = overlay,
             callback = function()
                 UIManager:close(overlay, "ui")
                 self.pending_install_context = saved_ctx
@@ -534,7 +557,6 @@ function M:init(Storefront)
             radius = storefront_theme.radius_btn or sc(18),
             padding = sc(10),
             width = math.floor((inner_w - sc(12)) / 2),
-            show_parent = overlay,
             callback = function()
                 UIManager:close(overlay, "ui")
                 if saved_ctx and saved_ctx.batch_callback then
@@ -577,16 +599,37 @@ function M:init(Storefront)
             content_vg,
         }
 
-        overlay = InputContainer:new{
+        local FocusManager = require("ui/widget/focusmanager")
+        local layout = {}
+        for _, rw in ipairs(row_widgets) do
+            table.insert(layout, { rw.item })
+        end
+        table.insert(layout, { install_btn, cancel_btn })
+
+        local Input = Device and Device.input
+        local key_events = {
+            Close = { { "Back" }, { "Escape" } }
+        }
+        if Input and Input.group and Input.group.Back then
+            table.insert(key_events.Close, { Input.group.Back })
+        end
+
+        overlay = FocusManager:new{
             dimen = Geom:new{ w = sw, h = sh },
-            key_events = {
-                Close = { { "Back" } }
-            },
+            layout = layout,
+            selected = { x = 1, y = 1 },
+            key_events = key_events,
             CenterContainer:new{
                 dimen = Geom:new{ w = sw, h = sh },
                 card,
             },
         }
+
+        for _, rw in ipairs(row_widgets) do
+            rw.item.show_parent = overlay
+        end
+        install_btn.show_parent = overlay
+        cancel_btn.show_parent = overlay
 
         overlay.onClose = function()
             UIManager:close(overlay, "ui")

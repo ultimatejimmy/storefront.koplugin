@@ -154,10 +154,26 @@ function DeleteUI.showDeleteConfirmationDialog(display_name, is_plugin, plugin_i
             }
         }
 
-        check_item.onTap = function()
+        check_item.frame = check_frame
+        check_item.isFocusable = function(self) return true end
+        check_item.onFocus = function(self)
+            if self.frame then
+                self.frame.invert = true
+                UIManager:setDirty(self.show_parent or self, "fast")
+            end
+            return true
+        end
+        check_item.onUnfocus = function(self)
+            if self.frame then
+                self.frame.invert = false
+                UIManager:setDirty(self.show_parent or self, "fast")
+            end
+            return true
+        end
+        check_item.onTapSelect = function(self)
             delete_settings = not delete_settings
             check_text_widget:setText(get_check_text())
-            UIManager:setDirty(overlay, "ui")
+            UIManager:setDirty(self.show_parent or self, "ui")
             if delete_settings and not plugin_instance then
                 UIManager:show(InfoMessage:new{
                     text = _("Plugin is not currently loaded, so settings cannot be deleted."),
@@ -165,6 +181,10 @@ function DeleteUI.showDeleteConfirmationDialog(display_name, is_plugin, plugin_i
                 })
             end
             return true
+        end
+
+        check_item.onTap = function()
+            return check_item:onTapSelect()
         end
     end
 
@@ -249,15 +269,36 @@ function DeleteUI.showDeleteConfirmationDialog(display_name, is_plugin, plugin_i
         content_vg,
     }
 
-    overlay = InputContainer:new{
+    local FocusManager = require("ui/widget/focusmanager")
+    local layout = {}
+    if check_item then
+        table.insert(layout, { check_item })
+    end
+    table.insert(layout, { cancel_btn, delete_btn })
+
+    local Input = Device and Device.input
+    local key_events = {
+        Close = { { "Back" }, { "Escape" } }
+    }
+    if Input and Input.group and Input.group.Back then
+        table.insert(key_events.Close, { Input.group.Back })
+    end
+
+    overlay = FocusManager:new{
         align = "center",
         vertical_align = "center",
         dimen = Geom:new{ w = sw, h = sh },
-        key_events = {
-            Close = { { "Back" } }
-        },
+        layout = layout,
+        selected = { x = 1, y = #layout },
+        key_events = key_events,
         card,
     }
+
+    cancel_btn.show_parent = overlay
+    delete_btn.show_parent = overlay
+    if check_item then
+        check_item.show_parent = overlay
+    end
 
     overlay.onClose = function()
         UIManager:close(overlay, "ui")

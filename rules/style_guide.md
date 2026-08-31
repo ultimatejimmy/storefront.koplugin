@@ -83,6 +83,8 @@ To ensure clean, professional, and consistent typography across UI components, s
 All dialog boxes and cards in Storefront follow a unified container structure:
 
 ```lua
+local FocusManager = require("ui/widget/focusmanager")
+
 local card = FrameContainer:new{
     padding = 0, -- (or card_padding = sc(12)-sc(14) for confirmation modals)
     radius = storefront_theme.radius_window or 0,
@@ -93,10 +95,12 @@ local card = FrameContainer:new{
     content_vg
 }
 
-local overlay = InputContainer:new{
+local overlay = FocusManager:new{
     align = "center",
     vertical_align = "center",
     dimen = Geom:new{ w = sw, h = sh },
+    layout = layout, -- 2D array of focusable rows/buttons e.g. { { row1 }, { row2 }, { cancel_btn, confirm_btn } }
+    selected = { x = 1, y = 1 },
     key_events = {
         Close = { { "Back" } }
     },
@@ -287,3 +291,65 @@ When executing multi-step or queue-based operations (such as "Update All", multi
 - **Single Persistent Progress Toast**: Show a single `StorefrontToast` instance at the start of the queue with `timeout = 0, dismissable = false`.
 - **In-Place Label Updates**: For each queue item (and intermediate steps like downloading and extracting), update progress text in-place using `batch_toast:setText(...)`. `setText` invalidates only the inner text bounding area, resulting in smooth text changes without screen-tearing or full-screen flashing.
 - **Single Completion Dismissal**: Close the persistent batch toast only once when the queue reaches completion or is cancelled.
+
+---
+
+## 8. Non-Touch & Hardware Button Support Standards
+
+All dialogs, views, modals, cards, and list views in Storefront MUST be 100% accessible on non-touch e-ink devices (e.g. Kindle 4 Non-Touch, Kindle Keyboard, Sony PRS, button-only readers) and when operated via external keyboard or D-pad controllers.
+
+### 8.1 FocusManager Protocol for Modals & Views
+- **Base Architecture**: Use `FocusManager:new` (or `FocusManager:extend`) for all modals, dialogs, and interactive fullscreen views.
+- **2D Layout Array (`layout`)**: Build an explicit 2D table `self.layout` representing the navigable grid of interactive elements:
+  ```lua
+  self.layout = {
+      { back_btn },                                 -- Row 1: Header navigation
+      { primary_action_btn, toggle_btn, delete_btn }, -- Row 2: Action buttons
+      { item_1 },                                   -- Row 3: First list item
+      { item_2 },                                   -- Row 4: Second list item
+      { cancel_btn, confirm_btn },                  -- Row 5: Footer action buttons
+  }
+  ```
+- **Initial Focus**: Always initialize `selected = { x = 1, y = 1 }` (or point to the primary action/row) so hardware focus starts in a predictable, valid location.
+
+### 8.2 Focusable Component Protocol
+Any custom row, toggle card, or list item placed into a `layout` array MUST implement the focus protocol:
+1. **`:isFocusable()`**: Return `true` when interactive; return `false` if disabled or pure static label.
+2. **`:onFocus()`**: Provide immediate, high-contrast visual feedback:
+   ```lua
+   function ItemWidget:onFocus()
+       if self.frame then
+           self.frame.invert = true -- or high-contrast focus border
+           UIManager:setDirty(self.show_parent or self, "fast")
+       end
+       return true
+   end
+   ```
+3. **`:onUnfocus()`**: Revert focus visual feedback:
+   ```lua
+   function ItemWidget:onUnfocus()
+       if self.frame then
+           self.frame.invert = false
+           UIManager:setDirty(self.show_parent or self, "fast")
+       end
+       return true
+   end
+   ```
+4. **`:onTapSelect()` / `:onPress()`**: Execute the item's primary action when the user presses `Enter` / `Press` on the hardware D-pad / keyboard:
+   ```lua
+   function ItemWidget:onTapSelect()
+       if self.callback then
+           self.callback()
+       end
+       return true
+   end
+   ```
+
+### 8.3 Separation of D-Pad Traversal vs. Pagination
+- **D-Pad Directional Keys**: `Up`, `Down`, `Left`, `Right` must strictly navigate focus across elements within the current view/page.
+- **Pagination Keys**: Page flips must be triggered strictly by dedicated page turn keys (`Input.group.PgFwd`, `Input.group.PgBack`, `PageUp`, `PageDown`) or explicit navigation buttons in the footer.
+- **Strict Rule**: NEVER bind `{ "Down" }` / `{ "Up" }` to `NextPage` / `PrevPage` on list dialogs or folder pickers, as this intercepts vertical item navigation.
+
+### 8.4 Auto-Scrolling on Focus Change
+In scrollable dialogs (`ScrollableContainer`), when focus moves to an element positioned outside the current visible viewport, the container's scroll offset must automatically adjust to bring the focused widget fully into view.
+

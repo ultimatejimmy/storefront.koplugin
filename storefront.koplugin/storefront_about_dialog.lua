@@ -243,6 +243,9 @@ function StorefrontAboutDialog.show(Storefront, on_close_cb)
             }
         }
 
+        local FocusManager = require("ui/widget/focusmanager")
+        local focusable_rows = {}
+
         -- Helper to create section header (Matching Settings Card style)
         local function create_section_header(title)
             local label = TextWidget:new{
@@ -303,6 +306,8 @@ function StorefrontAboutDialog.show(Storefront, on_close_cb)
             end
 
             local item = InputContainer:new{ frame }
+            item.frame = frame
+            item.callback = callback
             local row_size = frame:getSize() or { w = dialog_w - sc(4), h = 0 }
             item.ges_events = {
                 Tap = {
@@ -325,6 +330,31 @@ function StorefrontAboutDialog.show(Storefront, on_close_cb)
                 callback()
                 return true
             end
+            item.isFocusable = function(self)
+                return true
+            end
+            item.onFocus = function(self)
+                if self.frame then
+                    self.frame.invert = true
+                    UIManager:setDirty(self.show_parent or self, "fast")
+                end
+                return true
+            end
+            item.onUnfocus = function(self)
+                if self.frame then
+                    self.frame.invert = false
+                    UIManager:setDirty(self.show_parent or self, "fast")
+                end
+                return true
+            end
+            item.onTapSelect = function(self)
+                if self.callback then
+                    self.callback()
+                end
+                return true
+            end
+
+            table.insert(focusable_rows, item)
             return item
         end
 
@@ -414,13 +444,35 @@ function StorefrontAboutDialog.show(Storefront, on_close_cb)
             content_vg
         }
 
-        overlay = InputContainer:new{
+        local layout = {}
+        for _, row_item in ipairs(focusable_rows) do
+            table.insert(layout, { row_item })
+        end
+        table.insert(layout, { close_btn })
+
+        local Device = require("device")
+        local Input = Device and Device.input
+        local key_events = {
+            Close = { { "Back" }, { "Escape" } }
+        }
+        if Input and Input.group and Input.group.Back then
+            table.insert(key_events.Close, { Input.group.Back })
+        end
+
+        overlay = FocusManager:new{
             align = "center",
             vertical_align = "center",
             dimen = Geom:new{ w = sw, h = sh },
-            key_events = { Close = { { "Back" } } },
+            layout = layout,
+            selected = { x = 1, y = 1 },
+            key_events = key_events,
             card
         }
+
+        for _, row_item in ipairs(focusable_rows) do
+            row_item.show_parent = overlay
+        end
+        close_btn.show_parent = overlay
 
         overlay.onClose = function()
             UIManager:close(overlay, "ui")

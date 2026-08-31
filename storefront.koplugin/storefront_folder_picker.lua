@@ -385,8 +385,13 @@ function StorefrontFolderPicker.show(options)
         end
     end
 
+    local FocusManager = require("ui/widget/focusmanager")
+    local focusable_rows = {}
+
     local function make_row_item(frame, callback)
         local item = InputContainer:new{ frame }
+        item.frame = frame
+        item.callback = callback
         item.ges_events = {
             Tap = {
                 GestureRange:new{
@@ -401,10 +406,36 @@ function StorefrontFolderPicker.show(options)
             if callback then callback() end
             return true
         end
+        item.isFocusable = function(self)
+            return true
+        end
+        item.onFocus = function(self)
+            if self.frame then
+                self.frame.invert = true
+                UIManager:setDirty(self.show_parent or self, "fast")
+            end
+            return true
+        end
+        item.onUnfocus = function(self)
+            if self.frame then
+                self.frame.invert = false
+                UIManager:setDirty(self.show_parent or self, "fast")
+            end
+            return true
+        end
+        item.onTapSelect = function(self)
+            if self.callback then
+                self.callback()
+            end
+            return true
+        end
+
+        table.insert(focusable_rows, item)
         return item
     end
 
     refresh = function()
+        focusable_rows = {}
         local ok, err = pcall(function()
             if overlay then
                 local ov = overlay
@@ -845,17 +876,19 @@ function StorefrontFolderPicker.show(options)
                 content_vg,
             }
 
+            local layout = {}
+            for _, item in ipairs(focusable_rows) do
+                table.insert(layout, { item })
+            end
+            table.insert(layout, { cancel_btn, new_btn, select_btn })
+
             local key_events = {
-                Close = { { "Back" } },
+                Close = { { "Back" }, { "Escape" } },
                 NextPage = {
-                    { "Right" },
                     { "PageDown" },
-                    { "Down" },
                 },
                 PrevPage = {
-                    { "Left" },
                     { "PageUp" },
-                    { "Up" },
                 },
             }
 
@@ -872,10 +905,12 @@ function StorefrontFolderPicker.show(options)
                 end
             end
 
-            overlay = InputContainer:new{
+            overlay = FocusManager:new{
                 align = "center",
                 vertical_align = "center",
                 dimen = Geom:new{ w = sw, h = sh },
+                layout = layout,
+                selected = { x = 1, y = 1 },
                 key_events = key_events,
                 ges_events = {
                     Swipe = {
@@ -887,6 +922,13 @@ function StorefrontFolderPicker.show(options)
                 },
                 card,
             }
+
+            for _, item in ipairs(focusable_rows) do
+                item.show_parent = overlay
+            end
+            cancel_btn.show_parent = overlay
+            new_btn.show_parent = overlay
+            select_btn.show_parent = overlay
 
             overlay.onNextPage = function()
                 if current_page < total_pages then

@@ -27,10 +27,19 @@ function StorefrontImageModal:new(opts)
     if ok and res and type(res) == "table" and res.handleEvent then
         viewer = res
     else
+        local Device = require("device")
+        local Input = Device and Device.input
+        local key_events = {
+            Close = { { "Back" }, { "Escape" } },
+        }
+        if Input and Input.group and Input.group.Back then
+            table.insert(key_events.Close, { Input.group.Back })
+        end
         viewer = InputContainer:new{
             covers_fullscreen = true,
             image_path = image_path,
             title = display_title,
+            key_events = key_events,
         }
     end
 

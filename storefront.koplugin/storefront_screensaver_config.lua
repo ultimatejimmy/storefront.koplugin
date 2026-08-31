@@ -65,8 +65,13 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
         end)
     end
 
+    local FocusManager = require("ui/widget/focusmanager")
+    local focusable_rows = {}
+
     local function make_row_item(frame, callback)
         local item = InputContainer:new{ frame }
+        item.frame = frame
+        item.callback = callback
         item.ges_events = {
             Tap = {
                 GestureRange:new{
@@ -81,10 +86,36 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
             if callback then callback() end
             return true
         end
+        item.isFocusable = function(self)
+            return true
+        end
+        item.onFocus = function(self)
+            if self.frame then
+                self.frame.invert = true
+                UIManager:setDirty(self.show_parent or self, "fast")
+            end
+            return true
+        end
+        item.onUnfocus = function(self)
+            if self.frame then
+                self.frame.invert = false
+                UIManager:setDirty(self.show_parent or self, "fast")
+            end
+            return true
+        end
+        item.onTapSelect = function(self)
+            if self.callback then
+                self.callback()
+            end
+            return true
+        end
+
+        table.insert(focusable_rows, item)
         return item
     end
 
     refresh = function()
+        focusable_rows = {}
         if overlay then
             local ov = overlay
             overlay = nil
@@ -633,13 +664,36 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback)
             content_vg,
         }
 
-        overlay = InputContainer:new{
+        local layout = {}
+        for _, row_item in ipairs(focusable_rows) do
+            table.insert(layout, { row_item })
+        end
+        table.insert(layout, { close_btn })
+
+        local Device = require("device")
+        local Input = Device and Device.input
+        local key_events = {
+            Close = { { "Back" }, { "Escape" } }
+        }
+        if Input and Input.group and Input.group.Back then
+            table.insert(key_events.Close, { Input.group.Back })
+        end
+
+        overlay = FocusManager:new{
             align = "center",
             vertical_align = "center",
             dimen = Geom:new{ w = sw, h = sh },
-            key_events = { Close = { { "Back" } } },
+            layout = layout,
+            selected = { x = 1, y = 1 },
+            key_events = key_events,
             card,
         }
+
+        for _, row_item in ipairs(focusable_rows) do
+            row_item.show_parent = overlay
+        end
+        close_btn.show_parent = overlay
+
         overlay.onClose = function()
             overlay = nil
             if on_close_callback then

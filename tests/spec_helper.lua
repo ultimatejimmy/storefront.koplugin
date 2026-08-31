@@ -25,8 +25,18 @@ package.loaded["device"] = {
     }
 }
 
-package.loaded["docsettings"] = {
-    getSidecarDir = function(_, book_path) return book_path .. ".sdr" end
+_G.G_defaults = _G.G_defaults or {
+    readSetting = function() end,
+    saveSetting = function() end,
+}
+_G.G_reader_settings = _G.G_reader_settings or {
+    readSetting = function() end,
+    saveSetting = function() end,
+    isTrue = function() return false end,
+}
+package.loaded["dispatcher"] = {
+    registerAction = function() end,
+    getAction = function() return { name = "dummy" } end,
 }
 
 package.loaded["lfs"] = {
@@ -56,10 +66,37 @@ package.loaded["logger"] = {
     levels = { DBG = 1, INFO = 2, WARN = 3, ERR = 4 },
 }
 
-package.loaded["datastorage"] = {
+local ds_mock = {
     getSettingsDir = function() return "/tmp/koreader/settings" end,
-    getDataDir = function() return "/tmp/koreader" end
+    getDataDir = function() return "/tmp/koreader" end,
+    writeToFile = function(...) return true end,
+    readFromFile = function(...) return {} end,
+    save = function(...) return true end,
+    load = function(...) return {} end,
 }
+package.loaded["datastorage"] = ds_mock
+package.loaded["DataStorage"] = ds_mock
+package.loaded["frontend/datastorage"] = ds_mock
+package.loaded["frontend/DataStorage"] = ds_mock
+
+local luasettings_mock = {
+    open = function(self, path)
+        local s = {
+            data = {},
+            readSetting = function(me, k, default) return me.data[k] or default end,
+            saveSetting = function(me, k, v) me.data[k] = v end,
+            isTrue = function(me, k) return me.data[k] == true end,
+            isFalse = function(me, k) return me.data[k] == false end,
+            isNil = function(me, k) return me.data[k] == nil end,
+            has = function(me, k) return me.data[k] ~= nil end,
+            flush = function() return true end,
+            close = function() end,
+        }
+        return s
+    end
+}
+package.loaded["luasettings"] = luasettings_mock
+package.loaded["LuaSettings"] = luasettings_mock
 
 -- UI tracking for testing
 _G.ui_tracker = {
@@ -127,7 +164,13 @@ package.loaded["ui/widget/menu"] = {
     new = function(a, b) return { type = "Menu", args = b or a } end
 }
 package.loaded["ui/widget/verticalgroup"] = {
-    new = function(a, b) return { type = "VerticalGroup", args = b or a } end
+    new = function(a, b)
+        local args = b or a or {}
+        local vg = { type = "VerticalGroup", args = args }
+        for k, v in pairs(args) do vg[k] = v end
+        vg.getSize = function() return { w = 100, h = 50 } end
+        return vg
+    end
 }
 package.loaded["ui/widget/widget"] = (function()
     local klass = {}
@@ -171,8 +214,35 @@ package.loaded["ui/widget/container/centercontainer"] = {
 package.loaded["ui/widget/container/movablecontainer"] = {
     new = function(a, b) return { type = "MovableContainer", args = b or a } end
 }
-package.loaded["ui/widget/container/widgetcontainer"] = {
-    new = function(a, b) return { type = "WidgetContainer", args = b or a } end
+package.loaded["ui/widget/container/widgetcontainer"] = (function()
+    local klass = {}
+    klass.extend = function(self, prototype)
+        prototype = prototype or {}
+        prototype.new = function(cls, args)
+            args = args or {}
+            local instance = {}
+            for k, v in pairs(prototype) do instance[k] = v end
+            for k, v in pairs(args) do instance[k] = v end
+            instance.type = "WidgetContainer"
+            if instance.init then instance:init() end
+            return instance
+        end
+        return prototype
+    end
+    klass.new = function(self, args)
+        return klass:extend(args):new()
+    end
+    return klass
+end)()
+package.loaded["ui/widget/container/scrollablecontainer"] = {
+    new = function(a, b)
+        local sc = { type = "ScrollableContainer", args = b or a }
+        sc.getSize = function() return { w = 800, h = 600 } end
+        return sc
+    end
+}
+package.loaded["ui/widget/horizontalscrollbar"] = {
+    new = function(a, b) return { type = "HorizontalScrollBar", args = b or a } end
 }
 package.loaded["ui/widget/container/inputcontainer"] = (function()
     local klass = {}
@@ -194,6 +264,84 @@ package.loaded["ui/widget/container/inputcontainer"] = (function()
     end
     return klass
 end)()
+package.loaded["ui/widget/focusmanager"] = (function()
+    local klass = {}
+    klass.extend = function(self, prototype)
+        prototype = prototype or {}
+        prototype.onFocusMove = function(self, args)
+            if not self.layout then return false end
+            local dx, dy = args[1] or 0, args[2] or 0
+            if not self.selected then self.selected = { x = 1, y = 1 } end
+            local target_y = self.selected.y + dy
+            if target_y >= 1 and target_y <= #self.layout then
+                local row = self.layout[target_y]
+                local target_x = math.min(math.max(1, self.selected.x + dx), #row)
+                self.selected = { x = target_x, y = target_y }
+                local item = row[target_x]
+                if item and item.handleEvent then
+                    item:handleEvent({ name = "Focus" })
+                end
+                return true
+            end
+            return false
+        end
+        prototype.getFocusItem = function(self)
+            if self.layout and self.selected and self.layout[self.selected.y] then
+                return self.layout[self.selected.y][self.selected.x]
+            end
+            return nil
+        end
+        prototype.onPress = function(self)
+            local item = self:getFocusItem()
+            if item and item.onTapSelect then return item:onTapSelect() end
+            if item and item.callback then item.callback(); return true end
+            return false
+        end
+        prototype.new = function(cls, args)
+            args = args or {}
+            local instance = {}
+            for k, v in pairs(prototype) do instance[k] = v end
+            for k, v in pairs(args) do instance[k] = v end
+            instance.type = "FocusManager"
+            if instance.init then instance:init() end
+            return instance
+        end
+        return prototype
+    end
+    klass.onFocusMove = function(self, args)
+        if not self.layout then return false end
+        local dx, dy = args[1] or 0, args[2] or 0
+        if not self.selected then self.selected = { x = 1, y = 1 } end
+        local target_y = self.selected.y + dy
+        if target_y >= 1 and target_y <= #self.layout then
+            local row = self.layout[target_y]
+            local target_x = math.min(math.max(1, self.selected.x + dx), #row)
+            self.selected = { x = target_x, y = target_y }
+            local item = row[target_x]
+            if item and item.handleEvent then
+                item:handleEvent({ name = "Focus" })
+            end
+            return true
+        end
+        return false
+    end
+    klass.getFocusItem = function(self)
+        if self.layout and self.selected and self.layout[self.selected.y] then
+            return self.layout[self.selected.y][self.selected.x]
+        end
+        return nil
+    end
+    klass.onPress = function(self)
+        local item = self:getFocusItem()
+        if item and item.onTapSelect then return item:onTapSelect() end
+        if item and item.callback then item.callback(); return true end
+        return false
+    end
+    klass.new = function(self, args)
+        return klass:extend(args):new()
+    end
+    return klass
+end)()
 package.loaded["ui/widget/container/leftcontainer"] = {
     new = function(a, b) return { type = "LeftContainer", args = b or a } end
 }
@@ -204,29 +352,101 @@ package.loaded["ui/widget/container/bottomcontainer"] = {
     new = function(a, b) return { type = "BottomContainer", args = b or a } end
 }
 package.loaded["ui/widget/textboxwidget"] = {
-    new = function(a, b) return { type = "TextBoxWidget", args = b or a } end
+    new = function(a, b)
+        local tb = { type = "TextBoxWidget", args = b or a }
+        tb.getSize = function() return { w = 200, h = 40 } end
+        return tb
+    end
 }
 package.loaded["ui/widget/linewidget"] = {
-    new = function(a, b) return { type = "LineWidget", args = b or a } end
+    new = function(a, b)
+        local lw = { type = "LineWidget", args = b or a }
+        lw.getSize = function() return { w = 200, h = 2 } end
+        return lw
+    end
 }
 package.loaded["ui/widget/verticalspan"] = {
     new = function(a, b) return { type = "VerticalSpan", args = b or a } end
 }
 package.loaded["ui/widget/horizontalgroup"] = {
-    new = function(a, b) return { type = "HorizontalGroup", args = b or a } end
+    new = function(a, b)
+        local args = b or a or {}
+        local hg = { type = "HorizontalGroup", args = args }
+        for k, v in pairs(args) do hg[k] = v end
+        hg.getSize = function() return { w = 100, h = 50 } end
+        return hg
+    end
 }
 package.loaded["ui/widget/horizontalspan"] = {
     new = function(a, b) return { type = "HorizontalSpan", args = b or a } end
 }
 package.loaded["ui/size"] = {
-    line = { thick = 2 },
-    padding = { small = 4 }
+    line = { thick = 2, thin = 1, default = 1 },
+    border = { thick = 2, thin = 1, default = 1 },
+    padding = { small = 4, default = 8, large = 16 },
+    span = { vertical_default = 8, horizontal_default = 8 },
 }
 package.loaded["ui/geometry"] = {
     new = function(a, b) return b or a end
 }
 package.loaded["ui/widget/table"] = {
     new = function(a, b) return { type = "Table", args = b or a } end
+}
+package.loaded["ui/widget/checkbutton"] = {
+    new = function(a, b) return { type = "CheckButton", args = b or a } end
+}
+package.loaded["ui/widget/checkmark"] = {
+    new = function(a, b) return { type = "CheckMark", args = b or a } end
+}
+package.loaded["ui/widget/iconbutton"] = {
+    new = function(a, b) return { type = "IconButton", args = b or a } end
+}
+package.loaded["ui/widget/titlebar"] = {
+    new = function(a, b) return { type = "TitleBar", args = b or a } end
+}
+package.loaded["ui/widget/verticalscrollbar"] = {
+    new = function(a, b) return { type = "VerticalScrollBar", args = b or a } end
+}
+package.loaded["ui/widget/scrolltextwidget"] = {
+    new = function(a, b) return { type = "ScrollTextWidget", args = b or a } end
+}
+package.loaded["ui/widget/inputdialog"] = {
+    new = function(a, b) return { type = "InputDialog", args = b or a } end
+}
+package.loaded["ui/widget/multiinputdialog"] = {
+    new = function(a, b) return { type = "MultiInputDialog", args = b or a } end
+}
+package.loaded["ui/widget/spinwidget"] = {
+    new = function(a, b) return { type = "SpinWidget", args = b or a } end
+}
+package.loaded["ui/widget/iconwidget"] = {
+    new = function(a, b) return { type = "IconWidget", args = b or a } end
+}
+package.loaded["ui/widget/multiconfirmbox"] = {
+    new = function(a, b) return { type = "MultiConfirmBox", args = b or a } end
+}
+package.loaded["ui/network/manager"] = {
+    isOnline = function() return true end
+}
+package.loaded["ui/widget/htmlboxwidget"] = {
+    new = function(a, b)
+        local hb = { type = "HtmlBoxWidget", args = b or a, page_number = 1 }
+        hb.setContent = function() end
+        hb.getSize = function() return { w = 200, h = 200 } end
+        return hb
+    end
+}
+package.loaded["ui/widget/textviewer"] = {
+    new = function(a, b) return { type = "TextViewer", args = b or a } end
+}
+package.loaded["ui/widget/imageviewer"] = {
+    new = function(a, b) return { type = "ImageViewer", args = b or a } end
+}
+package.loaded["ui/widget/screenshoter"] = {}
+package.loaded["ui/widget/booklist"] = {}
+package.loaded["ui/renderimage"] = {}
+package.loaded["ui/widget/confirmbox"] = {
+    new = function(a, b) return { type = "ConfirmBox", args = b or a } end
 }
 package.loaded["ui/widget/textwidget"] = {
     new = function(a, b) 
@@ -238,8 +458,23 @@ package.loaded["ui/widget/textwidget"] = {
 }
 package.loaded["ui/widget/button"] = {
     new = function(a, b) 
-        local btn = { type = "Button", args = b or a }
+        local args = b or a or {}
+        local btn = { type = "Button", args = args }
+        for k, v in pairs(args) do btn[k] = v end
         btn.getSize = function() return { w = 100, h = 50 } end
+        btn.enableDisable = function() end
+        btn.enable = function() end
+        btn.disable = function() end
+        btn.isFocusable = function() return true end
+        btn.onFocus = function() end
+        btn.onUnfocus = function() end
+        btn.onTapSelect = function(self)
+            if self.callback then
+                self.callback()
+                return true
+            end
+            return false
+        end
         return btn
     end
 }
@@ -279,10 +514,17 @@ package.loaded["ui/event"] = {
 package.loaded["ui/gesturerange"] = {
     new = function(a, b) return { type = "GestureRange", args = b or a } end
 }
-package.loaded["gettext"] = {
+package.loaded["gettext"] = setmetatable({
     _ = function(s) return s end,
-    getLanguage = function() return "en" end
-}
+    C_ = function(ctx, s) return s end,
+    N_ = function(s) return s end,
+    T_ = function(s) return s end,
+    pgettext = function(ctx, s) return s end,
+    getLanguage = function() return "en" end,
+    setLanguage = function() end,
+}, {
+    __call = function(t, s) return s end
+})
 package.loaded["ui/trapper"] = {
     dismissableRunInSubprocess = function(_, _, f) return true, f() end
 }
@@ -291,6 +533,8 @@ package.loaded["ssl.https"] = {}
 package.loaded["ltn12"] = {}
 package.loaded["socket"] = {}
 package.loaded["socketutil"] = {}
+package.loaded["ffi/archiver"] = {}
+package.loaded["ffi/sha2"] = {}
 package.loaded["util"] = {
     splitToChars = function(text)
         local chars = {}

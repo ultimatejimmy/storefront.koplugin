@@ -508,6 +508,8 @@ function storefront_utils.showConfirmDialog(opts)
     local btn_font_size = storefront_utils.calcGroupFontSize({ cancel_text, ok_text }, inner_w, btn_gap, "cfont", sc(16), 18, 10)
     local btn_widths = storefront_utils.calcProportionalBtnWidths({ cancel_text, ok_text }, inner_w, btn_gap, btn_font_size, "cfont")
 
+    local FocusManager = require("ui/widget/focusmanager")
+
     local cancel_btn = storefront_utils.createButton{
         text = cancel_text,
         text_font_size = btn_font_size,
@@ -563,15 +565,26 @@ function storefront_utils.showConfirmDialog(opts)
         content_vg,
     }
 
-    overlay = InputContainer:new{
+    local Input = Device and Device.input
+    local key_events = {
+        Close = { { "Back" }, { "Escape" } }
+    }
+    if Input and Input.group and Input.group.Back then
+        table.insert(key_events.Close, { Input.group.Back })
+    end
+
+    overlay = FocusManager:new{
         align = "center",
         vertical_align = "center",
         dimen = Geom:new{ w = sw, h = sh },
-        key_events = {
-            Close = { { "Back" } }
-        },
+        layout = { { cancel_btn, ok_btn } },
+        selected = { x = 2, y = 1 },
+        key_events = key_events,
         card,
     }
+
+    cancel_btn.show_parent = overlay
+    ok_btn.show_parent = overlay
 
     overlay.onClose = function()
         UIManager:close(overlay, "ui")

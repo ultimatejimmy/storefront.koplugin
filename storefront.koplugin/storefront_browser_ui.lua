@@ -150,6 +150,7 @@ function StorefrontBrowserDialog:buildTabBar()
     local font_size = 18
     local font_face = Font:getFace("smallinfofont", font_size)
 
+    local tab_focus_buttons = {}
     for i, tab_name in ipairs(tabs) do
         if i > 1 then
             table.insert(tab_widgets, HorizontalSpan:new{ width = tab_gap })
@@ -240,6 +241,28 @@ function StorefrontBrowserDialog:buildTabBar()
         local tab_btn = InputContainer:new{
             tab_frame,
         }
+        tab_btn.show_parent = self
+        tab_btn.isFocusable = function() return true end
+        tab_btn.onFocus = function()
+            tab_frame.bordersize = sc(2)
+            tab_frame.color = Blitbuffer.COLOR_BLACK
+            tab_frame.background = Blitbuffer.Color8(230)
+            UIManager:setDirty(self.show_parent or self, "fast")
+            return true
+        end
+        tab_btn.onUnfocus = function()
+            tab_frame.bordersize = 0
+            tab_frame.color = nil
+            tab_frame.background = nil
+            UIManager:setDirty(self.show_parent or self, "fast")
+            return true
+        end
+        tab_btn.onTapSelect = function()
+            if self.on_tab_switch then
+                self.on_tab_switch(tab_name)
+            end
+            return true
+        end
         tab_btn.ges_events = {
             Tap = {
                 GestureRange:new{
@@ -273,7 +296,10 @@ function StorefrontBrowserDialog:buildTabBar()
         end
 
         table.insert(tab_widgets, tab_btn)
+        table.insert(tab_focus_buttons, tab_btn)
     end
+    self._tab_buttons = tab_focus_buttons
+    self._filter_btn = nil
 
     local tab_bar_group = HorizontalGroup:new(tab_widgets)
     local frame_content = tab_bar_group
@@ -307,15 +333,38 @@ function StorefrontBrowserDialog:buildTabBar()
         end
 
         local filter_btn_content = HorizontalGroup:new(icon_elements)
-        local filter_btn = InputContainer:new{
-            FrameContainer:new{
-                padding = sc(4),
-                padding_left = sc(6),
-                padding_right = sc(6),
-                bordersize = 0,
-                filter_btn_content,
-            }
+        local filter_frame = FrameContainer:new{
+            padding = sc(4),
+            padding_left = sc(6),
+            padding_right = sc(6),
+            bordersize = 0,
+            filter_btn_content,
         }
+        local filter_btn = InputContainer:new{
+            filter_frame,
+        }
+        filter_btn.show_parent = self
+        filter_btn.isFocusable = function() return true end
+        filter_btn.onFocus = function()
+            filter_frame.bordersize = sc(2)
+            filter_frame.color = Blitbuffer.COLOR_BLACK
+            filter_frame.background = Blitbuffer.Color8(230)
+            UIManager:setDirty(self.show_parent or self, "fast")
+            return true
+        end
+        filter_btn.onUnfocus = function()
+            filter_frame.bordersize = 0
+            filter_frame.color = nil
+            filter_frame.background = nil
+            UIManager:setDirty(self.show_parent or self, "fast")
+            return true
+        end
+        filter_btn.onTapSelect = function()
+            if self.on_toggle_filter_bar then
+                self.on_toggle_filter_bar(self.current_tab)
+            end
+            return true
+        end
         filter_btn.ges_events = {
             Tap = {
                 GestureRange:new{
@@ -338,6 +387,7 @@ function StorefrontBrowserDialog:buildTabBar()
             end
             return true
         end
+        self._filter_btn = filter_btn
 
         local right_container = RightContainer:new{
             dimen = Geom:new{ w = self.width - sc(24), h = tab_bar_group:getSize().h },
@@ -427,23 +477,25 @@ function StorefrontBrowserDialog:init()
 
     self.key_events = self.key_events or {}
     self.key_events.NextPage = {
-        { Input.group.PgFwd },
-        { "Right" },
         { "PageDown" },
-        { "Down" },
     }
     self.key_events.PrevPage = {
-        { Input.group.PgBack },
-        { "Left" },
         { "PageUp" },
-        { "Up" },
     }
-    -- Disable FocusManager D-Pad horizontal movement so Left/Right arrow keys trigger PrevPage/NextPage
-    self.key_events.FocusRight = nil
-    self.key_events.FocusLeft = nil
+    if Input and Input.group then
+        if Input.group.PgFwd then
+            table.insert(self.key_events.NextPage, { Input.group.PgFwd })
+        end
+        if Input.group.PgBack then
+            table.insert(self.key_events.PrevPage, { Input.group.PgBack })
+        end
+    end
 
+    self.key_events.Close = { { "Back" }, { "Escape" } }
     if Device:hasKeys() then
-        self.key_events.Close = { { Input.group.Back } }
+        if Input and Input.group and Input.group.Back then
+            table.insert(self.key_events.Close, { Input.group.Back })
+        end
         self.key_events.ShowMenu = { { "Menu" } }
     end
     if Device:hasKeyboard() then
@@ -489,6 +541,7 @@ function StorefrontBrowserDialog:init()
         height = btn_h,
         bordersize = 0,
         background = nil,
+        show_parent = self,
         callback = function()
             if self.current_tab == "Updates" then
                 return
@@ -507,6 +560,7 @@ function StorefrontBrowserDialog:init()
         height = btn_h,
         bordersize = 0,
         background = nil,
+        show_parent = self,
         callback = function()
             if self.on_settings_tap then self.on_settings_tap() end
         end,
@@ -632,6 +686,7 @@ function StorefrontBrowserDialog:init()
         bordersize = 0,
         background = nil,
         allow_flash = false,
+        show_parent = self,
         callback = function()
             if self.on_prev_page then
                 self.on_prev_page()
@@ -646,9 +701,39 @@ function StorefrontBrowserDialog:init()
         fgcolor = Blitbuffer.COLOR_BLACK,
     }
     
-    local page_button = InputContainer:new{
+    local page_frame = FrameContainer:new{
+        padding = sc(4),
+        padding_left = sc(8),
+        padding_right = sc(8),
+        bordersize = 0,
         page_label,
     }
+    
+    local page_button = InputContainer:new{
+        page_frame,
+    }
+    page_button.show_parent = self
+    page_button.isFocusable = function() return true end
+    page_button.onFocus = function()
+        page_frame.bordersize = sc(2)
+        page_frame.color = Blitbuffer.COLOR_BLACK
+        page_frame.background = Blitbuffer.Color8(230)
+        UIManager:setDirty(self.show_parent or self, "fast")
+        return true
+    end
+    page_button.onUnfocus = function()
+        page_frame.bordersize = 0
+        page_frame.color = nil
+        page_frame.background = nil
+        UIManager:setDirty(self.show_parent or self, "fast")
+        return true
+    end
+    page_button.onTapSelect = function()
+        if page_button.onStorefrontTap then
+            page_button.onStorefrontTap()
+        end
+        return true
+    end
     page_button.ges_events = {
         StorefrontTap = {
             GestureRange:new{
@@ -691,6 +776,7 @@ function StorefrontBrowserDialog:init()
         bordersize = 0,
         background = nil,
         allow_flash = false,
+        show_parent = self,
         callback = function()
             if self.on_next_page then
                 self.on_next_page()
@@ -882,7 +968,20 @@ function StorefrontBrowserDialog:init()
     end
 
     self.layout = {}
-    table.insert(self.layout, { filter_btn, settings_btn, close_btn })
+    table.insert(self.layout, { search_btn, settings_btn, close_btn })
+    local tab_row = {}
+    if self._tab_buttons then
+        for _, tb in ipairs(self._tab_buttons) do
+            table.insert(tab_row, tb)
+        end
+    end
+    if self._filter_btn then
+        table.insert(tab_row, self._filter_btn)
+    end
+    if #tab_row > 0 then
+        table.insert(self.layout, tab_row)
+        self._tab_row_index = #self.layout
+    end
     if self._toolbar_widgets and #self._toolbar_widgets > 0 then
         table.insert(self.layout, self._toolbar_widgets)
         self._toolbar_row_index = #self.layout
@@ -955,31 +1054,44 @@ function StorefrontBrowserDialog:onClose()
 end
 
 function StorefrontBrowserDialog:_resolveInitialFocus(first_list_row_index)
-    local select_y = first_list_row_index
-    if self._focus_target_index then
-        select_y = first_list_row_index + self._focus_target_index - 1
-    elseif self.initial_focus then
-        local f = self.initial_focus
-        if f.entry == "last" and self._last_entry_index then
-            select_y = first_list_row_index + self._last_entry_index - 1
-        elseif f.entry == "first" and self._first_entry_index then
-            select_y = first_list_row_index + self._first_entry_index - 1
-        elseif f.toolbar and self._toolbar_row_index then
-            select_y = self._toolbar_row_index
-        elseif f.footer and self._footer_row_index then
-            select_y = self._footer_row_index
-        end
-    end
-    select_y = math.min(math.max(1, select_y), #self.layout)
+    local select_y = self._tab_row_index or 2
     local select_x = 1
-    if self.initial_focus and self.initial_focus.footer and self._footer_buttons then
-        for idx, btn in ipairs(self._footer_buttons) do
-            if btn.id == self.initial_focus.footer then
+    if self.current_tab and self._tab_buttons then
+        local tab_order = { "Plugins", "Patches", "Fonts", "Screensavers", "Installed", "Updates" }
+        for idx, name in ipairs(tab_order) do
+            if name == self.current_tab and idx <= #self._tab_buttons then
                 select_x = idx
                 break
             end
         end
     end
+    if self._focus_target_index then
+        select_y = first_list_row_index + self._focus_target_index - 1
+        select_x = 1
+    elseif self.initial_focus then
+        local f = self.initial_focus
+        if f.entry == "last" and self._last_entry_index then
+            select_y = first_list_row_index + self._last_entry_index - 1
+            select_x = 1
+        elseif f.entry == "first" and self._first_entry_index then
+            select_y = first_list_row_index + self._first_entry_index - 1
+            select_x = 1
+        elseif f.toolbar and self._toolbar_row_index then
+            select_y = self._toolbar_row_index
+            select_x = 1
+        elseif f.footer and self._footer_row_index then
+            select_y = self._footer_row_index
+            if self._footer_buttons then
+                for idx, btn in ipairs(self._footer_buttons) do
+                    if btn.id == self.initial_focus.footer then
+                        select_x = idx
+                        break
+                    end
+                end
+            end
+        end
+    end
+    select_y = math.min(math.max(1, select_y), #self.layout)
     local row = self.layout[select_y] or {}
     select_x = math.min(math.max(1, select_x), #row)
     return { x = select_x, y = select_y }
@@ -1095,6 +1207,32 @@ end
 function StorefrontBrowserDialog:onFocusMove(args)
     FocusManager.onFocusMove(self, args)
     return true
+end
+
+function StorefrontBrowserDialog:getFocusItem()
+    if not self.layout or not self.selected then
+        return nil
+    end
+    if self.layout[self.selected.y] then
+        return self.layout[self.selected.y][self.selected.x]
+    end
+    return nil
+end
+
+function StorefrontBrowserDialog:onPress()
+    local item = self:getFocusItem()
+    if item then
+        if item.onTapSelect then
+            return item:onTapSelect()
+        elseif item.callback then
+            item.callback()
+            return true
+        end
+    end
+    if FocusManager and FocusManager.onPress then
+        return FocusManager.onPress(self)
+    end
+    return false
 end
 
 function StorefrontBrowserDialog:getScrollOffset()

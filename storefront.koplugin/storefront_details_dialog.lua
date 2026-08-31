@@ -150,7 +150,7 @@ local Input = Device.input
 
 local StorefrontVersionDetailsDialog
 
-local StorefrontDetailsDialog = InputContainer:extend{
+local StorefrontDetailsDialog = FocusManager:extend{
     covers_fullscreen = true,
     Storefront = nil,
     repo = nil,
@@ -178,20 +178,23 @@ function StorefrontDetailsDialog:init()
     end
 
     self.key_events = self.key_events or {}
+    self.key_events.Close = { { "Back" }, { "Escape" } }
     self.key_events.NextPage = {
-        { Input.group.PgFwd },
-        { "Right" },
         { "PageDown" },
-        { "Down" },
     }
     self.key_events.PrevPage = {
-        { Input.group.PgBack },
-        { "Left" },
         { "PageUp" },
-        { "Up" },
     }
-    if Device:hasKeys() then
-        self.key_events.Close = { { Input.group.Back } }
+    if Input and Input.group then
+        if Input.group.PgFwd then
+            table.insert(self.key_events.NextPage, { Input.group.PgFwd })
+        end
+        if Input.group.PgBack then
+            table.insert(self.key_events.PrevPage, { Input.group.PgBack })
+        end
+        if Input.group.Back then
+            table.insert(self.key_events.Close, { Input.group.Back })
+        end
     end
 
     self.ges_events = self.ges_events or {}
@@ -215,6 +218,7 @@ function StorefrontDetailsDialog:init()
             self:onClose()
         end,
     }
+    self.back_btn = back_btn
 
     -- -----------------------------------------------------------------------
     -- 2. Title & Metadata
@@ -428,12 +432,10 @@ function StorefrontDetailsDialog:init()
     local is_font = false
     if self.kind == "font" or self.kind == "fonts" then
         is_font = true
-    elseif self.kind ~= "plugin" and self.kind ~= "patch" and not self.patch then
-        if self.repo and (self.repo.kind == "font" or self.repo.is_font) then
-            is_font = true
-        elseif self.update_item and (self.update_item.kind == "font" or self.update_item.is_font) then
-            is_font = true
-        end
+    elseif self.repo and (self.repo.kind == "font" or self.repo.is_font) then
+        is_font = true
+    elseif self.update_item and (self.update_item.kind == "font" or self.update_item.is_font) then
+        is_font = true
     end
 
     local title_face
@@ -1339,6 +1341,10 @@ function StorefrontDetailsDialog:init()
             local gap = readme_w - sample_w - controls_w
             if gap < sc(8) then gap = sc(8) end
 
+            self._font_size_btns = { dec_btn, reset_btn, inc_btn }
+            self.tab_buttons = { sample_col[1], dec_btn, reset_btn, inc_btn }
+            if self.updateFocusLayout then self:updateFocusLayout() end
+
             return HorizontalGroup:new{
                 align = "center",
                 sample_col,
@@ -1408,6 +1414,23 @@ function StorefrontDetailsDialog:init()
             table.insert(tab_group_items, HorizontalSpan:new{ width = content_tab_gap })
             table.insert(tab_group_items, wiki_col)
         end
+
+        local tab_buttons = {}
+        if is_font then
+            if sample_col and sample_col[1] then table.insert(tab_buttons, sample_col[1]) end
+            if self._font_size_btns then
+                for _, b in ipairs(self._font_size_btns) do
+                    table.insert(tab_buttons, b)
+                end
+            end
+        else
+            if readme_col and readme_col[1] then table.insert(tab_buttons, readme_col[1]) end
+            if rel_col and rel_col[1] then table.insert(tab_buttons, rel_col[1]) end
+            if ver_col and ver_col[1] then table.insert(tab_buttons, ver_col[1]) end
+            if wiki_col and wiki_col[1] and self.has_wiki ~= false then table.insert(tab_buttons, wiki_col[1]) end
+        end
+        self.tab_buttons = tab_buttons
+        if self.updateFocusLayout then self:updateFocusLayout() end
 
         return HorizontalGroup:new(tab_group_items)
     end
@@ -1576,12 +1599,8 @@ tr:nth-child(even) td { background-color: #f5f5f5 !important; }
         end,
     }
 
-    if prev_btn.enableDisable then
-        prev_btn:enableDisable(false)
-    end
-    if next_btn.enableDisable then
-        next_btn:enableDisable(false)
-    end
+    self.prev_btn = prev_btn
+    self.next_btn = next_btn
 
     local pagination_bar = HorizontalGroup:new{
         align = "center",
@@ -1886,6 +1905,25 @@ tr:nth-child(even) td { background-color: #f5f5f5 !important; }
                 local toggle_btn = InputContainer:new{
                     toggle_frame,
                 }
+                toggle_btn.show_parent = self
+                toggle_btn.isFocusable = function() return true end
+                toggle_btn.onFocus = function()
+                    toggle_frame.bordersize = sc(2)
+                    toggle_frame.color = Blitbuffer.COLOR_BLACK
+                    toggle_frame.background = Blitbuffer.Color8(230)
+                    UIManager:setDirty(self.show_parent or self, "fast")
+                    return true
+                end
+                toggle_btn.onUnfocus = function()
+                    toggle_frame.bordersize = sc(1)
+                    toggle_frame.color = nil
+                    toggle_frame.background = Blitbuffer.COLOR_WHITE
+                    UIManager:setDirty(self.show_parent or self, "fast")
+                    return true
+                end
+                toggle_btn.onTapSelect = function()
+                    return toggle_btn:onStorefrontVersionToggleTap()
+                end
                 toggle_btn.ges_events = {
                     StorefrontVersionToggleTap = {
                         GestureRange:new{
@@ -1913,6 +1951,8 @@ tr:nth-child(even) td { background-color: #f5f5f5 !important; }
 
                 table.insert(list_items, toggle_btn)
                 table.insert(list_items, VerticalSpan:new{ width = sc(6) })
+
+                local tab_focus_items = { toggle_btn }
 
                 if #releases == 0 then
                     table.insert(list_items, TextWidget:new{
@@ -1970,14 +2010,19 @@ tr:nth-child(even) td { background-color: #f5f5f5 !important; }
                             },
                             width = readme_w,
                             dialog = self,
+                            show_parent = self,
                         }
 
                         table.insert(list_items, item)
+                        table.insert(tab_focus_items, item)
                         if i < end_idx then
                             table.insert(list_items, LineWidget:new{ background = Blitbuffer.COLOR_DARK_GRAY, dimen = Geom:new{ w = readme_w, h = Size.line.thin } })
                         end
                     end
                 end
+
+                self.tab_item_widgets = tab_focus_items
+                if self.updateFocusLayout then self:updateFocusLayout() end
 
                 local versions_group = VerticalGroup:new(list_items)
 
@@ -2186,6 +2231,9 @@ tr:nth-child(even) td { background-color: #f5f5f5 !important; }
                 self.pagination_bar_container[1] = pagination_bar
             end
 
+            self.tab_item_widgets = nil
+            if self.updateFocusLayout then self:updateFocusLayout() end
+
             if RepoContent and type(RepoContent.resetPayloadTracker) == "function" then
                 RepoContent.resetPayloadTracker()
             end
@@ -2379,6 +2427,76 @@ tr:nth-child(even) td { background-color: #f5f5f5 !important; }
         height = self.screen_h,
         content_group,
     }
+
+    local action_btn_list = {}
+    if main_action_btn then
+        if main_action_btn.show_parent then
+            table.insert(action_btn_list, main_action_btn)
+        elseif type(main_action_btn) == "table" then
+            for _, child in ipairs(main_action_btn) do
+                if child and child.show_parent then
+                    table.insert(action_btn_list, child)
+                end
+            end
+        end
+    end
+    self.action_buttons = action_btn_list
+
+    self:updateFocusLayout()
+end
+
+function StorefrontDetailsDialog:updateFocusLayout()
+    local layout = {}
+    if self.back_btn then
+        table.insert(layout, { self.back_btn })
+    end
+    if self.action_buttons and #self.action_buttons > 0 then
+        table.insert(layout, self.action_buttons)
+    end
+    if self.tab_buttons and #self.tab_buttons > 0 then
+        table.insert(layout, self.tab_buttons)
+    end
+    if self.tab_item_widgets and #self.tab_item_widgets > 0 then
+        for _, w in ipairs(self.tab_item_widgets) do
+            table.insert(layout, { w })
+        end
+    end
+    local pager_row = {}
+    if self.prev_btn then table.insert(pager_row, self.prev_btn) end
+    if self.next_btn then table.insert(pager_row, self.next_btn) end
+    if #pager_row > 0 then
+        table.insert(layout, pager_row)
+    end
+    self.layout = layout
+    if not self.selected then
+        self.selected = { x = 1, y = 1 }
+    end
+end
+
+function StorefrontDetailsDialog:getFocusItem()
+    if not self.layout or not self.selected then
+        return nil
+    end
+    if self.layout[self.selected.y] then
+        return self.layout[self.selected.y][self.selected.x]
+    end
+    return nil
+end
+
+function StorefrontDetailsDialog:onPress()
+    local item = self:getFocusItem()
+    if item then
+        if item.onTapSelect then
+            return item:onTapSelect()
+        elseif item.callback then
+            item.callback()
+            return true
+        end
+    end
+    if FocusManager and FocusManager.onPress then
+        return FocusManager.onPress(self)
+    end
+    return false
 end
 
 function StorefrontDetailsDialog:onLinkTap(href)
@@ -2587,7 +2705,7 @@ end
 -- ---------------------------------------------------------------------------
 -- Dedicated Full-Screen Version Details Dialog
 -- ---------------------------------------------------------------------------
-StorefrontVersionDetailsDialog = InputContainer:extend{
+StorefrontVersionDetailsDialog = FocusManager:extend{
     covers_fullscreen = true,
     Storefront = nil,
     parent_details = nil,
@@ -2606,20 +2724,23 @@ function StorefrontVersionDetailsDialog:init()
     self.dimen = Geom:new{ x = 0, y = 0, w = self.screen_w, h = self.screen_h }
 
     self.key_events = self.key_events or {}
+    self.key_events.Close = { { "Back" }, { "Escape" } }
     self.key_events.NextPage = {
-        { Input.group.PgFwd },
-        { "Right" },
         { "PageDown" },
-        { "Down" },
     }
     self.key_events.PrevPage = {
-        { Input.group.PgBack },
-        { "Left" },
         { "PageUp" },
-        { "Up" },
     }
-    if Device:hasKeys() then
-        self.key_events.Close = { { Input.group.Back } }
+    if Input and Input.group then
+        if Input.group.PgFwd then
+            table.insert(self.key_events.NextPage, { Input.group.PgFwd })
+        end
+        if Input.group.PgBack then
+            table.insert(self.key_events.PrevPage, { Input.group.PgBack })
+        end
+        if Input.group.Back then
+            table.insert(self.key_events.Close, { Input.group.Back })
+        end
     end
 
     self.ges_events = self.ges_events or {}
@@ -2741,6 +2862,8 @@ function StorefrontVersionDetailsDialog:init()
     local ignore_btn = InputContainer:new{
         ignore_frame,
     }
+    ignore_btn.frame = ignore_frame
+    ignore_btn.show_parent = self
     ignore_btn.ges_events = {
         StorefrontVersionIgnoreTap = {
             GestureRange:new{
@@ -2779,6 +2902,18 @@ function StorefrontVersionDetailsDialog:init()
             end
         end
         return true
+    end
+    ignore_btn.isFocusable = function(self) return true end
+    ignore_btn.onFocus = function(self)
+        if self.frame then self.frame.invert = true; UIManager:setDirty(self.show_parent or self, "fast") end
+        return true
+    end
+    ignore_btn.onUnfocus = function(self)
+        if self.frame then self.frame.invert = false; UIManager:setDirty(self.show_parent or self, "fast") end
+        return true
+    end
+    ignore_btn.onTapSelect = function(self)
+        return self:onStorefrontVersionIgnoreTap()
     end
 
     local action_row = HorizontalGroup:new{
@@ -2955,6 +3090,13 @@ a.plain-link { color: #000000 !important; text-decoration: none !important; }
         height = self.screen_h,
         content_group,
     }
+
+    self.layout = {
+        { back_btn },
+        { install_btn, ignore_btn },
+        { prev_btn, next_btn },
+    }
+    self.selected = { x = 1, y = 1 }
 end
 
 function StorefrontVersionDetailsDialog:onNextPage()

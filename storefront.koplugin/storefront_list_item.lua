@@ -645,7 +645,9 @@ function StorefrontListItem:onUnfocus()
 end
 
 function StorefrontListItem:onTapSelect()
-    if self.dialog then
+    if self.entry and self.entry.callback then
+        self.entry.callback()
+    elseif self.dialog and self.dialog.onEntryActivated then
         self.dialog:onEntryActivated(self.entry)
     end
     return true

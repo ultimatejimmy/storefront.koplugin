@@ -77,8 +77,13 @@ function StorefrontScreensaverGallery.show(Storefront, on_close_callback, on_set
         end
     end
 
+    local FocusManager = require("ui/widget/focusmanager")
+    local focusable_rows = {}
+
     local function make_tap_item(frame, callback)
         local item = InputContainer:new{ frame }
+        item.frame = frame
+        item.callback = callback
         item.ges_events = {
             Tap = {
                 GestureRange:new{
@@ -93,10 +98,32 @@ function StorefrontScreensaverGallery.show(Storefront, on_close_callback, on_set
             if callback then callback() end
             return true
         end
+        item.isFocusable = function(self) return true end
+        item.onFocus = function(self)
+            if self.frame then
+                self.frame.invert = true
+                UIManager:setDirty(self.show_parent or self, "fast")
+            end
+            return true
+        end
+        item.onUnfocus = function(self)
+            if self.frame then
+                self.frame.invert = false
+                UIManager:setDirty(self.show_parent or self, "fast")
+            end
+            return true
+        end
+        item.onTapSelect = function(self)
+            if self.callback then self.callback() end
+            return true
+        end
+
+        table.insert(focusable_rows, item)
         return item
     end
 
     refresh = function()
+        focusable_rows = {}
         if overlay then
             local ov = overlay
             overlay = nil
@@ -566,17 +593,19 @@ function StorefrontScreensaverGallery.show(Storefront, on_close_callback, on_set
             content_vg,
         }
 
+        local layout = {}
+        for _, item in ipairs(focusable_rows) do
+            table.insert(layout, { item })
+        end
+        table.insert(layout, { config_btn, close_btn })
+
         local key_events = {
-            Close = { { "Back" } },
+            Close = { { "Back" }, { "Escape" } },
             NextPage = {
-                { "Right" },
                 { "PageDown" },
-                { "Down" },
             },
             PrevPage = {
-                { "Left" },
                 { "PageUp" },
-                { "Up" },
             },
         }
 
@@ -601,14 +630,22 @@ function StorefrontScreensaverGallery.show(Storefront, on_close_callback, on_set
             }
         }
 
-        overlay = InputContainer:new{
+        overlay = FocusManager:new{
             align = "center",
             vertical_align = "center",
             dimen = Geom:new{ w = sw, h = sh },
+            layout = layout,
+            selected = { x = 1, y = 1 },
             key_events = key_events,
             ges_events = ges_events,
             card,
         }
+
+        for _, item in ipairs(focusable_rows) do
+            item.show_parent = overlay
+        end
+        config_btn.show_parent = overlay
+        close_btn.show_parent = overlay
 
         overlay.onNextPage = function()
             if current_page < total_pages then

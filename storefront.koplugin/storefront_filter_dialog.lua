@@ -89,6 +89,8 @@ function StorefrontFilterDialog.showInstalledFilter(arg1, arg2)
     local refresh
 
     refresh = function()
+        local FocusManager = require("ui/widget/focusmanager")
+        local focusable_rows = {}
         if overlay then
             UIManager:close(overlay, "ui")
         end
@@ -217,6 +219,8 @@ function StorefrontFilterDialog.showInstalledFilter(arg1, arg2)
             if not callback then return frame end
 
             local item = InputContainer:new{ frame }
+            item.frame = frame
+            item.callback = callback
             local row_size = frame:getSize() or { w = dialog_w - sc(4), h = 0 }
             item.ges_events = {
                 Tap = {
@@ -241,6 +245,27 @@ function StorefrontFilterDialog.showInstalledFilter(arg1, arg2)
                 callback()
                 return true
             end
+            item.isFocusable = function(self) return true end
+            item.onFocus = function(self)
+                if self.frame then
+                    self.frame.invert = true
+                    UIManager:setDirty(self.show_parent or self, "fast")
+                end
+                return true
+            end
+            item.onUnfocus = function(self)
+                if self.frame then
+                    self.frame.invert = false
+                    UIManager:setDirty(self.show_parent or self, "fast")
+                end
+                return true
+            end
+            item.onTapSelect = function(self)
+                if self.callback then self.callback() end
+                return true
+            end
+
+            table.insert(focusable_rows, item)
             return item
         end
 
@@ -406,15 +431,35 @@ function StorefrontFilterDialog.showInstalledFilter(arg1, arg2)
             content_vg,
         }
 
-        overlay = InputContainer:new{
+        local layout = {}
+        for _, row_item in ipairs(focusable_rows) do
+            table.insert(layout, { row_item })
+        end
+        table.insert(layout, { apply_btn })
+
+        local Device = require("device")
+        local Input = Device and Device.input
+        local key_events = {
+            Close = { { "Back" }, { "Escape" } }
+        }
+        if Input and Input.group and Input.group.Back then
+            table.insert(key_events.Close, { Input.group.Back })
+        end
+
+        overlay = FocusManager:new{
             align = "center",
             vertical_align = "center",
             dimen = Geom:new{ w = sw, h = sh },
-            key_events = {
-                Close = { { "Back" } }
-            },
+            layout = layout,
+            selected = { x = 1, y = #layout },
+            key_events = key_events,
             card,
         }
+
+        for _, row_item in ipairs(focusable_rows) do
+            row_item.show_parent = overlay
+        end
+        apply_btn.show_parent = overlay
 
         overlay.onClose = function()
             UIManager:close(overlay, "ui")
@@ -447,6 +492,8 @@ function StorefrontFilterDialog.showCatalogFilter(arg1, arg2)
     local refresh
 
     refresh = function()
+        local FocusManager = require("ui/widget/focusmanager")
+        local focusable_rows = {}
         if overlay then
             UIManager:close(overlay, "ui")
         end
@@ -575,6 +622,8 @@ function StorefrontFilterDialog.showCatalogFilter(arg1, arg2)
             if not callback then return frame end
 
             local item = InputContainer:new{ frame }
+            item.frame = frame
+            item.callback = callback
             local row_size = frame:getSize() or { w = dialog_w - sc(4), h = 0 }
             item.ges_events = {
                 Tap = {
@@ -599,6 +648,27 @@ function StorefrontFilterDialog.showCatalogFilter(arg1, arg2)
                 callback()
                 return true
             end
+            item.isFocusable = function(self) return true end
+            item.onFocus = function(self)
+                if self.frame then
+                    self.frame.invert = true
+                    UIManager:setDirty(self.show_parent or self, "fast")
+                end
+                return true
+            end
+            item.onUnfocus = function(self)
+                if self.frame then
+                    self.frame.invert = false
+                    UIManager:setDirty(self.show_parent or self, "fast")
+                end
+                return true
+            end
+            item.onTapSelect = function(self)
+                if self.callback then self.callback() end
+                return true
+            end
+
+            table.insert(focusable_rows, item)
             return item
         end
 
@@ -744,15 +814,35 @@ function StorefrontFilterDialog.showCatalogFilter(arg1, arg2)
             content_vg,
         }
 
-        overlay = InputContainer:new{
+        local layout = {}
+        for _, row_item in ipairs(focusable_rows) do
+            table.insert(layout, { row_item })
+        end
+        table.insert(layout, { apply_btn })
+
+        local Device = require("device")
+        local Input = Device and Device.input
+        local key_events = {
+            Close = { { "Back" }, { "Escape" } }
+        }
+        if Input and Input.group and Input.group.Back then
+            table.insert(key_events.Close, { Input.group.Back })
+        end
+
+        overlay = FocusManager:new{
             align = "center",
             vertical_align = "center",
             dimen = Geom:new{ w = sw, h = sh },
-            key_events = {
-                Close = { { "Back" } }
-            },
+            layout = layout,
+            selected = { x = 1, y = #layout },
+            key_events = key_events,
             card,
         }
+
+        for _, row_item in ipairs(focusable_rows) do
+            row_item.show_parent = overlay
+        end
+        apply_btn.show_parent = overlay
 
         overlay.onClose = function()
             UIManager:close(overlay, "ui")
@@ -934,9 +1024,14 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
         return _("All")
     end
 
+    local FocusManager = require("ui/widget/focusmanager")
+    local focusable_rows = {}
+
     -- Shared helpers
     local function make_row_item(frame, callback, row_w, row_h)
         local item = InputContainer:new{ frame }
+        item.frame = frame
+        item.callback = callback
         item.ges_events = {
             Tap = {
                 GestureRange:new{
@@ -953,6 +1048,27 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
             }
         }
         item.onTap = function() callback(); return true end
+        item.isFocusable = function(self) return true end
+        item.onFocus = function(self)
+            if self.frame then
+                self.frame.invert = true
+                UIManager:setDirty(self.show_parent or self, "fast")
+            end
+            return true
+        end
+        item.onUnfocus = function(self)
+            if self.frame then
+                self.frame.invert = false
+                UIManager:setDirty(self.show_parent or self, "fast")
+            end
+            return true
+        end
+        item.onTapSelect = function(self)
+            if self.callback then self.callback() end
+            return true
+        end
+
+        table.insert(focusable_rows, item)
         return item
     end
 
@@ -1099,6 +1215,9 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
                 background = Blitbuffer.COLOR_LIGHT_GRAY,
             })
 
+            local FocusManager = require("ui/widget/focusmanager")
+            local cat_focusable_rows = {}
+
             -- Category rows inside a scrollable container if height exceeds screen
             local list_vg = VerticalGroup:new{ align = "left" }
             for idx, cat_name in ipairs(cats) do
@@ -1146,6 +1265,7 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
 
                 local target_key = key
                 local row_item = InputContainer:new{ row_frame }
+                row_item.frame = row_frame
                 row_item.ges_events = {
                     Tap = {
                         GestureRange:new{
@@ -1156,7 +1276,7 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
                         },
                     },
                 }
-                row_item.onTap = function()
+                local toggle_cat = function()
                     if target_key == "all" then
                         cat_set = { all = true }
                     else
@@ -1171,6 +1291,27 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
                     build_cat_overlay()
                     return true
                 end
+                row_item.onTap = toggle_cat
+                row_item.isFocusable = function(self) return true end
+                row_item.onFocus = function(self)
+                    if self.frame then
+                        self.frame.invert = true
+                        UIManager:setDirty(self.show_parent or self, "fast")
+                    end
+                    return true
+                end
+                row_item.onUnfocus = function(self)
+                    if self.frame then
+                        self.frame.invert = false
+                        UIManager:setDirty(self.show_parent or self, "fast")
+                    end
+                    return true
+                end
+                row_item.onTapSelect = function(self)
+                    return toggle_cat()
+                end
+
+                table.insert(cat_focusable_rows, row_item)
                 table.insert(list_vg, row_item)
 
                 if idx < #cats then
@@ -1209,13 +1350,39 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
                 content,
             }
 
-            cat_overlay = InputContainer:new{
+            local cat_layout = {
+                { sel_all_btn, clear_btn, done_btn }
+            }
+            for _, r in ipairs(cat_focusable_rows) do
+                table.insert(cat_layout, { r })
+            end
+
+            local Device = require("device")
+            local Input = Device and Device.input
+            local cat_key_events = {
+                Close = { { "Back" }, { "Escape" } }
+            }
+            if Input and Input.group and Input.group.Back then
+                table.insert(cat_key_events.Close, { Input.group.Back })
+            end
+
+            cat_overlay = FocusManager:new{
                 align = "center",
                 vertical_align = "center",
                 dimen = Geom:new{ w = sw, h = sh },
-                key_events = { Close = { { "Back" } } },
+                layout = cat_layout,
+                selected = { x = 3, y = 1 },
+                key_events = cat_key_events,
                 card,
             }
+
+            sel_all_btn.show_parent = cat_overlay
+            clear_btn.show_parent = cat_overlay
+            done_btn.show_parent = cat_overlay
+            for _, r in ipairs(cat_focusable_rows) do
+                r.show_parent = cat_overlay
+            end
+
             cat_overlay.onClose = function()
                 if cat_overlay then UIManager:close(cat_overlay, "ui") end
                 on_save(cat_set)
@@ -1232,6 +1399,7 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
     local refresh
 
     refresh = function()
+        focusable_rows = {}
         if overlay then UIManager:close(overlay, "ui") end
 
         local available_h = sh - sc(24)
@@ -1428,12 +1596,35 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
             width = dialog_w, content_vg,
         }
 
-        overlay = InputContainer:new{
+        local layout = {}
+        for _, row_item in ipairs(focusable_rows) do
+            table.insert(layout, { row_item })
+        end
+        table.insert(layout, { apply_btn })
+
+        local Device = require("device")
+        local Input = Device and Device.input
+        local key_events = {
+            Close = { { "Back" }, { "Escape" } }
+        }
+        if Input and Input.group and Input.group.Back then
+            table.insert(key_events.Close, { Input.group.Back })
+        end
+
+        overlay = FocusManager:new{
             align = "center", vertical_align = "center",
             dimen = Geom:new{ w = sw, h = sh },
-            key_events = { Close = { { "Back" } } },
+            layout = layout,
+            selected = { x = 1, y = #layout },
+            key_events = key_events,
             card,
         }
+
+        for _, row_item in ipairs(focusable_rows) do
+            row_item.show_parent = overlay
+        end
+        apply_btn.show_parent = overlay
+
         overlay.onClose = function()
             state.page = 1
             Storefront:saveBrowserState()

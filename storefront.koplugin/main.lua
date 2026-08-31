@@ -423,9 +423,19 @@ local function showRestartConfirmation(message, force)
         content_vg,
     }
 
-    overlay = InputContainer:new{
+    local Input = Device and Device.input
+    local key_events = {
+        Close = { { "Back" }, { "Escape" } }
+    }
+    if Input and Input.group and Input.group.Back then
+        table.insert(key_events.Close, { Input.group.Back })
+    end
+
+    overlay = R.FocusManager:new{
         dimen = Geom:new{ w = sw, h = sh },
-        key_events = { Close = { { "Back" } } },
+        layout = { { cancel_btn, ok_btn } },
+        selected = { x = 2, y = 1 },
+        key_events = key_events,
         CenterContainer:new{
             dimen = Geom:new{ w = sw, h = sh },
             card,
@@ -563,13 +573,21 @@ function Storefront:showConfirmDialog(opts)
         content_vg,
     }
 
-    overlay = InputContainer:new{
+    local Input = Device and Device.input
+    local key_events = {
+        Close = { { "Back" }, { "Escape" } }
+    }
+    if Input and Input.group and Input.group.Back then
+        table.insert(key_events.Close, { Input.group.Back })
+    end
+
+    overlay = R.FocusManager:new{
         align = "center",
         vertical_align = "center",
         dimen = Geom:new{ w = sw, h = sh },
-        key_events = {
-            Close = { { "Back" } }
-        },
+        layout = { { cancel_btn, ok_btn } },
+        selected = { x = 2, y = 1 },
+        key_events = key_events,
         card,
     }
 
@@ -7747,6 +7765,22 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
         end
 
         local captured_entry = entry
+        card_ic.isFocusable = function() return true end
+        card_ic.onFocus = function()
+            card_frame.bordersize = sc(3)
+            card_frame.color = Blitbuffer.COLOR_BLACK
+            UIManager:setDirty(card_ic.show_parent or self_ref.browser_menu or card_ic, "fast")
+            return true
+        end
+        card_ic.onUnfocus = function()
+            card_frame.bordersize = sc(1)
+            card_frame.color = Blitbuffer.Color8(180)
+            UIManager:setDirty(card_ic.show_parent or self_ref.browser_menu or card_ic, "fast")
+            return true
+        end
+        card_ic.onTapSelect = function()
+            return card_ic:onSfssCardTap()
+        end
         card_ic.ges_events = {
             SfssCardTap = {
                 GestureRange:new{
