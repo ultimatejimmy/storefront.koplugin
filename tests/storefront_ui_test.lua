@@ -520,6 +520,38 @@ if ok_browser then
             print("Long tag version details dialog error was:", long_tag_test_err)
         end
 
+        -- Test versions fallback when fetch fails does not poison cached_releases permanently
+        local fallback_test_ok, fallback_test_err = pcall(function()
+            local repo_with_lat = {
+                name = "test_single_rel",
+                owner = "testowner",
+                latest_release = { tag_name = "v1.0.0", name = "v1.0.0", body = "Release 1", published_at = "2026-08-01" },
+            }
+            local details = StorefrontDetailsDialog:new{
+                Storefront = full_dummy_storefront,
+                repo = repo_with_lat,
+                kind = "plugin",
+            }
+            details:init()
+            -- Mock GitHubClient to simulate network failure (returning nil, err)
+            local GitHubClient = require("storefront_net_github")
+            local orig_fetch = GitHubClient.fetchReleases
+            GitHubClient.fetchReleases = function() return nil, "network error" end
+
+            details.active_tab = "versions"
+            details.loadContent("versions")
+
+            -- self.cached_releases should NOT be set to the 1-item table
+            check("Failed fetch with <= 1 release does not permanently poison cached_releases", details.cached_releases == nil, true)
+
+            -- Restore fetchReleases
+            GitHubClient.fetchReleases = orig_fetch
+        end)
+        check("Versions fallback cache test executed without error", fallback_test_ok, true)
+        if not fallback_test_ok then
+            print("Versions fallback cache test error was:", fallback_test_err)
+        end
+
         -- Test page_number reset when switching tabs in details dialog
         local page_reset_ok = pcall(function()
             local details = StorefrontDetailsDialog:new{

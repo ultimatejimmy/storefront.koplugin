@@ -1779,6 +1779,13 @@ tr:nth-child(even) td { background-color: #f5f5f5 !important; }
         else
             html_box:setContent("<p style='text-align:center;color:gray;'>" .. _("Loading README...") .. "</p>", readme_css, sc(18))
         end
+        if self.content_area_box then
+            self.content_area_box[1] = html_box
+        end
+        if self.pagination_bar_container and pagination_bar then
+            self.pagination_bar_container[1] = pagination_bar
+        end
+        updatePagination()
         UIManager:setDirty(self, "ui")
 
         if (not owner or owner == "" or not repo_name or repo_name == "") and tab_name ~= "versions" then
@@ -1826,21 +1833,25 @@ tr:nth-child(even) td { background-color: #f5f5f5 !important; }
                 local item_key = self.patch and self.patch.filename or (self.repo and (self.repo.name or self.repo.full_name or repo_name))
                 local allow_pre = item_key and InstallStore.isPreReleaseAllowed(item_key) or false
 
-                if not self.cached_releases or force_refresh then
+                local raw_releases = self.cached_releases
+                if not raw_releases or force_refresh then
                     local cached = getReleasesFromCache(self.repo)
                     if cached and #cached > 1 then
                         self.cached_releases = cached
+                        raw_releases = cached
                     else
                         local fetched, err = GitHubClient.fetchReleases(owner, repo_name)
                         if fetched and #fetched > 0 then
                             self.cached_releases = fetched
+                            raw_releases = fetched
                         else
-                            self.cached_releases = cached
+                            -- Fall back to cached release for display without poisoning self.cached_releases permanently
+                            raw_releases = cached
                         end
                     end
                 end
 
-                local raw_releases = self.cached_releases or {}
+                raw_releases = raw_releases or {}
                 local releases = {}
                 for _, rel in ipairs(raw_releases) do
                     local tag = rel.tag_name or rel.name or ""
@@ -2355,18 +2366,13 @@ tr:nth-child(even) td { background-color: #f5f5f5 !important; }
         end
 
         logger.info("Storefront Details: loadContent called for tab =", tab_name)
-        if tab_name == "versions" then
-            logger.info("Storefront Details: executing executeLoad immediately for versions tab")
-            executeLoad()
-        else
-            UIManager:scheduleIn(0.01, function()
-                if NetworkMgr and type(NetworkMgr.runWhenOnline) == "function" then
-                    NetworkMgr:runWhenOnline(executeLoad)
-                else
-                    executeLoad()
-                end
-            end)
-        end
+        UIManager:scheduleIn(0.01, function()
+            if NetworkMgr and type(NetworkMgr.runWhenOnline) == "function" then
+                NetworkMgr:runWhenOnline(executeLoad)
+            else
+                executeLoad()
+            end
+        end)
     end
 
     self.loadContent = loadContent
