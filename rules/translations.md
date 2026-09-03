@@ -10,7 +10,7 @@ description: Guidelines and rules for translation management, key synchronizatio
 - **100% Key Parity**: All translation keys referenced in Lua source code (`_("key")`, `loc:t("key")`, `KEY_ALIASES`, `FALLBACKS`) MUST exist in `en.po` and be synchronized across ALL 17 target `.po` files.
 - **Automated Synchronization & Auditing**:
   - Run `python tools/sync_translations.py` whenever adding or modifying translation keys.
-  - Run `python tools/audit_translation_keys.py` to verify 100% key coverage across all languages with 0 missing or empty keys.
+  - Run `python tools/check_translations.py` to verify 100% key coverage across all languages with 0 missing, empty, or stale keys.
 
 ## 2. Character Length & Proportional Scaling Rules
 - **Similar Length Requirement**: Target language translations (`msgstr`) should be kept similar in character length to the English source text (`msgid`). Avoid unnecessarily verbose phrasing or long compound words that distort UI alignment.

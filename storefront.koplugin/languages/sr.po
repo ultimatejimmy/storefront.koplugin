@@ -5,2286 +5,2827 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
+# en-hash: 8b58398aa916952e63218ac09281abb5
 msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
 msgstr "\"Dragi moj g. Benete,\" rekla mu je supruga jednog dana, \"jeste li čuli da je Nederfild Park konačno izdat?\" G. Benet je odgovorio da nije. \"Ali jeste,\" uzvratila je ona; \"jer je gđa Long upravo bila ovde i sve mi je ispričala.\" G. Benet nije odgovorio."
 
+# en-hash: 96283be084215c5b7fc00521037f20b3
 msgid "%d Categories"
 msgstr "%d категорија"
 
-msgid "%d items"
-msgstr "%d ставки"
-
+# en-hash: 7c23d2c4c06ff10d27bdaad6897814f6
 msgid "%d patches"
 msgstr "%d закрпа"
 
+# en-hash: c60876d1e8b218886df752b4fa8c7bad
 msgid "%d plugins"
 msgstr "%d плагина"
 
+# en-hash: fa6eebde796e7a0cd580534b810334a7
 msgid "%d wallpapers"
 msgstr "%d позадина"
 
+# en-hash: 6e1b6414c34df5efe842362cbf885e9f
+msgid "%d wallpapers found in this folder"
+msgstr "Пронађено је %d позадина у овој фасцикли"
+
+# en-hash: 0da3020f112f6cd08658e294198c9c89
 msgid "%d wallpapers stored on device"
 msgstr "%d позадина сачувано на уређају"
 
+# en-hash: a7b505048595a0e087b654ac78c21366
 msgid "%d wallpapers · Folder Shuffle (all in rotation)"
 msgstr "%d позадина · Насумично из фасцикле (све у ротацији)"
 
+# en-hash: 4cb52a5d104340ee5096ff0c9256f8e5
 msgid "%d wallpapers · Mode: Book Cover"
 msgstr "%d позадина · Режим: Корице књиге"
 
+# en-hash: 31e9831ff2c4b2a11920333cae5cc350
 msgid "%d wallpapers · Single mode active"
 msgstr "%d позадина · Активан један режим"
 
+# en-hash: 15fd4d0b221f644846168f217c6f9f9b
 msgid "%s and %s"
 msgstr "%s и %s"
 
+# en-hash: 77e9779a1de07d854ee4db9ffbd7c854
 msgid "%s is up to date (version %s)."
 msgstr "%s је ажуран (верзија %s)."
 
+# en-hash: 6837c7d74a6273ec361dfa5576ac324e
 msgid "%s is up to date."
 msgstr "%s је ажуран."
 
+# en-hash: 8057f0d063a74d07aef5fce030cc7ff0
 msgid "%s needs an update."
 msgstr "%s захтева ажурирање."
 
+# en-hash: 481a0c4b9817d80bf6a836a39441b9b5
 msgid "%s · %d files"
 msgstr "%s · %d датотека"
 
+# en-hash: 2f32645de7a4769c6310a98cc38d9a74
 msgid "%s · 1 file"
 msgstr "%s · 1 датотека"
 
+# en-hash: 83fd20d49deb849e4b9df60c50c9e67e
 msgid "(fork)"
 msgstr "(форк)"
 
+# en-hash: a122476080135dddfadec5a2bc576873
 msgid "(showing %d of %d commits)"
 msgstr "(prikazano %d od %d izmena)"
 
+# en-hash: 2722ddcbfd20786cc8715dac74c0531a
 msgid "+ Add to Shuffle Pool"
 msgstr "+ Додај у насумични избор"
 
+# en-hash: 4bc56877a98a3b5f59735f579cf735a6
+msgid "+ New"
+msgstr "+ Ново"
+
+# en-hash: d28fdd75f93893891fb2d7e3b40683de
+msgid ".. (Parent Folder)"
+msgstr ".. (Надређена фасцикла)"
+
+# en-hash: 6b2d75cc5eb0ea8c7fdf5686d758947a
 msgid "1 / 1"
 msgstr "1 / 1"
 
+# en-hash: f22f39e15c8f1579ba49d528da2ceef5
 msgid "1 patch"
 msgstr "1 закрпа"
 
+# en-hash: 8848b53275f0757ec5174d00d36fa107
 msgid "1 plugin"
 msgstr "1 плагин"
 
+# en-hash: 36cf3e1f679e22c5433ff72069545444
 msgid "< Back"
 msgstr "< Назад"
 
+# en-hash: d460ec1b52f16b50d55978c3d4bfdc97
 msgid "< Prev"
 msgstr "< Претх"
 
+# en-hash: d1457b72c3fb323a2671125aef3eab5d
 msgid "?"
 msgstr "?"
 
+# en-hash: b9afad882e91ad086f4f7ae1d7df0288
 msgid "A -> Z"
 msgstr "А -> Ш"
 
+# en-hash: 2bea5bec151d7f0543222a3fed8567cd
 msgid "A → Z"
 msgstr "А → Ш"
 
+# en-hash: 8f7f4c1ce7a4f933663d10543562b096
 msgid "About"
 msgstr "О апликацији"
 
+# en-hash: d8893e5780d1e992fa1b67612a58a15a
 msgid "About Storefront"
 msgstr "О Storefront-у"
 
+# en-hash: 9aa86bfc5b56a85d8df84a3b8808cd27
 msgid "Active Single"
 msgstr "Активан један"
 
+# en-hash: bda5dcfc5c6a544bb9dd8ede06326bff
 msgid "Active Wallpaper ✓"
 msgstr "Активна позадина ✓"
 
+# en-hash: 6a627cfbd72c22a29a09760de6332d6c
 msgid "Active: %s"
 msgstr "Активан: %s"
 
+# en-hash: 5c2154e81bf037e98dcada16b3f7b855
 msgid "Add to Shuffle"
 msgstr "Додај у насумично"
 
-msgid "Add to Shuffle Pool (Enable Shuffle)"
-msgstr "Додај у насумични скуп (омогући насумично)"
-
+# en-hash: f50b510e22815838c4d2d12e1d79bddf
 msgid "Added to shuffle pool & Folder Shuffle enabled!"
 msgstr "Додато у избор и омогућено насумично приказивање!"
 
+# en-hash: b1c94ca2fbc3e78fc30069c8d0f01680
 msgid "All"
 msgstr "Све"
 
+# en-hash: 4835fd4c5b4a4bb13a5279aaa440169d
 msgid "All Caches"
 msgstr "Све кеш меморије"
 
+# en-hash: a6a2a55bea8760389dfca77132905b7c
 msgid "All Categories"
 msgstr "Све категорије"
 
+# en-hash: 90b2f7433dcfc30b034860cef231c65e
 msgid "All Types"
 msgstr "Сви типови"
 
+# en-hash: 26cb53ddd2a92b3c12441f2ef14dddfe
 msgid "All items are up to date."
 msgstr "Све ставке су ажуриране."
 
+# en-hash: 74b5ba3a2b04019147114dcd4faa63d3
 msgid "All of your custom plugin folders are currently hidden (see Manage plugin paths). Install to the default plugin folder anyway?"
 msgstr "Сви ваши прилагођени фолдери са додацима су тренутно скривени (погледајте Управљање путањама додатака). Желите ли ипак да инсталирате у подразумевани фолдер?"
 
+# en-hash: e5b2ab04ccca28bb40e0f2798adeee89
 msgid "All patches"
 msgstr "Све закрпе"
 
+# en-hash: 252b0b491fd81591620e237146bdee45
 msgid "All plugins"
 msgstr "Сви додаци"
 
+# en-hash: 2bf227129d5e962d93d1e35b024b9640
 msgid "All plugins are already matched."
 msgstr "Svi priključci su već povezani."
 
+# en-hash: 6836fa6186eda79c3e6b4e081e1e3af7
 msgid "Allow pre-release updates"
 msgstr "Дозволи ажурирања претходних издања"
 
+# en-hash: 29a3b0c5f095a3d83a0f4db80abde080
 msgid "Alphabet & Numbers"
 msgstr "Абецеда и бројеви"
 
+# en-hash: 48e0275016325dd3e427457844634dee
 msgid "Also delete plugin settings"
 msgstr "Такође обриши подешавања додатка"
 
-msgid "Always install here (don"
-msgstr "Увек инсталирај овде (не"
-
+# en-hash: e026151fe5c4615b8b062d26222339ce
 msgid "Always install here (don't ask again)"
 msgstr "Увек инсталирај овде (не питај поново)"
 
+# en-hash: ed36a1ef76a59ee3f15180e0441188ad
 msgid "Any"
 msgstr "Било који"
 
+# en-hash: c3ea5744c196b11b2d0ee24b1474f0a0
 msgid "App Store · Installed patches"
 msgstr "Продавница · Инсталиране закрпе"
 
+# en-hash: 3a07742798b3fef4f6561f18e447cb4c
 msgid "App Store · Installed plugins"
 msgstr "Продавница · Инсталирани додаци"
 
+# en-hash: 9639e32cab248434a17ab32237cb3b71
 msgid "Apply"
 msgstr "Примени"
 
+# en-hash: 722c4b9ffb24735792c14251f8d6c824
 msgid "Assets — %s"
 msgstr "Datoteke — %s"
 
+# en-hash: a517747c3d12f99244ae598910d979c5
 msgid "Author"
 msgstr "Аутор"
 
+# en-hash: 0557fa923dcee4d0f86b1409f5c2167f
 msgid "Back"
 msgstr "Назад"
 
+# en-hash: 13f086bd019ffc0087d70b2eb74a0021
+msgid "Batch update cancelled."
+msgstr "Групно ажурирање је отказано."
+
+# en-hash: 0b87d66b88c72957dfea8c9605016442
 msgid "Beta"
 msgstr "Бета"
 
+# en-hash: 7a03bed65584ba9152e4b2955f52a6d5
 msgid "Black Fill"
 msgstr "Црна попуна"
 
+# en-hash: e4ef81cce7e4e10033ebb10962dfdd5e
 msgid "Blank"
 msgstr "Празно"
 
+# en-hash: 03ea37a723d863ca6c1918209c5c1a6f
 msgid "Book Cover"
 msgstr "Корице књиге"
 
+# en-hash: 64a05ab3190946ed2cad23d79eb426cf
 msgid "Border Fill / Background"
 msgstr "Попуна ивица / Позадина"
 
+# en-hash: b2ac03f07c134d4a823d4b8dc55699b1
 msgid "Both owner and repository name are required."
 msgstr "Потребни су и власник и назив спремишта."
 
+# en-hash: 52fc24b91c11bee9a8ca2aa275f0af46
 msgid "Branch: %s"
 msgstr "Грана: %s"
 
+# en-hash: 261dba00113a7f7e9754902b83293f85
 msgid "Browse Wallpapers in Storefront"
 msgstr "Прегледај позадине у Storefront-у"
 
+# en-hash: 2520852b211aecbd3c50faecf65d7725
 msgid "By "
 msgstr "By"
 
+# en-hash: 3c4904141f6211c6188585a06afce590
 msgid "By: %s"
 msgstr "Аутор: %s"
 
+# en-hash: b704cea49849610d116c424c22fde68c
 msgid "Cache empty. Refresh to retrieve repositories."
 msgstr "Кеш је празан. Освежите да бисте преузели спремишта."
 
+# en-hash: e04a3d6e93fc19fedf05dc814b4d788e
 msgid "Cache is older than a week, consider refreshing."
 msgstr "Кеш је старији од недељу дана, размислите о освежавању."
 
+# en-hash: 220aae231e667a518bacbf342edd05f2
 msgid "Cached %s patch repositories."
 msgstr "Keširano %s spremišta zakrpa."
 
+# en-hash: 2ef4327a8f0a164f2b44d320cdd581f1
 msgid "Cached %s plugins."
 msgstr "Кеширано %s додатака."
 
-msgid "Can"
-msgstr "Može"
-
+# en-hash: bac5ba8e1c46212203ff0b78f54091f9
 msgid "Can't load readme...."
 msgstr "Учитавање датотеке readme није успело...."
 
+# en-hash: ea4788705e6873b424c65e91c2846b19
 msgid "Cancel"
 msgstr "Откажи"
 
+# en-hash: a824e7a25d1ffe6f20250e487a859f38
 msgid "Cancel matching"
 msgstr "Откажи упаривање"
 
+# en-hash: b73f6a7b52845e67dcb6adbad1b2ca63
 msgid "Cannot read source file."
 msgstr "Није могуће прочитати изворну датотеку."
 
+# en-hash: 70fa579c3561b15b9d212e60431a050c
 msgid "Cannot write destination file."
 msgstr "Није могуће уписати одредишну датотеку."
 
+# en-hash: d204ef2d8d79afda131b1fc21a677416
 msgid "Catalog & Cache"
 msgstr "Каталог и кеш"
 
+# en-hash: cca9b8e583b2870d117efee0c14b97ad
 msgid "Catalog refresh failed: "
 msgstr "Освежавање каталога није успело: "
 
+# en-hash: d08b63f6583dcd5bb36142564f1b3ff4
 msgid "Catalog refresh is already in progress in the background."
 msgstr "Освежавање каталога је већ у току у позадини."
 
+# en-hash: 5f83265800ab3a842101d5d67ea875ce
 msgid "Catalog refreshed successfully."
 msgstr "Каталог је успешно освежен."
 
+# en-hash: 646e1f1324e200b3910e35ea3f015960
 msgid "Catalog source"
 msgstr "Извор каталога"
 
+# en-hash: d9c3997833636a589e7e5194bdee5d13
 msgid "Catalog updated: %d plugins, %d patches, %d fonts."
 msgstr "Katalog ažuriran: %d priključaka, %d zakrpa, %d fontova."
 
+# en-hash: af1b98adf7f686b84cd0b443e022b7a0
 msgid "Categories"
 msgstr "Категорије"
 
+# en-hash: cd10ba27bfc09acaa0262499736d9e27
 msgid "Category: "
 msgstr "Категорија: "
 
+# en-hash: b791ad0e25f7d1cacd59e723d4b9170d
 msgid "Category: %s"
 msgstr "Категорија: %s"
 
+# en-hash: a8a120c0fc72dea549de21988700415b
 msgid "Change..."
 msgstr "Промени..."
 
-msgid "Changelog for %s\n%s \\\\xE2\\\\x86\\\\x92 %s"
-msgstr "Changelog for %s\n%s \\\\xE2\\\\x86\\\\x92 %s"
-
+# en-hash: f2fe0cf2f0f795d65316611894a68e7b
 msgid "Changelog for %s\n%s → %s"
 msgstr "Дневник промена за %s\n%s → %s"
 
-msgid "Changelog for %s\\\n%s \\\\xE2\\\\x86\\\\x92 %s"
-msgstr "Changelog for %s\\\n%s \\\\xE2\\\\x86\\\\x92 %s"
-
+# en-hash: 4f52ad17d9ef55d023b50ecf6c5ac7c3
 msgid "Changelog: %s"
 msgstr "Дневник промена: %s"
 
+# en-hash: f601e13e28ad92635fc93e879040c3ff
 msgid "Check Updates"
 msgstr "Провери"
 
+# en-hash: 336133d7ab5cf683cbc061bd313f7ef5
 msgid "Check all updates"
 msgstr "Провери сва ажурирања"
 
+# en-hash: eb1b4bb3667dd670210c7822badc2f1d
 msgid "Check for updates"
 msgstr "Провери ажурирања"
 
+# en-hash: cc223fd29f9aaed67d7dea9ef0062e01
 msgid "Check this patch"
 msgstr "Proveri ovu zakrpu"
 
+# en-hash: 42bffd543675fd6b14d43433a1f54d74
 msgid "Check this plugin"
 msgstr "Провери овај додатак"
 
+# en-hash: bef1c1287016253dd146f119c597a2f5
 msgid "Checked %d patches: %d need updates, %d up to date."
 msgstr "Provereno %d zakrpa: %d zahteva ažuriranje, %d je ažurno."
 
-msgid "Checked %d plugin updates"
-msgstr "Проверено %d ажурирања прикључака"
-
+# en-hash: 758fb20a7a4707a5703fe4fc3e3c49ad
 msgid "Checked %d plugin(s) for updates."
 msgstr "Проверено %d плагина за ажурирања."
 
+# en-hash: 11f27528042aaf4401908c7fc54cec47
 msgid "Checking %s…"
 msgstr "Proveravanje %s…"
 
-msgid "Checking for Storefront updates..."
-msgstr "Проверавам ажурирања за Storefront..."
-
+# en-hash: 7118db6345de1b977663e915f6677b37
 msgid "Checking for Storefront updates…"
 msgstr "Провера ажурирања за Storefront…"
 
+# en-hash: e5b70ed328221d5061aada98031aad43
 msgid "Checking patch updates…"
 msgstr "Провера ажурирања закрпи…"
 
-msgid "Checking plugin updates"
-msgstr "Проверавам ажурирања прикључака"
-
+# en-hash: 010600e4b0c20b08887a141c471a517f
 msgid "Checking plugin updates…"
 msgstr "Provera ažuriranja dodataka…"
 
+# en-hash: 118d059b31b7c7d0fafb1c9e3372df83
 msgid "Choose Build — %s"
 msgstr "Изаберите верзију — %s"
 
-msgid "Clean"
-msgstr "Очисти"
-
+# en-hash: dc30bc0c7914db5918da4263fce93ad2
 msgid "Clear"
 msgstr "Очисти"
 
+# en-hash: e77fef0167598bb39846637ac3915f4e
 msgid "Clear All"
 msgstr "Обриши све"
 
+# en-hash: b18b24242a525f622bf5cafb2bfddaf3
 msgid "Clear All Caches?"
 msgstr "Обрисати све кеш меморије?"
 
+# en-hash: 06f4f7bd90b1c8a0145d18ee55c265c4
 msgid "Clear Cache"
 msgstr "Обриши кеш"
 
+# en-hash: ab5089d6920b15835d14854bcddedbe1
 msgid "Clear README Cache?"
 msgstr "Обрисати кеш за README?"
 
-msgid "Clear README cache"
-msgstr "Очисти кеш"
-
-msgid "Clear README cache (%s)?\nCached README files and images will be deleted."
-msgstr "Clear README cache (%s)?\nCached README files and images will be deleted."
-
+# en-hash: 95ba1adacfca638552f18e47e554e862
 msgid "Clear Thumbnail Cache?"
 msgstr "Обрисати кеш за умањене приказе?"
 
+# en-hash: 48ffbb73be4022ca2bd00a2f8bc66c95
 msgid "Clear Wiki Cache?"
 msgstr "Обрисати кеш за Вики?"
 
-msgid "Clear Wiki cache (%s)?\nCached wiki articles and images will be deleted."
-msgstr "Clear Wiki cache (%s)?\nCached wiki articles and images will be deleted."
-
-msgid "Clear all cached data (%s)?\nAll README files, wiki articles, and thumbnails will be deleted."
-msgstr "Clear all cached data (%s)?\nAll README files, wiki articles, and thumbnails will be deleted."
-
+# en-hash: ad757205c456c36c26d814e507bdcc6c
 msgid "Clear cache…"
 msgstr "Обриши кеш"
 
-msgid "Clear screensaver thumbnail cache (%s)?\nThumbnails will be re-downloaded when viewing wallpapers."
-msgstr "Clear screensaver thumbnail cache (%s)?\nThumbnails will be re-downloaded when viewing wallpapers."
-
+# en-hash: fe1c7dc8e530f67b130a7d3e842acb52
 msgid "Clear search & filters"
 msgstr "Обриши претрагу и филтере"
 
+# en-hash: 94eed90d63cb191df80e1bfc38925891
 msgid "Clear search/filters"
 msgstr "Очисти претрагу/филтере"
 
+# en-hash: 8696495aca7893ed2fccd70681de9d85
 msgid "Cleared README cache (%s freed)."
-msgstr "Cleared README cache (%s freed)."
+msgstr "Очишћена је README кеш меморија (ослобођено %s)."
 
+# en-hash: 3b72575672cb16e936cb35133f121b78
 msgid "Cleared Wiki cache (%s freed)."
-msgstr "Cleared Wiki cache (%s freed)."
+msgstr "Очишћена је Вики кеш меморија (ослобођено %s)."
 
+# en-hash: 3d7a21e1da5ad3d37e4c4bd71be1bc47
 msgid "Cleared all caches (%s freed, %d files)."
-msgstr "Cleared all caches (%s freed, %d files)."
+msgstr "Очишћене су све кеш меморије (ослобођено %s, %d датотека)."
 
+# en-hash: ee67ba4390450a1a5e45ac52eeeb86fc
 msgid "Cleared screensaver thumbnails (%s freed)."
-msgstr "Cleared screensaver thumbnails (%s freed)."
+msgstr "Очишћене су сличице чувара екрана (ослобођено %s)."
 
+# en-hash: d3d2e617335f08df83599665eef8a418
 msgid "Close"
 msgstr "Затвори"
 
+# en-hash: d15b505cce09406de9f918cb1f8c641c
 msgid "Collection"
 msgstr "Колекција"
 
+# en-hash: 981f1fd40dea380931dd17cee90acc30
 msgid "Commit diff: %s → %s"
 msgstr "Разлика измена: %s → %s"
 
-msgid "Commits: %s \\\\xE2\\\\x86\\\\x92 %s"
-msgstr "Commits: %s \\\\xE2\\\\x86\\\\x92 %s"
-
+# en-hash: 23b31366190a2a573a9a590f599770f0
 msgid "Commits: %s → %s"
 msgstr "Izmene: %s → %s"
 
+# en-hash: 7d61983c34edc2a8cabbea71c4732f62
 msgid "Community"
 msgstr "Заједница"
 
+# en-hash: fdd273d186bb6db8f5f2c72285324aec
 msgid "Config files only"
 msgstr "Samo konfiguracione datoteke"
 
+# en-hash: b768b282a095ca076c89bc7b3eced067
 msgid "Configured ✓"
 msgstr "Подешено ✓"
 
+# en-hash: 70d9be9b139893aa6c69b5e77e614311
 msgid "Confirm"
 msgstr "Потврди"
 
+# en-hash: 38cb30607aeadf3f4c7d4f422ee2de9a
 msgid "Confirm Update"
 msgstr "Потврди ажурирање"
 
+# en-hash: a8c0594bc89b6ef94014b5223dc35ddc
 msgid "Confirm Update All"
 msgstr "Потврди ажурирање свега"
 
+# en-hash: c85b3d1d3702a046bab4caeeb4e55f64
 msgid "Connecting to GitHub…\n\nPlease wait."
 msgstr "Повезивање са GitHub-ом…\n\nСачекајте."
 
-msgid "Connecting to GitHub…\\\n\\\nPlease wait."
-msgstr "Connecting to GitHub…\\\n\\\nPlease wait."
+# en-hash: 182e7eda4e721ad00737460b88701dee
+msgid "Connecting…"
+msgstr "Повезивање…"
 
+# en-hash: a0bfb8e59e6c13fc8d990781f77694fe
 msgid "Continue"
 msgstr "Настави"
 
-msgid "Copied to "
-msgstr "Копирано у "
-
+# en-hash: be355b8923591f9c64120839ed0fa3f2
 msgid "Copied to '%s'."
 msgstr "Копирано у '%s'."
 
+# en-hash: 5fb63579fc981698f97d55bfecb213ea
 msgid "Copy"
 msgstr "Копирај"
 
+# en-hash: 5cd829641ededb8420ab25d5c3ad13b4
 msgid "Copy file as"
 msgstr "Копирај датотеку као"
 
+# en-hash: 192d4ff36cce1dd9d398af567162b5ad
 msgid "Could not detect .koplugin folder in archive"
 msgstr "Није могуће пронаћи .koplugin фолдер у архиви"
 
+# en-hash: 8b4f90cf7829bf588a67afa2dbcd691b
 msgid "Could not detect plugin inside archive."
 msgstr "Nije moguće pronaći priključak u arhivi."
 
+# en-hash: 72ae81f8bda1220d8b574180c62788fc
 msgid "Could not fetch commit comparison."
 msgstr "Није могуће преузети поређење измена."
 
+# en-hash: 47fd11aaaabf931f38b53f39071589bb
 msgid "Could not fetch releases for changelog."
 msgstr "Није могуће преузети издања за дневник промена."
 
+# en-hash: 7fbfc9712a318a4e46cc00fedf205b44
 msgid "Could not fetch releases for this repository."
 msgstr "Није могуће преузети издања за ово спремиште."
 
+# en-hash: 7ebb1e00943becb4ef83e628f1a9b592
 msgid "Could not locate plugin folder (_meta.lua) in archive."
 msgstr "Nije moguće pronaći fasciklu priključka (_meta.lua) u arhivi."
 
-msgid "Could not open target file for writing"
-msgstr "Nije moguće otvoriti ciljnu datoteku za pisanje"
+# en-hash: 686e697538050e4664636337cc3b834f
+msgid "Create"
+msgstr "Креирај"
 
+# en-hash: 96cb7ae49077c528192c2bba40c42c69
+msgid "Create subfolder in '%s':"
+msgstr "Креирај подфасциклу у „%s“:"
+
+# en-hash: e6818edb27f4a7711ea452befaa5efd4
+msgid "Created '%s'"
+msgstr "Креирано „%s“"
+
+# en-hash: 691494205febafc531e883e2eea58253
+msgid "Custom folder"
+msgstr "Прилагођена фасцикла"
+
+# en-hash: 7a1920d61156abc05a60135aefe8bc67
 msgid "Default"
 msgstr "Подразумевано"
 
+# en-hash: f81cc86be84ce5cb6340aa87e3bd5951
+msgid "Default folder"
+msgstr "Подразумевана фасцикла"
+
+# en-hash: 20d0ac231664346c8c5c2d0e62cae022
 msgid "Default only"
 msgstr "Само подразумевано"
 
+# en-hash: f2a6c498fb90ee345d997f888fce3b18
 msgid "Delete"
 msgstr "Обриши"
 
-msgid "Delete "
-msgstr "Обриши"
-
+# en-hash: f62a1cb3aae94e380202902991b72365
 msgid "Delete '%s' from your device?"
 msgstr "Обрисати '%s' са вашег уређаја?"
 
+# en-hash: 01549534db8a76c8672f90efa6e40c12
 msgid "Delete File?"
 msgstr "Обрисати датотеку?"
 
+# en-hash: c1f18f6ad330d59f486fc731946419c3
 msgid "Delete Wallpaper?"
 msgstr "Обрисати позадину?"
 
+# en-hash: 7f7c7a10f4d60e1d09c4f87e8673b628
 msgid "Delete all cached README files? They will be re-downloaded on demand."
 msgstr "Обрисати све кеширане README датотеке? Биће поново преузете по потреби."
 
-msgid "Delete file "
-msgstr "Обриши датотеку "
-
+# en-hash: e17fae40f782a9317818bea081c40854
 msgid "Delete file '%s'?\n\nThis cannot be undone."
 msgstr "Izbrisati datoteku '%s'?\n\nOvo se ne može poništiti."
 
-msgid "Delete font "
-msgstr "Обриши фонт "
-
+# en-hash: 81b0d387edb4912fe59443537bf3f87d
 msgid "Delete font '%s'?"
 msgstr "Избрисати фонт '%s'?"
 
-msgid "Delete from Device"
-msgstr "Обриши са уређаја"
-
+# en-hash: af30128be8f8e067bb2ffd2fc477441e
 msgid "Delete patch"
 msgstr "Обриши закрпу"
 
-msgid "Delete patch "
-msgstr "Obriši zakrpu "
-
+# en-hash: ac6a3071c7803085d4fb716526f6d478
 msgid "Delete patch '%s'?"
 msgstr "Избрисати закрпу '%s'?"
 
+# en-hash: 1f000fabbc9da9aeed21999cb1d519d2
 msgid "Delete plugin"
 msgstr "Обриши додатак"
 
-msgid "Delete plugin "
-msgstr "Обриши додатак "
-
+# en-hash: 2fb5caa8680f8aba166fc7b75ee6b7e9
 msgid "Delete plugin '%s'?"
 msgstr "Избрисати прикључак '%s'?"
 
-msgid "Deleted "
-msgstr "Обрисано "
-
+# en-hash: cf19afa8a32af7f7af9b34bba1fe4166
 msgid "Deleted %d cached README file(s)."
 msgstr "Обрисано %d кешираних README датотека."
 
+# en-hash: 85edd2d8dcb3e43ac08a884f85cc1d8b
 msgid "Deleted %d cached README file(s); %d failed."
 msgstr "Obrisano %d keširanih README datoteka; %d neuspešno."
 
+# en-hash: 7c0668416ca1af5823373e21618402ee
 msgid "Deleted '%s'."
 msgstr "Избрисано '%s'."
 
+# en-hash: d76149b30a3ec56e39b839c43f7356e1
 msgid "Direct GitHub API"
 msgstr "Директан GitHub API"
 
+# en-hash: bcfaccebf745acfd5e75351095a5394a
 msgid "Disable"
 msgstr "Онемогући"
 
+# en-hash: 880906edcd787681e8b20bcb3f911366
 msgid "Disable patch"
 msgstr "Онемогући закрпу"
 
+# en-hash: 6b31659dc0e2d6dee04a585454805b13
 msgid "Disable plugin"
 msgstr "Онемогући додатак"
 
+# en-hash: b9f5c797ebbf55adccdd8539a65a0241
 msgid "Disabled"
 msgstr "Онемогућено"
 
+# en-hash: 9cbc24d23b943fe4b092e79dd82948e2
 msgid "Display Options"
 msgstr "Опције приказа"
 
+# en-hash: 0e7fb0120dbc22544e29ac9db3387fd5
 msgid "Displays a static wallpaper on sleep"
 msgstr "Приказује статичну позадину током спавања"
 
-msgid "Displays a static wallpaper on sleep.\nActive: %s"
-msgstr "Приказује статичну позадину током спавања.\nАктиван: %s"
-
+# en-hash: f92965e2c8a7afb3c1b9a5c09a263636
 msgid "Done"
 msgstr "Готово"
 
+# en-hash: 938a7f69f98b48f241a295717988ac23
 msgid "Download & Set Active"
 msgstr "Преузми и активирај"
 
+# en-hash: dce92c8cef805e9f91cd8d2c005f0f46
 msgid "Download Only"
 msgstr "Само преузимање"
 
-msgid "Download Only (Save to Device)"
-msgstr "Само преузми (сачувај на уређају)"
+# en-hash: 255cab4412ab57cd80daf9583400c221
+msgid "Download cancelled."
+msgstr "Преузимање је отказано."
 
+# en-hash: 59d30102eb8d3c0c8b031e08a28acd28
 msgid "Download failed: "
 msgstr "Преузимање није успело: "
 
+# en-hash: d804b94245bde55be9d4ffca062a5bf8
 msgid "Download options"
 msgstr "Опције преузимања"
 
+# en-hash: 764e067c9ef23f5cf2f2bc5f878b4c21
 msgid "Download options — %s"
 msgstr "Опције преузимања — %s"
 
+# en-hash: 7d3fa636928d0df549cd855a7386d3af
 msgid "Download options — %s (%s)"
 msgstr "Opcije preuzimanja — %s (%s)"
 
-msgid "Downloading "
-msgstr "Downloading..."
+# en-hash: 8108a1e1d020224c8b28fe992bfd63ee
+msgid "Downloading %s%s…\nTap screen to cancel."
+msgstr "Преузимање %s%s…\nДодирните екран за отказ."
 
-msgid "Downloading %s%s…\nThis may take a moment."
-msgstr "Преузимање %s%s…\nОво може потрајати."
-
-msgid "Downloading %s%s…\\\nThis may take a moment."
-msgstr "Downloading %s%s…\\\nThis may take a moment."
-
+# en-hash: aec53a66ffe56182ba4a5dcf0e90a275
 msgid "Downloading %s…"
 msgstr "Преузимање %s…"
 
+# en-hash: bf333add6ef5f765468ff1b2cbec283f
+msgid "Downloading %s…\nTap screen to cancel."
+msgstr "Преузимање %s…\nДодирните екран за отказ."
+
+# en-hash: 40b54ae3bc8f5d993db643fedae24bd9
 msgid "Downloading '%s'..."
-msgstr "Downloading '%s'..."
+msgstr "Преузимање „%s“..."
 
-msgid "Downloading patch \"%s\"…"
-msgstr "Preuzimanje zakrpe \"%s\"…"
+# en-hash: f490482ce2ff5bead6981f706fbde169
+msgid "Downloading patch %s%s…\nTap screen to cancel."
+msgstr "Преузимање закрпе %s%s…\nДодирните екран за отказ."
 
-msgid "Downloading patch %s…"
-msgstr "Преузимање закрпе %s…"
-
-msgid "Downloading patch \\\\\"%s\\\\\"…"
-msgstr "Downloading patch \\\\\"%s\\\\\"…"
-
+# en-hash: 4993ce1064d2f7d9f87af08788c1aa07
 msgid "Downloading screensaver..."
 msgstr "Преузимање чувара екрана..."
 
+# en-hash: 91b43304459d2788b8e0f062e8bae7f9
 msgid "Downloading to shuffle pool..."
 msgstr "Преузимање у скуп за насумично..."
 
+# en-hash: 5d85443302a42d23dfe25406bedec1fe
+msgid "Downloading…"
+msgstr "Преузимање…"
+
+# en-hash: 7dce122004969d56ae2e0245cb754d35
 msgid "Edit"
 msgstr "Уреди"
 
+# en-hash: ce2c8aed9c2fa0cfbed56cbda4d8bf07
+msgid "Empty"
+msgstr "Празно"
+
+# en-hash: d9ba5d0ad5da62c0e9609e7dd16242a0
 msgid "Empty (0 KB)"
 msgstr "Празно (0 KB)"
 
+# en-hash: 2faec1f9f8cc7f8f40d521c4dd574f49
 msgid "Enable"
 msgstr "Омогући"
 
+# en-hash: fb1f608c7230ba5a23c68a46749b4533
 msgid "Enable patch"
 msgstr "Омогући закрпу"
 
+# en-hash: fe0eee2eb31bfc64e307fe0c4575a6fe
 msgid "Enable plugin"
 msgstr "Омогући додатак"
 
+# en-hash: 00d23a76e43b46dae9ec7aa9dcbebb32
 msgid "Enabled"
 msgstr "Омогућено"
 
+# en-hash: a5e686002851661852b063c72d3690d6
 msgid "Enter item number"
 msgstr "Unesite broj stavke"
 
+# en-hash: 888bd819da7fe02d3297018a56143a94
 msgid "Enter plugin number"
 msgstr "Унесите број додатка"
 
-msgid "Extracting and installing plugin…\nPlease wait."
-msgstr "Распакивање и инсталирање додатка…\nСачекајте."
-
-msgid "Extracting and installing plugin…\\\nPlease wait."
-msgstr "Extracting and installing plugin…\\\nPlease wait."
-
+# en-hash: 006ec38349cf69bccea24bc63924ae72
 msgid "Failed to check %s: %s"
 msgstr "Провера %s није успела: %s"
 
+# en-hash: a839308c91bc32d9f74d46cc63762eed
 msgid "Failed to check for Storefront updates: %s"
 msgstr "Провера ажурирања за Storefront није успела: %s"
 
+# en-hash: 96310b2cf48706c28110688622ac2cf2
+msgid "Failed to create folder."
+msgstr "Неуспешно креирање фасцикле."
+
+# en-hash: 1d4841b5eb85eeaabf888424ecd8ac21
 msgid "Failed to create patches directory: %s"
 msgstr "Креирање директоријума за закрпе није успело: %s"
 
+# en-hash: 860cb7eece22597a006254d958e6a7ba
 msgid "Failed to delete patch: %s"
 msgstr "Брисање закрпе није успело: %s"
 
+# en-hash: 4c75af0fca678cf2fe899492e0b02f92
 msgid "Failed to delete plugin: %s"
 msgstr "Brisanje priključka nije uspelo: %s"
 
+# en-hash: c160d9b95d4692de2b15d26fd202bd59
 msgid "Failed to delete: %s"
 msgstr "Брисање није успело: %s"
 
-msgid "Failed to disable patch "
-msgstr "Онемогућавање закрпе није успело "
-
+# en-hash: 9e1c8554fe325381728cb11857412b63
 msgid "Failed to disable patch '%s'."
 msgstr "Онемогућавање закрпе '%s' није успело."
 
+# en-hash: f0ebe26dcf9d6fa44cde188e40a589e7
 msgid "Failed to download patch: %s"
 msgstr "Преузимање закрпе није успело: %s"
 
+# en-hash: 4d1faf257a78b8069ebe8461f3abbf46
 msgid "Failed to download screensaver."
 msgstr "Неуспешно преузимање чувара екрана."
 
-msgid "Failed to enable patch "
-msgstr "Омогућавање закрпе није успело "
-
+# en-hash: 299937dabd41b5a53f0bac657282f11a
 msgid "Failed to enable patch '%s'."
 msgstr "Омогућавање закрпе '%s' није успело."
 
+# en-hash: 6f2b5d4f0cc7e0b2385d1d032522b4bd
 msgid "Failed to extract file: "
 msgstr "Распакивање датотеке није успело: "
 
+# en-hash: fe989bd2dbf40c82690c306acb001a3a
 msgid "Failed to fetch patch list."
 msgstr "Greška pri preuzimanju liste zakrpa."
 
-msgid "Failed to fetch repository "
-msgstr "Преузимање спремишта није успело "
-
+# en-hash: 2ede1d0fe827423291a944fd6781528b
 msgid "Failed to fetch repository '%s/%s': %s"
 msgstr "Преузимање спремишта '%s/%s' није успело: %s"
 
-msgid "Failed to install patch: "
-msgstr "Instalacija zakrpe nije uspela: "
-
+# en-hash: afbf1b132f9abe2de5f51f83c510215f
 msgid "Failed to open downloaded archive."
 msgstr "Отварање преузете архиве није успело."
 
-msgid "Failed to prepare patches directory."
-msgstr "Припрема директоријума закрпи није успела."
+# en-hash: 74f1c03265afb9d29b3b034faa5a48f9
+msgid "Failed to save downloaded file"
+msgstr "Неуспешно чување преузете датотеке"
 
+# en-hash: b2b70bea56298693ab867c3578f69689
 msgid "Failed to toggle patch status."
 msgstr "Промена статуса закрпе није успела."
 
-msgid "Fetching Release Info"
-msgstr "Preuzimanje informacija o izdanju"
-
+# en-hash: eebc29b3e7e2c6769ebff642798b1404
 msgid "Fetching changelog…"
 msgstr "Преузимање дневника промена…"
 
+# en-hash: c1619d0d90fa01f5455378495d989e4f
 msgid "Fetching commits…"
 msgstr "Preuzimanje izmena…"
 
+# en-hash: 12ce7854cb696e96176026ed6cf06687
 msgid "Fetching patch file listings…"
 msgstr "Преузимање листе закрпа…"
 
+# en-hash: 78e53bec60feb201b2fac6420da38fe1
 msgid "Fetching patches via Direct GitHub API…"
 msgstr "Преузимање закрпа преко Direct GitHub API…"
 
+# en-hash: b78a265ea8828cb2e572717c087743cf
 msgid "Fetching plugins via Direct GitHub API…"
 msgstr "Преузимање плагина преко Direct GitHub API…"
 
+# en-hash: f63989d95ffad413b304939567794aa1
 msgid "Fetching release info…"
 msgstr "Преузимање информација о издању…"
 
+# en-hash: c46a772df29c20c2eeb89d83c2735dbd
 msgid "Fetching releases…"
 msgstr "Преузимање издања…"
 
+# en-hash: 0a88cdbcbcea3653e2735adf50ecc1e1
 msgid "Fetching repository %s/%s..."
 msgstr "Preuzimanje spremišta %s/%s..."
 
+# en-hash: 2fbaebf47d75ee1a07cd1f43fd1f500a
 msgid "Filename cannot be empty."
 msgstr "Назив датотеке не може бити празан."
 
+# en-hash: 0348020221bca94f6c0c957312a5499b
 msgid "Filter & Sort Fonts"
 msgstr "Филтрирај и сортирај фонтове"
 
+# en-hash: f194737f3d3a64180c39853153840502
 msgid "Filter & Sort Installed"
 msgstr "Филтрирај и сортирај инсталирано"
 
+# en-hash: fe45c5f7d8a246fa4d2efe897d28b7c3
 msgid "Filter & Sort Patches"
 msgstr "Филтрирај и сортирај закрпе"
 
+# en-hash: b7eecac15cc2b43333bf843d1c9b1d87
 msgid "Filter & Sort Plugins"
 msgstr "Филтрирај и сортирај плагине"
 
+# en-hash: 89d2f846ee1bbb47ca2e8b030e2e4189
 msgid "Filter & Sort Screensavers"
 msgstr "Филтрирај и сортирај чуваре екрана"
 
+# en-hash: 1446533225561c0eab39df334afdb8d6
 msgid "Filter Installed Patches"
 msgstr "Филтрирај инсталиране закрпе"
 
+# en-hash: 08035a4fa08d488eb8c5dfa0a24f6c82
 msgid "Filter Installed Plugins"
 msgstr "Филтрирај инсталиране додатке"
 
+# en-hash: e5a388bfcac9cbe6abccfed4a731f1ad
 msgid "Filter pre-releases"
 msgstr "Филтрирај претходна издања"
 
+# en-hash: f7c1eb876d7615707ea0fd479487900d
 msgid "Filter..."
 msgstr "Филтер..."
 
+# en-hash: 1b1bb499f25bb1476d30cd4affce9075
 msgid "Filter: "
 msgstr "Филтер: "
 
+# en-hash: f3f43e30c8c7d78c6ac0173515e57a00
 msgid "Filters"
 msgstr "Филтери"
 
+# en-hash: 2273ffe78e83a4806b8be0b0e635918f
 msgid "Filters: "
 msgstr "Филтери: "
 
+# en-hash: 3e0417b7f49673a504c5fce7ed73b3f1
 msgid "Filters: (none)"
 msgstr "Филтери: (нема)"
 
+# en-hash: b0f2b97dc5d2b76b26e040408bb1d8af
+msgid "Folder"
+msgstr "Фасцикла"
+
+# en-hash: 16803106d3aa4c6852022f3da9d4c54a
 msgid "Folder Shuffle"
 msgstr "Насумично из фасцикле"
 
+# en-hash: 1591eb86c0d061a8c688e72d6e5a7afa
 msgid "Folder Shuffle enabled with this wallpaper!"
 msgstr "Насумично из фасцикле омогућено са овом позадином!"
 
+# en-hash: 194f5394ae2e9c74dc3c441b92862d1d
 msgid "Font"
-msgstr "Font"
+msgstr "Фонт"
 
-msgid "Font "
-msgstr "Font "
-
+# en-hash: db3f985617e1e6551cff24a6fe9188dc
 msgid "Font '%s' deleted."
 msgstr "Фонт '%s' је избрисан."
 
+# en-hash: 717e550de76db6127ae7dd11389f0976
 msgid "Font files not found for %s."
 msgstr "Datoteke fonta nisu pronađene za %s."
 
+# en-hash: f8e3211bbd5d1c9e4bbe92fb5006478e
 msgid "Font style"
 msgstr "Стил фонта"
 
+# en-hash: 59c4ad3f3cb3d812d68fab7a354d4a63
 msgid "Fonts"
 msgstr "Фонтови"
 
+# en-hash: 5c99698f8bc539c76b21a52919303871
 msgid "Free up storage space on your device. Cached items are re-downloaded automatically when needed."
 msgstr "Ослободите простор на уређају. Кеширане ставке се аутоматски поново преузимају када затребају."
 
+# en-hash: 4da7aff05cb0f2c3407a7c1614f4bdfc
 msgid "GitHub API rate limit exceeded. Add a GitHub token in Storefront settings to increase the limit (10→30 req/min)."
 msgstr "Prekoračeno GitHub API ograničenje. Dodajte GitHub token u podešavanjima Storefront-a za povećanje ograničenja (10→30 zahteva/min)."
 
+# en-hash: 1c7d0190e4ba9f73f86c298338f784d9
 msgid "GitHub API rate limit exceeded. Please wait a few minutes and try again."
 msgstr "Прекорачено је ограничење GitHub API захтева. Сачекајте неколико минута и покушајте поново."
 
+# en-hash: 338e5ab2edd18c402bff7a5b4779882a
 msgid "GitHub personal access token"
 msgstr "GitHub lični pristupni token"
 
+# en-hash: 20654d652da57268dd0da4a74bf7bc02
 msgid "GitHub rejected this request: fine-grained personal access tokens are not supported for search. Please use a classic token instead (see the Storefront README)."
 msgstr "GitHub је одбио овај захтев: прецизни лични токени за приступ нису подржани за претрагу. Уместо тога користите класични токен (погледајте README за Storefront)."
 
+# en-hash: 8efc95b34d419e5c29af3dbb2624e8a6
 msgid "GitHub token"
 msgstr "GitHub токен"
 
+# en-hash: 1e800e2e0a0a21c5be4a5ef7cbf886f8
 msgid "GitHub token saved."
 msgstr "GitHub токен је сачуван."
 
+# en-hash: 5f075ae3e1f9d0382bb8c4632991f96f
 msgid "Go"
 msgstr "Иди"
 
+# en-hash: 1d4d9852d98701123588ff8d61eed722
 msgid "Go to page"
 msgstr "Иди на страницу"
 
+# en-hash: 1f651ab3d2499f9ec45d86440334683e
 msgid "HTTP error"
 msgstr "HTTP грешка"
 
-msgid "HTTP request failed"
-msgstr "HTTP zahtev nije uspeo"
-
+# en-hash: fd038fc7f319e48f3115d92bf5bdbef9
 msgid "Ignore"
 msgstr "Занемари"
 
-msgid "Ignore All Updates"
-msgstr "Игнориши сва ажурирања"
-
+# en-hash: 1c48d7d231e8e7c5fe283692818decf9
 msgid "Ignore Updates"
 msgstr "Игнориши ажурирања"
 
+# en-hash: d96143ba1b15645919cea00ec9d1be62
 msgid "Ignored"
 msgstr "Ignorisano"
 
+# en-hash: ceba6bb0c0b86a1957317f3a828bc38b
 msgid "Image View"
 msgstr "Приказ слике"
 
+# en-hash: 0069f584f27016aa2929d8e5cd0b2ad7
 msgid "Include 0-star forks"
 msgstr "Укључи форкове без звездица"
 
+# en-hash: 349838fb1d851d3e2014b9fe39203275
 msgid "Install"
 msgstr "Инсталирај"
 
+# en-hash: e7a971cdcab59cd7c94ae2b1178308f0
 msgid "Install %s"
 msgstr "Инсталирај %s"
 
+# en-hash: 34a6e250e2f1055de0f097543b25e81e
 msgid "Install Font"
 msgstr "Инсталирај фонт"
 
+# en-hash: 2af63c0a989a5cb9f1ab37ca00455436
 msgid "Install Patch"
 msgstr "Инсталирај закрпу"
 
+# en-hash: e0822ca52cb203afef179bfc61ae36e6
 msgid "Install a patch"
 msgstr "Инсталирај закрпу"
 
+# en-hash: fed72926722e1b5a79668bf1edd0edf1
 msgid "Install patch from GitHub"
 msgstr "Инсталирај закрпу са GitHub-а"
 
+# en-hash: fad698daedaa1d6488803cc1e24e92ae
 msgid "Install plugin from GitHub"
 msgstr "Инсталирај додатак са GitHub-а"
 
+# en-hash: a2cea2e16db4682ca5a8da8e0d9d53cd
 msgid "Install to Default?"
 msgstr "Инсталирати на подразумевану локацију?"
 
+# en-hash: c53b3ab057b8ccbb521328307551f56e
 msgid "Install to default"
 msgstr "Инсталирај на подразумевано место"
 
+# en-hash: d351bd4c3f855c9189c2b9ba8fa0a470
 msgid "Installation failed: "
 msgstr "Instalacija nije uspela: "
 
+# en-hash: bc641d0101b8079cb24f0c54e664173a
 msgid "Installation is currently only supported for plugins."
 msgstr "Instalacija je trenutno podržana samo za priključke."
 
+# en-hash: 98dd43dfae05b11befe1f140e0ec787a
 msgid "Installed"
 msgstr "Инсталирано"
 
+# en-hash: f908ee5a16c5ad7cc5513ec8a3bb9bc2
 msgid "Installed Patches Settings"
 msgstr "Подешавања инсталираних закрпи"
 
+# en-hash: 77ba923ad0644f4300cae8cb5367d0b7
 msgid "Installed Plugins Settings"
 msgstr "Подешавања инсталираних додатака"
 
+# en-hash: 038f35c2f842d3e81468493c8f38723f
 msgid "Installed Regular font style offline for \"%s\". Full font family queued for download when reconnected."
 msgstr "Instaliran običan stil fonta van mreže za \"%s\". Cela porodica fontova je na čekanju za preuzimanje po ponovnom povezivanju."
 
-msgid "Installed Regular font style offline for \\\\\"%s\\\\\". Full font family queued for download when reconnected."
-msgstr "Installed Regular font style offline for \\\\\"%s\\\\\". Full font family queued for download when reconnected."
-
+# en-hash: 5fcc7f067fee6def71086742d8e42a95
 msgid "Installed font \"%s\" (%d file(s))."
 msgstr "Instaliran font \"%s\" (%d datoteka)."
 
-msgid "Installed font \\\\\"%s\\\\\" (%d file(s))."
-msgstr "Installed font \\\\\"%s\\\\\" (%d file(s))."
-
+# en-hash: 895249f0b65de25b747f8c273baf1377
 msgid "Installed full font family \"%s\" (%d file(s))."
 msgstr "Instalirana cela porodica fontova \"%s\" (%d datoteka)."
 
-msgid "Installed full font family \\\\\"%s\\\\\" (%d file(s))."
-msgstr "Installed full font family \\\\\"%s\\\\\" (%d file(s))."
-
+# en-hash: 7ff35e7a7a86c5238f127b89f7a51091
 msgid "Installed patch \"%s\"."
 msgstr "Instalirana zakrpa \"%s\"."
 
-msgid "Installed patch \\\\\"%s\\\\\"."
-msgstr "Installed patch \\\\\"%s\\\\\"."
-
-msgid "Installed plugin \"%s\" (version %s)."
-msgstr "Instaliran dodatak \"%s\" (verzija %s)."
-
-msgid "Installed plugin \"%s\"."
-msgstr "Instaliran dodatak \"%s\"."
-
-msgid "Installed plugin Storefront version %s"
-msgstr "Инсталиран прикључак Storefront верзија %s"
-
+# en-hash: c98f920c29f4d2f367f11f8aad8c6b98
 msgid "Installing %s…"
 msgstr "Инсталирање %s…"
 
+# en-hash: ce90675d97fd997c33b628127c70ee68
 msgid "Invalid archive reader"
 msgstr "Неважећи читач архиве"
 
+# en-hash: 9f87250ed8e0a43ac7ca9aad8c583fb3
 msgid "Invalid extraction parameters"
 msgstr "Неважећи параметри распакивања"
 
+# en-hash: e9de67466fdd1133ec97e3390e4474f0
 msgid "Invalid patch target filename."
 msgstr "Неважеће циљно име датотеке закрпе."
 
+# en-hash: eccf3939b72861834197e6233af9d5d9
 msgid "Invalid selection."
 msgstr "Neispravan izbor."
 
+# en-hash: 1554833122e9bc723e16d2f1b927dc98
 msgid "Invert colors (night mode / dark background)"
 msgstr "Инвертуј боје (ноћни режим / тамна позадина)"
 
+# en-hash: 3a6bec8da59fdc67759959fa32ec296c
 msgid "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters."
 msgstr "Општеприхваћена је истина да је неожењеном човеку са лепим имањем потребна жена."
 
+# en-hash: aaaa3c0a0086a0eedaf3350d3cfe92c1
 msgid "Items per page"
 msgstr "Ставки по страници"
 
+# en-hash: 344fee1b8e1e7edcd682d019ec9cdaca
 msgid "Items per page: %d"
 msgstr "Ставки по страници: %d"
 
+# en-hash: 6ae8e1a8a7c0ed909275ac9b2f85ab55
 msgid "Last Updated (Newest)"
 msgstr "Најновије"
 
+# en-hash: 28a8142aea6bd8ae071ec7eaae8a8c28
 msgid "Last Updated (Oldest)"
 msgstr "Најстарије"
 
+# en-hash: 89de86aa34494d545d8cbb4fff3a4e59
 msgid "Last check: %s"
 msgstr "Последња провера: %s"
 
+# en-hash: f3a9b7d34a5f7e5519618c0dd6c5cf81
 msgid "Latest Release"
 msgstr "Најновије издање"
 
+# en-hash: 54f8757b0a086614ea6588643252100b
 msgid "Latest release"
 msgstr "Најновије издање"
 
+# en-hash: b0f881a2804462c73885763e90ca06b9
 msgid "License: %s"
 msgstr "Лиценца: %s"
 
+# en-hash: 5e347ec69e30a0d0193f461f5c4322be
 msgid "Linked only"
 msgstr "Само повезани"
 
+# en-hash: 8083ad12dd312d0eefcfa380e773ba47
 msgid "Loading README..."
 msgstr "Учитавање README..."
 
+# en-hash: 51cb210bd25a349de3392f32f96848af
 msgid "Loading Release Notes..."
 msgstr "Učitavanje zabeleški o izdanju..."
 
+# en-hash: 98e619ebb3b2e9c357288aa5b980dd72
 msgid "Loading Versions..."
 msgstr "Учитавање верзија..."
 
+# en-hash: 85708a35df048d2bb3043538dd349fe5
 msgid "Loading Wiki..."
 msgstr "Учитавање Вики странице..."
 
+# en-hash: 6a1ffeecd6a430240080a1c3e8c0791b
 msgid "Local SHA: %s"
 msgstr "Локални SHA: %s"
 
+# en-hash: b086ddeb28116cff6a3c58e23d11a483
 msgid "Local version: %s"
 msgstr "Локална верзија: %s"
 
+# en-hash: dd490278ec3e6b5fe6e62ad7b11c42dd
 msgid "Local: %s"
 msgstr "Локално: %s"
 
+# en-hash: 5be5fd39fe33c67b819d6e2fd805a8d3
 msgid "Local: %s → Remote: %s"
 msgstr "Локално: %s → Удаљено: %s"
 
+# en-hash: 62f0842d75a169f04944c6c8514bf1d4
 msgid "Manage plugin paths"
 msgstr "Управљање путањама додатака"
 
+# en-hash: f54d902bf6fa9de2c25b5e7fcff35637
 msgid "Manage plugin paths\n\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
 msgstr "Управљање путањама додатака\n\nСкривање путање утиче само на оно што Storefront овде приказује/управља. KOReader ће и даље учитавати додатке одатле."
 
-msgid "Manage plugin paths\\\n\\\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
-msgstr "Manage plugin paths\\\n\\\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
-
+# en-hash: 6da89265a9a8b0b28eb4946bb2ec0c6d
 msgid "Match"
 msgstr "Упари"
 
+# en-hash: 991c0566008a6a8be9e6ff4aa54f0494
 msgid "Match from List"
 msgstr "Упари из листе"
 
+# en-hash: 6657fcf61727c1842241143a238e5ef1
 msgid "Match patch with GitHub repository"
 msgstr "Упари закрпу са GitHub спремиштем"
 
+# en-hash: 0ac0d37f606a0602273e784505c40efe
 msgid "Match plugin with GitHub repository"
 msgstr "Poveži priključak sa GitHub spremištem"
 
+# en-hash: e615c12b8887f4ce351bc8f8fa8e120b
 msgid "Match plugin: %s"
 msgstr "Упари додатак: %s"
 
+# en-hash: 94c938e73f50bbecb5ca5588b919066e
 msgid "Match this remote patch"
 msgstr "Упари ову удаљену закрпу"
 
+# en-hash: bd2910ce749e393bf98d831fd6126c66
 msgid "Match with URL"
 msgstr "Poveži sa URL-om"
 
+# en-hash: a16e773aa63dcfad0ddf839c4adca2be
 msgid "Match with repo"
 msgstr "Poveži sa spremištem"
 
+# en-hash: eb4ed04559ffa34f4343c30c8a72dd21
 msgid "Match with this repo"
 msgstr "Упари са овим спремиштем"
 
+# en-hash: 9087fefb8d3ee82cc1b4446df6f323a3
 msgid "Matched %s with %s."
 msgstr "Упарено %s са %s."
 
+# en-hash: c54f1f9f6c9b36cb6aa7e8b70d44d963
 msgid "Matched repo: %s/%s"
 msgstr "Povezano spremište: %s/%s"
 
+# en-hash: 922a14659fff965e2ed9254e6de9d00f
 msgid "Matching entries: %s / %s"
 msgstr "Упарене ставке: %s / %s"
 
+# en-hash: ab78fc6941a8178b3eb71cf54279ae30
 msgid "Matching patch: %s — tap to cancel"
 msgstr "Povezivanje zakrpe: %s — dodirnite da otkažete"
 
+# en-hash: 7ab02b95bf829f69411ef69b9c4f5c70
 msgid "Matching patches: %s (repos: %s / %s)"
 msgstr "Упарене закрпе: %s (спремишта: %s / %s)"
 
+# en-hash: 87bd468c77a1b9b62ceff408774062a9
 msgid "Matching plugin: %s — tap to cancel"
 msgstr "Упаривање додатка: %s — додирните да откажете"
 
+# en-hash: 1b00479b9973909bf7d7e52b0a542a08
 msgid "Minimum stars"
 msgstr "Najmanje zvezdica"
 
+# en-hash: c2526b87d7100c4a0b71ece262afbb3d
 msgid "Missing README path"
 msgstr "Недостаје путања до README датотеке"
 
+# en-hash: fb2078d1aee196e3eca34f46ff03b77a
 msgid "Missing URL"
 msgstr "Недостаје URL"
 
+# en-hash: d24b3dbae6402cdc113aeab1a24c10d0
 msgid "Missing asset download URL."
 msgstr "Недостаје URL за преузимање датотеке."
 
-msgid "Missing download URL for release asset."
-msgstr "Недостаје URL за преузимање датотеке издања."
-
+# en-hash: a7c0c61a5d816042233cba6c433c5917
 msgid "Missing font metadata."
 msgstr "Недостају метаподаци фонта."
 
+# en-hash: 7656c7fd4967bd315743a6466e917815
 msgid "Missing meta path in record."
 msgstr "Недостаје путања метаподатака у запису."
 
+# en-hash: 17357974fb6c092a5fe8dfa66e1557fe
 msgid "Missing repository info for patch update."
 msgstr "Недостају информације о спремишту за ажурирање закрпе."
 
+# en-hash: c85bfa8f9c8b6690fb60dc51e1e41abc
 msgid "Missing repository info for update."
 msgstr "Недостају информације о спремишту за ажурирање."
 
+# en-hash: 6ee8bf1b8bd8cf4445940ac4e75d4d56
 msgid "Missing repository metadata for README download."
 msgstr "Недостају метаподаци спремишта за преузимање README датотеке."
 
+# en-hash: 46d4ec30e02bf60e65faf2cb77266dbc
 msgid "Missing repository metadata for installation."
 msgstr "Недостају метаподаци спремишта за инсталацију."
 
+# en-hash: e1671330d61243f8b85b476beb4e33d9
 msgid "Missing repository metadata for patch install."
 msgstr "Nedostaju metapodaci spremišta za instalaciju zakrpe."
 
+# en-hash: c22861112013cbdb8ebfa32db587fb8d
 msgid "Missing repository metadata for patch."
 msgstr "Недостају метаподаци спремишта за закрпу."
 
+# en-hash: 70c6d379edf60ed1bb8728f526741591
 msgid "Missing repository metadata for releases."
 msgstr "Недостају метаподаци спремишта за издања."
 
+# en-hash: 0c69cf64725f51a7e4efab7b4d293b33
 msgid "Missing repository metadata for remote fetch."
 msgstr "Недостају метаподаци спремишта за удаљено преузимање."
 
+# en-hash: 8dfff041fcd598a7a41df55b9e8ea076
+msgid "Missing target path"
+msgstr "Недостаје циљна путања"
+
+# en-hash: 6043603aeda23c74e75b67ae9ced95ce
 msgid "Modify Patch"
 msgstr "Измени закрпу"
 
+# en-hash: b57dc362d2c64058493d4d3877a25017
 msgid "Modify Plugin"
 msgstr "Izmeni priključak"
 
+# en-hash: 9dbdd0c952fedc3db87f3a02d99591d4
 msgid "Modify Plugin: %s"
 msgstr "Izmeni dodatak: %s"
 
+# en-hash: 406af19badea17896b1bfef1897f23bd
 msgid "Most Downloaded"
 msgstr "Највише преузимано"
 
+# en-hash: 425efa6ee97738e110fd7b195fb83e07
 msgid "Most Popular"
 msgstr "Најпопуларније"
 
+# en-hash: e7fe7f09186cbca01bbda9c023027023
 msgid "Multiple custom plugin folders are configured. Where should this plugin be installed?"
 msgstr "Podešeno je više prilagođenih fascikli za priključke. Gde treba instalirati ovaj priključak?"
 
+# en-hash: 3e4c3929bba389269bbcf346a50809ea
 msgid "My wallpaper collection"
 msgstr "Моја колекција позадина"
 
+# en-hash: 012b5aaf72938230a90f7017a59f053a
 msgid "Name (A-Z)"
 msgstr "Назив (А-Ш)"
 
+# en-hash: 06f3b5897c120fcbfeca67ab948b718a
 msgid "Name (Z-A)"
 msgstr "Назив (Ш-А)"
 
+# en-hash: 752e1c52024d295666c0f93830fc9b96
 msgid "Name, description, topic"
 msgstr "Назив, опис, тема"
 
+# en-hash: 7bd1b01e2b3f3738a5df3d196bd8fd24
 msgid "Needs update"
 msgstr "Потребно ажурирање"
 
+# en-hash: e3fa2e77e516634aa78f106b5b413c20
 msgid "Needs update: %d"
 msgstr "Potrebno ažuriranje: %d"
 
+# en-hash: 6e7b34fa59e1bd229b207892956dc41c
 msgid "Never"
 msgstr "Никад"
 
+# en-hash: 5148905edb46ca87df979cbb369c403d
+msgid "New Folder"
+msgstr "Нова фасцикла"
+
+# en-hash: acc257cee5229d7d53cb4ed8e9596e8e
 msgid "New filename"
 msgstr "Нови назив датотеке"
 
+# en-hash: 10ac3d04253ef7e1ddc73e6091c0cd55
 msgid "Next"
 msgstr "Даље"
 
+# en-hash: dd9644efbcf9d41c5be6daed03514dd8
 msgid "Next >"
 msgstr "Следеће >"
 
+# en-hash: 4e30ba17cc4c52ad756bf117a1a32cff
 msgid "No Fill (Transparent)"
 msgstr "Без попуне (провидно)"
 
+# en-hash: a57adf9d6921b10f559aef2f60f98ed4
 msgid "No Lua files found in plugin directory"
 msgstr "Нису пронађене Lua датотеке у директоријуму додатка"
 
+# en-hash: 722ac1f55e069022e6f5121ab04c2f4b
 msgid "No README available."
 msgstr "README није доступан."
 
+# en-hash: ab6f6ae99463b83798788e9ed8df6629
 msgid "No Release Notes available."
 msgstr "Beleške o izdanju nisu dostupne."
 
+# en-hash: b564d5711f07e60166a119a7812c5929
 msgid "No Wiki available."
 msgstr "Wiki nije dostupan."
 
+# en-hash: 6b051bf369e34783a8e61fca2e2c4ba7
 msgid "No cached README files to delete."
 msgstr "Nema keširanih README datoteka za brisanje."
 
+# en-hash: 4dbc80cb9073d70dbfc6278bb3d6f915
 msgid "No cached entries yet."
 msgstr "Још нема кешираних ставки."
 
+# en-hash: 9e34dcb97f8ca1812d0a6406f53cee79
 msgid "No cached entries yet. Refresh to fetch from GitHub."
 msgstr "Još nema keširanih stavki. Osvežite da preuzmete sa GitHub-a."
 
+# en-hash: e592e146ba0ca4bc92d3894dabaf3e0e
 msgid "No changelog entries found for this range."
 msgstr "Нису пронађене ставке у дневнику промена за овај опсег."
 
+# en-hash: d404302efb40cb4c8a7d3f48041ab5ea
 msgid "No commits found in this range."
 msgstr "Nema izmena u ovom opsegu."
 
+# en-hash: e98992a8b6c7c9499b7eda33820bfdff
 msgid "No config files found — uncheck filter to show all files"
 msgstr "Нису пронађене конфигурационе датотеке — одштриклирајте филтер да прикажете све датотеке"
 
+# en-hash: 6c89d34e72b57d009141ea4f8b238cda
 msgid "No date"
 msgstr "Bez datuma"
 
+# en-hash: fd9f9dbe75b721451d3f8002e9cf6c86
 msgid "No detailed release notes provided for this version."
 msgstr "Нема детаљних белешки о издању за ову верзију."
 
+# en-hash: eb54fd022ff6b11f4bb7ede404d1cc40
 msgid "No entries match current filters."
 msgstr "Ниједна ставка не одговара тренутним филтерима."
 
+# en-hash: 64c2c01ee3add40a161dc72dcc462d9d
 msgid "No installed items found."
 msgstr "Nema instaliranih stavki."
 
+# en-hash: bc4c1050aeeb3ff4240c4894b98f32a9
 msgid "No items found."
 msgstr "Ништа није пронађено."
 
+# en-hash: 5455eddcbdea8d5ab481536eaa1c765b
 msgid "No matched patches to check."
 msgstr "Нема упарених закрпи за проверу."
 
+# en-hash: f9852c172eb56b8f419ca9bd2604871b
 msgid "No matched plugins to check."
 msgstr "Нема упарених плагина за проверу."
 
+# en-hash: c250ed3add5b171ba37f69df4bf40737
 msgid "No patch files found in %s/%s."
 msgstr "Нису пронађене датотеке закрпи у %s/%s."
 
+# en-hash: 2316087204c753b44a14dc0867037a62
 msgid "No patch files found in repository %s."
 msgstr "У спремишту %s нису пронађене датотеке закрпи."
 
+# en-hash: a764106ad70b31d8ca6a70261af01255
 msgid "No patches found in matching repositories."
 msgstr "Нису пронађене закрпе у одговарајућим спремиштима."
 
+# en-hash: 6b4b87bf42015f1997bba709a4307cf7
 msgid "No patches need updates."
 msgstr "Nijedna zakrpa ne zahteva ažuriranje."
 
+# en-hash: 87e10d5d604d4b482fe4446d63159b92
 msgid "No patches to display."
 msgstr "Нема закрпи за приказ."
 
+# en-hash: 57ef14caeb36cf1377f55cc7f8cefa15
 msgid "No plugin files were extracted"
 msgstr "Ниједна датотека додатка није распакована"
 
+# en-hash: 44bcb443c85eb26db62aaa89da4ddc60
 msgid "No plugins need updates."
 msgstr "Ниједан прикључак не захтева ажурирање."
 
+# en-hash: 9f7e71426e7d9c095768dd12cff34a5c
 msgid "No plugins to display."
 msgstr "Нема додатака за приказ."
 
+# en-hash: 953753ce5197ee0fd284246514cb7b2f
 msgid "No plugins tracked yet."
 msgstr "Још нема праћених додатака."
 
+# en-hash: a10f66ad1e00d43bc02f5fa30796ccca
 msgid "No previous page in history"
 msgstr "Nema prethodne stranice u istoriji"
 
+# en-hash: 50dcf0a0435f6f459ece9d3e45a1311f
 msgid "No release notes provided for this version."
 msgstr "Nema napomena o izdanju za ovu verziju."
 
+# en-hash: 8897bd78abc8cfa5e9ea79c4dc226f98
 msgid "No release notes."
 msgstr "Нема белешки о издању."
 
+# en-hash: 2e20ec8c848352f34ecef4e93214c26c
 msgid "No releases found for this repository."
 msgstr "Нису пронађена издања за ово спремиште."
 
+# en-hash: 67694f6f04615aaae16e57a4a9e324fe
 msgid "No remote version info for %s."
 msgstr "Nema informacija o udaljenoj verziji za %s."
 
+# en-hash: b62bf861cefe4425e699aa2eea1c5df0
 msgid "No screensavers match this filter."
 msgstr "Ниједан чувар екрана не одговара овом филтеру."
 
+# en-hash: 76e98d4a945da2ea2df295e4cf7b4692
 msgid "No stable releases found — uncheck filter to show all releases"
 msgstr "Nisu pronađena stabilna izdanja — odčekirajte filter da prikažete sva izdanja"
 
+# en-hash: 4911d39dfeb5093032e4317a04cef4c1
+msgid "No subfolders in this directory.\nTap 'Select Folder' below to use it, or '+ New' to create a subfolder."
+msgstr "Нема подфасцикли у овом директоријуму.\nДодирните „Изабери фасциклу“ испод да бисте је користили, или „+ Ново“ да креирате подфасциклу."
+
+# en-hash: 3a4b0c3e394b06b711fdb675f6beeb6b
 msgid "No tracked plugins to check."
 msgstr "Нема праћених додатака за проверу."
 
+# en-hash: af09a29159202c3e40315a0861655abf
 msgid "No wallpapers found in your screensavers folder.\n\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
 msgstr "Нема позадина у фасцикли чувара екрана.\n\nПрегледајте Storefront каталог да бисте преузели позадине!"
 
-msgid "No wallpapers found in your screensavers folder.\\\n\\\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
-msgstr "No wallpapers found in your screensavers folder.\\\n\\\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
-
+# en-hash: 2b340063734382803d14ef2234a59b46
 msgid "None selected"
 msgstr "Ништа није изабрано"
 
+# en-hash: 2b8d3061f885c676130053230eb8a5d1
 msgid "Not matched with a repository."
 msgstr "Nije povezano sa repozitorijumom."
 
+# en-hash: 9ba66a9f92056682b7d86a38b4bc18c0
 msgid "Not set"
 msgstr "Није постављено"
 
-msgid "Notes"
-msgstr "Белешке"
-
+# en-hash: e0aa021e21dddbd6d8cecec71e9cf564
 msgid "OK"
 msgstr "У реду"
 
+# en-hash: 3153c6cc9bfae333965e0f6ce3b2097c
 msgid "Offline Regular"
 msgstr "Офлајн Regular"
 
+# en-hash: c3bf447eabe632720a3aa1a7ce401274
 msgid "Open"
 msgstr "Отвори"
 
+# en-hash: aaaca14de025427e39ed056b29af4058
 msgid "Open Wallpaper Collection Gallery"
 msgstr "Отвори галерију позадина"
 
+# en-hash: 0da9511b88a62642518334bda95c7370
 msgid "Open details"
 msgstr "Отвори детаље"
 
-msgid "Optional. Raises the GitHub API rate limit. Generate one (classic, "
-msgstr "Опционо. Повећава ограничавање GitHub API захтева. Генеришите га (класичан, "
-
+# en-hash: bc134584494d4e13143f406c85e00718
 msgid "Optional. Raises the GitHub API rate limit. Generate one (classic, 'public_repo' scope is enough) at github.com/settings/tokens, then paste it here."
 msgstr "Опционо. Повећава ограничење GitHub API захтева. Генеришите токен (класичан, обим 'public_repo' је довољан) на github.com/settings/tokens и налепите га овде."
 
+# en-hash: efbc241d60f2ad92aea2e5ca3fd8a839
 msgid "Options ▾"
 msgstr "Опције ▾"
 
+# en-hash: 3edf8ca26a1ec14dd6e91dd277ae1de6
 msgid "Origin"
 msgstr "Порекло"
 
+# en-hash: b6f4a2ec6356bbd56d49f2096bf9d3d3
 msgid "Owner"
 msgstr "Власник"
 
+# en-hash: 8a1e7619b4e790b85c7ae69311afb326
 msgid "Owner %s"
 msgstr "Власник %s"
 
+# en-hash: 4b4828d89b9244a9f74639dd8e2e2cce
 msgid "Owner: "
 msgstr "Vlasnik: "
 
+# en-hash: f15ac516f788aec4f30932ffb6395c39
 msgid "Pack my box with five dozen liquor jugs."
 msgstr "Чешаљем са жутим зубима џунглом шета фини ђак."
 
+# en-hash: b8065ad2628f1f82f3167af0947b3e43
 msgid "Page %d of %d"
 msgstr "Страница %d од %d"
 
+# en-hash: 8bf7816729d37eeee406ea2d02ab9e78
 msgid "Page %d/%d"
 msgstr "Страница %d/%d"
 
+# en-hash: 629d8ec3aa8109288fe0ca897082f106
 msgid "Pangram Preview"
 msgstr "Преглед панграма"
 
+# en-hash: 156e10596fdc76ee5300bab931d89c0f
 msgid "Patch"
 msgstr "Закрпа"
 
-msgid "Patch "
-msgstr "Закрпа "
-
+# en-hash: 096539a30b886b6f8afdc93f15f3241c
 msgid "Patch %s has been %s."
 msgstr "Закрпа %s је %s."
 
+# en-hash: 1d6697e009252f7720f527e1cb2b362e
 msgid "Patch '%s' deleted."
 msgstr "Патцх '%s' је обрисан."
 
+# en-hash: ac0fbadc7625ef18100ba480f1fc70aa
 msgid "Patch '%s' disabled."
 msgstr "Закрпа '%s' је онемогућена."
 
+# en-hash: 18a7bd11efe3622cfb550e6f68c5f6f7
 msgid "Patch '%s' enabled."
 msgstr "Закрпа '%s' је омогућена."
 
+# en-hash: 9e1aa789a1a1dfeadcc12a7035f56dd6
 msgid "Patch cache is older than a week, consider refreshing."
 msgstr "Кеш закрпи је старији од недељу дана, размислите о освежавању."
 
+# en-hash: dbcb46b453719dbd421a7642af6da6be
 msgid "Patch file not found in repository."
 msgstr "Datoteka zakrpe nije pronađena u spremištu."
 
+# en-hash: 3f4e01c4deadd79f83b592f0e7c99700
 msgid "Patch file not found locally."
 msgstr "Датотека закрпе није пронађена локално."
 
+# en-hash: 19e9285394d14df97e2b0af94d1e6f3f
 msgid "Patch file not found."
 msgstr "Датотека закрпе није пронађена."
 
+# en-hash: c4efe31ff39ce0d24ea8b3781e4ecf10
 msgid "Patch matching cancelled."
 msgstr "Povezivanje zakrpe je otkazano."
 
+# en-hash: 91721799c8121092a4379d08001d803e
 msgid "Patch: %s"
 msgstr "Закрпа: %s"
 
+# en-hash: c4d283323af70979073f5cb6145f3a4b
 msgid "Patches"
 msgstr "Закрпе"
 
+# en-hash: 62dcdbd5469ff435ab6b562734df5adb
 msgid "Patches cached: %s (last update: %s)"
 msgstr "Кеширане закрпе: %s (последње ажурирање: %s)"
 
+# en-hash: b49c0ace14234fbaf5b2eb411383df13
 msgid "Patches found: %d"
 msgstr "Pronađeno zakrpa: %d"
 
+# en-hash: a31abc9538737a6fd3cd42b234559cb3
 msgid "Path: %s"
 msgstr "Putanja: %s"
 
+# en-hash: 409c1892b68cb394799262ac57f6d4f1
 msgid "Plugin"
 msgstr "Priključak"
 
-msgid "Plugin "
-msgstr "Додатак "
-
+# en-hash: 55660a9f279ae6e277eb8c16a0f3f013
 msgid "Plugin %s has been %s."
 msgstr "Priključak %s je %s."
 
+# en-hash: ea44b3d2165c20ad1c9a9ffafca3c6d1
 msgid "Plugin '%s' deleted."
 msgstr "Прикључак '%s' је избрисан."
 
+# en-hash: 8b8f597f17d0fc4e7023a94e26d39ad2
 msgid "Plugin '%s' disabled."
 msgstr "Прикључак '%s' је онемогућен."
 
+# en-hash: 025583a90e53c886a8dc2639d9bcc1ac
 msgid "Plugin '%s' enabled."
 msgstr "Прикључак '%s' је омогућен."
 
+# en-hash: 5793f995e482c1d69a6b5246de072068
 msgid "Plugin and patch browser for KOReader."
 msgstr "Прегледач додатака и закрпи за KOReader."
 
+# en-hash: d337cebbb781983be12661e42396acca
 msgid "Plugin cache is older than a week, consider refreshing."
 msgstr "Кеш додатака је старији од недељу дана, размислите о освежавању."
 
+# en-hash: 7b4d0de12a96a094bcbce0f294fa7947
 msgid "Plugin directory not found."
 msgstr "Директоријум додатка није пронађен."
 
+# en-hash: e59b53e1ff95beae26b23bff6d6c0bf8
 msgid "Plugin folder not found."
 msgstr "Фолдер додатка није пронађен."
 
+# en-hash: a5e47942c15643339e19f9c97ed56a59
 msgid "Plugin is not currently loaded, so settings cannot be deleted."
 msgstr "Додатак тренутно није учитан, па се подешавања не могу обрисати."
 
+# en-hash: bb38096ab39160dc20d44f3ea6b44507
 msgid "Plugins"
 msgstr "Додаци"
 
+# en-hash: 765e45648076f663b54274a5ce9307e0
 msgid "Plugins cached: %s (last update: %s)"
 msgstr "Кеширани додаци: %s (последње ажурирање: %s)"
 
+# en-hash: c69b2b2160fa59e049f0a588222d2902
 msgid "Pool size: %d wallpapers in rotation"
 msgstr "Величина скупа: %d позадина у ротацији"
 
+# en-hash: e5ab942cd3fb2632d94b3cee3aa8b7db
 msgid "Pre-installed core KOReader plugin."
 msgstr "Преинсталирани основни KOReader прикључак."
 
+# en-hash: 14230d11143a03f4330c6433d5032a9d
 msgid "Prev"
 msgstr "Претходна"
 
+# en-hash: 0387f6092bdd447cc77402e2af1e1fb1
 msgid "Published: %s"
 msgstr "Објављено: %s"
 
+# en-hash: c47c7c7383225ab55ff591cb59c41e6b
 msgid "README"
 msgstr "README"
 
+# en-hash: 225dac2abe39edea015bc40a3dc6b398
 msgid "README download failed: "
 msgstr "Преузимање README датотеке није успело: "
 
+# en-hash: b6bc7c82cd5b9ba2ba540b8214af6240
 msgid "README files & images"
 msgstr "README датотеке и слике"
 
+# en-hash: aa128a6671fa8af1cd4e96b7ec4e0723
 msgid "Rate Wallpaper"
 msgstr "Оцени позадину"
 
+# en-hash: 172bdcbf3c1298405f3292de568e54f0
 msgid "Reading Passage Specimen"
 msgstr "Узорак за читање"
 
+# en-hash: 7f58b08556c5375e2559f267873d1218
 msgid "Reading Progress"
 msgstr "Напредак читања"
 
+# en-hash: 09d465b122ab48dbe5cad73d4656d4e1
 msgid "Reading Progress / Summary"
 msgstr "Напредак читања / Резиме"
 
+# en-hash: e1a444c57a59c310dfd913b8fbbcaa70
 msgid "Recently Added"
 msgstr "Недавно додато"
 
+# en-hash: 63a6a88c066880c5ac42394a22803ca6
 msgid "Refresh"
 msgstr "Osveži"
 
-msgid "Refresh cache"
-msgstr "Освежи кеш"
-
+# en-hash: 404d7ac924d396a7634738a80a90d835
 msgid "Refresh catalog"
 msgstr "Освежи каталог"
 
+# en-hash: a4ab749eba148966e242b4f38f774b60
 msgid "Refreshing catalog via Direct GitHub API…"
 msgstr "Освежавање каталога преко Direct GitHub API…"
 
+# en-hash: d79adaec4b83cfc1e3cb44ded7689888
 msgid "Refreshing catalog..."
 msgstr "Освежавање каталога..."
 
+# en-hash: 0cb1e25c68defbaa1b6fcb7a10f9932f
 msgid "Refreshing catalog…"
 msgstr "Освежавање каталога…"
 
+# en-hash: 5c123dffc87233456030f3762f15c3f2
 msgid "Refreshing…"
 msgstr "Освежавање…"
 
+# en-hash: b437e453bf9e4e455cf25804ea74d071
 msgid "Reinstall"
 msgstr "Поново инсталирај"
 
+# en-hash: b8e7b465df7c5979dc731d06e84ce2cf
 msgid "Release"
 msgstr "Издање"
 
+# en-hash: 5dd03e8d039863e563e049be198c3fd3
 msgid "Release Notes"
 msgstr "Белешке о издању"
 
+# en-hash: e40e20ac241367df6f44db214d52d20d
 msgid "Release notes for %s"
 msgstr "Белешке о издању за %s"
 
+# en-hash: 33a351564f22fd647623cfb28f147bc6
 msgid "Release: %s"
 msgstr "Издање: %s"
 
+# en-hash: d50ae403cb49a205bdf789f377f5cfe6
 msgid "Releases"
 msgstr "Izdanja"
 
+# en-hash: 44398344dd02c7d56e1b9629ef8d724d
 msgid "Releases — %s"
 msgstr "Издања — %s"
 
+# en-hash: ef9e8096713bc1df35e59a0eef226bc6
 msgid "Remote SHA: %s"
 msgstr "Удаљени SHA: %s"
 
+# en-hash: 6a95db820d2b45a6d7ab155283c5b028
 msgid "Remote SHA: %s (checked %s)"
 msgstr "Удаљени SHA: %s (проверено %s)"
 
+# en-hash: 26db4927c3e3b5acd143bcdc9bf3423c
 msgid "Remote check failed: "
 msgstr "Удаљена провера није успела: "
 
+# en-hash: 2143ce4992be9f0c69c155c57ad058d3
 msgid "Remote version for %s: %s."
 msgstr "Удаљена верзија за %s: %s."
 
+# en-hash: 0afd6abc2dd57e3c1e468b7640f01a71
 msgid "Remote version not found."
 msgstr "Udaljena verzija nije pronađena."
 
+# en-hash: c6b535676cfd2fe183aa6dded3c028e4
 msgid "Remote: %s"
 msgstr "Удаљено: %s"
 
+# en-hash: 97220aac05a7c16b7b17306c71151f98
 msgid "Remote: %s (checked %s)"
 msgstr "Удаљено: %s (проверено %s)"
 
+# en-hash: 04f88568e32c4fd2752556fe318193dc
 msgid "Remote: (not checked)"
 msgstr "Удаљено: (није проверено)"
 
+# en-hash: 1063e38cb53d94d386f21227fcd84717
 msgid "Remove"
 msgstr "Уклони"
 
-msgid "Remove "
-msgstr "Уклони"
-
+# en-hash: 2805a601b427c95c08257220b066bf3d
 msgid "Remove '%s' from your wallpaper collection?"
 msgstr "Уклонити '%s' из ваше колекције позадина?"
 
+# en-hash: fbf5151ac635b3d3a7337842640b5b7c
 msgid "Remove Wallpaper?"
 msgstr "Уклонити позадину?"
 
+# en-hash: 904a8304056d77e4547744781b7ceb50
 msgid "Rename"
 msgstr "Преименуј"
 
+# en-hash: 19c94687f8cd5f97d087e7706bfd5022
 msgid "Rename failed: %s"
 msgstr "Преименовање није успело: %s"
 
+# en-hash: 86c66437fdfef9a63a22987937a5f34c
 msgid "Rename file"
 msgstr "Преименуј датотеку"
 
-msgid "Renamed to "
-msgstr "Преименовано у "
-
+# en-hash: 7eb83eac0b00a6d27a370a8750eedf11
 msgid "Renamed to '%s'."
 msgstr "Преименовано у '%s'."
 
+# en-hash: b1c043133aefc568dedd61b24ef6911b
 msgid "Repo: %s/%s"
 msgstr "Repozitorijum: %s/%s"
 
+# en-hash: 16a40191ec805a280e542f246f47df9e
 msgid "Repo: (not matched)"
 msgstr "Спремиште: (није упарено)"
 
+# en-hash: 33fcf2b3ec4686d9cd06051c726d0ba2
 msgid "Repository"
 msgstr "Спремиште"
 
+# en-hash: e7f076457e98df1d924002d6f493bf68
 msgid "Repository %s not found on GitHub."
 msgstr "Спремиште %s није пронађено на GitHub-у."
 
+# en-hash: 6c4274a072c4d46c6ec6091ee96e734f
 msgid "Repository name"
 msgstr "Назив спремишта"
 
+# en-hash: ac7717cc2b600657620b5b808fd1deb4
 msgid "Repository owner"
 msgstr "Власник спремишта"
 
+# en-hash: daff3bf20e31b8b0377f58ac0104358e
 msgid "Repository: %s"
 msgstr "Spremište: %s"
 
+# en-hash: 268d1dca05a4dd6c3d647a4de01bf9d5
 msgid "Reset filters"
 msgstr "Ресетуј филтере"
 
+# en-hash: 60dd7d7c4ef2b2ff23759f9efc59b258
+msgid "Reset to Default Folder"
+msgstr "Врати на подразумевану фасциклу"
+
+# en-hash: bcf762b56cb03f374197ee9e86273b77
+msgid "Reset to default screensaver folder"
+msgstr "Врати на подразумевану фасциклу чувара екрана"
+
+# en-hash: 21e2bb42873eddcb9b476b8eafbe0c18
 msgid "Reset to defaults"
 msgstr "Подразумевано"
 
+# en-hash: 606c44bdcc18bc4cd3d17f3e55dc190a
 msgid "Restart later"
 msgstr "Рестартуј касније"
 
+# en-hash: 1f4f5533443045d7cc68e7e6a885df3d
 msgid "Restart now"
 msgstr "Поново покрени"
 
+# en-hash: 504901d470d6b3ab83f0a01f6a947c41
+msgid "Restore: %s"
+msgstr "Врати: %s"
+
+# en-hash: 83936a3f80ba44c78c9911f5445f2994
 msgid "Sample Text"
 msgstr "Пример текста"
 
+# en-hash: c9cc8cce247e49bae79f15173ce97354
 msgid "Save"
 msgstr "Сачувај"
 
+# en-hash: 603fcc0a702da1e164d6d14e0ca47782
 msgid "Screensaver"
 msgstr "Чувар екрана"
 
+# en-hash: 0a9573f725d45f05a9e834c86ee40e97
 msgid "Screensaver & Wallpapers"
 msgstr "Чувар екрана и позадине"
 
+# en-hash: 6b75c24e60c7e3b3ef2d48239b62c4ea
 msgid "Screensaver Details"
 msgstr "Детаљи чувара екрана"
 
+# en-hash: 46fccad77c3bb02aa47d90843edc6297
+msgid "Screensaver Folder"
+msgstr "Фасцикла чувара екрана"
+
+# en-hash: 5f7b0afc6bb85571770fa56c2e142306
 msgid "Screensaver Mode"
 msgstr "Режим чувара екрана"
 
+# en-hash: 6df6c2dd7dd08e6108bf1b8dea56c527
 msgid "Screensaver Settings"
 msgstr "Подешавања чувара екрана"
 
+# en-hash: 72eacc0569bfceb647d70beda2982045
+msgid "Screensaver folder set to '%s'"
+msgstr "Фасцикла чувара екрана постављена на „%s“"
+
+# en-hash: 538e5b6850b31afe617747bdf37203b2
 msgid "Screensaver mode"
 msgstr "Режим чувара екрана"
 
+# en-hash: 11e906f78566aa3e02e0e631c59e9a29
 msgid "Screensaver thumbnails"
 msgstr "Умањени прикази чувара екрана"
 
+# en-hash: cb95f5f307c64043351b5125571b350a
 msgid "Screensavers"
 msgstr "Чувари екрана"
 
+# en-hash: 13348442cc6a27032d2b4aa28b75a5d3
 msgid "Search"
 msgstr "Претрага"
 
+# en-hash: f2ecdcba091a518fcb585529186fa60b
 msgid "Search \"%s\""
 msgstr "Pretraži \"%s\""
 
+# en-hash: 02aebab4da8f3c3506b5f7841b74771e
 msgid "Search & API"
 msgstr "Претрага и API"
 
+# en-hash: ff39b7ff718f007859f0505525457425
 msgid "Search filter (\"%s\") is not applied to Updates."
-msgstr "Search filter (\"%s\") is not applied to Updates."
+msgstr "Filter pretrage („%s”) se ne primenjuje na Ažuriranja."
 
-msgid "Search filter (\\\\\"%s\\\\\") is not applied to Updates."
-msgstr "Search filter (\\\\\"%s\\\\\") is not applied to Updates."
-
+# en-hash: 5535a0cf45d5824d5a8d3c306ff6b30c
 msgid "Search text"
 msgstr "Текст за претрагу"
 
+# en-hash: 53eef1dc1c84ebd17d645173b7b7655a
 msgid "Search: "
 msgstr "Претрага: "
 
+# en-hash: 45e96c0a422ce8a1a6ec1bd5eb9625c6
 msgid "Select All"
 msgstr "Изабери све"
 
+# en-hash: 28258e7a927711d405af65fbb6d13614
 msgid "Select Categories"
 msgstr "Изабери категорије"
 
+# en-hash: deffb03a57b0deaf912f04da4575848f
+msgid "Select Folder"
+msgstr "Izaberi fasciklu"
+
+# en-hash: 9b834c9f23888e04d5ec898aa174eecc
+msgid "Select Screensaver Folder"
+msgstr "Izaberi fasciklu čuvara ekrana"
+
+# en-hash: 9f3ac6dac42e1c9f63901bd946e13f8c
 msgid "Select a repository patch entry to match with the chosen file."
 msgstr "Изаберите ставку закрпе из спремишта за упаривање са изабраном датотеком."
 
+# en-hash: 3d190a9867210e4154510c4f0b651c6f
 msgid "Select a repository to match with the chosen plugin."
 msgstr "Izaberite repozitorijum za povezivanje sa izabranim dodatkom."
 
-msgid "Select installation directory"
-msgstr "Изаберите фолдер за инсталацију"
-
+# en-hash: 9c5c40a67662e66d06e841a60c741c94
 msgid "Select patch file from %s"
 msgstr "Изаберите датотеку закрпе из %s"
 
+# en-hash: 96b5a52402cc48b814e789adde02d11e
 msgid "Select patch in %s"
 msgstr "Изаберите закрпу у %s"
 
+# en-hash: 31ac932fd0524d22514aeae4fbd355e0
 msgid "Select plugin to match"
 msgstr "Изаберите додатак за упаривање"
 
+# en-hash: 48532f91308f78f51670fe7e8fd84e94
 msgid "Select repository"
 msgstr "Изабери спремиште"
 
+# en-hash: 5d5b78699e57104f2fa03bbdf7b9197b
 msgid "Set"
 msgstr "Postavi"
 
+# en-hash: 704f03f7c5dd59a9b3ae46df8e1e46a4
 msgid "Set Active Single"
 msgstr "Постави као активну појединачну"
 
+# en-hash: 4b6cd91c8b421c62191433f3f42d368f
 msgid "Set Single"
 msgstr "Постави једно"
 
+# en-hash: 1f1e8dafb1197cbb60bae4fbfb9187cc
 msgid "Set as Active"
 msgstr "Постави као активно"
 
-msgid "Set as Active Single Wallpaper"
-msgstr "Постави као активну појединачну позадину"
-
+# en-hash: b9031cfe402ffd940eede9f395bafd1b
 msgid "Set as active single wallpaper!"
 msgstr "Постављено као активна појединачна позадина!"
 
+# en-hash: f4f70727dc34561dfde1a3c529b6205c
 msgid "Settings"
 msgstr "Подешавања"
 
+# en-hash: e07a73b7f6a6887a98684040bfebc396
 msgid "Show needs update"
 msgstr "Прикажи оне којима је потребно ажурирање"
 
+# en-hash: 1f1b02ee24bf2ce675bc4c571ec2b586
 msgid "Show reading progress banner overlay"
 msgstr "Прикажи траку напретка читања"
 
+# en-hash: 4fceb4bd855ed2529cef174e323c8b8d
 msgid "Shows reading stats, percentage, and chapter progress"
 msgstr "Приказује статистику читања, проценат и напредак поглавља"
 
+# en-hash: cbaa5a2bd50a11bc36534d3f4d6b478b
 msgid "Shows the cover of the book currently being read"
 msgstr "Приказује корице књиге која се тренутно чита"
 
+# en-hash: 34be03edf6b1450f2e3631363ce7e1fb
 msgid "Shuffle (%d)"
 msgstr "Насумично (%d)"
 
+# en-hash: 8031ea438e6b65115548622e43fc3fc6
 msgid "Shuffle Pool"
 msgstr "Скуп за насумично"
 
-msgid "Shuffles through all wallpapers in folder on sleep.\nPool size: %d wallpapers in rotation"
-msgstr "Насумично мења све позадине из фасцикле током спавања.\nВеличина скупа: %d позадина у ротацији"
-
+# en-hash: 66ba162102bbf6ae31b522aec561735e
 msgid "Single"
 msgstr "Појединачно"
 
+# en-hash: c1cb41ea040ff053e2219930470897ed
 msgid "Single Wallpaper"
 msgstr "Појединачна позадина"
 
+# en-hash: bc586928ac8f7c25dabb909c67bdfa88
 msgid "Solid fill for screen margins & letterboxing"
 msgstr "Пуна боја за маргине екрана"
 
+# en-hash: 6b46ae48421828d9973deec5fa9aa0c3
 msgid "Sort"
 msgstr "Сортирање"
 
+# en-hash: 3173f57c630d7906d6269e633ca006e6
 msgid "Sort mode"
 msgstr "Режим сортирања"
 
+# en-hash: da817141563c7ce9a6fd4173c1530d1c
 msgid "Sort: A-Z"
 msgstr "Сортирај: А-Ш"
 
+# en-hash: ef595b3838621b68aae951bc9ffa229f
 msgid "Sort: Most Liked"
 msgstr "Сортирај: Највише свиђања"
 
+# en-hash: 4db0a46605c5f6f7fa94141acea4f175
 msgid "Sort: Name (A → Z)"
 msgstr "Сортирај: Назив (А-Ш)"
 
+# en-hash: 0757713018112dc84666148de8f02e19
 msgid "Sort: Name (Z → A)"
 msgstr "Сортирај: Назив (Ш-А)"
 
+# en-hash: 8613ff1a8daa77eb854fe8f3cafad6a6
 msgid "Sort: Oldest"
 msgstr "Сортирај: Најстарије"
 
+# en-hash: 60b42108b3d6aa7354ce042fb4eaf8a9
 msgid "Sort: Recently updated"
 msgstr "Сортирај: Датум"
 
+# en-hash: 7cd4ca35a0b2aeb8804acb13f51c3fff
 msgid "Sort: Stars (high → low)"
 msgstr "Сортирај: Звездице"
 
+# en-hash: 45d8103f48fbec349b836ab0d48e7c0b
 msgid "Sort: Status"
 msgstr "Сортирај: Статус"
 
+# en-hash: 2f407ac9b0d53d42137b946c73a3b68e
 msgid "Sort: Type"
 msgstr "Сортирај: Тип"
 
+# en-hash: 7669c9c879da298b11b7252c337aa70e
 msgid "Sort: Updated"
 msgstr "Сортирање: Ажурирано"
 
+# en-hash: d79ac8a369c836fab6a21d64685e1e30
 msgid "Sort: Z-A"
 msgstr "Сортирај: Ш-А"
 
+# en-hash: 2808a34767e19b842d906ab8ab6264c6
 msgid "Sorting"
 msgstr "Сортирање"
 
+# en-hash: fa3aff3c185c6dc7754235f397c2099a
 msgid "Stable"
 msgstr "Стабилно"
 
+# en-hash: ec53a8c4f07baed5d8825072c89799be
 msgid "Status"
 msgstr "Статус"
 
+# en-hash: bec65d389b89556e7c0731a3051bd602
 msgid "Status: Needs matching"
 msgstr "Статус: Потребно упаривање"
 
+# en-hash: 68cbe9141a2fc21378b57a483d0ae38f
 msgid "Status: Up to date"
 msgstr "Статус: Ажурно"
 
+# en-hash: 70460461d97894427b6bbdb4a7ec6c69
 msgid "Status: Update available"
 msgstr "Статус: Доступно је ажурирање"
 
+# en-hash: f0dca7e4eaedf573d4664be249845942
 msgid "Storefront"
-msgstr "Storefront"
+msgstr "Prodavnica"
 
+# en-hash: 7ade5d484a71e39d2c37c5eb72d01b80
 msgid "Storefront cache refreshed."
 msgstr "Кеш Storefront-а је освежен."
 
+# en-hash: 979936c531edc87a0ad5e09bea0c7ef2
 msgid "Storefront is up to date (v%s)."
 msgstr "Storefront је ажуриран (v%s)."
 
+# en-hash: 8decbc8ca8cf516ff56a0aa25ef650e0
 msgid "Storefront refresh failed: "
 msgstr "Osvežavanje Storefront-a nije uspelo: "
 
+# en-hash: 454d2b24e0f1d6c8b73e291c49ca90ce
 msgid "Storefront · Updates"
 msgstr "Storefront · Ажурирања"
 
+# en-hash: 5620a897002239dbdf1fb1d697e36ffe
 msgid "Storefront: Open"
 msgstr "Продавница: Отвори"
 
+# en-hash: dd2d866df5da52a1aed8e63192026530
 msgid "Stretch image to fill entire screen"
 msgstr "Развуци слику преко целог екрана"
 
+# en-hash: a2af7968373489748ae4a88c961e5b4d
 msgid "Style: "
 msgstr "Стил: "
 
+# en-hash: df30b0a7f63ac7248425b965ff0c47b8
 msgid "Successfully updated %d item(s)."
 msgstr "Успешно ажурирано %d ставки."
 
-msgid "Successfully updated %d items."
-msgstr "Успешно ажурирано %d ставки."
-
+# en-hash: 5b0930e019a80668fb3a71f966038113
 msgid "Switch to installed patches"
 msgstr "Пређи на инсталиране закрпе"
 
+# en-hash: ae002149ee123e54d73abed0a8fc1e7e
 msgid "Switch to installed plugins"
 msgstr "Pređi na instalirane dodatke"
 
+# en-hash: ab9cb50c180fdf8953cbb354410c4db0
 msgid "Switch to patch list"
 msgstr "Пређи на листу закрпи"
 
+# en-hash: a804bddb25e800d41fb13e07b478fa46
 msgid "Switch to patches"
 msgstr "Пређи на закрпе"
 
+# en-hash: 065be62239c91c37174533c2f0c72648
 msgid "Switch to plugin list"
 msgstr "Pređi na listu priključaka"
 
+# en-hash: 08d08d4342b48346ca14718012c405da
 msgid "Tag not found on GitHub (%s or %s)."
 msgstr "Ознака није пронађена на GitHub-у (%s или %s)."
 
-msgid "Text"
-msgstr "Текст"
-
+# en-hash: e60eb6a944962445b77455f99dd667be
 msgid "Text editor plugin is not available."
 msgstr "Додатак уређивача текста није доступан."
 
+# en-hash: e4d909c290d0fb1ca068ffaddf22cbd0
 msgid "The quick brown fox jumps over the lazy dog."
 msgstr "Чешаљем са жутим зубима џунглом шета фини ђак."
 
+# en-hash: a26abb5b7dd05b79763d7799a9f6ecbb
 msgid "This action cannot be undone.\n\nChanges will take effect after restart."
 msgstr "Ова радња се не може опозвати.\n\nИзмене ће ступити на снагу након поновног покретања."
 
-msgid "This action cannot be undone.\\\n\\\nChanges will take effect after restart."
-msgstr "This action cannot be undone.\\\n\\\nChanges will take effect after restart."
-
+# en-hash: c3ab64f00eece9eed797129cb54da718
 msgid "This wallpaper is currently set as your active screensaver."
 msgstr "Ова позадина је тренутно постављена као ваш активни чувар екрана."
 
+# en-hash: 8ec39453f44420d798ad107f73aed05f
 msgid "This will delete all cached README files, wiki articles, and screensaver thumbnails (%s)."
 msgstr "Ово ће обрисати све кеширане README датотеке, вики чланке и умањене приказе чувара екрана (%s)."
 
+# en-hash: 1b334fd93d06fc1ec0c8d05823db0361
 msgid "This will delete cached README markdown files and downloaded images (%s)."
 msgstr "Ово ће обрисати кеширане README датотеке и преузете слике (%s)."
 
+# en-hash: 440ae88b9bb5677227f33ae07af37e1a
 msgid "This will delete cached screensaver thumbnail previews (%s)."
 msgstr "Ово ће обрисати кеширане умањене приказе чувара екрана (%s)."
 
+# en-hash: 8727046e22b076362d60f816560ffe09
 msgid "This will delete cached wiki articles and downloaded images (%s)."
 msgstr "Ово ће обрисати кеширане вики чланке и преузете слике (%s)."
 
+# en-hash: 638ec245e32c807a8e2b0998d3165411
 msgid "This will take effect on next restart."
 msgstr "Ovo će stupiti na snagu pri sledećem ponovnom pokretanju."
 
+# en-hash: d425644c6a2afa44fa44a1565b489dd6
 msgid "Total commits: %d"
 msgstr "Укупно измена: %d"
 
+# en-hash: 06dac6da57eb6f64c9d64810e10a7192
 msgid "Tracked: %d"
 msgstr "Праћено: %d"
 
+# en-hash: 9f20e45267caff9e39ca3b9bea16db47
 msgid "Transparent overlay (page content visible behind)"
 msgstr "Провидна позадина (садржај странице видљив иза)"
 
+# en-hash: a1fa27779242b4902f7ae3bdd5c6d508
 msgid "Type"
 msgstr "Тип"
 
-msgid "Unable to determine patch download URL."
-msgstr "Није могуће утврдити URL за преузимање закрпе."
-
+# en-hash: 7802fb36da7e75034a308a4571ef56f5
 msgid "Unable to load wiki page. Tap refresh to retry."
 msgstr "Учитавање вики странице није успело. Додирните за освежавање."
 
+# en-hash: 1f6cf37a8939823937bd076c4fd51d1e
 msgid "Unable to read README file"
 msgstr "Čitanje README datoteke nije uspelo"
 
+# en-hash: 56346840eef36c0a910297ed2be6e6ea
 msgid "Unable to read README. Tap refresh to retry."
 msgstr "Nije moguće pročitati README. Dodirnite osveži za ponovni pokušaj."
 
+# en-hash: ef46a966a56b65fc4922957b129d6a4c
 msgid "Unable to store match for patch."
 msgstr "Nije moguće sačuvati vezu za zakrpu."
 
+# en-hash: 32b379cd5cc2b3f84797b70dc8781d62
 msgid "Unable to store match for plugin."
 msgstr "Nije moguće sačuvati vezu за priključak."
 
+# en-hash: a27dfe771799a09fd55fea73286eb6ab
 msgid "Uninstall"
 msgstr "Ukloni"
 
+# en-hash: 88183b946cc5f0e8c96b2e66e1c74a7e
 msgid "Unknown"
 msgstr "Непознато"
 
+# en-hash: aee9784c03b80d38d3271cde2b252b8d
 msgid "Unknown error"
 msgstr "Непозната грешка"
 
+# en-hash: a08ab7628919ab9cdf4f5f0bc062f885
 msgid "Unlink the repo"
 msgstr "Прекини везу са спремиштем"
 
+# en-hash: 7706ebf98072b20aa4591e1776a7eeda
 msgid "Unlinked %s from repository."
 msgstr "%s је одвојен од спремишта."
 
+# en-hash: 43908857e7877a678a8d332efdf89b61
 msgid "Unmatched: %d"
 msgstr "Неупарено: %d"
 
+# en-hash: 4b8bbf97f50333628448f95de672ce63
 msgid "Unnamed release"
 msgstr "Неименовано издање"
 
+# en-hash: 06933067aafd48425d67bcb01bba5cb6
 msgid "Update"
 msgstr "Ажурирај"
 
-msgid "Update %d outdated item(s)?"
-msgstr "Ажурирати %d застарелих ставки?"
-
+# en-hash: 8ed0aac4c9739a981247e0115effb18f
 msgid "Update %s?"
 msgstr "Ажурирати %s?"
 
+# en-hash: 6d9160dc4176d784df94f92a091a9a59
 msgid "Update All"
 msgstr "Ажурирај све"
 
-msgid "Update all outdated items?"
-msgstr "Ажурирати све застареле ставке?"
-
+# en-hash: 247ef2772cca9ce82a8934100af8683c
 msgid "Update available for %s: remote %s, installed %s."
 msgstr "Доступно је ажурирање за %s: удаљено %s, инсталирано %s."
 
+# en-hash: 224518815caec6dace24684b7bd877e8
 msgid "Update channel"
 msgstr "Канал ажурирања"
 
-msgid "Update check was cancelled"
-msgstr "Провера ажурирања је отказана"
+# en-hash: e1ba91f9b8666f2b30bf501bb1114462
+msgid "Update check was cancelled."
+msgstr "Provera ažuriranja je otkazana."
 
+# en-hash: 43c694f6abd3b6ce1e256015dfe2513e
 msgid "Update patch"
 msgstr "Ажурирај закрпу"
 
+# en-hash: 9d8ea88e41cfd4bdcf741262ccd22fe2
 msgid "Update plugin"
 msgstr "Ажурирај додатак"
 
+# en-hash: 523a95254799739122d7851c74241cc0
 msgid "Updated %d of %d item(s) (%d failed)."
 msgstr "Ажурирано %d од %d ставки (%d неуспешно)."
 
+# en-hash: bda1a603a6d50386060b8dd0ff3a1c27
 msgid "Updated patch \"%s\"."
 msgstr "Ažurirana zakrpa \"%s\"."
 
-msgid "Updated patch %s."
-msgstr "Ažurirana zakrpa %s."
-
-msgid "Updated patch \\\\\"%s\\\\\"."
-msgstr "Updated patch \\\\\"%s\\\\\"."
-
+# en-hash: ea03cc9fdc791c9e882185f9871e2d19
 msgid "Updated plugin \"%s\" to version %s."
 msgstr "Ažuriran dodatak \"%s\" na verziju %s."
 
+# en-hash: cfba84643992b94389217ecb4b0e89c5
 msgid "Updated plugin \"%s\"."
 msgstr "Ažuriran dodatak \"%s\"."
 
-msgid "Updated plugin \\\\\"%s\\\\\" to version %s."
-msgstr "Updated plugin \\\\\"%s\\\\\" to version %s."
-
-msgid "Updated plugin \\\\\"%s\\\\\"."
-msgstr "Updated plugin \\\\\"%s\\\\\"."
-
+# en-hash: 700f08e43a1a17d018812444cc9391e9
 msgid "Updated: %s"
 msgstr "Ажурирано: %s"
 
+# en-hash: 9ac41b6a577daadd588f0fcde0071e8b
 msgid "Updates"
 msgstr "Ажурирања"
 
+# en-hash: 7a1861cda946de73714affbeb669eba4
 msgid "Updates Ignored"
 msgstr "Ажурирања игнорисана"
 
-msgid "Updating [%d/%d]: %s…"
-msgstr "Ажурирање [%d/%d]: %s…"
+# en-hash: 4a70d22f0b6c142f1932649237e68002
+msgid "Updating [%d/%d]: %s…\nTap screen to cancel."
+msgstr "Ažuriranje [%d/%d]: %s…\nDodirnite ekran da otkažete."
 
+# en-hash: a07df8665a5e8ade90f822d03b1ad148
 msgid "User Installed"
 msgstr "Кориснички"
 
+# en-hash: c75e442b6637b50312241c2ed46ef563
 msgid "Verifying repository %s/%s..."
 msgstr "Провера спремишта %s/%s..."
 
+# en-hash: 34b6cd75171affba6957e308dcbd92be
 msgid "Version"
 msgstr "Верзија"
 
+# en-hash: 9e69db6d28a0ec32d28e2c9e327fd40a
 msgid "Versions"
 msgstr "Верзије"
 
+# en-hash: ea4021361394f56beeae77c394271b11
 msgid "View README"
 msgstr "Прикажи README"
 
-msgid "View commits (%s \\\\xE2\\\\x86\\\\x92 %s)"
-msgstr "View commits (%s \\\\xE2\\\\x86\\\\x92 %s)"
-
+# en-hash: 033b69530c7d38c7bcda12b16b97b203
 msgid "View commits (%s → %s)"
 msgstr "Прикажи измене (%s → %s)"
 
+# en-hash: dabeb2a6efa064595e4fbf43fda02f42
 msgid "Wallpaper Collection"
 msgstr "Колекција позадина"
 
+# en-hash: 882dac04ff81c4267d741a32fd9702bf
 msgid "Wallpaper Options"
 msgstr "Опције позадине"
 
+# en-hash: 72df29e602f5d37ea0a0ab01b9528d83
 msgid "Wallpaper deleted from device."
 msgstr "Позадина је обрисана са уређаја."
 
+# en-hash: 10d89f780d289c5a80bae8b18a04b517
 msgid "Wallpaper removed"
 msgstr "Позадина уклоњена"
 
+# en-hash: b6dea7fce89bd30f8c3d5b898849aa4b
 msgid "Wallpaper saved to collection!"
 msgstr "Позадина је сачувана у колекцији!"
 
+# en-hash: ba8ef34da8f377a1c718ff0f10e107b1
 msgid "Wallpaper set as active KOReader screensaver!"
 msgstr "Позадина је постављена као активни чувар екрана!"
 
+# en-hash: 9f095ba0dd323e2cf519b77ca8c01715
 msgid "Wallpaper set as active screensaver!"
 msgstr "Позадина постављена као активни чувар екрана!"
 
+# en-hash: 5debabbcc269798b673cbe19cd73e8e7
 msgid "Warning: the selected version is older than what is currently installed. You are downgrading."
 msgstr "Упозорење: изабрана верзија је старија од тренутно инсталиране. Вршите враћање на старију верзију."
 
+# en-hash: a89746741af25fe85303aa1ec68a24dd
 msgid "White Fill"
 msgstr "Бела попуна"
 
+# en-hash: bf111e3622a72a3b5dc784b5903983ca
 msgid "Wiki"
 msgstr "Вики"
 
+# en-hash: e87f48c9651c58d2e58f8947cf30a34c
 msgid "Wiki Pages"
 msgstr "Вики странице"
 
+# en-hash: f78c688bce00bf8bd27b83392711b180
 msgid "Wiki pages & images"
 msgstr "Вики странице и слике"
 
+# en-hash: 20c942c0130f3367917c5d16db658ce3
 msgid "Z -> A"
 msgstr "Ш -> А"
 
+# en-hash: 93d846d0fcab50e65740af3b2eabafac
 msgid "Z → A"
 msgstr "Ш → А"
 
+# en-hash: 035661797ec0fdd6b3ae3d5d36ab7d1a
 msgid "[ Loading preview... ]"
 msgstr "[ Учитавање прегледа... ]"
 
+# en-hash: 4bca90761cfeab8d19688f449263dd62
 msgid "[ Wallpaper Preview Loading... ]"
 msgstr "[ Учитавање прегледа позадине... ]"
 
+# en-hash: f29a8499c7d11cf44a0787e0fd1e3900
 msgid "[Ignored]"
 msgstr "[Занемарено]"
 
+# en-hash: d633fec4eb7598d17886e92c10438dcc
 msgid "[draft]"
 msgstr "[нацрт]"
 
+# en-hash: 59db44a5d1552a390f72a7e83935bca0
 msgid "[pre]"
 msgstr "[pred]"
 
-msgid "\\\\\"My dear Mr. Bennet,\\\\\" said his lady to him one day, \\\\\"have you heard that Netherfield Park is let at last?\\\\\" Mr. Bennet replied that he had not. \\\\\"But it is,\\\\\" returned she; \\\\\"for Mrs. Long has just been here, and she told me all about it.\\\\\" Mr. Bennet made no answer."
-msgstr "\\\\\"My dear Mr. Bennet,\\\\\" said his lady to him one day, \\\\\"have you heard that Netherfield Park is let at last?\\\\\" Mr. Bennet replied that he had not. \\\\\"But it is,\\\\\" returned she; \\\\\"for Mrs. Long has just been here, and she told me all about it.\\\\\" Mr. Bennet made no answer."
-
-msgid "\\\\xC2\\\\xB7"
-msgstr "\\\\xC2\\\\xB7"
-
+# en-hash: 452444be4c6a56f22e40e23472b8c748
 msgid "about_text"
 msgstr "Storefront је менаџер пакета у KOReader-у за плагине, закрпе и фонтове."
 
+# en-hash: b1f8e4a5ec893d89ea440ddff299c0fc
 msgid "anyone"
 msgstr "bilo ko"
 
+# en-hash: 9639e32cab248434a17ab32237cb3b71
 msgid "btn_apply"
 msgstr "Примени"
 
+# en-hash: 36cf3e1f679e22c5433ff72069545444
 msgid "btn_back"
 msgstr "Назад"
 
+# en-hash: ea4788705e6873b424c65e91c2846b19
 msgid "btn_cancel"
 msgstr "Откажи"
 
+# en-hash: d3d2e617335f08df83599665eef8a418
 msgid "btn_close"
 msgstr "Затвори"
 
+# en-hash: 349838fb1d851d3e2014b9fe39203275
 msgid "btn_install"
 msgstr "Инсталирај"
 
+# en-hash: e0aa021e21dddbd6d8cecec71e9cf564
 msgid "btn_ok"
 msgstr "У реду"
 
+# en-hash: 31fde7b05ac8952dacf4af8a704074ec
 msgid "btn_preview"
 msgstr "Преглед"
 
+# en-hash: 63a6a88c066880c5ac42394a22803ca6
 msgid "btn_refresh"
 msgstr "Освежи"
 
+# en-hash: 5dd03e8d039863e563e049be198c3fd3
 msgid "btn_release_notes"
 msgstr "Белешке о издању"
 
+# en-hash: d8ffc3650a53fc6fa8d38545e68ea687
 msgid "btn_restart"
 msgstr "Поново покрени KOReader"
 
+# en-hash: 6327b4e59f58137083214a1fec358855
 msgid "btn_retry"
 msgstr "Покушај поново"
 
+# en-hash: 13348442cc6a27032d2b4aa28b75a5d3
 msgid "btn_search"
 msgstr "Претражи"
 
+# en-hash: a27dfe771799a09fd55fea73286eb6ab
 msgid "btn_uninstall"
 msgstr "Деинсталирај"
 
+# en-hash: 06933067aafd48425d67bcb01bba5cb6
 msgid "btn_update"
 msgstr "Ажурирај"
 
+# en-hash: 5d5cd268b8acccf04f63d81c5d0d2cab
 msgid "btn_view_details"
 msgstr "Детаљи"
 
+# en-hash: bbdb1b84c8613a1be1923b11899bcc8c
 msgid "confirm_install"
 msgstr "Инсталирати '%s'?"
 
+# en-hash: 50a23dbf9b273a7e0cab4f891e547b10
 msgid "confirm_uninstall"
 msgstr "Деинсталирати '%s'? Ова радња се не може опозвати."
 
+# en-hash: dfa41c893ce5f542c03912db3d4ad362
 msgid "confirm_update"
 msgstr "Ажурирати '%s' са v%s на v%s?"
 
+# en-hash: 075ae3d2fc31640504f814f60e5ef713
 msgid "disabled"
 msgstr "онемогућено"
 
+# en-hash: 733f628800e6308b1644849183455412
 msgid "e.g., koreader"
 msgstr "нпр. koreader"
 
+# en-hash: a10311459433adf322f2590a4987c423
 msgid "enabled"
 msgstr "омогућено"
 
+# en-hash: ac45f3ac988950ed01db115154165bfe
 msgid "err_install_failed"
 msgstr "Инсталација није успела за '%s'."
 
+# en-hash: 961f347bf5a8870fdba8d55abf430777
 msgid "err_network_failed"
 msgstr "Мрежна грешка: Преузимање каталога није успело."
 
+# en-hash: 75a119f679c1502c27ae4eb42fec6ab7
 msgid "err_uninstall_failed"
 msgstr "Деинсталација није успела за '%s'."
 
+# en-hash: a6a2a55bea8760389dfca77132905b7c
 msgid "filter_all"
 msgstr "Све категорије"
 
+# en-hash: 98dd43dfae05b11befe1f140e0ec787a
 msgid "filter_installed"
 msgstr "Инсталирано"
 
+# en-hash: 59ea61e4d9d9255e175f475275becb51
 msgid "filter_updates"
 msgstr "Ажурирања"
 
+# en-hash: 47a282dfe68a42d302e22c4920ed9b5e
 msgid "font"
 msgstr "фонт"
 
+# en-hash: 8ae3b1c71d59d1307a2ccfe7d632e71a
 msgid "ghp_..."
 msgstr "ghp_..."
 
+# en-hash: 3bf3ce19d8fe8a31b9d175e473f696ba
 msgid "header_about"
-msgstr "header_about"
+msgstr "O aplikaciji"
 
+# en-hash: 608900ed06f424f6830232f2c2080b42
 msgid "header_updates"
-msgstr "header_updates"
+msgstr "Ažuriranja"
 
+# en-hash: a517747c3d12f99244ae598910d979c5
 msgid "label_author"
 msgstr "Аутор"
 
+# en-hash: b5a7adde1af5c87d7fd797b6245c2a39
 msgid "label_description"
 msgstr "Опис"
 
+# en-hash: c20c35ef53bf1b70789ce94e66800147
 msgid "label_downloads"
 msgstr "Преузимања"
 
+# en-hash: 794df3791a8c800841516007427a2aa3
 msgid "label_license"
 msgstr "Лиценца"
 
+# en-hash: 33fcf2b3ec4686d9cd06051c726d0ba2
 msgid "label_repository"
 msgstr "Репозиторијум"
 
+# en-hash: 6f6cb72d544962fa333e2e34ce64f719
 msgid "label_size"
 msgstr "Величина"
 
+# en-hash: a1fa27779242b4902f7ae3bdd5c6d508
 msgid "label_type"
 msgstr "Тип"
 
+# en-hash: 34b6cd75171affba6957e308dcbd92be
 msgid "label_version"
 msgstr "Верзија"
 
+# en-hash: 71ccb7a35a452ea8153b6d920f9f190e
 msgid "latest"
 msgstr "најновије"
 
+# en-hash: d8893e5780d1e992fa1b67612a58a15a
 msgid "menu_about"
 msgstr "О Storefront-у"
 
+# en-hash: 2fa906347292074ac66ffc6ddb5574da
 msgid "menu_settings"
 msgstr "Подешавања Storefront-а"
 
+# en-hash: f0dca7e4eaedf573d4664be249845942
 msgid "menu_storefront"
-msgstr "Storefront"
+msgstr "Prodavnica"
 
+# en-hash: 88311e0136525ece02a3ddc403fa9306
 msgid "menu_storefront_desc"
 msgstr "Прегледајте, инсталирајте и ажурирајте плагине, закрпе и фонтове."
 
+# en-hash: 6219fef68ef3c131b9d8a45746d183f1
 msgid "msg_catalog_updated"
 msgstr "Каталог је успешно ажуриран."
 
+# en-hash: ea7009546a19031e6fddcf0ad7e2d5a9
 msgid "msg_installed_plugin"
 msgstr "Додатак „%s“ је инсталиран."
 
+# en-hash: 1ea8b0189bc054c587a78d1b13f5dc9d
 msgid "msg_installed_plugin_version"
 msgstr "Додатак „%s“ (верзија %s) је инсталиран."
 
+# en-hash: 666d2dad00473f02da8e25031ea9c9fa
 msgid "msg_no_results"
 msgstr "Нема резултата претраге."
 
+# en-hash: 22af645d1859cb5ca6da0c484f1f37ea
 msgid "new"
 msgstr "ново"
 
+# en-hash: d8f4a1993546cc4b850cde3599e27aec
 msgid "not found"
 msgstr "није пронађено"
 
+# en-hash: e5c5e6dae38b284e8cf0bd1fb0efac03
 msgid "patch"
 msgstr "закрпа"
 
+# en-hash: a24bcf2198b1b13ad985304483f7f324
 msgid "plugin"
 msgstr "додатак"
 
+# en-hash: c360639f51cb2625a9439974e865a683
 msgid "progress_please_wait"
 msgstr "Сачекајте"
 
+# en-hash: ffed49d9612d727a79f49a2a024f8c14
 msgid "prompt_restart_needed"
 msgstr "Инсталација је завршена. Поново покренути KOReader да бисте омогућили '%s'?"
 
+# en-hash: 469baadc4a21365596e9733f122d0d19
 msgid "release asset"
 msgstr "datoteka izdanja"
 
+# en-hash: 7fe46288d821fce32e4f247000aab961
 msgid "release is newer by date"
 msgstr "izdanje je novije po datumu"
 
+# en-hash: 923e1e6300d2ab90858681d6aa53e7c6
 msgid "remote is newer by date"
 msgstr "udaljena verzija je novija po datumu"
 
+# en-hash: b3f2035551f6e48c67489ace9f588f94
 msgid "repository"
 msgstr "спремиште"
 
+# en-hash: fe1cf176acd521dda7c2ef219171a5da
 msgid "search_hint"
 msgstr "Претражи у storefront-у..."
 
+# en-hash: f09090e6eca8bb5cc1a878687719625a
 msgid "status_builtin"
 msgstr "Уграђено"
 
+# en-hash: 96c4d7265c89a6e0ed70ffec22fb1afe
 msgid "status_downloading"
 msgstr "Преузимање..."
 
+# en-hash: 98dd43dfae05b11befe1f140e0ec787a
 msgid "status_installed"
 msgstr "Инсталирано"
 
+# en-hash: b9940e6be68b04502240b4d9dcadf31f
 msgid "status_installing"
 msgstr "Инсталирање..."
 
+# en-hash: ddd8eef6f86868a07f62b0e3810711f0
 msgid "status_not_installed"
 msgstr "Није инсталирано"
 
+# en-hash: d698f29bd76283937c7834415ffc0d7d
 msgid "status_uninstalling"
 msgstr "Деинсталирање..."
 
+# en-hash: 8bd7695831e104e2669e086e03927a20
 msgid "status_update_available"
 msgstr "Доступно ажурирање"
 
+# en-hash: f0dca7e4eaedf573d4664be249845942
 msgid "storefront_title"
-msgstr "Storefront"
+msgstr "Prodavnica"
 
+# en-hash: b1c94ca2fbc3e78fc30069c8d0f01680
 msgid "tab_all"
 msgstr "Све"
 
+# en-hash: 59c4ad3f3cb3d812d68fab7a354d4a63
 msgid "tab_fonts"
 msgstr "Фонтови"
 
+# en-hash: c4d283323af70979073f5cb6145f3a4b
 msgid "tab_patches"
 msgstr "Закрпе"
 
+# en-hash: bb38096ab39160dc20d44f3ea6b44507
 msgid "tab_plugins"
 msgstr "Плагини"
 
+# en-hash: c47c7c7383225ab55ff591cb59c41e6b
 msgid "tab_readme"
 msgstr "Pročitaj me"
 
+# en-hash: 83936a3f80ba44c78c9911f5445f2994
 msgid "tab_sample_text"
 msgstr "Primer teksta"
 
+# en-hash: cb95f5f307c64043351b5125571b350a
 msgid "tab_screensavers"
 msgstr "Позадине"
 
+# en-hash: 9e69db6d28a0ec32d28e2c9e327fd40a
 msgid "tab_versions"
 msgstr "Verzije"
 
+# en-hash: ad921d60486366258809553a3db49a4a
 msgid "unknown"
 msgstr "непознато"
 
+# en-hash: dad0a0e6e89b494d132708b10a6487fb
 msgid "updated %s"
 msgstr "ажурирано %s"
 
+# en-hash: 4fb9820991bd18f6c55eb72a24b1c411
 msgid "updated %s (%s)"
 msgstr "ажурирано %s (%s)"
 
+# en-hash: 176848afabe6f93c3e23a470037ab74f
 msgid "·"
 msgstr "·"
 
+# en-hash: a565c660107f7ea24918e8be382b38bd
 msgid "≥ %s ⭐"
 msgstr "≥ %s ⭐"
 
+# en-hash: 9f636722b704a35440a8446070c2fcb0
 msgid "★ ACTIVE"
 msgstr "★ АКТИВНО"
 
+# en-hash: decf3b69778962bc18d9771802e3a3f2
 msgid "⚙ Settings"
 msgstr "⚙ Подешавања"
 
-msgid "⚙ Settings..."
-msgstr "⚙ Подешавања..."
-
+# en-hash: 55930f171c863808f8dba67599ec1d70
 msgid "✓ Current"
 msgstr "✓ Trenutno"
-
-msgid "Downloading…"
-msgstr ""
-
-msgid "Download cancelled."
-msgstr ""
-
-msgid "Batch update cancelled."
-msgstr ""
-
-msgid "Connecting…"
-msgstr ""
 

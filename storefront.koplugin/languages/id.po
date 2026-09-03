@@ -5,2286 +5,2827 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
+# en-hash: 8b58398aa916952e63218ac09281abb5
 msgid "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard that Netherfield Park is let at last?\" Mr. Bennet replied that he had not. \"But it is,\" returned she; \"for Mrs. Long has just been here, and she told me all about it.\" Mr. Bennet made no answer."
 msgstr "\"Suamiku Mr. Bennet yang baik,\" kata istrinya suatu hari, \"sudahkah Anda mendengar bahwa Netherfield Park akhirnya disewakan?\" Mr. Bennet menjawab belum. \"Tapi memang sudah,\" balasnya; \"karena Mrs. Long baru saja dari sini, dan menceritakan semuanya kepadaku.\" Mr. Bennet tidak menjawab."
 
+# en-hash: 96283be084215c5b7fc00521037f20b3
 msgid "%d Categories"
 msgstr "%d Kategori"
 
-msgid "%d items"
-msgstr "%d item"
-
+# en-hash: 7c23d2c4c06ff10d27bdaad6897814f6
 msgid "%d patches"
 msgstr "%d tambalan"
 
+# en-hash: c60876d1e8b218886df752b4fa8c7bad
 msgid "%d plugins"
 msgstr "%d plugin"
 
+# en-hash: fa6eebde796e7a0cd580534b810334a7
 msgid "%d wallpapers"
 msgstr "%d wallpaper"
 
+# en-hash: 6e1b6414c34df5efe842362cbf885e9f
+msgid "%d wallpapers found in this folder"
+msgstr "%d wallpaper ditemukan di folder ini"
+
+# en-hash: 0da3020f112f6cd08658e294198c9c89
 msgid "%d wallpapers stored on device"
 msgstr "%d wallpaper disimpan di perangkat"
 
+# en-hash: a7b505048595a0e087b654ac78c21366
 msgid "%d wallpapers · Folder Shuffle (all in rotation)"
 msgstr "%d wallpaper · Acak Folder (semua berputar)"
 
+# en-hash: 4cb52a5d104340ee5096ff0c9256f8e5
 msgid "%d wallpapers · Mode: Book Cover"
 msgstr "%d wallpaper · Mode: Sampul Buku"
 
+# en-hash: 31e9831ff2c4b2a11920333cae5cc350
 msgid "%d wallpapers · Single mode active"
 msgstr "%d wallpaper · Mode tunggal aktif"
 
+# en-hash: 15fd4d0b221f644846168f217c6f9f9b
 msgid "%s and %s"
 msgstr "%s dan %s"
 
+# en-hash: 77e9779a1de07d854ee4db9ffbd7c854
 msgid "%s is up to date (version %s)."
 msgstr "%s sudah terbaru (versi %s)."
 
+# en-hash: 6837c7d74a6273ec361dfa5576ac324e
 msgid "%s is up to date."
 msgstr "%s sudah yang terbaru."
 
+# en-hash: 8057f0d063a74d07aef5fce030cc7ff0
 msgid "%s needs an update."
 msgstr "%s memerlukan pembaruan."
 
+# en-hash: 481a0c4b9817d80bf6a836a39441b9b5
 msgid "%s · %d files"
 msgstr "%s · %d file"
 
+# en-hash: 2f32645de7a4769c6310a98cc38d9a74
 msgid "%s · 1 file"
-msgstr "%s · 1 file"
+msgstr "%s · 1 berkas"
 
+# en-hash: 83fd20d49deb849e4b9df60c50c9e67e
 msgid "(fork)"
 msgstr "(fork)"
 
+# en-hash: a122476080135dddfadec5a2bc576873
 msgid "(showing %d of %d commits)"
 msgstr "(menampilkan %d dari %d komit)"
 
+# en-hash: 2722ddcbfd20786cc8715dac74c0531a
 msgid "+ Add to Shuffle Pool"
 msgstr "+ Tambahkan ke Acak"
 
+# en-hash: 4bc56877a98a3b5f59735f579cf735a6
+msgid "+ New"
+msgstr "+ Baru"
+
+# en-hash: d28fdd75f93893891fb2d7e3b40683de
+msgid ".. (Parent Folder)"
+msgstr ".. (Folder Induk)"
+
+# en-hash: 6b2d75cc5eb0ea8c7fdf5686d758947a
 msgid "1 / 1"
 msgstr "1 / 1"
 
+# en-hash: f22f39e15c8f1579ba49d528da2ceef5
 msgid "1 patch"
 msgstr "1 tambalan"
 
+# en-hash: 8848b53275f0757ec5174d00d36fa107
 msgid "1 plugin"
 msgstr "1 plugin"
 
+# en-hash: 36cf3e1f679e22c5433ff72069545444
 msgid "< Back"
 msgstr "< Kembali"
 
+# en-hash: d460ec1b52f16b50d55978c3d4bfdc97
 msgid "< Prev"
 msgstr "< SBLM"
 
+# en-hash: d1457b72c3fb323a2671125aef3eab5d
 msgid "?"
 msgstr "?"
 
+# en-hash: b9afad882e91ad086f4f7ae1d7df0288
 msgid "A -> Z"
 msgstr "A -> Z"
 
+# en-hash: 2bea5bec151d7f0543222a3fed8567cd
 msgid "A → Z"
 msgstr "A → Z"
 
+# en-hash: 8f7f4c1ce7a4f933663d10543562b096
 msgid "About"
 msgstr "Tentang"
 
+# en-hash: d8893e5780d1e992fa1b67612a58a15a
 msgid "About Storefront"
 msgstr "Tentang Storefront"
 
+# en-hash: 9aa86bfc5b56a85d8df84a3b8808cd27
 msgid "Active Single"
 msgstr "Tunggal Aktif"
 
+# en-hash: bda5dcfc5c6a544bb9dd8ede06326bff
 msgid "Active Wallpaper ✓"
 msgstr "Wallpaper Aktif ✓"
 
+# en-hash: 6a627cfbd72c22a29a09760de6332d6c
 msgid "Active: %s"
 msgstr "Aktif: %s"
 
+# en-hash: 5c2154e81bf037e98dcada16b3f7b855
 msgid "Add to Shuffle"
 msgstr "Tambah ke Acak"
 
-msgid "Add to Shuffle Pool (Enable Shuffle)"
-msgstr "Tambah ke Kolam Acak (Aktifkan Acak)"
-
+# en-hash: f50b510e22815838c4d2d12e1d79bddf
 msgid "Added to shuffle pool & Folder Shuffle enabled!"
 msgstr "Ditambahkan ke daftar acak & putar acak diaktifkan!"
 
+# en-hash: b1c94ca2fbc3e78fc30069c8d0f01680
 msgid "All"
 msgstr "Semua"
 
+# en-hash: 4835fd4c5b4a4bb13a5279aaa440169d
 msgid "All Caches"
 msgstr "Semua Cache"
 
+# en-hash: a6a2a55bea8760389dfca77132905b7c
 msgid "All Categories"
 msgstr "Semua Kategori"
 
+# en-hash: 90b2f7433dcfc30b034860cef231c65e
 msgid "All Types"
 msgstr "Semua Tipe"
 
+# en-hash: 26cb53ddd2a92b3c12441f2ef14dddfe
 msgid "All items are up to date."
 msgstr "Semua item sudah terbaru."
 
+# en-hash: 74b5ba3a2b04019147114dcd4faa63d3
 msgid "All of your custom plugin folders are currently hidden (see Manage plugin paths). Install to the default plugin folder anyway?"
 msgstr "Semua folder plugin kustom Anda saat ini disembunyikan (lihat Kelola jalur plugin). Tetap pasang ke folder plugin bawaan?"
 
+# en-hash: e5b2ab04ccca28bb40e0f2798adeee89
 msgid "All patches"
 msgstr "Semua patch"
 
+# en-hash: 252b0b491fd81591620e237146bdee45
 msgid "All plugins"
 msgstr "Semua plugin"
 
+# en-hash: 2bf227129d5e962d93d1e35b024b9640
 msgid "All plugins are already matched."
 msgstr "Semua plugin sudah dicocokkan."
 
+# en-hash: 6836fa6186eda79c3e6b4e081e1e3af7
 msgid "Allow pre-release updates"
 msgstr "Izinkan pembaruan pra-rilis"
 
+# en-hash: 29a3b0c5f095a3d83a0f4db80abde080
 msgid "Alphabet & Numbers"
 msgstr "Alfabet & Angka"
 
+# en-hash: 48e0275016325dd3e427457844634dee
 msgid "Also delete plugin settings"
 msgstr "Hapus juga pengaturan plugin"
 
-msgid "Always install here (don"
-msgstr "Selalu pasang di sini (ja"
-
+# en-hash: e026151fe5c4615b8b062d26222339ce
 msgid "Always install here (don't ask again)"
 msgstr "Selalu pasang di sini (jangan tanyakan lagi)"
 
+# en-hash: ed36a1ef76a59ee3f15180e0441188ad
 msgid "Any"
 msgstr "Semua"
 
+# en-hash: c3ea5744c196b11b2d0ee24b1474f0a0
 msgid "App Store · Installed patches"
 msgstr "App Store · Tambalan terpasang"
 
+# en-hash: 3a07742798b3fef4f6561f18e447cb4c
 msgid "App Store · Installed plugins"
 msgstr "Toko Aplikasi · Plugin terpasang"
 
+# en-hash: 9639e32cab248434a17ab32237cb3b71
 msgid "Apply"
 msgstr "Terapkan"
 
+# en-hash: 722c4b9ffb24735792c14251f8d6c824
 msgid "Assets — %s"
 msgstr "Aset — %s"
 
+# en-hash: a517747c3d12f99244ae598910d979c5
 msgid "Author"
 msgstr "Penulis"
 
+# en-hash: 0557fa923dcee4d0f86b1409f5c2167f
 msgid "Back"
 msgstr "Kembali"
 
+# en-hash: 13f086bd019ffc0087d70b2eb74a0021
+msgid "Batch update cancelled."
+msgstr "Pembaruan massal dibatalkan."
+
+# en-hash: 0b87d66b88c72957dfea8c9605016442
 msgid "Beta"
 msgstr "Beta"
 
+# en-hash: 7a03bed65584ba9152e4b2955f52a6d5
 msgid "Black Fill"
 msgstr "Isian Hitam"
 
+# en-hash: e4ef81cce7e4e10033ebb10962dfdd5e
 msgid "Blank"
 msgstr "Kosong"
 
+# en-hash: 03ea37a723d863ca6c1918209c5c1a6f
 msgid "Book Cover"
 msgstr "Sampul Buku"
 
+# en-hash: 64a05ab3190946ed2cad23d79eb426cf
 msgid "Border Fill / Background"
 msgstr "Isian Tepi / Latar Belakang"
 
+# en-hash: b2ac03f07c134d4a823d4b8dc55699b1
 msgid "Both owner and repository name are required."
 msgstr "Pemilik dan nama repositori wajib diisi."
 
+# en-hash: 52fc24b91c11bee9a8ca2aa275f0af46
 msgid "Branch: %s"
 msgstr "Cabang: %s"
 
+# en-hash: 261dba00113a7f7e9754902b83293f85
 msgid "Browse Wallpapers in Storefront"
 msgstr "Jelajahi Wallpaper di Storefront"
 
+# en-hash: 2520852b211aecbd3c50faecf65d7725
 msgid "By "
 msgstr "By"
 
+# en-hash: 3c4904141f6211c6188585a06afce590
 msgid "By: %s"
 msgstr "Oleh: %s"
 
+# en-hash: b704cea49849610d116c424c22fde68c
 msgid "Cache empty. Refresh to retrieve repositories."
 msgstr "Tembolok kosong. Segarkan untuk mengambil repositori."
 
+# en-hash: e04a3d6e93fc19fedf05dc814b4d788e
 msgid "Cache is older than a week, consider refreshing."
 msgstr "Tembolok lebih lama dari seminggu, pertimbangkan untuk menyegarkan."
 
+# en-hash: 220aae231e667a518bacbf342edd05f2
 msgid "Cached %s patch repositories."
 msgstr "Menyimpan %s repositori tambalan ke tembolok."
 
+# en-hash: 2ef4327a8f0a164f2b44d320cdd581f1
 msgid "Cached %s plugins."
 msgstr "Menyimpan %s plugin ke tembolok."
 
-msgid "Can"
-msgstr "Bisa"
-
+# en-hash: bac5ba8e1c46212203ff0b78f54091f9
 msgid "Can't load readme...."
 msgstr "Tidak dapat memuat readme...."
 
+# en-hash: ea4788705e6873b424c65e91c2846b19
 msgid "Cancel"
 msgstr "Batal"
 
+# en-hash: a824e7a25d1ffe6f20250e487a859f38
 msgid "Cancel matching"
 msgstr "Batalkan pencocokan"
 
+# en-hash: b73f6a7b52845e67dcb6adbad1b2ca63
 msgid "Cannot read source file."
 msgstr "Gagal membaca berkas sumber."
 
+# en-hash: 70fa579c3561b15b9d212e60431a050c
 msgid "Cannot write destination file."
 msgstr "Gagal menulis berkas tujuan."
 
+# en-hash: d204ef2d8d79afda131b1fc21a677416
 msgid "Catalog & Cache"
 msgstr "Katalog & Cache"
 
+# en-hash: cca9b8e583b2870d117efee0c14b97ad
 msgid "Catalog refresh failed: "
 msgstr "Gagal memperbarui katalog: "
 
+# en-hash: d08b63f6583dcd5bb36142564f1b3ff4
 msgid "Catalog refresh is already in progress in the background."
 msgstr "Penyegaran katalog sedang berjalan di latar belakang."
 
+# en-hash: 5f83265800ab3a842101d5d67ea875ce
 msgid "Catalog refreshed successfully."
 msgstr "Katalog berhasil diperbarui."
 
+# en-hash: 646e1f1324e200b3910e35ea3f015960
 msgid "Catalog source"
 msgstr "Sumber katalog"
 
+# en-hash: d9c3997833636a589e7e5194bdee5d13
 msgid "Catalog updated: %d plugins, %d patches, %d fonts."
 msgstr "Katalog diperbarui: %d plugin, %d tambalan, %d font."
 
+# en-hash: af1b98adf7f686b84cd0b443e022b7a0
 msgid "Categories"
 msgstr "Kategori"
 
+# en-hash: cd10ba27bfc09acaa0262499736d9e27
 msgid "Category: "
 msgstr "Kategori: "
 
+# en-hash: b791ad0e25f7d1cacd59e723d4b9170d
 msgid "Category: %s"
 msgstr "Kategori: %s"
 
+# en-hash: a8a120c0fc72dea549de21988700415b
 msgid "Change..."
 msgstr "Ubah..."
 
-msgid "Changelog for %s\n%s \\\\xE2\\\\x86\\\\x92 %s"
-msgstr "Changelog for %s\n%s \\\\xE2\\\\x86\\\\x92 %s"
-
+# en-hash: f2fe0cf2f0f795d65316611894a68e7b
 msgid "Changelog for %s\n%s → %s"
 msgstr "Catatan perubahan untuk %s\n%s → %s"
 
-msgid "Changelog for %s\\\n%s \\\\xE2\\\\x86\\\\x92 %s"
-msgstr "Changelog for %s\\\n%s \\\\xE2\\\\x86\\\\x92 %s"
-
+# en-hash: 4f52ad17d9ef55d023b50ecf6c5ac7c3
 msgid "Changelog: %s"
 msgstr "Log perubahan: %s"
 
+# en-hash: f601e13e28ad92635fc93e879040c3ff
 msgid "Check Updates"
 msgstr "Periksa"
 
+# en-hash: 336133d7ab5cf683cbc061bd313f7ef5
 msgid "Check all updates"
 msgstr "Periksa semua pembaruan"
 
+# en-hash: eb1b4bb3667dd670210c7822badc2f1d
 msgid "Check for updates"
 msgstr "Periksa pembaruan"
 
+# en-hash: cc223fd29f9aaed67d7dea9ef0062e01
 msgid "Check this patch"
 msgstr "Periksa tambalan ini"
 
+# en-hash: 42bffd543675fd6b14d43433a1f54d74
 msgid "Check this plugin"
 msgstr "Periksa plugin ini"
 
+# en-hash: bef1c1287016253dd146f119c597a2f5
 msgid "Checked %d patches: %d need updates, %d up to date."
 msgstr "Memeriksa %d tambalan: %d perlu pembaruan, %d sudah terbaru."
 
-msgid "Checked %d plugin updates"
-msgstr "Diperiksa %d pembaruan plugin"
-
+# en-hash: 758fb20a7a4707a5703fe4fc3e3c49ad
 msgid "Checked %d plugin(s) for updates."
 msgstr "Memeriksa pembaruan %d plugin."
 
+# en-hash: 11f27528042aaf4401908c7fc54cec47
 msgid "Checking %s…"
 msgstr "Memeriksa %s…"
 
-msgid "Checking for Storefront updates..."
-msgstr "Memeriksa pembaruan Storefront..."
-
+# en-hash: 7118db6345de1b977663e915f6677b37
 msgid "Checking for Storefront updates…"
 msgstr "Memeriksa pembaruan Storefront…"
 
+# en-hash: e5b70ed328221d5061aada98031aad43
 msgid "Checking patch updates…"
 msgstr "Memeriksa pembaruan patch…"
 
-msgid "Checking plugin updates"
-msgstr "Memeriksa pembaruan plugin"
-
+# en-hash: 010600e4b0c20b08887a141c471a517f
 msgid "Checking plugin updates…"
 msgstr "Memeriksa pembaruan plugin…"
 
+# en-hash: 118d059b31b7c7d0fafb1c9e3372df83
 msgid "Choose Build — %s"
 msgstr "Pilih Build — %s"
 
-msgid "Clean"
-msgstr "Bersihkan"
-
+# en-hash: dc30bc0c7914db5918da4263fce93ad2
 msgid "Clear"
 msgstr "Bersihkan"
 
+# en-hash: e77fef0167598bb39846637ac3915f4e
 msgid "Clear All"
 msgstr "Hapus Semua"
 
+# en-hash: b18b24242a525f622bf5cafb2bfddaf3
 msgid "Clear All Caches?"
 msgstr "Hapus Semua Cache?"
 
+# en-hash: 06f4f7bd90b1c8a0145d18ee55c265c4
 msgid "Clear Cache"
 msgstr "Hapus Cache"
 
+# en-hash: ab5089d6920b15835d14854bcddedbe1
 msgid "Clear README Cache?"
 msgstr "Hapus Cache README?"
 
-msgid "Clear README cache"
-msgstr "Hapus cache README"
-
-msgid "Clear README cache (%s)?\nCached README files and images will be deleted."
-msgstr "Clear README cache (%s)?\nCached README files and images will be deleted."
-
+# en-hash: 95ba1adacfca638552f18e47e554e862
 msgid "Clear Thumbnail Cache?"
 msgstr "Hapus Cache Gambar Mini?"
 
+# en-hash: 48ffbb73be4022ca2bd00a2f8bc66c95
 msgid "Clear Wiki Cache?"
 msgstr "Hapus Cache Wiki?"
 
-msgid "Clear Wiki cache (%s)?\nCached wiki articles and images will be deleted."
-msgstr "Clear Wiki cache (%s)?\nCached wiki articles and images will be deleted."
-
-msgid "Clear all cached data (%s)?\nAll README files, wiki articles, and thumbnails will be deleted."
-msgstr "Clear all cached data (%s)?\nAll README files, wiki articles, and thumbnails will be deleted."
-
+# en-hash: ad757205c456c36c26d814e507bdcc6c
 msgid "Clear cache…"
 msgstr "Hapus Cache"
 
-msgid "Clear screensaver thumbnail cache (%s)?\nThumbnails will be re-downloaded when viewing wallpapers."
-msgstr "Clear screensaver thumbnail cache (%s)?\nThumbnails will be re-downloaded when viewing wallpapers."
-
+# en-hash: fe1c7dc8e530f67b130a7d3e842acb52
 msgid "Clear search & filters"
 msgstr "Hapus pencarian & filter"
 
+# en-hash: 94eed90d63cb191df80e1bfc38925891
 msgid "Clear search/filters"
 msgstr "Hapus pencarian/filter"
 
+# en-hash: 8696495aca7893ed2fccd70681de9d85
 msgid "Cleared README cache (%s freed)."
-msgstr "Cleared README cache (%s freed)."
+msgstr "Cache README dibersihkan (%s dibebaskan)."
 
+# en-hash: 3b72575672cb16e936cb35133f121b78
 msgid "Cleared Wiki cache (%s freed)."
-msgstr "Cleared Wiki cache (%s freed)."
+msgstr "Cache Wiki dibersihkan (%s dibebaskan)."
 
+# en-hash: 3d7a21e1da5ad3d37e4c4bd71be1bc47
 msgid "Cleared all caches (%s freed, %d files)."
-msgstr "Cleared all caches (%s freed, %d files)."
+msgstr "Semua cache dibersihkan (%s dibebaskan, %d berkas)."
 
+# en-hash: ee67ba4390450a1a5e45ac52eeeb86fc
 msgid "Cleared screensaver thumbnails (%s freed)."
-msgstr "Cleared screensaver thumbnails (%s freed)."
+msgstr "Thumbnail screensaver dibersihkan (%s dibebaskan)."
 
+# en-hash: d3d2e617335f08df83599665eef8a418
 msgid "Close"
 msgstr "Tutup"
 
+# en-hash: d15b505cce09406de9f918cb1f8c641c
 msgid "Collection"
 msgstr "Koleksi"
 
+# en-hash: 981f1fd40dea380931dd17cee90acc30
 msgid "Commit diff: %s → %s"
 msgstr "Perbedaan komit: %s → %s"
 
-msgid "Commits: %s \\\\xE2\\\\x86\\\\x92 %s"
-msgstr "Commits: %s \\\\xE2\\\\x86\\\\x92 %s"
-
+# en-hash: 23b31366190a2a573a9a590f599770f0
 msgid "Commits: %s → %s"
 msgstr "Komit: %s → %s"
 
+# en-hash: 7d61983c34edc2a8cabbea71c4732f62
 msgid "Community"
 msgstr "Komunitas"
 
+# en-hash: fdd273d186bb6db8f5f2c72285324aec
 msgid "Config files only"
 msgstr "Hanya berkas konfigurasi"
 
+# en-hash: b768b282a095ca076c89bc7b3eced067
 msgid "Configured ✓"
 msgstr "Terkonfigurasi ✓"
 
+# en-hash: 70d9be9b139893aa6c69b5e77e614311
 msgid "Confirm"
 msgstr "Konfirmasi"
 
+# en-hash: 38cb30607aeadf3f4c7d4f422ee2de9a
 msgid "Confirm Update"
 msgstr "Konfirmasi Pembaruan"
 
+# en-hash: a8c0594bc89b6ef94014b5223dc35ddc
 msgid "Confirm Update All"
 msgstr "Konfirmasi Perbarui Semua"
 
+# en-hash: c85b3d1d3702a046bab4caeeb4e55f64
 msgid "Connecting to GitHub…\n\nPlease wait."
 msgstr "Menghubungkan ke GitHub…\n\nMohon tunggu."
 
-msgid "Connecting to GitHub…\\\n\\\nPlease wait."
-msgstr "Connecting to GitHub…\\\n\\\nPlease wait."
+# en-hash: 182e7eda4e721ad00737460b88701dee
+msgid "Connecting…"
+msgstr "Menghubungkan…"
 
+# en-hash: a0bfb8e59e6c13fc8d990781f77694fe
 msgid "Continue"
 msgstr "Lanjutkan"
 
-msgid "Copied to "
-msgstr "Disalin ke "
-
+# en-hash: be355b8923591f9c64120839ed0fa3f2
 msgid "Copied to '%s'."
 msgstr "Disalin ke '%s'."
 
+# en-hash: 5fb63579fc981698f97d55bfecb213ea
 msgid "Copy"
 msgstr "Salin"
 
+# en-hash: 5cd829641ededb8420ab25d5c3ad13b4
 msgid "Copy file as"
 msgstr "Salin berkas sebagai"
 
+# en-hash: 192d4ff36cce1dd9d398af567162b5ad
 msgid "Could not detect .koplugin folder in archive"
 msgstr "Folder .koplugin tidak terdeteksi dalam arsip"
 
+# en-hash: 8b4f90cf7829bf588a67afa2dbcd691b
 msgid "Could not detect plugin inside archive."
 msgstr "Tidak dapat mendeteksi plugin di dalam arsip."
 
+# en-hash: 72ae81f8bda1220d8b574180c62788fc
 msgid "Could not fetch commit comparison."
 msgstr "Tidak dapat mengambil perbandingan komit."
 
+# en-hash: 47fd11aaaabf931f38b53f39071589bb
 msgid "Could not fetch releases for changelog."
 msgstr "Tidak dapat mengambil rilis untuk catatan perubahan."
 
+# en-hash: 7fbfc9712a318a4e46cc00fedf205b44
 msgid "Could not fetch releases for this repository."
 msgstr "Gagal mengambil rilis untuk repositori ini."
 
+# en-hash: 7ebb1e00943becb4ef83e628f1a9b592
 msgid "Could not locate plugin folder (_meta.lua) in archive."
 msgstr "Tidak dapat menemukan folder plugin (_meta.lua) dalam arsip."
 
-msgid "Could not open target file for writing"
-msgstr "Tidak dapat membuka berkas target untuk ditulis"
+# en-hash: 686e697538050e4664636337cc3b834f
+msgid "Create"
+msgstr "Buat"
 
+# en-hash: 96cb7ae49077c528192c2bba40c42c69
+msgid "Create subfolder in '%s':"
+msgstr "Buat subfolder di '%s':"
+
+# en-hash: e6818edb27f4a7711ea452befaa5efd4
+msgid "Created '%s'"
+msgstr "Berhasil membuat '%s'"
+
+# en-hash: 691494205febafc531e883e2eea58253
+msgid "Custom folder"
+msgstr "Folder kustom"
+
+# en-hash: 7a1920d61156abc05a60135aefe8bc67
 msgid "Default"
 msgstr "Bawaan"
 
+# en-hash: f81cc86be84ce5cb6340aa87e3bd5951
+msgid "Default folder"
+msgstr "Folder bawaan"
+
+# en-hash: 20d0ac231664346c8c5c2d0e62cae022
 msgid "Default only"
 msgstr "Default saja"
 
+# en-hash: f2a6c498fb90ee345d997f888fce3b18
 msgid "Delete"
 msgstr "Hapus"
 
-msgid "Delete "
-msgstr "Hapus"
-
+# en-hash: f62a1cb3aae94e380202902991b72365
 msgid "Delete '%s' from your device?"
 msgstr "Hapus '%s' dari perangkat Anda?"
 
+# en-hash: 01549534db8a76c8672f90efa6e40c12
 msgid "Delete File?"
 msgstr "Hapus File?"
 
+# en-hash: c1f18f6ad330d59f486fc731946419c3
 msgid "Delete Wallpaper?"
 msgstr "Hapus Wallpaper?"
 
+# en-hash: 7f7c7a10f4d60e1d09c4f87e8673b628
 msgid "Delete all cached README files? They will be re-downloaded on demand."
 msgstr "Hapus semua berkas README yang tersimpan di tembolok? Berkas akan diunduh ulang saat dibutuhkan."
 
-msgid "Delete file "
-msgstr "Hapus berkas "
-
+# en-hash: e17fae40f782a9317818bea081c40854
 msgid "Delete file '%s'?\n\nThis cannot be undone."
 msgstr "Hapus berkas '%s'?\n\nTindakan ini tidak dapat dibatalkan."
 
-msgid "Delete font "
-msgstr "Hapus font "
-
+# en-hash: 81b0d387edb4912fe59443537bf3f87d
 msgid "Delete font '%s'?"
 msgstr "Hapus font '%s'?"
 
-msgid "Delete from Device"
-msgstr "Hapus dari Perangkat"
-
+# en-hash: af30128be8f8e067bb2ffd2fc477441e
 msgid "Delete patch"
 msgstr "Hapus patch"
 
-msgid "Delete patch "
-msgstr "Hapus tambalan "
-
+# en-hash: ac6a3071c7803085d4fb716526f6d478
 msgid "Delete patch '%s'?"
 msgstr "Hapus tambalan '%s'?"
 
+# en-hash: 1f000fabbc9da9aeed21999cb1d519d2
 msgid "Delete plugin"
 msgstr "Hapus plugin"
 
-msgid "Delete plugin "
-msgstr "Hapus plugin "
-
+# en-hash: 2fb5caa8680f8aba166fc7b75ee6b7e9
 msgid "Delete plugin '%s'?"
 msgstr "Hapus plugin '%s'?"
 
-msgid "Deleted "
-msgstr "Dihapus "
-
+# en-hash: cf19afa8a32af7f7af9b34bba1fe4166
 msgid "Deleted %d cached README file(s)."
 msgstr "Berhasil menghapus %d berkas README tersimpan."
 
+# en-hash: 85edd2d8dcb3e43ac08a884f85cc1d8b
 msgid "Deleted %d cached README file(s); %d failed."
 msgstr "Berhasil menghapus %d berkas README tersimpan; %d gagal."
 
+# en-hash: 7c0668416ca1af5823373e21618402ee
 msgid "Deleted '%s'."
 msgstr "'%s' dihapus."
 
+# en-hash: d76149b30a3ec56e39b839c43f7356e1
 msgid "Direct GitHub API"
 msgstr "API GitHub Langsung"
 
+# en-hash: bcfaccebf745acfd5e75351095a5394a
 msgid "Disable"
 msgstr "Nonaktifkan"
 
+# en-hash: 880906edcd787681e8b20bcb3f911366
 msgid "Disable patch"
 msgstr "Nonaktifkan patch"
 
+# en-hash: 6b31659dc0e2d6dee04a585454805b13
 msgid "Disable plugin"
 msgstr "Nonaktifkan plugin"
 
+# en-hash: b9f5c797ebbf55adccdd8539a65a0241
 msgid "Disabled"
 msgstr "Dinonaktifkan"
 
+# en-hash: 9cbc24d23b943fe4b092e79dd82948e2
 msgid "Display Options"
 msgstr "Opsi Tampilan"
 
+# en-hash: 0e7fb0120dbc22544e29ac9db3387fd5
 msgid "Displays a static wallpaper on sleep"
 msgstr "Menampilkan wallpaper statis saat tidur"
 
-msgid "Displays a static wallpaper on sleep.\nActive: %s"
-msgstr "Menampilkan wallpaper statis saat tidur.\nAktif: %s"
-
+# en-hash: f92965e2c8a7afb3c1b9a5c09a263636
 msgid "Done"
 msgstr "Selesai"
 
+# en-hash: 938a7f69f98b48f241a295717988ac23
 msgid "Download & Set Active"
 msgstr "Unduh & Terapkan"
 
+# en-hash: dce92c8cef805e9f91cd8d2c005f0f46
 msgid "Download Only"
 msgstr "Unduh Saja"
 
-msgid "Download Only (Save to Device)"
-msgstr "Unduh Saja (Simpan ke Perangkat)"
+# en-hash: 255cab4412ab57cd80daf9583400c221
+msgid "Download cancelled."
+msgstr "Unduhan dibatalkan."
 
+# en-hash: 59d30102eb8d3c0c8b031e08a28acd28
 msgid "Download failed: "
 msgstr "Unduhan gagal: "
 
+# en-hash: d804b94245bde55be9d4ffca062a5bf8
 msgid "Download options"
 msgstr "Opsi unduhan"
 
+# en-hash: 764e067c9ef23f5cf2f2bc5f878b4c21
 msgid "Download options — %s"
 msgstr "Opsi unduhan — %s"
 
+# en-hash: 7d3fa636928d0df549cd855a7386d3af
 msgid "Download options — %s (%s)"
 msgstr "Opsi unduhan — %s (%s)"
 
-msgid "Downloading "
-msgstr "Downloading..."
+# en-hash: 8108a1e1d020224c8b28fe992bfd63ee
+msgid "Downloading %s%s…\nTap screen to cancel."
+msgstr "Mengunduh %s%s…\nKetuk layar untuk membatalkan."
 
-msgid "Downloading %s%s…\nThis may take a moment."
-msgstr "Mengunduh %s%s…\nIni mungkin memerlukan waktu sejenak."
-
-msgid "Downloading %s%s…\\\nThis may take a moment."
-msgstr "Downloading %s%s…\\\nThis may take a moment."
-
+# en-hash: aec53a66ffe56182ba4a5dcf0e90a275
 msgid "Downloading %s…"
 msgstr "Mengunduh %s…"
 
+# en-hash: bf333add6ef5f765468ff1b2cbec283f
+msgid "Downloading %s…\nTap screen to cancel."
+msgstr "Mengunduh %s…\nKetuk layar untuk membatalkan."
+
+# en-hash: 40b54ae3bc8f5d993db643fedae24bd9
 msgid "Downloading '%s'..."
-msgstr "Downloading '%s'..."
+msgstr "Mengunduh '%s'..."
 
-msgid "Downloading patch \"%s\"…"
-msgstr "Mengunduh patch \"%s\"…"
+# en-hash: f490482ce2ff5bead6981f706fbde169
+msgid "Downloading patch %s%s…\nTap screen to cancel."
+msgstr "Mengunduh tambalan %s%s…\nKetuk layar untuk membatalkan."
 
-msgid "Downloading patch %s…"
-msgstr "Mengunduh patch %s…"
-
-msgid "Downloading patch \\\\\"%s\\\\\"…"
-msgstr "Downloading patch \\\\\"%s\\\\\"…"
-
+# en-hash: 4993ce1064d2f7d9f87af08788c1aa07
 msgid "Downloading screensaver..."
 msgstr "Mengunduh screensaver..."
 
+# en-hash: 91b43304459d2788b8e0f062e8bae7f9
 msgid "Downloading to shuffle pool..."
 msgstr "Mengunduh ke kolam acak..."
 
+# en-hash: 5d85443302a42d23dfe25406bedec1fe
+msgid "Downloading…"
+msgstr "Mengunduh…"
+
+# en-hash: 7dce122004969d56ae2e0245cb754d35
 msgid "Edit"
 msgstr "Edit"
 
+# en-hash: ce2c8aed9c2fa0cfbed56cbda4d8bf07
+msgid "Empty"
+msgstr "Kosong"
+
+# en-hash: d9ba5d0ad5da62c0e9609e7dd16242a0
 msgid "Empty (0 KB)"
 msgstr "Kosong (0 KB)"
 
+# en-hash: 2faec1f9f8cc7f8f40d521c4dd574f49
 msgid "Enable"
 msgstr "Aktifkan"
 
+# en-hash: fb1f608c7230ba5a23c68a46749b4533
 msgid "Enable patch"
 msgstr "Aktifkan patch"
 
+# en-hash: fe0eee2eb31bfc64e307fe0c4575a6fe
 msgid "Enable plugin"
 msgstr "Aktifkan plugin"
 
+# en-hash: 00d23a76e43b46dae9ec7aa9dcbebb32
 msgid "Enabled"
 msgstr "Diaktifkan"
 
+# en-hash: a5e686002851661852b063c72d3690d6
 msgid "Enter item number"
 msgstr "Masukkan nomor item"
 
+# en-hash: 888bd819da7fe02d3297018a56143a94
 msgid "Enter plugin number"
 msgstr "Masukkan nomor plugin"
 
-msgid "Extracting and installing plugin…\nPlease wait."
-msgstr "Mengekstrak dan memasang plugin…\nMohon tunggu."
-
-msgid "Extracting and installing plugin…\\\nPlease wait."
-msgstr "Extracting and installing plugin…\\\nPlease wait."
-
+# en-hash: 006ec38349cf69bccea24bc63924ae72
 msgid "Failed to check %s: %s"
 msgstr "Gagal memeriksa %s: %s"
 
+# en-hash: a839308c91bc32d9f74d46cc63762eed
 msgid "Failed to check for Storefront updates: %s"
 msgstr "Gagal memeriksa pembaruan Storefront: %s"
 
+# en-hash: 96310b2cf48706c28110688622ac2cf2
+msgid "Failed to create folder."
+msgstr "Gagal membuat folder."
+
+# en-hash: 1d4841b5eb85eeaabf888424ecd8ac21
 msgid "Failed to create patches directory: %s"
 msgstr "Gagal membuat direktori patch: %s"
 
+# en-hash: 860cb7eece22597a006254d958e6a7ba
 msgid "Failed to delete patch: %s"
 msgstr "Gagal menghapus patch: %s"
 
+# en-hash: 4c75af0fca678cf2fe899492e0b02f92
 msgid "Failed to delete plugin: %s"
 msgstr "Gagal menghapus plugin: %s"
 
+# en-hash: c160d9b95d4692de2b15d26fd202bd59
 msgid "Failed to delete: %s"
 msgstr "Gagal menghapus: %s"
 
-msgid "Failed to disable patch "
-msgstr "Gagal menonaktifkan tambalan "
-
+# en-hash: 9e1c8554fe325381728cb11857412b63
 msgid "Failed to disable patch '%s'."
 msgstr "Gagal menonaktifkan tambalan '%s'."
 
+# en-hash: f0ebe26dcf9d6fa44cde188e40a589e7
 msgid "Failed to download patch: %s"
 msgstr "Gagal mengunduh patch: %s"
 
+# en-hash: 4d1faf257a78b8069ebe8461f3abbf46
 msgid "Failed to download screensaver."
 msgstr "Gagal mengunduh screensaver."
 
-msgid "Failed to enable patch "
-msgstr "Gagal mengaktifkan patch "
-
+# en-hash: 299937dabd41b5a53f0bac657282f11a
 msgid "Failed to enable patch '%s'."
 msgstr "Gagal mengaktifkan tambalan '%s'."
 
+# en-hash: 6f2b5d4f0cc7e0b2385d1d032522b4bd
 msgid "Failed to extract file: "
 msgstr "Gagal mengekstrak berkas: "
 
+# en-hash: fe989bd2dbf40c82690c306acb001a3a
 msgid "Failed to fetch patch list."
 msgstr "Gagal mengambil daftar tambalan."
 
-msgid "Failed to fetch repository "
-msgstr "Gagal mengambil repositori "
-
+# en-hash: 2ede1d0fe827423291a944fd6781528b
 msgid "Failed to fetch repository '%s/%s': %s"
 msgstr "Gagal mengambil repositori '%s/%s': %s"
 
-msgid "Failed to install patch: "
-msgstr "Gagal memasang tambalan: "
-
+# en-hash: afbf1b132f9abe2de5f51f83c510215f
 msgid "Failed to open downloaded archive."
 msgstr "Gagal membuka arsip yang diunduh."
 
-msgid "Failed to prepare patches directory."
-msgstr "Gagal menyiapkan direktori patch."
+# en-hash: 74f1c03265afb9d29b3b034faa5a48f9
+msgid "Failed to save downloaded file"
+msgstr "Gagal menyimpan berkas terunduh"
 
+# en-hash: b2b70bea56298693ab867c3578f69689
 msgid "Failed to toggle patch status."
 msgstr "Gagal mengubah status patch."
 
-msgid "Fetching Release Info"
-msgstr "Mengambil Info Rilis"
-
+# en-hash: eebc29b3e7e2c6769ebff642798b1404
 msgid "Fetching changelog…"
 msgstr "Mengambil log perubahan…"
 
+# en-hash: c1619d0d90fa01f5455378495d989e4f
 msgid "Fetching commits…"
 msgstr "Mengambil komit…"
 
+# en-hash: 12ce7854cb696e96176026ed6cf06687
 msgid "Fetching patch file listings…"
 msgstr "Mengambil daftar file tambalan…"
 
+# en-hash: 78e53bec60feb201b2fac6420da38fe1
 msgid "Fetching patches via Direct GitHub API…"
 msgstr "Mengambil tambalan via Direct GitHub API…"
 
+# en-hash: b78a265ea8828cb2e572717c087743cf
 msgid "Fetching plugins via Direct GitHub API…"
 msgstr "Mengambil plugin via Direct GitHub API…"
 
+# en-hash: f63989d95ffad413b304939567794aa1
 msgid "Fetching release info…"
 msgstr "Mengambil info rilis…"
 
+# en-hash: c46a772df29c20c2eeb89d83c2735dbd
 msgid "Fetching releases…"
 msgstr "Mengambil rilis…"
 
+# en-hash: 0a88cdbcbcea3653e2735adf50ecc1e1
 msgid "Fetching repository %s/%s..."
 msgstr "Mengambil repositori %s/%s..."
 
+# en-hash: 2fbaebf47d75ee1a07cd1f43fd1f500a
 msgid "Filename cannot be empty."
 msgstr "Nama berkas tidak boleh kosong."
 
+# en-hash: 0348020221bca94f6c0c957312a5499b
 msgid "Filter & Sort Fonts"
 msgstr "Filter & Urutkan Font"
 
+# en-hash: f194737f3d3a64180c39853153840502
 msgid "Filter & Sort Installed"
 msgstr "Filter & Urutkan Terpasang"
 
+# en-hash: fe45c5f7d8a246fa4d2efe897d28b7c3
 msgid "Filter & Sort Patches"
 msgstr "Filter & Urutkan Tambalan"
 
+# en-hash: b7eecac15cc2b43333bf843d1c9b1d87
 msgid "Filter & Sort Plugins"
 msgstr "Filter & Urutkan Plugin"
 
+# en-hash: 89d2f846ee1bbb47ca2e8b030e2e4189
 msgid "Filter & Sort Screensavers"
 msgstr "Filter & Urutkan Screensaver"
 
+# en-hash: 1446533225561c0eab39df334afdb8d6
 msgid "Filter Installed Patches"
 msgstr "Filter Patch Terpasang"
 
+# en-hash: 08035a4fa08d488eb8c5dfa0a24f6c82
 msgid "Filter Installed Plugins"
 msgstr "Filter Plugin Terpasang"
 
+# en-hash: e5a388bfcac9cbe6abccfed4a731f1ad
 msgid "Filter pre-releases"
 msgstr "Filter pra-rilis"
 
+# en-hash: f7c1eb876d7615707ea0fd479487900d
 msgid "Filter..."
 msgstr "Filter..."
 
+# en-hash: 1b1bb499f25bb1476d30cd4affce9075
 msgid "Filter: "
 msgstr "Filter: "
 
+# en-hash: f3f43e30c8c7d78c6ac0173515e57a00
 msgid "Filters"
 msgstr "Filter"
 
+# en-hash: 2273ffe78e83a4806b8be0b0e635918f
 msgid "Filters: "
 msgstr "Filter: "
 
+# en-hash: 3e0417b7f49673a504c5fce7ed73b3f1
 msgid "Filters: (none)"
 msgstr "Filter: (tidak ada)"
 
+# en-hash: b0f2b97dc5d2b76b26e040408bb1d8af
+msgid "Folder"
+msgstr "Folder"
+
+# en-hash: 16803106d3aa4c6852022f3da9d4c54a
 msgid "Folder Shuffle"
 msgstr "Putar Acak Folder"
 
+# en-hash: 1591eb86c0d061a8c688e72d6e5a7afa
 msgid "Folder Shuffle enabled with this wallpaper!"
 msgstr "Acak Folder diaktifkan dengan wallpaper ini!"
 
+# en-hash: 194f5394ae2e9c74dc3c441b92862d1d
 msgid "Font"
 msgstr "Font"
 
-msgid "Font "
-msgstr "Font "
-
+# en-hash: db3f985617e1e6551cff24a6fe9188dc
 msgid "Font '%s' deleted."
 msgstr "Font '%s' dihapus."
 
+# en-hash: 717e550de76db6127ae7dd11389f0976
 msgid "Font files not found for %s."
 msgstr "Berkas font tidak ditemukan untuk %s."
 
+# en-hash: f8e3211bbd5d1c9e4bbe92fb5006478e
 msgid "Font style"
 msgstr "Gaya font"
 
+# en-hash: 59c4ad3f3cb3d812d68fab7a354d4a63
 msgid "Fonts"
 msgstr "Font"
 
+# en-hash: 5c99698f8bc539c76b21a52919303871
 msgid "Free up storage space on your device. Cached items are re-downloaded automatically when needed."
 msgstr "Bebaskan ruang penyimpanan perangkat. Item cache akan diunduh ulang secara otomatis saat dibutuhkan."
 
+# en-hash: 4da7aff05cb0f2c3407a7c1614f4bdfc
 msgid "GitHub API rate limit exceeded. Add a GitHub token in Storefront settings to increase the limit (10→30 req/min)."
 msgstr "Batas laju API GitHub terlampaui. Tambahkan token GitHub di pengaturan Storefront untuk meningkatkan batas (10→30 req/min)."
 
+# en-hash: 1c7d0190e4ba9f73f86c298338f784d9
 msgid "GitHub API rate limit exceeded. Please wait a few minutes and try again."
 msgstr "Batas laju API GitHub terlampaui. Harap tunggu beberapa menit dan coba lagi."
 
+# en-hash: 338e5ab2edd18c402bff7a5b4779882a
 msgid "GitHub personal access token"
 msgstr "Token akses pribadi GitHub"
 
+# en-hash: 20654d652da57268dd0da4a74bf7bc02
 msgid "GitHub rejected this request: fine-grained personal access tokens are not supported for search. Please use a classic token instead (see the Storefront README)."
 msgstr "GitHub menolak permintaan ini: token akses pribadi fine-grained tidak didukung untuk pencarian. Gunakan token klasik sebagai gantinya (lihat README Storefront)."
 
+# en-hash: 8efc95b34d419e5c29af3dbb2624e8a6
 msgid "GitHub token"
 msgstr "Token GitHub"
 
+# en-hash: 1e800e2e0a0a21c5be4a5ef7cbf886f8
 msgid "GitHub token saved."
 msgstr "Token GitHub disimpan."
 
+# en-hash: 5f075ae3e1f9d0382bb8c4632991f96f
 msgid "Go"
 msgstr "Buka"
 
+# en-hash: 1d4d9852d98701123588ff8d61eed722
 msgid "Go to page"
 msgstr "Buka halaman"
 
+# en-hash: 1f651ab3d2499f9ec45d86440334683e
 msgid "HTTP error"
 msgstr "Kesalahan HTTP"
 
-msgid "HTTP request failed"
-msgstr "Permintaan HTTP gagal"
-
+# en-hash: fd038fc7f319e48f3115d92bf5bdbef9
 msgid "Ignore"
 msgstr "Abaikan"
 
-msgid "Ignore All Updates"
-msgstr "Abaikan Semua Pembaruan"
-
+# en-hash: 1c48d7d231e8e7c5fe283692818decf9
 msgid "Ignore Updates"
 msgstr "Abaikan Pembaruan"
 
+# en-hash: d96143ba1b15645919cea00ec9d1be62
 msgid "Ignored"
 msgstr "Diabaikan"
 
+# en-hash: ceba6bb0c0b86a1957317f3a828bc38b
 msgid "Image View"
 msgstr "Tampilan Gambar"
 
+# en-hash: 0069f584f27016aa2929d8e5cd0b2ad7
 msgid "Include 0-star forks"
 msgstr "Sertakan cabang 0 bintang"
 
+# en-hash: 349838fb1d851d3e2014b9fe39203275
 msgid "Install"
 msgstr "Pasang"
 
+# en-hash: e7a971cdcab59cd7c94ae2b1178308f0
 msgid "Install %s"
 msgstr "Pasang %s"
 
+# en-hash: 34a6e250e2f1055de0f097543b25e81e
 msgid "Install Font"
 msgstr "Pasang Font"
 
+# en-hash: 2af63c0a989a5cb9f1ab37ca00455436
 msgid "Install Patch"
 msgstr "Pasang Tambalan"
 
+# en-hash: e0822ca52cb203afef179bfc61ae36e6
 msgid "Install a patch"
 msgstr "Pasang patch"
 
+# en-hash: fed72926722e1b5a79668bf1edd0edf1
 msgid "Install patch from GitHub"
 msgstr "Pasang patch dari GitHub"
 
+# en-hash: fad698daedaa1d6488803cc1e24e92ae
 msgid "Install plugin from GitHub"
 msgstr "Pasang plugin dari GitHub"
 
+# en-hash: a2cea2e16db4682ca5a8da8e0d9d53cd
 msgid "Install to Default?"
 msgstr "Pasang ke Default?"
 
+# en-hash: c53b3ab057b8ccbb521328307551f56e
 msgid "Install to default"
 msgstr "Pasang ke standar"
 
+# en-hash: d351bd4c3f855c9189c2b9ba8fa0a470
 msgid "Installation failed: "
 msgstr "Pemasangan gagal: "
 
+# en-hash: bc641d0101b8079cb24f0c54e664173a
 msgid "Installation is currently only supported for plugins."
 msgstr "Pemasangan saat ini hanya didukung untuk plugin."
 
+# en-hash: 98dd43dfae05b11befe1f140e0ec787a
 msgid "Installed"
 msgstr "Terpasang"
 
+# en-hash: f908ee5a16c5ad7cc5513ec8a3bb9bc2
 msgid "Installed Patches Settings"
 msgstr "Pengaturan Patch Terpasang"
 
+# en-hash: 77ba923ad0644f4300cae8cb5367d0b7
 msgid "Installed Plugins Settings"
 msgstr "Pengaturan Plugin Terpasang"
 
+# en-hash: 038f35c2f842d3e81468493c8f38723f
 msgid "Installed Regular font style offline for \"%s\". Full font family queued for download when reconnected."
 msgstr "Gaya font Reguler terpasang secara luring untuk \"%s\". Rumpun font lengkap diantrekan untuk diunduh saat terhubung kembali."
 
-msgid "Installed Regular font style offline for \\\\\"%s\\\\\". Full font family queued for download when reconnected."
-msgstr "Installed Regular font style offline for \\\\\"%s\\\\\". Full font family queued for download when reconnected."
-
+# en-hash: 5fcc7f067fee6def71086742d8e42a95
 msgid "Installed font \"%s\" (%d file(s))."
 msgstr "Font \"%s\" terpasang (%d berkas)."
 
-msgid "Installed font \\\\\"%s\\\\\" (%d file(s))."
-msgstr "Installed font \\\\\"%s\\\\\" (%d file(s))."
-
+# en-hash: 895249f0b65de25b747f8c273baf1377
 msgid "Installed full font family \"%s\" (%d file(s))."
 msgstr "Rumpun font lengkap \"%s\" terpasang (%d berkas)."
 
-msgid "Installed full font family \\\\\"%s\\\\\" (%d file(s))."
-msgstr "Installed full font family \\\\\"%s\\\\\" (%d file(s))."
-
+# en-hash: 7ff35e7a7a86c5238f127b89f7a51091
 msgid "Installed patch \"%s\"."
 msgstr "Patch \"%s\" terpasang."
 
-msgid "Installed patch \\\\\"%s\\\\\"."
-msgstr "Installed patch \\\\\"%s\\\\\"."
-
-msgid "Installed plugin \"%s\" (version %s)."
-msgstr "Plugin \"%s\" terpasang (versi %s)."
-
-msgid "Installed plugin \"%s\"."
-msgstr "Plugin \"%s\" terpasang."
-
-msgid "Installed plugin Storefront version %s"
-msgstr "Versi plugin Storefront %s terpasang"
-
+# en-hash: c98f920c29f4d2f367f11f8aad8c6b98
 msgid "Installing %s…"
 msgstr "Memasang %s…"
 
+# en-hash: ce90675d97fd997c33b628127c70ee68
 msgid "Invalid archive reader"
 msgstr "Pembaca arsip tidak valid"
 
+# en-hash: 9f87250ed8e0a43ac7ca9aad8c583fb3
 msgid "Invalid extraction parameters"
 msgstr "Parameter ekstraksi tidak valid"
 
+# en-hash: e9de67466fdd1133ec97e3390e4474f0
 msgid "Invalid patch target filename."
 msgstr "Nama berkas target patch tidak valid."
 
+# en-hash: eccf3939b72861834197e6233af9d5d9
 msgid "Invalid selection."
 msgstr "Pilihan tidak valid."
 
+# en-hash: 1554833122e9bc723e16d2f1b927dc98
 msgid "Invert colors (night mode / dark background)"
 msgstr "Balikkan warna (mode malam / latar gelap)"
 
+# en-hash: 3a6bec8da59fdc67759959fa32ec296c
 msgid "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters."
 msgstr "Adalah kebenaran yang diakui secara umum, bahwa seorang pria lajang yang kaya pasti membutuhkan seorang istri."
 
+# en-hash: aaaa3c0a0086a0eedaf3350d3cfe92c1
 msgid "Items per page"
 msgstr "Item per halaman"
 
+# en-hash: 344fee1b8e1e7edcd682d019ec9cdaca
 msgid "Items per page: %d"
 msgstr "Item per halaman: %d"
 
+# en-hash: 6ae8e1a8a7c0ed909275ac9b2f85ab55
 msgid "Last Updated (Newest)"
 msgstr "Terbaru"
 
+# en-hash: 28a8142aea6bd8ae071ec7eaae8a8c28
 msgid "Last Updated (Oldest)"
 msgstr "Terlama"
 
+# en-hash: 89de86aa34494d545d8cbb4fff3a4e59
 msgid "Last check: %s"
 msgstr "Pemeriksaan terakhir: %s"
 
+# en-hash: f3a9b7d34a5f7e5519618c0dd6c5cf81
 msgid "Latest Release"
 msgstr "Rilis Terbaru"
 
+# en-hash: 54f8757b0a086614ea6588643252100b
 msgid "Latest release"
 msgstr "Rilis terbaru"
 
+# en-hash: b0f881a2804462c73885763e90ca06b9
 msgid "License: %s"
 msgstr "Lisensi: %s"
 
+# en-hash: 5e347ec69e30a0d0193f461f5c4322be
 msgid "Linked only"
 msgstr "Hanya yang terhubung"
 
+# en-hash: 8083ad12dd312d0eefcfa380e773ba47
 msgid "Loading README..."
 msgstr "Memuat README..."
 
+# en-hash: 51cb210bd25a349de3392f32f96848af
 msgid "Loading Release Notes..."
 msgstr "Memuat Catatan Rilis..."
 
+# en-hash: 98e619ebb3b2e9c357288aa5b980dd72
 msgid "Loading Versions..."
 msgstr "Memuat Versi..."
 
+# en-hash: 85708a35df048d2bb3043538dd349fe5
 msgid "Loading Wiki..."
 msgstr "Memuat Wiki..."
 
+# en-hash: 6a1ffeecd6a430240080a1c3e8c0791b
 msgid "Local SHA: %s"
 msgstr "SHA Lokal: %s"
 
+# en-hash: b086ddeb28116cff6a3c58e23d11a483
 msgid "Local version: %s"
 msgstr "Versi lokal: %s"
 
+# en-hash: dd490278ec3e6b5fe6e62ad7b11c42dd
 msgid "Local: %s"
 msgstr "Lokal: %s"
 
+# en-hash: 5be5fd39fe33c67b819d6e2fd805a8d3
 msgid "Local: %s → Remote: %s"
 msgstr "Lokal: %s → Remote: %s"
 
+# en-hash: 62f0842d75a169f04944c6c8514bf1d4
 msgid "Manage plugin paths"
 msgstr "Kelola jalur plugin"
 
+# en-hash: f54d902bf6fa9de2c25b5e7fcff35637
 msgid "Manage plugin paths\n\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
 msgstr "Kelola jalur plugin\n\nMenyembunyikan jalur hanya memengaruhi apa yang ditampilkan/dikelola Storefront di sini. KOReader akan tetap memuat plugin darinya."
 
-msgid "Manage plugin paths\\\n\\\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
-msgstr "Manage plugin paths\\\n\\\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
-
+# en-hash: 6da89265a9a8b0b28eb4946bb2ec0c6d
 msgid "Match"
 msgstr "Cocokkan"
 
+# en-hash: 991c0566008a6a8be9e6ff4aa54f0494
 msgid "Match from List"
 msgstr "Cocokkan dari Daftar"
 
+# en-hash: 6657fcf61727c1842241143a238e5ef1
 msgid "Match patch with GitHub repository"
 msgstr "Cocokkan tambalan dengan repositori GitHub"
 
+# en-hash: 0ac0d37f606a0602273e784505c40efe
 msgid "Match plugin with GitHub repository"
 msgstr "Cocokkan plugin dengan repositori GitHub"
 
+# en-hash: e615c12b8887f4ce351bc8f8fa8e120b
 msgid "Match plugin: %s"
 msgstr "Cocokkan plugin: %s"
 
+# en-hash: 94c938e73f50bbecb5ca5588b919066e
 msgid "Match this remote patch"
 msgstr "Cocokkan patch remote ini"
 
+# en-hash: bd2910ce749e393bf98d831fd6126c66
 msgid "Match with URL"
 msgstr "Cocokkan dengan URL"
 
+# en-hash: a16e773aa63dcfad0ddf839c4adca2be
 msgid "Match with repo"
 msgstr "Cocokkan dengan repositori"
 
+# en-hash: eb4ed04559ffa34f4343c30c8a72dd21
 msgid "Match with this repo"
 msgstr "Cocokkan dengan repo ini"
 
+# en-hash: 9087fefb8d3ee82cc1b4446df6f323a3
 msgid "Matched %s with %s."
 msgstr "Mencocokkan %s dengan %s."
 
+# en-hash: c54f1f9f6c9b36cb6aa7e8b70d44d963
 msgid "Matched repo: %s/%s"
 msgstr "Repositori cocok: %s/%s"
 
+# en-hash: 922a14659fff965e2ed9254e6de9d00f
 msgid "Matching entries: %s / %s"
 msgstr "Entri yang cocok: %s / %s"
 
+# en-hash: ab78fc6941a8178b3eb71cf54279ae30
 msgid "Matching patch: %s — tap to cancel"
 msgstr "Mencocokkan tambalan: %s — ketuk untuk membatalkan"
 
+# en-hash: 7ab02b95bf829f69411ef69b9c4f5c70
 msgid "Matching patches: %s (repos: %s / %s)"
 msgstr "Patch yang cocok: %s (repo: %s / %s)"
 
+# en-hash: 87bd468c77a1b9b62ceff408774062a9
 msgid "Matching plugin: %s — tap to cancel"
 msgstr "Mencocokkan plugin: %s — ketuk untuk membatalkan"
 
+# en-hash: 1b00479b9973909bf7d7e52b0a542a08
 msgid "Minimum stars"
 msgstr "Bintang minimum"
 
+# en-hash: c2526b87d7100c4a0b71ece262afbb3d
 msgid "Missing README path"
 msgstr "Jalur README tidak ada"
 
+# en-hash: fb2078d1aee196e3eca34f46ff03b77a
 msgid "Missing URL"
 msgstr "URL tidak ada"
 
+# en-hash: d24b3dbae6402cdc113aeab1a24c10d0
 msgid "Missing asset download URL."
 msgstr "URL unduhan aset tidak ada."
 
-msgid "Missing download URL for release asset."
-msgstr "URL unduhan aset rilis tidak ada."
-
+# en-hash: a7c0c61a5d816042233cba6c433c5917
 msgid "Missing font metadata."
 msgstr "Metadata font tidak ada."
 
+# en-hash: 7656c7fd4967bd315743a6466e917815
 msgid "Missing meta path in record."
 msgstr "Jalur meta tidak ada dalam rekaman."
 
+# en-hash: 17357974fb6c092a5fe8dfa66e1557fe
 msgid "Missing repository info for patch update."
 msgstr "Informasi repositori tidak ada untuk pembaruan patch."
 
+# en-hash: c85bfa8f9c8b6690fb60dc51e1e41abc
 msgid "Missing repository info for update."
 msgstr "Informasi repositori tidak ada untuk pembaruan."
 
+# en-hash: 6ee8bf1b8bd8cf4445940ac4e75d4d56
 msgid "Missing repository metadata for README download."
 msgstr "Metadata repositori tidak ada untuk pengunduhan README."
 
+# en-hash: 46d4ec30e02bf60e65faf2cb77266dbc
 msgid "Missing repository metadata for installation."
 msgstr "Metadata repositori tidak ada untuk pemasangan."
 
+# en-hash: e1671330d61243f8b85b476beb4e33d9
 msgid "Missing repository metadata for patch install."
 msgstr "Metadata repositori hilang untuk pemasangan tambalan."
 
+# en-hash: c22861112013cbdb8ebfa32db587fb8d
 msgid "Missing repository metadata for patch."
 msgstr "Metadata repositori tidak ada untuk tambalan."
 
+# en-hash: 70c6d379edf60ed1bb8728f526741591
 msgid "Missing repository metadata for releases."
 msgstr "Metadata repositori tidak ada untuk rilis."
 
+# en-hash: 0c69cf64725f51a7e4efab7b4d293b33
 msgid "Missing repository metadata for remote fetch."
 msgstr "Metadata repositori tidak ada untuk pengambilan remote."
 
+# en-hash: 8dfff041fcd598a7a41df55b9e8ea076
+msgid "Missing target path"
+msgstr "Jalur target hilang"
+
+# en-hash: 6043603aeda23c74e75b67ae9ced95ce
 msgid "Modify Patch"
 msgstr "Ubah Patch"
 
+# en-hash: b57dc362d2c64058493d4d3877a25017
 msgid "Modify Plugin"
 msgstr "Ubah Plugin"
 
+# en-hash: 9dbdd0c952fedc3db87f3a02d99591d4
 msgid "Modify Plugin: %s"
 msgstr "Ubah Plugin: %s"
 
+# en-hash: 406af19badea17896b1bfef1897f23bd
 msgid "Most Downloaded"
 msgstr "Paling Banyak Diunduh"
 
+# en-hash: 425efa6ee97738e110fd7b195fb83e07
 msgid "Most Popular"
 msgstr "Paling Populer"
 
+# en-hash: e7fe7f09186cbca01bbda9c023027023
 msgid "Multiple custom plugin folders are configured. Where should this plugin be installed?"
 msgstr "Beberapa folder plugin kustom dikonfigurasi. Di mana plugin ini harus dipasang?"
 
+# en-hash: 3e4c3929bba389269bbcf346a50809ea
 msgid "My wallpaper collection"
 msgstr "Koleksi wallpaper saya"
 
+# en-hash: 012b5aaf72938230a90f7017a59f053a
 msgid "Name (A-Z)"
 msgstr "Nama (A-Z)"
 
+# en-hash: 06f3b5897c120fcbfeca67ab948b718a
 msgid "Name (Z-A)"
 msgstr "Nama (Z-A)"
 
+# en-hash: 752e1c52024d295666c0f93830fc9b96
 msgid "Name, description, topic"
 msgstr "Nama, deskripsi, topik"
 
+# en-hash: 7bd1b01e2b3f3738a5df3d196bd8fd24
 msgid "Needs update"
 msgstr "Perlu pembaruan"
 
+# en-hash: e3fa2e77e516634aa78f106b5b413c20
 msgid "Needs update: %d"
 msgstr "Perlu pembaruan: %d"
 
+# en-hash: 6e7b34fa59e1bd229b207892956dc41c
 msgid "Never"
 msgstr "Tidak pernah"
 
+# en-hash: 5148905edb46ca87df979cbb369c403d
+msgid "New Folder"
+msgstr "Folder Baru"
+
+# en-hash: acc257cee5229d7d53cb4ed8e9596e8e
 msgid "New filename"
 msgstr "Nama berkas baru"
 
+# en-hash: 10ac3d04253ef7e1ddc73e6091c0cd55
 msgid "Next"
 msgstr "Berikutnya"
 
+# en-hash: dd9644efbcf9d41c5be6daed03514dd8
 msgid "Next >"
 msgstr "Lanjut >"
 
+# en-hash: 4e30ba17cc4c52ad756bf117a1a32cff
 msgid "No Fill (Transparent)"
 msgstr "Tanpa Isian (Transparan)"
 
+# en-hash: a57adf9d6921b10f559aef2f60f98ed4
 msgid "No Lua files found in plugin directory"
 msgstr "Berkas Lua tidak ditemukan di direktori plugin"
 
+# en-hash: 722ac1f55e069022e6f5121ab04c2f4b
 msgid "No README available."
 msgstr "README tidak tersedia."
 
+# en-hash: ab6f6ae99463b83798788e9ed8df6629
 msgid "No Release Notes available."
 msgstr "Tidak ada Catatan Rilis."
 
+# en-hash: b564d5711f07e60166a119a7812c5929
 msgid "No Wiki available."
 msgstr "Tidak ada Wiki."
 
+# en-hash: 6b051bf369e34783a8e61fca2e2c4ba7
 msgid "No cached README files to delete."
 msgstr "Tidak ada berkas README tersimpan untuk dihapus."
 
+# en-hash: 4dbc80cb9073d70dbfc6278bb3d6f915
 msgid "No cached entries yet."
 msgstr "Belum ada entri tersimpan di tembolok."
 
+# en-hash: 9e34dcb97f8ca1812d0a6406f53cee79
 msgid "No cached entries yet. Refresh to fetch from GitHub."
 msgstr "Belum ada entri tersimpan. Segarkan untuk mengambil dari GitHub."
 
+# en-hash: e592e146ba0ca4bc92d3894dabaf3e0e
 msgid "No changelog entries found for this range."
 msgstr "Entri log perubahan tidak ditemukan untuk rentang ini."
 
+# en-hash: d404302efb40cb4c8a7d3f48041ab5ea
 msgid "No commits found in this range."
 msgstr "Tidak ada komit dalam rentang ini."
 
+# en-hash: e98992a8b6c7c9499b7eda33820bfdff
 msgid "No config files found — uncheck filter to show all files"
 msgstr "Berkas konfigurasi tidak ditemukan — hapus centang filter untuk menampilkan semua berkas"
 
+# en-hash: 6c89d34e72b57d009141ea4f8b238cda
 msgid "No date"
 msgstr "Tanpa tanggal"
 
+# en-hash: fd9f9dbe75b721451d3f8002e9cf6c86
 msgid "No detailed release notes provided for this version."
 msgstr "Tidak ada catatan rilis terperinci untuk versi ini."
 
+# en-hash: eb54fd022ff6b11f4bb7ede404d1cc40
 msgid "No entries match current filters."
 msgstr "Tidak ada entri yang cocok dengan filter saat ini."
 
+# en-hash: 64c2c01ee3add40a161dc72dcc462d9d
 msgid "No installed items found."
 msgstr "Tidak ada item terpasang yang ditemukan."
 
+# en-hash: bc4c1050aeeb3ff4240c4894b98f32a9
 msgid "No items found."
 msgstr "Item tidak ditemukan."
 
+# en-hash: 5455eddcbdea8d5ab481536eaa1c765b
 msgid "No matched patches to check."
 msgstr "Tidak ada patch yang cocok untuk diperiksa."
 
+# en-hash: f9852c172eb56b8f419ca9bd2604871b
 msgid "No matched plugins to check."
 msgstr "Tidak ada plugin cocok untuk diperiksa."
 
+# en-hash: c250ed3add5b171ba37f69df4bf40737
 msgid "No patch files found in %s/%s."
 msgstr "Berkas patch tidak ditemukan di %s/%s."
 
+# en-hash: 2316087204c753b44a14dc0867037a62
 msgid "No patch files found in repository %s."
 msgstr "Berkas patch tidak ditemukan di repositori %s."
 
+# en-hash: a764106ad70b31d8ca6a70261af01255
 msgid "No patches found in matching repositories."
 msgstr "Patch tidak ditemukan di repositori yang cocok."
 
+# en-hash: 6b4b87bf42015f1997bba709a4307cf7
 msgid "No patches need updates."
 msgstr "Tidak ada tambalan yang perlu diperbarui."
 
+# en-hash: 87e10d5d604d4b482fe4446d63159b92
 msgid "No patches to display."
 msgstr "Tidak ada patch untuk ditampilkan."
 
+# en-hash: 57ef14caeb36cf1377f55cc7f8cefa15
 msgid "No plugin files were extracted"
 msgstr "Tidak ada berkas plugin yang diekstrak"
 
+# en-hash: 44bcb443c85eb26db62aaa89da4ddc60
 msgid "No plugins need updates."
 msgstr "Tidak ada plugin yang memerlukan pembaruan."
 
+# en-hash: 9f7e71426e7d9c095768dd12cff34a5c
 msgid "No plugins to display."
 msgstr "Tidak ada plugin untuk ditampilkan."
 
+# en-hash: 953753ce5197ee0fd284246514cb7b2f
 msgid "No plugins tracked yet."
 msgstr "Belum ada plugin yang dilacak."
 
+# en-hash: a10f66ad1e00d43bc02f5fa30796ccca
 msgid "No previous page in history"
 msgstr "Tidak ada halaman sebelumnya dalam riwayat"
 
+# en-hash: 50dcf0a0435f6f459ece9d3e45a1311f
 msgid "No release notes provided for this version."
 msgstr "Tidak ada catatan rilis untuk versi ini."
 
+# en-hash: 8897bd78abc8cfa5e9ea79c4dc226f98
 msgid "No release notes."
 msgstr "Tidak ada catatan rilis."
 
+# en-hash: 2e20ec8c848352f34ecef4e93214c26c
 msgid "No releases found for this repository."
 msgstr "Rilis tidak ditemukan untuk repositori ini."
 
+# en-hash: 67694f6f04615aaae16e57a4a9e324fe
 msgid "No remote version info for %s."
 msgstr "Tidak ada info versi jarak jauh untuk %s."
 
+# en-hash: b62bf861cefe4425e699aa2eea1c5df0
 msgid "No screensavers match this filter."
 msgstr "Tidak ada screensaver yang cocok dengan filter ini."
 
+# en-hash: 76e98d4a945da2ea2df295e4cf7b4692
 msgid "No stable releases found — uncheck filter to show all releases"
 msgstr "Tidak ada rilis stabil yang ditemukan — hapus centang filter untuk menampilkan semua rilis"
 
+# en-hash: 4911d39dfeb5093032e4317a04cef4c1
+msgid "No subfolders in this directory.\nTap 'Select Folder' below to use it, or '+ New' to create a subfolder."
+msgstr "Tidak ada subfolder di direktori ini.\nKetuk 'Pilih Folder' di bawah untuk menggunakannya, atau '+ Baru' untuk membuat subfolder."
+
+# en-hash: 3a4b0c3e394b06b711fdb675f6beeb6b
 msgid "No tracked plugins to check."
 msgstr "Tidak ada plugin terlacak untuk diperiksa."
 
+# en-hash: af09a29159202c3e40315a0861655abf
 msgid "No wallpapers found in your screensavers folder.\n\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
 msgstr "Tidak ada wallpaper di folder screensaver.\n\nJelajahi katalog Screensaver di Storefront untuk mengunduh wallpaper!"
 
-msgid "No wallpapers found in your screensavers folder.\\\n\\\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
-msgstr "No wallpapers found in your screensavers folder.\\\n\\\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
-
+# en-hash: 2b340063734382803d14ef2234a59b46
 msgid "None selected"
 msgstr "Tidak ada yang dipilih"
 
+# en-hash: 2b8d3061f885c676130053230eb8a5d1
 msgid "Not matched with a repository."
 msgstr "Tidak cocok dengan repositori."
 
+# en-hash: 9ba66a9f92056682b7d86a38b4bc18c0
 msgid "Not set"
 msgstr "Belum diatur"
 
-msgid "Notes"
-msgstr "Catatan"
-
+# en-hash: e0aa021e21dddbd6d8cecec71e9cf564
 msgid "OK"
 msgstr "OK"
 
+# en-hash: 3153c6cc9bfae333965e0f6ce3b2097c
 msgid "Offline Regular"
-msgstr "Offline Regular"
+msgstr "Offline Reguler"
 
+# en-hash: c3bf447eabe632720a3aa1a7ce401274
 msgid "Open"
 msgstr "Buka"
 
+# en-hash: aaaca14de025427e39ed056b29af4058
 msgid "Open Wallpaper Collection Gallery"
 msgstr "Buka Galeri Wallpaper"
 
+# en-hash: 0da9511b88a62642518334bda95c7370
 msgid "Open details"
 msgstr "Buka detail"
 
-msgid "Optional. Raises the GitHub API rate limit. Generate one (classic, "
-msgstr "Opsional. Meningkatkan batas laju API GitHub. Buat satu (klasik, "
-
+# en-hash: bc134584494d4e13143f406c85e00718
 msgid "Optional. Raises the GitHub API rate limit. Generate one (classic, 'public_repo' scope is enough) at github.com/settings/tokens, then paste it here."
 msgstr "Opsional. Meningkatkan batas laju API GitHub. Buat token (klasik, cakupan 'public_repo' sudah cukup) di github.com/settings/tokens, lalu tempelkan di sini."
 
+# en-hash: efbc241d60f2ad92aea2e5ca3fd8a839
 msgid "Options ▾"
 msgstr "Opsi ▾"
 
+# en-hash: 3edf8ca26a1ec14dd6e91dd277ae1de6
 msgid "Origin"
 msgstr "Asal"
 
+# en-hash: b6f4a2ec6356bbd56d49f2096bf9d3d3
 msgid "Owner"
 msgstr "Pemilik"
 
+# en-hash: 8a1e7619b4e790b85c7ae69311afb326
 msgid "Owner %s"
 msgstr "Pemilik %s"
 
+# en-hash: 4b4828d89b9244a9f74639dd8e2e2cce
 msgid "Owner: "
 msgstr "Pemilik: "
 
+# en-hash: f15ac516f788aec4f30932ffb6395c39
 msgid "Pack my box with five dozen liquor jugs."
 msgstr "Saya ingin makan nasi goreng pedas manis enak sekali."
 
+# en-hash: b8065ad2628f1f82f3167af0947b3e43
 msgid "Page %d of %d"
 msgstr "Halaman %d dari %d"
 
+# en-hash: 8bf7816729d37eeee406ea2d02ab9e78
 msgid "Page %d/%d"
 msgstr "Halaman %d/%d"
 
+# en-hash: 629d8ec3aa8109288fe0ca897082f106
 msgid "Pangram Preview"
 msgstr "Pratinjau Pangram"
 
+# en-hash: 156e10596fdc76ee5300bab931d89c0f
 msgid "Patch"
-msgstr "Patch"
+msgstr "Tambalan"
 
-msgid "Patch "
-msgstr "Patch "
-
+# en-hash: 096539a30b886b6f8afdc93f15f3241c
 msgid "Patch %s has been %s."
 msgstr "Patch %s telah %s."
 
+# en-hash: 1d6697e009252f7720f527e1cb2b362e
 msgid "Patch '%s' deleted."
 msgstr "Patch '%s' dihapus."
 
+# en-hash: ac0fbadc7625ef18100ba480f1fc70aa
 msgid "Patch '%s' disabled."
 msgstr "Tambalan '%s' dinonaktifkan."
 
+# en-hash: 18a7bd11efe3622cfb550e6f68c5f6f7
 msgid "Patch '%s' enabled."
 msgstr "Tambalan '%s' diaktifkan."
 
+# en-hash: 9e1aa789a1a1dfeadcc12a7035f56dd6
 msgid "Patch cache is older than a week, consider refreshing."
 msgstr "Tembolok patch lebih lama dari seminggu, pertimbangkan untuk menyegarkan."
 
+# en-hash: dbcb46b453719dbd421a7642af6da6be
 msgid "Patch file not found in repository."
 msgstr "Berkas tambalan tidak ditemukan di repositori."
 
+# en-hash: 3f4e01c4deadd79f83b592f0e7c99700
 msgid "Patch file not found locally."
 msgstr "Berkas patch tidak ditemukan secara lokal."
 
+# en-hash: 19e9285394d14df97e2b0af94d1e6f3f
 msgid "Patch file not found."
 msgstr "Berkas patch tidak ditemukan."
 
+# en-hash: c4efe31ff39ce0d24ea8b3781e4ecf10
 msgid "Patch matching cancelled."
 msgstr "Pencocokan tambalan dibatalkan."
 
+# en-hash: 91721799c8121092a4379d08001d803e
 msgid "Patch: %s"
-msgstr "Patch: %s"
+msgstr "Tambalan: %s"
 
+# en-hash: c4d283323af70979073f5cb6145f3a4b
 msgid "Patches"
 msgstr "Patch"
 
+# en-hash: 62dcdbd5469ff435ab6b562734df5adb
 msgid "Patches cached: %s (last update: %s)"
 msgstr "Patch tersimpan di tembolok: %s (pembaruan terakhir: %s)"
 
+# en-hash: b49c0ace14234fbaf5b2eb411383df13
 msgid "Patches found: %d"
 msgstr "Tambalan ditemukan: %d"
 
+# en-hash: a31abc9538737a6fd3cd42b234559cb3
 msgid "Path: %s"
 msgstr "Jalur: %s"
 
+# en-hash: 409c1892b68cb394799262ac57f6d4f1
 msgid "Plugin"
 msgstr "Plugin"
 
-msgid "Plugin "
-msgstr "Plugin "
-
+# en-hash: 55660a9f279ae6e277eb8c16a0f3f013
 msgid "Plugin %s has been %s."
 msgstr "Plugin %s telah %s."
 
+# en-hash: ea44b3d2165c20ad1c9a9ffafca3c6d1
 msgid "Plugin '%s' deleted."
 msgstr "Plugin '%s' dihapus."
 
+# en-hash: 8b8f597f17d0fc4e7023a94e26d39ad2
 msgid "Plugin '%s' disabled."
 msgstr "Plugin '%s' dinonaktifkan."
 
+# en-hash: 025583a90e53c886a8dc2639d9bcc1ac
 msgid "Plugin '%s' enabled."
 msgstr "Plugin '%s' diaktifkan."
 
+# en-hash: 5793f995e482c1d69a6b5246de072068
 msgid "Plugin and patch browser for KOReader."
 msgstr "Peramban plugin dan patch untuk KOReader."
 
+# en-hash: d337cebbb781983be12661e42396acca
 msgid "Plugin cache is older than a week, consider refreshing."
 msgstr "Tembolok plugin lebih lama dari seminggu, pertimbangkan untuk menyegarkan."
 
+# en-hash: 7b4d0de12a96a094bcbce0f294fa7947
 msgid "Plugin directory not found."
 msgstr "Direktori plugin tidak ditemukan."
 
+# en-hash: e59b53e1ff95beae26b23bff6d6c0bf8
 msgid "Plugin folder not found."
 msgstr "Folder plugin tidak ditemukan."
 
+# en-hash: a5e47942c15643339e19f9c97ed56a59
 msgid "Plugin is not currently loaded, so settings cannot be deleted."
 msgstr "Plugin tidak dimuat saat ini, sehingga pengaturan tidak dapat dihapus."
 
+# en-hash: bb38096ab39160dc20d44f3ea6b44507
 msgid "Plugins"
 msgstr "Plugin"
 
+# en-hash: 765e45648076f663b54274a5ce9307e0
 msgid "Plugins cached: %s (last update: %s)"
 msgstr "Plugin tersimpan: %s (pembaruan terakhir: %s)"
 
+# en-hash: c69b2b2160fa59e049f0a588222d2902
 msgid "Pool size: %d wallpapers in rotation"
 msgstr "Ukuran kolam: %d wallpaper berputar"
 
+# en-hash: e5ab942cd3fb2632d94b3cee3aa8b7db
 msgid "Pre-installed core KOReader plugin."
 msgstr "Plugin inti KOReader bawaan."
 
+# en-hash: 14230d11143a03f4330c6433d5032a9d
 msgid "Prev"
 msgstr "Sblm"
 
+# en-hash: 0387f6092bdd447cc77402e2af1e1fb1
 msgid "Published: %s"
 msgstr "Diterbitkan: %s"
 
+# en-hash: c47c7c7383225ab55ff591cb59c41e6b
 msgid "README"
 msgstr "README"
 
+# en-hash: 225dac2abe39edea015bc40a3dc6b398
 msgid "README download failed: "
 msgstr "Pengunduhan README gagal: "
 
+# en-hash: b6bc7c82cd5b9ba2ba540b8214af6240
 msgid "README files & images"
 msgstr "File & gambar README"
 
+# en-hash: aa128a6671fa8af1cd4e96b7ec4e0723
 msgid "Rate Wallpaper"
 msgstr "Nilai Wallpaper"
 
+# en-hash: 172bdcbf3c1298405f3292de568e54f0
 msgid "Reading Passage Specimen"
 msgstr "Spesimen Bacaan"
 
+# en-hash: 7f58b08556c5375e2559f267873d1218
 msgid "Reading Progress"
 msgstr "Progres Membaca"
 
+# en-hash: 09d465b122ab48dbe5cad73d4656d4e1
 msgid "Reading Progress / Summary"
 msgstr "Kemajuan Membaca / Ringkasan"
 
+# en-hash: e1a444c57a59c310dfd913b8fbbcaa70
 msgid "Recently Added"
 msgstr "Baru Ditambahkan"
 
+# en-hash: 63a6a88c066880c5ac42394a22803ca6
 msgid "Refresh"
 msgstr "Segarkan"
 
-msgid "Refresh cache"
-msgstr "Segarkan cache"
-
+# en-hash: 404d7ac924d396a7634738a80a90d835
 msgid "Refresh catalog"
 msgstr "Segarkan katalog"
 
+# en-hash: a4ab749eba148966e242b4f38f774b60
 msgid "Refreshing catalog via Direct GitHub API…"
 msgstr "Menyegarkan katalog via Direct GitHub API…"
 
+# en-hash: d79adaec4b83cfc1e3cb44ded7689888
 msgid "Refreshing catalog..."
 msgstr "Menyegarkan katalog..."
 
+# en-hash: 0cb1e25c68defbaa1b6fcb7a10f9932f
 msgid "Refreshing catalog…"
 msgstr "Menyegarkan katalog…"
 
+# en-hash: 5c123dffc87233456030f3762f15c3f2
 msgid "Refreshing…"
 msgstr "Menyegarkan…"
 
+# en-hash: b437e453bf9e4e455cf25804ea74d071
 msgid "Reinstall"
 msgstr "Pasang ulang"
 
+# en-hash: b8e7b465df7c5979dc731d06e84ce2cf
 msgid "Release"
 msgstr "Rilis"
 
+# en-hash: 5dd03e8d039863e563e049be198c3fd3
 msgid "Release Notes"
 msgstr "Catatan Rilis"
 
+# en-hash: e40e20ac241367df6f44db214d52d20d
 msgid "Release notes for %s"
 msgstr "Catatan rilis untuk %s"
 
+# en-hash: 33a351564f22fd647623cfb28f147bc6
 msgid "Release: %s"
 msgstr "Rilis: %s"
 
+# en-hash: d50ae403cb49a205bdf789f377f5cfe6
 msgid "Releases"
 msgstr "Rilis"
 
+# en-hash: 44398344dd02c7d56e1b9629ef8d724d
 msgid "Releases — %s"
 msgstr "Rilis — %s"
 
+# en-hash: ef9e8096713bc1df35e59a0eef226bc6
 msgid "Remote SHA: %s"
 msgstr "SHA Remote: %s"
 
+# en-hash: 6a95db820d2b45a6d7ab155283c5b028
 msgid "Remote SHA: %s (checked %s)"
 msgstr "SHA Remote: %s (diperiksa %s)"
 
+# en-hash: 26db4927c3e3b5acd143bcdc9bf3423c
 msgid "Remote check failed: "
 msgstr "Pemeriksaan remote gagal: "
 
+# en-hash: 2143ce4992be9f0c69c155c57ad058d3
 msgid "Remote version for %s: %s."
 msgstr "Versi remote untuk %s: %s."
 
+# en-hash: 0afd6abc2dd57e3c1e468b7640f01a71
 msgid "Remote version not found."
 msgstr "Versi jarak jauh tidak ditemukan."
 
+# en-hash: c6b535676cfd2fe183aa6dded3c028e4
 msgid "Remote: %s"
 msgstr "Remote: %s"
 
+# en-hash: 97220aac05a7c16b7b17306c71151f98
 msgid "Remote: %s (checked %s)"
 msgstr "Remote: %s (diperiksa %s)"
 
+# en-hash: 04f88568e32c4fd2752556fe318193dc
 msgid "Remote: (not checked)"
 msgstr "Remote: (tidak diperiksa)"
 
+# en-hash: 1063e38cb53d94d386f21227fcd84717
 msgid "Remove"
 msgstr "Hapus"
 
-msgid "Remove "
-msgstr "Hapus"
-
+# en-hash: 2805a601b427c95c08257220b066bf3d
 msgid "Remove '%s' from your wallpaper collection?"
 msgstr "Hapus '%s' dari koleksi wallpaper Anda?"
 
+# en-hash: fbf5151ac635b3d3a7337842640b5b7c
 msgid "Remove Wallpaper?"
 msgstr "Hapus Wallpaper?"
 
+# en-hash: 904a8304056d77e4547744781b7ceb50
 msgid "Rename"
 msgstr "Ubah nama"
 
+# en-hash: 19c94687f8cd5f97d087e7706bfd5022
 msgid "Rename failed: %s"
 msgstr "Gagal mengubah nama: %s"
 
+# en-hash: 86c66437fdfef9a63a22987937a5f34c
 msgid "Rename file"
 msgstr "Ubah nama berkas"
 
-msgid "Renamed to "
-msgstr "Diubah nama menjadi "
-
+# en-hash: 7eb83eac0b00a6d27a370a8750eedf11
 msgid "Renamed to '%s'."
 msgstr "Diubah namanya menjadi '%s'."
 
+# en-hash: b1c043133aefc568dedd61b24ef6911b
 msgid "Repo: %s/%s"
 msgstr "Repo: %s/%s"
 
+# en-hash: 16a40191ec805a280e542f246f47df9e
 msgid "Repo: (not matched)"
 msgstr "Repo: (tidak cocok)"
 
+# en-hash: 33fcf2b3ec4686d9cd06051c726d0ba2
 msgid "Repository"
 msgstr "Repositori"
 
+# en-hash: e7f076457e98df1d924002d6f493bf68
 msgid "Repository %s not found on GitHub."
 msgstr "Repositori %s tidak ditemukan di GitHub."
 
+# en-hash: 6c4274a072c4d46c6ec6091ee96e734f
 msgid "Repository name"
 msgstr "Nama repositori"
 
+# en-hash: ac7717cc2b600657620b5b808fd1deb4
 msgid "Repository owner"
 msgstr "Pemilik repositori"
 
+# en-hash: daff3bf20e31b8b0377f58ac0104358e
 msgid "Repository: %s"
 msgstr "Repositori: %s"
 
+# en-hash: 268d1dca05a4dd6c3d647a4de01bf9d5
 msgid "Reset filters"
 msgstr "Reset filter"
 
+# en-hash: 60dd7d7c4ef2b2ff23759f9efc59b258
+msgid "Reset to Default Folder"
+msgstr "Atur Ulang ke Folder Bawaan"
+
+# en-hash: bcf762b56cb03f374197ee9e86273b77
+msgid "Reset to default screensaver folder"
+msgstr "Atur ulang ke folder screensaver bawaan"
+
+# en-hash: 21e2bb42873eddcb9b476b8eafbe0c18
 msgid "Reset to defaults"
 msgstr "Reset awal"
 
+# en-hash: 606c44bdcc18bc4cd3d17f3e55dc190a
 msgid "Restart later"
 msgstr "Mulai ulang nanti"
 
+# en-hash: 1f4f5533443045d7cc68e7e6a885df3d
 msgid "Restart now"
 msgstr "Mulai ulang"
 
+# en-hash: 504901d470d6b3ab83f0a01f6a947c41
+msgid "Restore: %s"
+msgstr "Pulihkan: %s"
+
+# en-hash: 83936a3f80ba44c78c9911f5445f2994
 msgid "Sample Text"
 msgstr "Teks Contoh"
 
+# en-hash: c9cc8cce247e49bae79f15173ce97354
 msgid "Save"
 msgstr "Simpan"
 
+# en-hash: 603fcc0a702da1e164d6d14e0ca47782
 msgid "Screensaver"
 msgstr "Screensaver"
 
+# en-hash: 0a9573f725d45f05a9e834c86ee40e97
 msgid "Screensaver & Wallpapers"
 msgstr "Screensaver & Wallpaper"
 
+# en-hash: 6b75c24e60c7e3b3ef2d48239b62c4ea
 msgid "Screensaver Details"
 msgstr "Detail Screensaver"
 
+# en-hash: 46fccad77c3bb02aa47d90843edc6297
+msgid "Screensaver Folder"
+msgstr "Folder Screensaver"
+
+# en-hash: 5f7b0afc6bb85571770fa56c2e142306
 msgid "Screensaver Mode"
 msgstr "Mode Screensaver"
 
+# en-hash: 6df6c2dd7dd08e6108bf1b8dea56c527
 msgid "Screensaver Settings"
 msgstr "Pengaturan Screensaver"
 
+# en-hash: 72eacc0569bfceb647d70beda2982045
+msgid "Screensaver folder set to '%s'"
+msgstr "Folder screensaver diatur ke '%s'"
+
+# en-hash: 538e5b6850b31afe617747bdf37203b2
 msgid "Screensaver mode"
 msgstr "Mode screensaver"
 
+# en-hash: 11e906f78566aa3e02e0e631c59e9a29
 msgid "Screensaver thumbnails"
 msgstr "Gambar mini screensaver"
 
+# en-hash: cb95f5f307c64043351b5125571b350a
 msgid "Screensavers"
 msgstr "Screensaver"
 
+# en-hash: 13348442cc6a27032d2b4aa28b75a5d3
 msgid "Search"
 msgstr "Cari"
 
+# en-hash: f2ecdcba091a518fcb585529186fa60b
 msgid "Search \"%s\""
 msgstr "Cari \"%s\""
 
+# en-hash: 02aebab4da8f3c3506b5f7841b74771e
 msgid "Search & API"
 msgstr "Cari & API"
 
+# en-hash: ff39b7ff718f007859f0505525457425
 msgid "Search filter (\"%s\") is not applied to Updates."
-msgstr "Search filter (\"%s\") is not applied to Updates."
+msgstr "Filter pencarian (\"%s\") tidak diterapkan pada Pembaruan."
 
-msgid "Search filter (\\\\\"%s\\\\\") is not applied to Updates."
-msgstr "Search filter (\\\\\"%s\\\\\") is not applied to Updates."
-
+# en-hash: 5535a0cf45d5824d5a8d3c306ff6b30c
 msgid "Search text"
 msgstr "Teks pencarian"
 
+# en-hash: 53eef1dc1c84ebd17d645173b7b7655a
 msgid "Search: "
 msgstr "Cari: "
 
+# en-hash: 45e96c0a422ce8a1a6ec1bd5eb9625c6
 msgid "Select All"
 msgstr "Pilih Semua"
 
+# en-hash: 28258e7a927711d405af65fbb6d13614
 msgid "Select Categories"
 msgstr "Pilih Kategori"
 
+# en-hash: deffb03a57b0deaf912f04da4575848f
+msgid "Select Folder"
+msgstr "Pilih Folder"
+
+# en-hash: 9b834c9f23888e04d5ec898aa174eecc
+msgid "Select Screensaver Folder"
+msgstr "Pilih Folder Screensaver"
+
+# en-hash: 9f3ac6dac42e1c9f63901bd946e13f8c
 msgid "Select a repository patch entry to match with the chosen file."
 msgstr "Pilih entri patch repositori untuk dicocokkan dengan berkas yang dipilih."
 
+# en-hash: 3d190a9867210e4154510c4f0b651c6f
 msgid "Select a repository to match with the chosen plugin."
 msgstr "Pilih repositori untuk dicocokkan dengan plugin yang dipilih."
 
-msgid "Select installation directory"
-msgstr "Pilih direktori pemasangan"
-
+# en-hash: 9c5c40a67662e66d06e841a60c741c94
 msgid "Select patch file from %s"
 msgstr "Pilih berkas patch dari %s"
 
+# en-hash: 96b5a52402cc48b814e789adde02d11e
 msgid "Select patch in %s"
 msgstr "Pilih patch di %s"
 
+# en-hash: 31ac932fd0524d22514aeae4fbd355e0
 msgid "Select plugin to match"
 msgstr "Pilih plugin untuk dicocokkan"
 
+# en-hash: 48532f91308f78f51670fe7e8fd84e94
 msgid "Select repository"
 msgstr "Pilih repositori"
 
+# en-hash: 5d5b78699e57104f2fa03bbdf7b9197b
 msgid "Set"
 msgstr "Atur"
 
+# en-hash: 704f03f7c5dd59a9b3ae46df8e1e46a4
 msgid "Set Active Single"
 msgstr "Atur Sebagai Wallpaper Tunggal"
 
+# en-hash: 4b6cd91c8b421c62191433f3f42d368f
 msgid "Set Single"
 msgstr "Setel Tunggal"
 
+# en-hash: 1f1e8dafb1197cbb60bae4fbfb9187cc
 msgid "Set as Active"
 msgstr "Jadikan Aktif"
 
-msgid "Set as Active Single Wallpaper"
-msgstr "Jadikan Wallpaper Tunggal Aktif"
-
+# en-hash: b9031cfe402ffd940eede9f395bafd1b
 msgid "Set as active single wallpaper!"
 msgstr "Disetel sebagai wallpaper tunggal aktif!"
 
+# en-hash: f4f70727dc34561dfde1a3c529b6205c
 msgid "Settings"
 msgstr "Pengaturan"
 
+# en-hash: e07a73b7f6a6887a98684040bfebc396
 msgid "Show needs update"
 msgstr "Tampilkan yang perlu pembaruan"
 
+# en-hash: 1f1b02ee24bf2ce675bc4c571ec2b586
 msgid "Show reading progress banner overlay"
 msgstr "Tampilkan bilah progres membaca"
 
+# en-hash: 4fceb4bd855ed2529cef174e323c8b8d
 msgid "Shows reading stats, percentage, and chapter progress"
 msgstr "Menampilkan statistik membaca, persentase, dan kemajuan bab"
 
+# en-hash: cbaa5a2bd50a11bc36534d3f4d6b478b
 msgid "Shows the cover of the book currently being read"
 msgstr "Menampilkan sampul buku yang sedang dibaca"
 
+# en-hash: 34be03edf6b1450f2e3631363ce7e1fb
 msgid "Shuffle (%d)"
 msgstr "Acak (%d)"
 
+# en-hash: 8031ea438e6b65115548622e43fc3fc6
 msgid "Shuffle Pool"
 msgstr "Kolam Acak"
 
-msgid "Shuffles through all wallpapers in folder on sleep.\nPool size: %d wallpapers in rotation"
-msgstr "Mengacak semua wallpaper di folder saat tidur.\nUkuran kolam: %d wallpaper berputar"
-
+# en-hash: 66ba162102bbf6ae31b522aec561735e
 msgid "Single"
 msgstr "Tunggal"
 
+# en-hash: c1cb41ea040ff053e2219930470897ed
 msgid "Single Wallpaper"
 msgstr "Wallpaper Tunggal"
 
+# en-hash: bc586928ac8f7c25dabb909c67bdfa88
 msgid "Solid fill for screen margins & letterboxing"
 msgstr "Isian warna solid untuk margin layar"
 
+# en-hash: 6b46ae48421828d9973deec5fa9aa0c3
 msgid "Sort"
 msgstr "Urutkan"
 
+# en-hash: 3173f57c630d7906d6269e633ca006e6
 msgid "Sort mode"
 msgstr "Mode Urut"
 
+# en-hash: da817141563c7ce9a6fd4173c1530d1c
 msgid "Sort: A-Z"
 msgstr "Urut: A-Z"
 
+# en-hash: ef595b3838621b68aae951bc9ffa229f
 msgid "Sort: Most Liked"
 msgstr "Urutkan: Paling Disukai"
 
+# en-hash: 4db0a46605c5f6f7fa94141acea4f175
 msgid "Sort: Name (A → Z)"
 msgstr "Urut: Nama (A-Z)"
 
+# en-hash: 0757713018112dc84666148de8f02e19
 msgid "Sort: Name (Z → A)"
 msgstr "Urut: Nama (Z-A)"
 
+# en-hash: 8613ff1a8daa77eb854fe8f3cafad6a6
 msgid "Sort: Oldest"
 msgstr "Urut: Terlama"
 
+# en-hash: 60b42108b3d6aa7354ce042fb4eaf8a9
 msgid "Sort: Recently updated"
 msgstr "Urut: Tanggal"
 
+# en-hash: 7cd4ca35a0b2aeb8804acb13f51c3fff
 msgid "Sort: Stars (high → low)"
 msgstr "Urut: Bintang"
 
+# en-hash: 45d8103f48fbec349b836ab0d48e7c0b
 msgid "Sort: Status"
 msgstr "Urut: Status"
 
+# en-hash: 2f407ac9b0d53d42137b946c73a3b68e
 msgid "Sort: Type"
 msgstr "Urut: Tipe"
 
+# en-hash: 7669c9c879da298b11b7252c337aa70e
 msgid "Sort: Updated"
 msgstr "Urutkan: Diperbarui"
 
+# en-hash: d79ac8a369c836fab6a21d64685e1e30
 msgid "Sort: Z-A"
 msgstr "Urut: Z-A"
 
+# en-hash: 2808a34767e19b842d906ab8ab6264c6
 msgid "Sorting"
 msgstr "Pengurutan"
 
+# en-hash: fa3aff3c185c6dc7754235f397c2099a
 msgid "Stable"
 msgstr "Stabil"
 
+# en-hash: ec53a8c4f07baed5d8825072c89799be
 msgid "Status"
 msgstr "Status"
 
+# en-hash: bec65d389b89556e7c0731a3051bd602
 msgid "Status: Needs matching"
 msgstr "Status: Perlu pencocokan"
 
+# en-hash: 68cbe9141a2fc21378b57a483d0ae38f
 msgid "Status: Up to date"
 msgstr "Status: Terbaru"
 
+# en-hash: 70460461d97894427b6bbdb4a7ec6c69
 msgid "Status: Update available"
 msgstr "Status: Pembaruan tersedia"
 
+# en-hash: f0dca7e4eaedf573d4664be249845942
 msgid "Storefront"
 msgstr "Storefront"
 
+# en-hash: 7ade5d484a71e39d2c37c5eb72d01b80
 msgid "Storefront cache refreshed."
 msgstr "Tembolok Storefront diperbarui."
 
+# en-hash: 979936c531edc87a0ad5e09bea0c7ef2
 msgid "Storefront is up to date (v%s)."
 msgstr "Storefront sudah terbaru (v%s)."
 
+# en-hash: 8decbc8ca8cf516ff56a0aa25ef650e0
 msgid "Storefront refresh failed: "
 msgstr "Penyegaran Storefront gagal: "
 
+# en-hash: 454d2b24e0f1d6c8b73e291c49ca90ce
 msgid "Storefront · Updates"
 msgstr "Storefront · Pembaruan"
 
+# en-hash: 5620a897002239dbdf1fb1d697e36ffe
 msgid "Storefront: Open"
 msgstr "Storefront: Buka"
 
+# en-hash: dd2d866df5da52a1aed8e63192026530
 msgid "Stretch image to fill entire screen"
 msgstr "Regangkan gambar ke layar penuh"
 
+# en-hash: a2af7968373489748ae4a88c961e5b4d
 msgid "Style: "
 msgstr "Gaya: "
 
+# en-hash: df30b0a7f63ac7248425b965ff0c47b8
 msgid "Successfully updated %d item(s)."
 msgstr "Berhasil memperbarui %d item."
 
-msgid "Successfully updated %d items."
-msgstr "Berhasil memperbarui %d item."
-
+# en-hash: 5b0930e019a80668fb3a71f966038113
 msgid "Switch to installed patches"
 msgstr "Beralih ke patch terpasang"
 
+# en-hash: ae002149ee123e54d73abed0a8fc1e7e
 msgid "Switch to installed plugins"
 msgstr "Beralih ke plugin terpasang"
 
+# en-hash: ab9cb50c180fdf8953cbb354410c4db0
 msgid "Switch to patch list"
 msgstr "Beralih ke daftar patch"
 
+# en-hash: a804bddb25e800d41fb13e07b478fa46
 msgid "Switch to patches"
 msgstr "Beralih ke patch"
 
+# en-hash: 065be62239c91c37174533c2f0c72648
 msgid "Switch to plugin list"
 msgstr "Beralih ke daftar plugin"
 
+# en-hash: 08d08d4342b48346ca14718012c405da
 msgid "Tag not found on GitHub (%s or %s)."
 msgstr "Tag tidak ditemukan di GitHub (%s atau %s)."
 
-msgid "Text"
-msgstr "Teks"
-
+# en-hash: e60eb6a944962445b77455f99dd667be
 msgid "Text editor plugin is not available."
 msgstr "Plugin editor teks tidak tersedia."
 
+# en-hash: e4d909c290d0fb1ca068ffaddf22cbd0
 msgid "The quick brown fox jumps over the lazy dog."
 msgstr "Saya ingin makan nasi goreng pedas manis enak sekali."
 
+# en-hash: a26abb5b7dd05b79763d7799a9f6ecbb
 msgid "This action cannot be undone.\n\nChanges will take effect after restart."
 msgstr "Tindakan ini tidak dapat dibatalkan.\n\nPerubahan akan berlaku setelah mulai ulang."
 
-msgid "This action cannot be undone.\\\n\\\nChanges will take effect after restart."
-msgstr "This action cannot be undone.\\\n\\\nChanges will take effect after restart."
-
+# en-hash: c3ab64f00eece9eed797129cb54da718
 msgid "This wallpaper is currently set as your active screensaver."
 msgstr "Wallpaper ini saat ini disetel sebagai screensaver aktif Anda."
 
+# en-hash: 8ec39453f44420d798ad107f73aed05f
 msgid "This will delete all cached README files, wiki articles, and screensaver thumbnails (%s)."
 msgstr "Ini akan menghapus semua file README, artikel wiki, dan gambar mini screensaver yang di-cache (%s)."
 
+# en-hash: 1b334fd93d06fc1ec0c8d05823db0361
 msgid "This will delete cached README markdown files and downloaded images (%s)."
 msgstr "Ini akan menghapus file markdown README dan gambar yang diunduh di cache (%s)."
 
+# en-hash: 440ae88b9bb5677227f33ae07af37e1a
 msgid "This will delete cached screensaver thumbnail previews (%s)."
 msgstr "Ini akan menghapus pratinjau gambar mini screensaver di cache (%s)."
 
+# en-hash: 8727046e22b076362d60f816560ffe09
 msgid "This will delete cached wiki articles and downloaded images (%s)."
 msgstr "Ini akan menghapus artikel wiki dan gambar yang diunduh di cache (%s)."
 
+# en-hash: 638ec245e32c807a8e2b0998d3165411
 msgid "This will take effect on next restart."
 msgstr "Ini akan berlaku pada pemuatan ulang berikutnya."
 
+# en-hash: d425644c6a2afa44fa44a1565b489dd6
 msgid "Total commits: %d"
 msgstr "Total komit: %d"
 
+# en-hash: 06dac6da57eb6f64c9d64810e10a7192
 msgid "Tracked: %d"
 msgstr "Melacak: %d"
 
+# en-hash: 9f20e45267caff9e39ca3b9bea16db47
 msgid "Transparent overlay (page content visible behind)"
 msgstr "Lapisan transparan (halaman terlihat di belakang)"
 
+# en-hash: a1fa27779242b4902f7ae3bdd5c6d508
 msgid "Type"
 msgstr "Tipe"
 
-msgid "Unable to determine patch download URL."
-msgstr "Gagal menentukan URL unduhan patch."
-
+# en-hash: 7802fb36da7e75034a308a4571ef56f5
 msgid "Unable to load wiki page. Tap refresh to retry."
 msgstr "Gagal memuat halaman wiki. Ketuk segar untuk mencoba lagi."
 
+# en-hash: 1f6cf37a8939823937bd076c4fd51d1e
 msgid "Unable to read README file"
 msgstr "Gagal membaca berkas README"
 
+# en-hash: 56346840eef36c0a910297ed2be6e6ea
 msgid "Unable to read README. Tap refresh to retry."
 msgstr "Gagal membaca README. Ketuk segarkan untuk mencoba lagi."
 
+# en-hash: ef46a966a56b65fc4922957b129d6a4c
 msgid "Unable to store match for patch."
 msgstr "Gagal menyimpan pencocokan untuk tambalan."
 
+# en-hash: 32b379cd5cc2b3f84797b70dc8781d62
 msgid "Unable to store match for plugin."
 msgstr "Gagal menyimpan pencocokan untuk plugin."
 
+# en-hash: a27dfe771799a09fd55fea73286eb6ab
 msgid "Uninstall"
 msgstr "Copot pemasangan"
 
+# en-hash: 88183b946cc5f0e8c96b2e66e1c74a7e
 msgid "Unknown"
 msgstr "Tidak diketahui"
 
+# en-hash: aee9784c03b80d38d3271cde2b252b8d
 msgid "Unknown error"
 msgstr "Kesalahan tidak diketahui"
 
+# en-hash: a08ab7628919ab9cdf4f5f0bc062f885
 msgid "Unlink the repo"
 msgstr "Putus tautan repositori"
 
+# en-hash: 7706ebf98072b20aa4591e1776a7eeda
 msgid "Unlinked %s from repository."
 msgstr "Memutus tautan %s dari repositori."
 
+# en-hash: 43908857e7877a678a8d332efdf89b61
 msgid "Unmatched: %d"
 msgstr "Belum dicocokkan: %d"
 
+# en-hash: 4b8bbf97f50333628448f95de672ce63
 msgid "Unnamed release"
 msgstr "Rilis tanpa nama"
 
+# en-hash: 06933067aafd48425d67bcb01bba5cb6
 msgid "Update"
 msgstr "Perbarui"
 
-msgid "Update %d outdated item(s)?"
-msgstr "Perbarui %d item yang kadaluarsa?"
-
+# en-hash: 8ed0aac4c9739a981247e0115effb18f
 msgid "Update %s?"
 msgstr "Perbarui %s?"
 
+# en-hash: 6d9160dc4176d784df94f92a091a9a59
 msgid "Update All"
 msgstr "Perbarui Semua"
 
-msgid "Update all outdated items?"
-msgstr "Perbarui semua item yang kadaluarsa?"
-
+# en-hash: 247ef2772cca9ce82a8934100af8683c
 msgid "Update available for %s: remote %s, installed %s."
 msgstr "Pembaruan tersedia untuk %s: remote %s, terpasang %s."
 
+# en-hash: 224518815caec6dace24684b7bd877e8
 msgid "Update channel"
 msgstr "Saluran pembaruan"
 
-msgid "Update check was cancelled"
-msgstr "Pemeriksaan pembaruan dibatalkan"
+# en-hash: e1ba91f9b8666f2b30bf501bb1114462
+msgid "Update check was cancelled."
+msgstr "Pemeriksaan pembaruan dibatalkan."
 
+# en-hash: 43c694f6abd3b6ce1e256015dfe2513e
 msgid "Update patch"
 msgstr "Perbarui patch"
 
+# en-hash: 9d8ea88e41cfd4bdcf741262ccd22fe2
 msgid "Update plugin"
 msgstr "Perbarui plugin"
 
+# en-hash: 523a95254799739122d7851c74241cc0
 msgid "Updated %d of %d item(s) (%d failed)."
 msgstr "Berhasil memperbarui %d dari %d item (%d gagal)."
 
+# en-hash: bda1a603a6d50386060b8dd0ff3a1c27
 msgid "Updated patch \"%s\"."
 msgstr "Patch \"%s\" diperbarui."
 
-msgid "Updated patch %s."
-msgstr "Tambalan %s telah diperbarui."
-
-msgid "Updated patch \\\\\"%s\\\\\"."
-msgstr "Updated patch \\\\\"%s\\\\\"."
-
+# en-hash: ea03cc9fdc791c9e882185f9871e2d19
 msgid "Updated plugin \"%s\" to version %s."
 msgstr "Plugin \"%s\" diperbarui ke versi %s."
 
+# en-hash: cfba84643992b94389217ecb4b0e89c5
 msgid "Updated plugin \"%s\"."
 msgstr "Plugin \"%s\" diperbarui."
 
-msgid "Updated plugin \\\\\"%s\\\\\" to version %s."
-msgstr "Updated plugin \\\\\"%s\\\\\" to version %s."
-
-msgid "Updated plugin \\\\\"%s\\\\\"."
-msgstr "Updated plugin \\\\\"%s\\\\\"."
-
+# en-hash: 700f08e43a1a17d018812444cc9391e9
 msgid "Updated: %s"
 msgstr "Diperbarui: %s"
 
+# en-hash: 9ac41b6a577daadd588f0fcde0071e8b
 msgid "Updates"
 msgstr "Pembaruan"
 
+# en-hash: 7a1861cda946de73714affbeb669eba4
 msgid "Updates Ignored"
 msgstr "Pembaruan Diabaikan"
 
-msgid "Updating [%d/%d]: %s…"
-msgstr "Memperbarui [%d/%d]: %s…"
+# en-hash: 4a70d22f0b6c142f1932649237e68002
+msgid "Updating [%d/%d]: %s…\nTap screen to cancel."
+msgstr "Memperbarui [%d/%d]: %s…\nKetuk layar untuk membatalkan."
 
+# en-hash: a07df8665a5e8ade90f822d03b1ad148
 msgid "User Installed"
 msgstr "Pengguna"
 
+# en-hash: c75e442b6637b50312241c2ed46ef563
 msgid "Verifying repository %s/%s..."
 msgstr "Memverifikasi repositori %s/%s..."
 
+# en-hash: 34b6cd75171affba6957e308dcbd92be
 msgid "Version"
 msgstr "Versi"
 
+# en-hash: 9e69db6d28a0ec32d28e2c9e327fd40a
 msgid "Versions"
 msgstr "Versi"
 
+# en-hash: ea4021361394f56beeae77c394271b11
 msgid "View README"
 msgstr "Lihat README"
 
-msgid "View commits (%s \\\\xE2\\\\x86\\\\x92 %s)"
-msgstr "View commits (%s \\\\xE2\\\\x86\\\\x92 %s)"
-
+# en-hash: 033b69530c7d38c7bcda12b16b97b203
 msgid "View commits (%s → %s)"
 msgstr "Lihat komit (%s → %s)"
 
+# en-hash: dabeb2a6efa064595e4fbf43fda02f42
 msgid "Wallpaper Collection"
 msgstr "Koleksi Wallpaper"
 
+# en-hash: 882dac04ff81c4267d741a32fd9702bf
 msgid "Wallpaper Options"
 msgstr "Opsi Wallpaper"
 
+# en-hash: 72df29e602f5d37ea0a0ab01b9528d83
 msgid "Wallpaper deleted from device."
 msgstr "Wallpaper dihapus dari perangkat."
 
+# en-hash: 10d89f780d289c5a80bae8b18a04b517
 msgid "Wallpaper removed"
 msgstr "Wallpaper dihapus"
 
+# en-hash: b6dea7fce89bd30f8c3d5b898849aa4b
 msgid "Wallpaper saved to collection!"
 msgstr "Wallpaper disimpan ke koleksi!"
 
+# en-hash: ba8ef34da8f377a1c718ff0f10e107b1
 msgid "Wallpaper set as active KOReader screensaver!"
 msgstr "Wallpaper diatur sebagai screensaver KOReader aktif!"
 
+# en-hash: 9f095ba0dd323e2cf519b77ca8c01715
 msgid "Wallpaper set as active screensaver!"
 msgstr "Wallpaper disetel sebagai screensaver aktif!"
 
+# en-hash: 5debabbcc269798b673cbe19cd73e8e7
 msgid "Warning: the selected version is older than what is currently installed. You are downgrading."
 msgstr "Peringatan: versi yang dipilih lebih lama daripada yang terpasang saat ini. Anda menurunkan versi."
 
+# en-hash: a89746741af25fe85303aa1ec68a24dd
 msgid "White Fill"
 msgstr "Isian Putih"
 
+# en-hash: bf111e3622a72a3b5dc784b5903983ca
 msgid "Wiki"
 msgstr "Wiki"
 
+# en-hash: e87f48c9651c58d2e58f8947cf30a34c
 msgid "Wiki Pages"
 msgstr "Halaman Wiki"
 
+# en-hash: f78c688bce00bf8bd27b83392711b180
 msgid "Wiki pages & images"
 msgstr "Halaman & gambar Wiki"
 
+# en-hash: 20c942c0130f3367917c5d16db658ce3
 msgid "Z -> A"
 msgstr "Z -> A"
 
+# en-hash: 93d846d0fcab50e65740af3b2eabafac
 msgid "Z → A"
 msgstr "Z → A"
 
+# en-hash: 035661797ec0fdd6b3ae3d5d36ab7d1a
 msgid "[ Loading preview... ]"
 msgstr "[ Memuat pratinjau... ]"
 
+# en-hash: 4bca90761cfeab8d19688f449263dd62
 msgid "[ Wallpaper Preview Loading... ]"
 msgstr "[ Memuat Pratinjau Wallpaper... ]"
 
+# en-hash: f29a8499c7d11cf44a0787e0fd1e3900
 msgid "[Ignored]"
 msgstr "[Diabaikan]"
 
+# en-hash: d633fec4eb7598d17886e92c10438dcc
 msgid "[draft]"
 msgstr "[draf]"
 
+# en-hash: 59db44a5d1552a390f72a7e83935bca0
 msgid "[pre]"
 msgstr "[pre]"
 
-msgid "\\\\\"My dear Mr. Bennet,\\\\\" said his lady to him one day, \\\\\"have you heard that Netherfield Park is let at last?\\\\\" Mr. Bennet replied that he had not. \\\\\"But it is,\\\\\" returned she; \\\\\"for Mrs. Long has just been here, and she told me all about it.\\\\\" Mr. Bennet made no answer."
-msgstr "\\\\\"My dear Mr. Bennet,\\\\\" said his lady to him one day, \\\\\"have you heard that Netherfield Park is let at last?\\\\\" Mr. Bennet replied that he had not. \\\\\"But it is,\\\\\" returned she; \\\\\"for Mrs. Long has just been here, and she told me all about it.\\\\\" Mr. Bennet made no answer."
-
-msgid "\\\\xC2\\\\xB7"
-msgstr "\\\\xC2\\\\xB7"
-
+# en-hash: 452444be4c6a56f22e40e23472b8c748
 msgid "about_text"
 msgstr "Storefront adalah manajer paket bawaan KOReader untuk plugin, tambalan, dan font."
 
+# en-hash: b1f8e4a5ec893d89ea440ddff299c0fc
 msgid "anyone"
 msgstr "siapa saja"
 
+# en-hash: 9639e32cab248434a17ab32237cb3b71
 msgid "btn_apply"
 msgstr "Terapkan"
 
+# en-hash: 36cf3e1f679e22c5433ff72069545444
 msgid "btn_back"
 msgstr "Kembali"
 
+# en-hash: ea4788705e6873b424c65e91c2846b19
 msgid "btn_cancel"
 msgstr "Batal"
 
+# en-hash: d3d2e617335f08df83599665eef8a418
 msgid "btn_close"
 msgstr "Tutup"
 
+# en-hash: 349838fb1d851d3e2014b9fe39203275
 msgid "btn_install"
 msgstr "Pasang"
 
+# en-hash: e0aa021e21dddbd6d8cecec71e9cf564
 msgid "btn_ok"
 msgstr "OK"
 
+# en-hash: 31fde7b05ac8952dacf4af8a704074ec
 msgid "btn_preview"
 msgstr "Pratinjau"
 
+# en-hash: 63a6a88c066880c5ac42394a22803ca6
 msgid "btn_refresh"
 msgstr "Segarkan"
 
+# en-hash: 5dd03e8d039863e563e049be198c3fd3
 msgid "btn_release_notes"
 msgstr "Catatan Rilis"
 
+# en-hash: d8ffc3650a53fc6fa8d38545e68ea687
 msgid "btn_restart"
 msgstr "Mulai Ulang KOReader"
 
+# en-hash: 6327b4e59f58137083214a1fec358855
 msgid "btn_retry"
 msgstr "Coba Lagi"
 
+# en-hash: 13348442cc6a27032d2b4aa28b75a5d3
 msgid "btn_search"
 msgstr "Cari"
 
+# en-hash: a27dfe771799a09fd55fea73286eb6ab
 msgid "btn_uninstall"
 msgstr "Copot"
 
+# en-hash: 06933067aafd48425d67bcb01bba5cb6
 msgid "btn_update"
 msgstr "Perbarui"
 
+# en-hash: 5d5cd268b8acccf04f63d81c5d0d2cab
 msgid "btn_view_details"
 msgstr "Lihat Detail"
 
+# en-hash: bbdb1b84c8613a1be1923b11899bcc8c
 msgid "confirm_install"
 msgstr "Pasang '%s'?"
 
+# en-hash: 50a23dbf9b273a7e0cab4f891e547b10
 msgid "confirm_uninstall"
 msgstr "Copot '%s'? Tindakan ini tidak dapat dibatalkan."
 
+# en-hash: dfa41c893ce5f542c03912db3d4ad362
 msgid "confirm_update"
 msgstr "Perbarui '%s' dari v%s ke v%s?"
 
+# en-hash: 075ae3d2fc31640504f814f60e5ef713
 msgid "disabled"
 msgstr "dinonaktifkan"
 
+# en-hash: 733f628800e6308b1644849183455412
 msgid "e.g., koreader"
 msgstr "mis., koreader"
 
+# en-hash: a10311459433adf322f2590a4987c423
 msgid "enabled"
 msgstr "diaktifkan"
 
+# en-hash: ac45f3ac988950ed01db115154165bfe
 msgid "err_install_failed"
 msgstr "Pemasangan gagal untuk '%s'."
 
+# en-hash: 961f347bf5a8870fdba8d55abf430777
 msgid "err_network_failed"
 msgstr "Kesalahan jaringan: Gagal mengunduh katalog."
 
+# en-hash: 75a119f679c1502c27ae4eb42fec6ab7
 msgid "err_uninstall_failed"
 msgstr "Pencopotan gagal untuk '%s'."
 
+# en-hash: a6a2a55bea8760389dfca77132905b7c
 msgid "filter_all"
 msgstr "Semua Kategori"
 
+# en-hash: 98dd43dfae05b11befe1f140e0ec787a
 msgid "filter_installed"
 msgstr "Terpasang"
 
+# en-hash: 59ea61e4d9d9255e175f475275becb51
 msgid "filter_updates"
 msgstr "Pembaruan"
 
+# en-hash: 47a282dfe68a42d302e22c4920ed9b5e
 msgid "font"
 msgstr "font"
 
+# en-hash: 8ae3b1c71d59d1307a2ccfe7d632e71a
 msgid "ghp_..."
 msgstr "ghp_..."
 
+# en-hash: 3bf3ce19d8fe8a31b9d175e473f696ba
 msgid "header_about"
 msgstr "header_about"
 
+# en-hash: 608900ed06f424f6830232f2c2080b42
 msgid "header_updates"
 msgstr "header_updates"
 
+# en-hash: a517747c3d12f99244ae598910d979c5
 msgid "label_author"
 msgstr "Penulis"
 
+# en-hash: b5a7adde1af5c87d7fd797b6245c2a39
 msgid "label_description"
 msgstr "Deskripsi"
 
+# en-hash: c20c35ef53bf1b70789ce94e66800147
 msgid "label_downloads"
 msgstr "Unduhan"
 
+# en-hash: 794df3791a8c800841516007427a2aa3
 msgid "label_license"
 msgstr "Lisensi"
 
+# en-hash: 33fcf2b3ec4686d9cd06051c726d0ba2
 msgid "label_repository"
 msgstr "Repositori"
 
+# en-hash: 6f6cb72d544962fa333e2e34ce64f719
 msgid "label_size"
 msgstr "Ukuran"
 
+# en-hash: a1fa27779242b4902f7ae3bdd5c6d508
 msgid "label_type"
 msgstr "Tipe"
 
+# en-hash: 34b6cd75171affba6957e308dcbd92be
 msgid "label_version"
 msgstr "Versi"
 
+# en-hash: 71ccb7a35a452ea8153b6d920f9f190e
 msgid "latest"
 msgstr "terbaru"
 
+# en-hash: d8893e5780d1e992fa1b67612a58a15a
 msgid "menu_about"
 msgstr "Tentang Storefront"
 
+# en-hash: 2fa906347292074ac66ffc6ddb5574da
 msgid "menu_settings"
 msgstr "Pengaturan Storefront"
 
+# en-hash: f0dca7e4eaedf573d4664be249845942
 msgid "menu_storefront"
 msgstr "Storefront"
 
+# en-hash: 88311e0136525ece02a3ddc403fa9306
 msgid "menu_storefront_desc"
 msgstr "Jelajahi, pasang, dan perbarui plugin, tambalan, dan font."
 
+# en-hash: 6219fef68ef3c131b9d8a45746d183f1
 msgid "msg_catalog_updated"
 msgstr "Katalog berhasil diperbarui."
 
+# en-hash: ea7009546a19031e6fddcf0ad7e2d5a9
 msgid "msg_installed_plugin"
 msgstr "Plugin \"%s\" terpasang."
 
+# en-hash: 1ea8b0189bc054c587a78d1b13f5dc9d
 msgid "msg_installed_plugin_version"
 msgstr "Plugin \"%s\" terpasang (versi %s)."
 
+# en-hash: 666d2dad00473f02da8e25031ea9c9fa
 msgid "msg_no_results"
 msgstr "Tidak ada item yang cocok."
 
+# en-hash: 22af645d1859cb5ca6da0c484f1f37ea
 msgid "new"
 msgstr "baru"
 
+# en-hash: d8f4a1993546cc4b850cde3599e27aec
 msgid "not found"
 msgstr "tidak ditemukan"
 
+# en-hash: e5c5e6dae38b284e8cf0bd1fb0efac03
 msgid "patch"
 msgstr "patch"
 
+# en-hash: a24bcf2198b1b13ad985304483f7f324
 msgid "plugin"
-msgstr "plugin"
+msgstr "pengaya"
 
+# en-hash: c360639f51cb2625a9439974e865a683
 msgid "progress_please_wait"
 msgstr "Harap tunggu"
 
+# en-hash: ffed49d9612d727a79f49a2a024f8c14
 msgid "prompt_restart_needed"
 msgstr "Pemasangan selesai. Mulai ulang KOReader sekarang untuk mengaktifkan '%s'?"
 
+# en-hash: 469baadc4a21365596e9733f122d0d19
 msgid "release asset"
 msgstr "aset rilis"
 
+# en-hash: 7fe46288d821fce32e4f247000aab961
 msgid "release is newer by date"
 msgstr "rilis lebih baru berdasarkan tanggal"
 
+# en-hash: 923e1e6300d2ab90858681d6aa53e7c6
 msgid "remote is newer by date"
 msgstr "versi jarak jauh lebih baru berdasarkan tanggal"
 
+# en-hash: b3f2035551f6e48c67489ace9f588f94
 msgid "repository"
 msgstr "repositori"
 
+# en-hash: fe1cf176acd521dda7c2ef219171a5da
 msgid "search_hint"
 msgstr "Cari di storefront..."
 
+# en-hash: f09090e6eca8bb5cc1a878687719625a
 msgid "status_builtin"
 msgstr "Bawaan"
 
+# en-hash: 96c4d7265c89a6e0ed70ffec22fb1afe
 msgid "status_downloading"
 msgstr "Mengunduh..."
 
+# en-hash: 98dd43dfae05b11befe1f140e0ec787a
 msgid "status_installed"
 msgstr "Terpasang"
 
+# en-hash: b9940e6be68b04502240b4d9dcadf31f
 msgid "status_installing"
 msgstr "Memasang..."
 
+# en-hash: ddd8eef6f86868a07f62b0e3810711f0
 msgid "status_not_installed"
 msgstr "Belum Terpasang"
 
+# en-hash: d698f29bd76283937c7834415ffc0d7d
 msgid "status_uninstalling"
 msgstr "Mencopot..."
 
+# en-hash: 8bd7695831e104e2669e086e03927a20
 msgid "status_update_available"
 msgstr "Pembaruan Tersedia"
 
+# en-hash: f0dca7e4eaedf573d4664be249845942
 msgid "storefront_title"
 msgstr "Storefront"
 
+# en-hash: b1c94ca2fbc3e78fc30069c8d0f01680
 msgid "tab_all"
 msgstr "Semua"
 
+# en-hash: 59c4ad3f3cb3d812d68fab7a354d4a63
 msgid "tab_fonts"
 msgstr "Font"
 
+# en-hash: c4d283323af70979073f5cb6145f3a4b
 msgid "tab_patches"
 msgstr "Tambalan"
 
+# en-hash: bb38096ab39160dc20d44f3ea6b44507
 msgid "tab_plugins"
 msgstr "Plugin"
 
+# en-hash: c47c7c7383225ab55ff591cb59c41e6b
 msgid "tab_readme"
 msgstr "README"
 
+# en-hash: 83936a3f80ba44c78c9911f5445f2994
 msgid "tab_sample_text"
 msgstr "Teks Contoh"
 
+# en-hash: cb95f5f307c64043351b5125571b350a
 msgid "tab_screensavers"
 msgstr "Wallpaper"
 
+# en-hash: 9e69db6d28a0ec32d28e2c9e327fd40a
 msgid "tab_versions"
 msgstr "Versi"
 
+# en-hash: ad921d60486366258809553a3db49a4a
 msgid "unknown"
 msgstr "tidak diketahui"
 
+# en-hash: dad0a0e6e89b494d132708b10a6487fb
 msgid "updated %s"
 msgstr "diperbarui %s"
 
+# en-hash: 4fb9820991bd18f6c55eb72a24b1c411
 msgid "updated %s (%s)"
 msgstr "diperbarui %s (%s)"
 
+# en-hash: 176848afabe6f93c3e23a470037ab74f
 msgid "·"
 msgstr "·"
 
+# en-hash: a565c660107f7ea24918e8be382b38bd
 msgid "≥ %s ⭐"
 msgstr "≥ %s ⭐"
 
+# en-hash: 9f636722b704a35440a8446070c2fcb0
 msgid "★ ACTIVE"
 msgstr "★ AKTIF"
 
+# en-hash: decf3b69778962bc18d9771802e3a3f2
 msgid "⚙ Settings"
 msgstr "⚙ Pengaturan"
 
-msgid "⚙ Settings..."
-msgstr "⚙ Pengaturan..."
-
+# en-hash: 55930f171c863808f8dba67599ec1d70
 msgid "✓ Current"
 msgstr "✓ Saat ini"
-
-msgid "Downloading…"
-msgstr ""
-
-msgid "Download cancelled."
-msgstr ""
-
-msgid "Batch update cancelled."
-msgstr ""
-
-msgid "Connecting…"
-msgstr ""
 

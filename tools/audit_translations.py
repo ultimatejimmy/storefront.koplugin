@@ -4,6 +4,14 @@ import re
 import sys
 import sync_translations
 
+# UTF-8 stdout/stderr reconfiguration
+if sys.version_info >= (3, 7):
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+        sys.stderr.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
+
 PLUGIN_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'storefront.koplugin'))
 LANGUAGES_DIR = os.path.join(PLUGIN_DIR, 'languages')
 SOURCE_DIR = PLUGIN_DIR
@@ -30,95 +38,66 @@ LANG_NAMES = {
 }
 
 UI_WIDGET_PATTERNS = [
-    r'TextWidget:new\s*\{\s*text\s*=\s*"([^"]+)"',
-    r'TextBoxWidget:new\s*\{\s*text\s*=\s*"([^"]+)"',
-    r'Button:new\s*\{\s*text\s*=\s*"([^"]+)"',
-    r'CheckButton:new\s*\{\s*text\s*=\s*"([^"]+)"',
-    r'InputDialog:new\s*\{\s*title\s*=\s*"([^"]+)"',
-    r'InputDialog:new\s*\{\s*description\s*=\s*"([^"]+)"',
+    r'TextWidget:new\s*\{[^}]*?text\s*=\s*"([^"]+)"',
+    r'TextBoxWidget:new\s*\{[^}]*?text\s*=\s*"([^"]+)"',
+    r'Button:new\s*\{[^}]*?text\s*=\s*"([^"]+)"',
+    r'InputDialog:new\s*\{[^}]*?title\s*=\s*"([^"]+)"',
+    r'InputDialog:new\s*\{[^}]*?description\s*=\s*"([^"]+)"',
+    r'InfoMessage:new\s*\{[^}]*?text\s*=\s*"([^"]+)"',
+    r'ConfirmBox:new\s*\{[^}]*?text\s*=\s*"([^"]+)"',
 ]
 
-# Keep fixed-width action buttons safe for localized text. These limits count
-# Unicode characters, not UTF-8 bytes.
 TRANSLATION_MAX_LENGTHS = {
     'Restart now': 16,
 }
 
-# These status strings never legitimately contain question marks. Treat one as
-# an encoding-corruption marker so it is caught before a release.
 ENCODING_SENSITIVE_KEYS = {
-    'msg_installed_plugin',
-    'msg_installed_plugin_version',
     'progress_please_wait',
 }
+
+def decode_po_string(s):
+    if hasattr(sync_translations, 'decode_po_string'):
+        return sync_translations.decode_po_string(s)
+    return s.replace('\\n', '\n').replace('\\"', '"').replace('\\\\', '\\') if s else ""
+
+def encode_po_string(s):
+    if hasattr(sync_translations, 'encode_po_string'):
+        return sync_translations.encode_po_string(s)
+    return s.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n') if s else ""
+
+def format_specifiers(s):
+    if hasattr(sync_translations, 'format_specifiers'):
+        return sync_translations.format_specifiers(s)
+    return re.findall(r'%(?:\d+\$)?[sd]', s) if s else []
 
 def scan_unwrapped_ui_strings():
     unwrapped = []
     for root, _, files in os.walk(SOURCE_DIR):
-        if 'languages' in root or 'tools' in root or 'tests' in root: continue
+        if 'languages' in root or 'tools' in root or 'tests' in root:
+            continue
         for file in files:
-            if file.endswith('.lua'):
+            if file.endswith('.lua') and file != 'localization_storefront.lua':
                 file_path = os.path.join(root, file)
                 with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
                     content = f.read()
                     for pat in UI_WIDGET_PATTERNS:
                         for m in re.finditer(pat, content):
                             val = m.group(1)
-                            # Ignore icon strings, single characters, numbers, asset paths
-                            if len(val) > 2 and not val.endswith('.svg') and not val.endswith('.ttf') and not val.startswith('%'):
+                            # Ignore icon strings, font files, numbers, single chars, format templates, URLs, and punctuation separators
+                            v_clean = val.strip()
+                            if (len(val) > 2 and not val.endswith('.svg') and not val.endswith('.png')
+                                    and not val.endswith('.ttf') and not val.startswith('%')
+                                    and not val.startswith('http://') and not val.startswith('https://')
+                                    and not val.startswith('www.')
+                                    and v_clean not in ('·', '–', '—', '+', '-', '•', '|', '/', '\\', '...')):
                                 unwrapped.append((file, val))
     return unwrapped
 
 def extract_keys_from_lua():
-    keys = set()
-
-    # Extract FALLBACKS and KEY_ALIASES
-    loc_file = os.path.join(SOURCE_DIR, 'localization_storefront.lua')
-    if os.path.exists(loc_file):
-        with open(loc_file, 'r', encoding='utf-8', errors='ignore') as f:
-            content = f.read()
-            m_fb = re.search(r'local FALLBACKS = \{(.*?)\}', content, re.DOTALL)
-            if m_fb:
-                for line in m_fb.group(1).splitlines():
-                    m_kv = re.match(r'^\s*([a-zA-Z0-9_]+)\s*=\s*"(.*)"\s*,?\s*$', line)
-                    if m_kv:
-                        keys.add(m_kv.group(1))
-
-            m_ka = re.search(r'local KEY_ALIASES = \{(.*?)\}', content, re.DOTALL)
-            if m_ka:
-                for line in m_ka.group(1).splitlines():
-                    m_kv = re.match(r'^\s*\["(.*)"\]\s*=\s*"(.*)"\s*,?\s*$', line)
-                    if m_kv:
-                        keys.add(m_kv.group(1))
-                        keys.add(m_kv.group(2))
-
-    for root, _, files in os.walk(SOURCE_DIR):
-        if 'languages' in root or 'tools' in root or 'tests' in root: continue
-        for file in files:
-            if file.endswith('.lua'):
-                file_path = os.path.join(root, file)
-                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                    content = f.read()
-
-                    # 1. Double quoted _("...")
-                    for m in re.finditer(r'(?:_|_G\._|loc:t|Localization:t)\s*\(\s*"((?:[^"\\]|\\.)*)"\s*[\),]', content):
-                        s = m.group(1).replace('\\"', '"').replace('\\n', '\n').replace('\\\\', '\\')
-                        s = s.replace('\\xC2\\xB7', '·').replace('\\xE2\\x86\\x92', '→').replace('\\xE2\\x80\\x94', '—').replace('\\xE2\\x80\\xA2', '•')
-                        if s and not s.startswith('%'): keys.add(s)
-
-                    # 2. Single quoted _('...')
-                    for m in re.finditer(r'(?:_|_G\._|loc:t|Localization:t)\s*\(\s*\'((?:[^\'\\]|\\.)*)\'\s*[\),]', content):
-                        s = m.group(1).replace("\\'", "'").replace('\\n', '\n').replace('\\\\', '\\')
-                        s = s.replace('\\xC2\\xB7', '·').replace('\\xE2\\x86\\x92', '→').replace('\\xE2\\x80\\x94', '—').replace('\\xE2\\x80\\xA2', '•')
-                        if s and not s.startswith('%'): keys.add(s)
-
-                    # 3. Block quoted _([[...]])
-                    for m in re.finditer(r'(?:_|_G\._|loc:t|Localization:t)\s*\(\s*\[\[(.*?)\]\]\s*[\),]', content, re.DOTALL):
-                        s = m.group(1)
-                        if s: keys.add(s)
-
-    keys.discard("")
-    return keys
+    res = sync_translations.extract_keys_from_lua()
+    if isinstance(res, tuple):
+        return res[0]
+    return res
 
 def parse_po(file_path):
     entries = {}
@@ -143,19 +122,19 @@ def parse_po(file_path):
                 if current_msgid is not None and current_msgstr is not None:
                     entries[current_msgid] = current_msgstr
                 m = re.match(r'^msgid "(.*)"$', line_str)
-                current_msgid = sync_translations.decode_po_string(m.group(1)) if m else ''
+                current_msgid = decode_po_string(m.group(1)) if m else ''
                 current_msgstr = None
                 in_msgid = True
                 in_msgstr = False
             elif line_str.startswith('msgstr '):
                 m = re.match(r'^msgstr "(.*)"$', line_str)
-                current_msgstr = sync_translations.decode_po_string(m.group(1)) if m else ''
+                current_msgstr = decode_po_string(m.group(1)) if m else ''
                 in_msgid = False
                 in_msgstr = True
             elif line_str.startswith('"'):
                 m = re.match(r'^"(.*)"$', line_str)
                 if m:
-                    val = sync_translations.decode_po_string(m.group(1))
+                    val = decode_po_string(m.group(1))
                     if in_msgid and current_msgid is not None:
                         current_msgid += val
                     elif in_msgstr and current_msgstr is not None:
@@ -171,13 +150,13 @@ def save_po(file_path, lang_name, lang_code, entries):
         for key in sorted(entries.keys()):
             if not key: continue
             val = entries[key]
-            escaped_key = sync_translations.encode_po_string(key)
-            escaped_val = sync_translations.encode_po_string(val)
+            escaped_key = encode_po_string(key)
+            escaped_val = encode_po_string(val)
             f.write(f'msgid "{escaped_key}"\nmsgstr "{escaped_val}"\n\n')
 
 def run_audit():
     print("==================================================")
-    print("      ADVANCED LUA AST TRANSLATION AUDITOR       ")
+    print("    STOREFRONT TRANSLATION & UI STRING AUDITOR    ")
     print("==================================================\n")
 
     unwrapped_ui = scan_unwrapped_ui_strings()
@@ -185,6 +164,8 @@ def run_audit():
         print(f"⚠️ Warning: Found {len(unwrapped_ui)} potentially un-wrapped UI string literals:")
         for fn, s in unwrapped_ui[:10]:
             print(f"   [{fn}] \"{s}\"")
+        if len(unwrapped_ui) > 10:
+            print(f"   ... and {len(unwrapped_ui) - 10} more")
         print()
     else:
         print("✅ 0 Un-wrapped UI String Literals Found!\n")
@@ -204,13 +185,11 @@ def run_audit():
             en_entries[k] = k
         save_po(en_path, 'English', 'en', en_entries)
 
-    print("✅ English Master (en.po) Key Parity: 100%!")
+    print(f"✅ English Master (en.po) Key Parity: 100% ({len(en_entries)} keys)!\n")
 
     # 2. Check and report on target language coverage
-    print("\n--- Target Language Parity & Completeness Audit ---")
+    print("--- Target Language Parity & Completeness Audit ---")
     total_issues = 0
-
-    tab_keys = {'tab_plugins', 'tab_patches', 'tab_fonts', 'filter_installed', 'filter_updates'}
 
     for lang_code, lang_name in sorted(LANG_NAMES.items()):
         if lang_code == 'en': continue
@@ -221,9 +200,11 @@ def run_audit():
         missing = []
         empty = []
         too_long = []
+        spec_mismatch = []
 
         for key in sorted(en_entries.keys()):
             val = entries.get(key, "")
+            en_val = en_entries.get(key, key)
             if key not in entries:
                 missing.append(key)
             elif not val or val.strip() == "":
@@ -232,16 +213,17 @@ def run_audit():
                 empty.append(key)
             elif key in ENCODING_SENSITIVE_KEYS and "?" in val:
                 empty.append(key)
-            elif key in tab_keys and len(val) > 11:
-                too_long.append((key, val))
+            elif format_specifiers(val) != format_specifiers(en_val):
+                spec_mismatch.append(key)
 
             max_length = TRANSLATION_MAX_LENGTHS.get(key)
             if max_length is not None and len(val) > max_length:
                 too_long.append((key, val))
 
-        if missing or empty or too_long:
-            total_issues += len(missing) + len(empty) + len(too_long)
-            print(f"❌ {lang_code}.po ({lang_name}): {len(entries)}/{len(en_entries)} keys | {len(missing)} missing | {len(empty)} empty | {len(too_long)} length violations")
+        issues_count = len(missing) + len(empty) + len(too_long) + len(spec_mismatch)
+        if issues_count > 0:
+            total_issues += issues_count
+            print(f"❌ {lang_code}.po ({lang_name}): {len(entries)}/{len(en_entries)} keys | {len(missing)} missing | {len(empty)} empty | {len(spec_mismatch)} format mismatches | {len(too_long)} length violations")
         else:
             print(f"✅ {lang_code}.po ({lang_name}): 100% complete ({len(entries)}/{len(en_entries)} keys)")
 
