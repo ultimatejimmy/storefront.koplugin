@@ -432,6 +432,8 @@ local KEY_ALIASES = {
     ["About"] = "header_about",
     ["Version"] = "label_version",
     ["Author"] = "label_author",
+    ["Installed plugin \"%s\" (version %s)."] = "msg_installed_plugin_version",
+    ["Installed plugin \"%s\"."] = "msg_installed_plugin",
 }
 
 -- Translate string key with formatting support

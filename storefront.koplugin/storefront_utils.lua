@@ -296,7 +296,9 @@ function storefront_utils.calcDynamicFontSize(text, max_width, face_name, max_fo
     return min_font_size
 end
 
-function storefront_utils.calcGroupFontSize(texts, total_avail_width, gap, face_name, padding_per_item, max_font_size, min_font_size)
+function storefront_utils.calcGroupFontSize(
+    texts, total_avail_width, gap, face_name, padding_per_item, max_font_size, min_font_size
+)
     face_name = face_name or "cfont"
     local Device = require("device")
     local Font = require("ui/font")
@@ -478,7 +480,9 @@ function storefront_utils.showConfirmDialog(opts)
     local overlay
 
     local title_text = opts.title or _("Confirm")
-    local dynamic_title_size = storefront_utils.calcDynamicFontSize(title_text, inner_w, "NotoSerif-Regular.ttf", title_font_size, 12, true)
+    local dynamic_title_size = storefront_utils.calcDynamicFontSize(
+        title_text, inner_w, "NotoSerif-Regular.ttf", title_font_size, 12, true
+    )
     local title_label = TextBoxWidget:new{
         text = title_text,
         face = Font:getFace("NotoSerif-Regular.ttf", dynamic_title_size),
@@ -505,8 +509,12 @@ function storefront_utils.showConfirmDialog(opts)
     local btn_gap = sc(12)
     local cancel_text = opts.cancel_text or _("Cancel")
     local ok_text = opts.ok_text or _("OK")
-    local btn_font_size = storefront_utils.calcGroupFontSize({ cancel_text, ok_text }, inner_w, btn_gap, "cfont", sc(16), 18, 10)
-    local btn_widths = storefront_utils.calcProportionalBtnWidths({ cancel_text, ok_text }, inner_w, btn_gap, btn_font_size, "cfont")
+    local btn_font_size = storefront_utils.calcGroupFontSize(
+        { cancel_text, ok_text }, inner_w, btn_gap, "cfont", sc(16), 18, 10
+    )
+    local btn_widths = storefront_utils.calcProportionalBtnWidths(
+        { cancel_text, ok_text }, inner_w, btn_gap, btn_font_size, "cfont"
+    )
 
     local FocusManager = require("ui/widget/focusmanager")
 

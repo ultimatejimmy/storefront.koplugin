@@ -1,4 +1,5 @@
-package.path = "storefront.koplugin/?.lua;" .. package.path
+package.path = "storefront.koplugin/?.lua;tests/?.lua;" .. package.path
+require("spec_helper")
 
 local storefront_utils = require("storefront_utils")
 

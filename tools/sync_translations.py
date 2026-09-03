@@ -224,6 +224,23 @@ def save_po(file_path, lang_name, lang_code, keys, translations, fallback_map, e
     with open(file_path, 'w', encoding='utf-8', newline='\n') as f:
         f.write(''.join(chunks))
 
+def validate_translations(lang_code, requested, translated):
+    if not isinstance(translated, dict):
+        return [f"{lang_code}: provider did not return a translations object"]
+
+    errors = []
+    for key, english in requested.items():
+        value = translated.get(key)
+        if not isinstance(value, str) or not value.strip():
+            errors.append(f"{lang_code}: missing translation for {key!r}")
+        elif "???" in value:
+            errors.append(f"{lang_code}: placeholder/corrupt translation for {key!r}")
+        elif value == english and key not in ALLOWLIST:
+            errors.append(f"{lang_code}: English fallback returned for {key!r}")
+        elif format_specifiers(value) != format_specifiers(english):
+            errors.append(f"{lang_code}: format specifiers differ for {key!r}")
+    return errors
+
 def get_gemini_key():
     return os.environ.get("GEMINI_API_KEY")
 
