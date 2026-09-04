@@ -3028,13 +3028,6 @@ end
 
 function Storefront:_scanUpdatesForDirectApi(tracked)
     NetworkMgr:runWhenOnline(function()
-        local CatalogClient = require("storefront_net_catalog")
-        CatalogClient.fetchAndUpdateCacheAsync(nil, function(ok, err)
-            if ok then
-                self:softRefreshCurrentBrowserView()
-            end
-        end)
-
         local Trapper = require("ui/trapper")
         local ltn12 = require("ltn12")
         local GitHub = require("storefront_net_github")

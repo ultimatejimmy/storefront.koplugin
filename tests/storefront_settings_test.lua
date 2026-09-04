@@ -252,6 +252,54 @@ do
     pcall(os.remove, test_patch_file)
 end
 
+-- 7. Test maybeAutoCheckUpdates pure in-memory behavior & manual checkAllUpdates
+do
+    local populate_called = false
+    local direct_api_called = false
+
+    local test_sf = {
+        updates_state = { last_auto_check = 0 },
+        ensureUpdatesState = function(self)
+            self.updates_state = self.updates_state or {}
+        end,
+        saveUpdatesState = function(self) end,
+        ensurePatchUpdatesState = function(self) end,
+        populateRemoteInfoFromCatalog = function(self)
+            populate_called = true
+        end,
+        _scanUpdatesForDirectApi = function(self, tracked)
+            direct_api_called = true
+        end,
+        _checkAllUpdatesInternal = function(self, repos)
+            direct_api_called = true
+        end,
+        _refreshPatchUpdatesInternal = function(self, repos)
+            direct_api_called = true
+        end,
+        listInstalledPlugins = function(self)
+            return { { dirname = "sample.koplugin" } }
+        end,
+        invalidateInstalledPluginsCache = function(self) end,
+    }
+
+    MainStorefront.maybeAutoCheckUpdates(test_sf)
+    check("maybeAutoCheckUpdates calls populateRemoteInfoFromCatalog in-memory", populate_called == true)
+    check("maybeAutoCheckUpdates does NOT call direct API or subprocess", direct_api_called == false)
+    check("maybeAutoCheckUpdates flags session as checked", test_sf._updates_checked_this_session == true)
+    check("maybeAutoCheckUpdates sets last_auto_check timestamp", test_sf.updates_state.last_auto_check > 0)
+
+    -- Test manual checkAllUpdates: should invoke _scanUpdatesForDirectApi for live GitHub API check
+    local InstallStore = require("storefront_installs")
+    InstallStore.upsert("sample.koplugin", {
+        owner = "testowner",
+        repo = "testrepo",
+        version = "1.0",
+    })
+
+    MainStorefront.checkAllUpdates(test_sf)
+    check("Manual checkAllUpdates invokes _scanUpdatesForDirectApi (live GitHub API)", direct_api_called == true)
+end
+
 print(string.format("=== Settings Regression Tests Complete: %d Failures ===", failures))
 if failures > 0 then
     os.exit(1)

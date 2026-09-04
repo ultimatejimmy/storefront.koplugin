@@ -289,36 +289,8 @@ function UpdatesMgr:init(Storefront)
             UIManager:show(InfoMessage:new{ text = _("No matched plugins to check."), timeout = 4 })
             return
         end
-        local GitHub = require("storefront_net_github")
-        if GitHub and GitHub.isDirectApiEnabled and GitHub.isDirectApiEnabled() then
-            sf:_scanUpdatesForDirectApi(tracked)
-            return
-        end
-
-        NetworkMgr:runWhenOnline(function()
-            local Toast = require("storefront_toast")
-            Toast.show(_("Refreshing catalog..."), 1.5)
-            StorefrontLogger.info("Storefront UI: manual refresh triggered, fetching catalog cache...")
-
-            local CatalogClient = require("storefront_net_catalog")
-            CatalogClient.fetchAndUpdateCacheAsync(nil, function(ok, err)
-                if ok then
-                    StorefrontLogger.info("Storefront UI: manual refresh succeeded, populating remote info.")
-                    if sf.populateRemoteInfoFromCatalog then
-                        sf:populateRemoteInfoFromCatalog()
-                    end
-                    if sf.updates_menu then
-                        sf:updateUpdatesDialog()
-                    end
-                    UIManager:setDirty(nil, "full")
-                    sf:refreshCurrentBrowserTab()
-                    Toast.show(_("Catalog refreshed successfully."), 3)
-                else
-                    StorefrontLogger.warn("Storefront UI: manual refresh failed: " .. tostring(err))
-                    Toast.show(_("Catalog refresh failed: ") .. tostring(err), 4)
-                end
-            end)
-        end)
+        -- User explicitly requested manual update check: query GitHub API directly.
+        sf:_scanUpdatesForDirectApi(tracked)
     end
 end
 

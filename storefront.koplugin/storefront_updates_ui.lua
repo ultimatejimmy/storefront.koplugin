@@ -275,7 +275,7 @@ function StorefrontUpdatesUi:init(StorefrontClass)
         if self._updates_checked_this_session then
             return
         end
-        
+
         self:ensureUpdatesState()
         local last_check = self.updates_state.last_auto_check or 0
         if os.time() - last_check < 86400 then
@@ -283,62 +283,27 @@ function StorefrontUpdatesUi:init(StorefrontClass)
             return
         end
 
-        if not NetworkMgr:isWifiOn() then
-            -- Skip if wifi is off to avoid annoying prompts
-            return
-        end
-
         self._updates_checked_this_session = true
         self.updates_state.last_auto_check = os.time()
         self:saveUpdatesState()
 
-        UIManager:nextTick(function()
-            if not self.browser_menu then
-                return
-            end
+        -- Automatic background update checks run purely in-memory against the
+        -- local catalog cache: zero network calls, zero process forks, zero lag.
+        if self.populateRemoteInfoFromCatalog then
+            self:populateRemoteInfoFromCatalog()
+        end
+        self:ensurePatchUpdatesState()
+        self._cached_plugin_summary = nil
+        self._cached_patch_summary = nil
+        self._merged_updates_cache = nil
 
-            -- Check plugins
-            local installed_plugins = self:listInstalledPlugins()
-            local records = self:getInstallRecordsMap()
-            local plugin_repos = {}
-            for idx, plugin in ipairs(installed_plugins) do
-                local record = records[plugin.dirname]
-                if record and record.owner and record.repo then
-                    table.insert(plugin_repos, record)
+        if self.browser_menu and (self.browser_state and self.browser_state.tab == "Updates") then
+            UIManager:nextTick(function()
+                if self.browser_menu and (self.browser_state and self.browser_state.tab == "Updates") then
+                    self:refreshCurrentBrowserTab()
                 end
-            end
-
-            -- Check patches
-            local installed_patches = self:listInstalledPatches()
-            local patch_records = self:getPatchRecordsMap()
-            local patch_repos = {}
-            for idx, patch in ipairs(installed_patches) do
-                local record = patch_records[patch.filename]
-                if record and record.owner and record.repo and record.path then
-                    table.insert(patch_repos, record)
-                end
-            end
-
-            -- Run the checks
-            if #plugin_repos > 0 and self.browser_menu then
-                pcall(function()
-                    self:_checkAllUpdatesInternal(plugin_repos)
-                end)
-            end
-            if #patch_repos > 0 and self.browser_menu then
-                pcall(function()
-                    self:_refreshPatchUpdatesInternal(patch_repos)
-                end)
-            end
-
-            if self.browser_menu then
-                UIManager:nextTick(function()
-                    if self.browser_menu then
-                        self:refreshCurrentBrowserTab()
-                    end
-                end)
-            end
-        end)
+            end)
+        end
     end
 end
 
