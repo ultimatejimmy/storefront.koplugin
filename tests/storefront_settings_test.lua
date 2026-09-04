@@ -21,6 +21,7 @@ local StorefrontBrowserDialog = require("storefront_browser_ui")
 local StorefrontSettingsDialog = require("storefront_settings_dialog")
 local StorefrontSettingsCard = require("storefront_settings_card")
 local StorefrontScreensaverMgr = require("storefront_screensaver_mgr")
+local lfs = require("libs/libkoreader-lfs")
 
 print("=== Running Storefront Settings Button & Dialog Regression Tests ===")
 
@@ -147,6 +148,108 @@ do
         local close_ok = pcall(close_btn.callback)
         check("Clear Cache dialog close button callback executes", close_ok)
     end
+end
+
+-- 6. Test Disabled Patches in StorefrontDetailsDialog & togglePatchDisabled
+do
+    local StorefrontDetailsDialog = require("storefront_details_dialog")
+    local InstallStore = require("storefront_installs")
+
+    local toggle_called_with = nil
+    local delete_called_with = nil
+
+    local mock_storefront = {
+        browser_state = { kind = "patch" },
+        browserRefresh = function() end,
+        saveBrowserState = function() end,
+        getInstallRecordsMap = function() return {} end,
+        getPatchRecordsMap = function() return {} end,
+        listInstalledPatches = function()
+            return {
+                { filename = "2-page-scrubber.lua.disabled", path = "/tmp/2-page-scrubber.lua.disabled", disabled = true }
+            }
+        end,
+        togglePatchDisabled = function(self, fn)
+            toggle_called_with = fn
+            return false, fn:gsub("%.disabled$", "")
+        end,
+        deletePatch = function(self, fn, rec)
+            delete_called_with = fn
+            return true
+        end,
+        installPatchFromRepo = function(self, repo, patch) end,
+    }
+
+    local disabled_patch_entry = {
+        filename = "2-page-scrubber.lua.disabled",
+        path = "/tmp/2-page-scrubber.lua.disabled",
+        display_path = "/tmp/2-page-scrubber.lua.disabled",
+    }
+    local dummy_repo = {
+        name = "2-page-scrubber.lua.disabled",
+        kind = "patch",
+    }
+
+    local details = StorefrontDetailsDialog:new{
+        Storefront = mock_storefront,
+        repo = dummy_repo,
+        patch = disabled_patch_entry,
+        kind = "patch",
+        update_item = { patch = { filename = "2-page-scrubber.lua.disabled" }, needs_update = false },
+    }
+    local ok_init, err_init = pcall(function() details:init() end)
+    check("Details dialog for disabled patch initializes without error", ok_init)
+    if not ok_init then print("Disabled patch details init error:", err_init) end
+
+    -- Verify that the action button is not a single "Install Patch" button, but a button group with Reinstall, Enable, Ignore, Remove
+    local main_btn = details.main_action_btn
+    check("Disabled patch action button group created", main_btn ~= nil)
+    check("Disabled patch is not rendered as single Install button", main_btn.type ~= "Button" or (main_btn.text and not main_btn.text:find("Install")))
+
+    -- Find buttons within the group
+    local enable_btn = nil
+    local remove_btn = nil
+    if main_btn and main_btn[1] then
+        -- HorizontalGroup of buttons
+        for idx, child in ipairs(main_btn) do
+            if child.text == "Enable" or (type(child.text) == "string" and child.text:find("Enable")) then
+                enable_btn = child
+            elseif child.text == "Remove" or (type(child.text) == "string" and child.text:find("Remove")) then
+                remove_btn = child
+            end
+        end
+    end
+
+    check("Disabled patch has 'Enable' action button", enable_btn ~= nil)
+    if enable_btn and enable_btn.callback then
+        enable_btn.callback()
+        check("Tapping 'Enable' calls togglePatchDisabled with patch filename", toggle_called_with == "2-page-scrubber.lua.disabled")
+    end
+
+    check("Disabled patch has 'Remove' action button", remove_btn ~= nil)
+    if remove_btn and remove_btn.callback then
+        remove_btn.callback()
+        check("Tapping 'Remove' calls deletePatch with patch filename", delete_called_with == "2-page-scrubber.lua.disabled")
+    end
+
+    -- Test togglePatchDisabled function in MainStorefront
+    local DataStorage = require("datastorage")
+    local patches_dir = DataStorage:getDataDir() .. "/patches"
+    os.execute("mkdir -p " .. patches_dir)
+    local test_patch_file = patches_dir .. "/unit_test_toggle.lua.disabled"
+    local f = io.open(test_patch_file, "w")
+    if f then
+        f:write("-- test patch\n")
+        f:close()
+    end
+
+    local toggle_ok, res_filename = MainStorefront:togglePatchDisabled("unit_test_toggle.lua.disabled", true)
+    check("MainStorefront:togglePatchDisabled enabled the disabled file", toggle_ok == false and res_filename == "unit_test_toggle.lua")
+    check("File was renamed on disk to .lua", lfs.attributes(patches_dir .. "/unit_test_toggle.lua", "mode") == "file")
+
+    -- Clean up test file
+    pcall(os.remove, patches_dir .. "/unit_test_toggle.lua")
+    pcall(os.remove, test_patch_file)
 end
 
 print(string.format("=== Settings Regression Tests Complete: %d Failures ===", failures))

@@ -1119,6 +1119,21 @@ end
 function Storefront:togglePatchDisabled(filename, skip_prompt)
     if not filename or filename == "" then return false, "" end
     local old_path = PATCHES_ROOT .. "/" .. filename
+    if lfs.attributes(old_path, "mode") ~= "file" then
+        if filename:match("%.disabled$") then
+            local alt = filename:gsub("%.disabled$", "")
+            if lfs.attributes(PATCHES_ROOT .. "/" .. alt, "mode") == "file" then
+                filename = alt
+                old_path = PATCHES_ROOT .. "/" .. filename
+            end
+        else
+            local alt = filename .. ".disabled"
+            if lfs.attributes(PATCHES_ROOT .. "/" .. alt, "mode") == "file" then
+                filename = alt
+                old_path = PATCHES_ROOT .. "/" .. filename
+            end
+        end
+    end
     if lfs.attributes(old_path, "mode") ~= "file" then return false, "" end
 
     local new_filename
@@ -1133,12 +1148,29 @@ function Storefront:togglePatchDisabled(filename, skip_prompt)
     local ok, err = os.rename(old_path, new_path)
     if ok then
         local records = getPatchRecordsMap()
-        local rec = records[filename]
+        local rec = records[filename] or records[new_filename] or records[filename:gsub("%.disabled$", "")]
         if rec then
             InstallStore.removePatch(filename)
+            InstallStore.removePatch(new_filename)
+            InstallStore.removePatch(filename:gsub("%.disabled$", ""))
             rec.filename = new_filename
             InstallStore.upsertPatch(new_filename, rec)
+        else
+            InstallStore.bumpGeneration()
         end
+        if invalidateInstalledPatchesCache then
+            invalidateInstalledPatchesCache()
+        end
+        if self.invalidateInstalledPatchesCache then
+            self:invalidateInstalledPatchesCache()
+        end
+        if self.invalidateInstalledPluginsCache then
+            self:invalidateInstalledPluginsCache()
+        end
+        self._installed_tab_items_cache = nil
+        self._installed_lookup_cache = nil
+        self._tab_menu_items_cache = nil
+
         local is_now_disabled = not is_disabled
         if not skip_prompt then
             self:reopenBrowser(nil, function()

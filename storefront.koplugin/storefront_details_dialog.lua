@@ -226,7 +226,9 @@ function StorefrontDetailsDialog:init()
     local function getInstallRecord()
         if self.patch then
             local patch_records = InstallStore.listPatches() or {}
-            return patch_records[self.patch.filename]
+            local fn = self.patch.filename or ""
+            local clean_fn = fn:gsub("%.disabled$", "")
+            return patch_records[fn] or patch_records[clean_fn] or patch_records[clean_fn .. ".disabled"]
         else
             local repo_name_lower = (self.repo.name or ""):lower()
             local install_records = InstallStore.list() or {}
@@ -250,7 +252,7 @@ function StorefrontDetailsDialog:init()
 
     local item_key
     if self.patch then
-        item_key = self.patch.filename
+        item_key = (self.patch.filename or ""):gsub("%.disabled$", "")
     elseif self.update_item and self.update_item.plugin and self.update_item.plugin.dirname then
         item_key = self.update_item.plugin.dirname
     elseif owner ~= "" and repo_name ~= "" then
@@ -345,10 +347,12 @@ function StorefrontDetailsDialog:init()
                     end
                 end
             end
-        elseif self.patch and self.Storefront.listInstalledPatches then
+        elseif self.patch and self.Storefront and self.Storefront.listInstalledPatches then
             local installed_patches = self.Storefront:listInstalledPatches()
+            local target_clean = (self.patch.filename or ""):gsub("%.disabled$", "")
             for _, p in ipairs(installed_patches or {}) do
-                if p.filename == self.patch.filename then
+                local p_clean = (p.filename or ""):gsub("%.disabled$", "")
+                if p.filename == self.patch.filename or (target_clean ~= "" and p_clean == target_clean) then
                     if p.sha then
                         version_str = "sha:" .. p.sha:sub(1, 7)
                         break
@@ -703,8 +707,40 @@ function StorefrontDetailsDialog:init()
             end
         end
     elseif self.patch or (self.repo and self.repo.kind == "patch") then
+        local fn = (self.patch and self.patch.filename) or (self.repo and self.repo.filename) or ""
+        local clean_fn = fn:gsub("%.disabled$", "")
+
+        if self.kind == "installed" or (self.update_item and (self.update_item.patch or self.update_item.record)) then
+            is_installed = true
+        end
+
         local patch_map = InstallStore.listPatches() or {}
-        if self.patch and patch_map[self.patch.filename] ~= nil then is_installed = true end
+        if fn ~= "" and (patch_map[fn] ~= nil or patch_map[clean_fn] ~= nil or patch_map[clean_fn .. ".disabled"] ~= nil) then
+            is_installed = true
+        end
+
+        local DataStorage = require("datastorage")
+        local patches_dir = DataStorage:getDataDir() .. "/patches"
+        local path_to_check = (self.patch and self.patch.path)
+        if path_to_check and lfs.attributes(path_to_check, "mode") == "file" then
+            is_installed = true
+        elseif clean_fn ~= "" then
+            if lfs.attributes(patches_dir .. "/" .. clean_fn, "mode") == "file"
+               or lfs.attributes(patches_dir .. "/" .. clean_fn .. ".disabled", "mode") == "file" then
+                is_installed = true
+            end
+        end
+
+        if not is_installed and self.Storefront and type(self.Storefront.listInstalledPatches) == "function" then
+            local installed_patches = self.Storefront:listInstalledPatches()
+            for _, p in ipairs(installed_patches or {}) do
+                local p_clean = (p.filename or ""):gsub("%.disabled$", "")
+                if p.filename == fn or (clean_fn ~= "" and p_clean == clean_fn) then
+                    is_installed = true
+                    break
+                end
+            end
+        end
     else
         if (self.update_item and (self.update_item.is_installed_item or self.update_item.plugin))
            or (self.repo and (self.repo.is_installed_item or self.repo.is_installed or self.repo.is_default))
@@ -849,7 +885,25 @@ function StorefrontDetailsDialog:init()
     if has_update then
         local is_item_disabled = false
         if self.patch and self.patch.filename then
-            is_item_disabled = (self.patch.filename:match("%.disabled$") ~= nil)
+            local fn = self.patch.filename
+            if fn:match("%.disabled$") then
+                is_item_disabled = true
+            else
+                local clean_fn = fn:gsub("%.disabled$", "")
+                local DataStorage = require("datastorage")
+                local patches_dir = DataStorage:getDataDir() .. "/patches"
+                if lfs.attributes(patches_dir .. "/" .. clean_fn .. ".disabled", "mode") == "file"
+                   and lfs.attributes(patches_dir .. "/" .. clean_fn, "mode") ~= "file" then
+                    is_item_disabled = true
+                elseif self.Storefront and type(self.Storefront.listInstalledPatches) == "function" then
+                    for _, p in ipairs(self.Storefront:listInstalledPatches() or {}) do
+                        if (p.filename or ""):gsub("%.disabled$", "") == clean_fn and p.disabled then
+                            is_item_disabled = true
+                            break
+                        end
+                    end
+                end
+            end
         elseif (self.repo and self.repo.name) or (self.update_item and self.update_item.plugin and self.update_item.plugin.dirname) then
             local plugins_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
             local dirname = (self.update_item and self.update_item.plugin and self.update_item.plugin.dirname) or (self.repo and self.repo.name)
@@ -975,7 +1029,25 @@ function StorefrontDetailsDialog:init()
     elseif is_installed then
         local is_item_disabled = false
         if self.patch and self.patch.filename then
-            is_item_disabled = (self.patch.filename:match("%.disabled$") ~= nil)
+            local fn = self.patch.filename
+            if fn:match("%.disabled$") then
+                is_item_disabled = true
+            else
+                local clean_fn = fn:gsub("%.disabled$", "")
+                local DataStorage = require("datastorage")
+                local patches_dir = DataStorage:getDataDir() .. "/patches"
+                if lfs.attributes(patches_dir .. "/" .. clean_fn .. ".disabled", "mode") == "file"
+                   and lfs.attributes(patches_dir .. "/" .. clean_fn, "mode") ~= "file" then
+                    is_item_disabled = true
+                elseif self.Storefront and type(self.Storefront.listInstalledPatches) == "function" then
+                    for _, p in ipairs(self.Storefront:listInstalledPatches() or {}) do
+                        if (p.filename or ""):gsub("%.disabled$", "") == clean_fn and p.disabled then
+                            is_item_disabled = true
+                            break
+                        end
+                    end
+                end
+            end
         elseif self.repo and self.repo.name then
             local plugins_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
             local dirname = (self.update_item and self.update_item.plugin and self.update_item.plugin.dirname) or self.repo.name
@@ -2448,6 +2520,7 @@ tr:nth-child(even) td { background-color: #f5f5f5 !important; }
         end
     end
     self.action_buttons = action_btn_list
+    self.main_action_btn = main_action_btn
 
     self:updateFocusLayout()
 end

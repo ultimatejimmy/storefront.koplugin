@@ -317,8 +317,8 @@ function storefront_utils.calcGroupFontSize(
         local total_w = gaps_total
         for _, text in ipairs(texts) do
             local tw = TextWidget:new{ text = text, face = face, bold = true }
-            local sz = tw.getSize and tw:getSize()
-            local tw_w = (sz and sz.w) or (#text * 8)
+            local tw_sz = tw.getSize and tw:getSize()
+            local tw_w = (tw_sz and tw_sz.w) or (#text * 8)
             total_w = total_w + tw_w + padding_per_item
         end
         if total_w <= total_avail_width then
@@ -464,7 +464,6 @@ function storefront_utils.showConfirmDialog(opts)
     local UIManager = require("ui/uimanager")
     local TextBoxWidget = require("ui/widget/textboxwidget")
     local FrameContainer = require("ui/widget/container/framecontainer")
-    local InputContainer = require("ui/widget/container/inputcontainer")
     local HorizontalGroup = require("ui/widget/horizontalgroup")
     local HorizontalSpan = require("ui/widget/horizontalspan")
     local VerticalGroup = require("ui/widget/verticalgroup")

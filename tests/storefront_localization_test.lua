@@ -30,12 +30,21 @@ local function runTests()
     -- ----------------------------------------------------
     print("\n--- TEST 1: PO Parser & Language Discovery ---")
     
-    local path = script_dir .. "../storefront.koplugin/storefront.koplugin"
-    local f_check = io.open(path .. "/languages/en.po", "r")
-    if f_check then
-        f_check:close()
-    else
-        path = script_dir .. "../storefront.koplugin"
+    local candidate_paths = {
+        script_dir .. "../storefront.koplugin",
+        script_dir .. "../storefront.koplugin/storefront.koplugin",
+        "storefront.koplugin",
+        "storefront.koplugin/storefront.koplugin",
+        ".",
+    }
+    local path = script_dir .. "../storefront.koplugin"
+    for _, cand in ipairs(candidate_paths) do
+        local f = io.open(cand .. "/languages/en.po", "r")
+        if f then
+            f:close()
+            path = cand
+            break
+        end
     end
     Localization:init(path)
 

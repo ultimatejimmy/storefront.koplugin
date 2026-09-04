@@ -628,6 +628,9 @@ function M:init(Storefront)
         end
         local raw_url = patch.download_url or string.format("https://raw.githubusercontent.com/%s/%s/%s/%s", owner, repo.name, patch.branch or "HEAD", patch.path or patch.filename)
         local target_filename = patch.filename or (patch.path and patch.path:match("([^/]+)$"))
+        if target_filename then
+            target_filename = target_filename:gsub("%.disabled$", "")
+        end
         if not target_filename or target_filename == "" then
             if not is_batch then
                 UIManager:show(InfoMessage:new{ text = _("Invalid patch target filename."), timeout = 4 })
@@ -713,6 +716,12 @@ function M:init(Storefront)
             if stored_record then
                 InstallStore.upsertPatch(target_filename, stored_record)
             end
+            local disabled_path = PATCHES_ROOT .. "/" .. target_filename .. ".disabled"
+            if lfs.attributes(disabled_path, "mode") == "file" then
+                util.removeFile(disabled_path)
+                InstallStore.removePatch(target_filename .. ".disabled")
+            end
+            InstallStore.bumpGeneration()
             invalidateInstalledPatchesCache()
 
             local is_update = self.pending_patch_install and self.pending_patch_install.mode == "update"

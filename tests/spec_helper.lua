@@ -42,19 +42,44 @@ package.loaded["dispatcher"] = {
 package.loaded["lfs"] = {
     attributes = function(path, req)
         if req == "mode" then
-            if path and (path:match("%.jpg$") or path:match("%.png$") or path:match("%.lua$") or path:match("%.zip$")) then
+            if path and (path:match("%.jpg$") or path:match("%.png$") or path:match("%.lua$") or path:match("%.disabled$") or path:match("%.zip$")) then
                 return "file"
             end
             return "directory"
         end
-        if path and (path:match("%.jpg$") or path:match("%.png$") or path:match("%.lua$") or path:match("%.zip$")) then
+        if path and (path:match("%.jpg$") or path:match("%.png$") or path:match("%.lua$") or path:match("%.disabled$") or path:match("%.zip$")) then
             return { mode = "file", size = 1234, modification = os.time() }
         end
         return { mode = "directory", size = 4096, modification = os.time() }
     end,
     dir = function(path)
         local dummy_state = { __name = "directory", path = path }
-        local entries = { ".", "..", "sample_wallpaper.jpg" }
+        local entries = {}
+        if path and type(path) == "string" then
+            local ok, p = pcall(io.popen, "ls -a \"" .. path .. "\" 2>/dev/null")
+            if ok and p then
+                for line in p:lines() do
+                    line = line:gsub("[\r\n]$", "")
+                    if line ~= "" then
+                        table.insert(entries, line)
+                    end
+                end
+                p:close()
+            end
+        end
+        if #entries == 0 then
+            if path and tostring(path):match("languages") then
+                entries = {
+                    ".", "..",
+                    "ar.po", "de.po", "en.po", "es.po", "fr.po",
+                    "hu.po", "id.po", "it.po", "ja.po", "ko.po",
+                    "nl.po", "pl.po", "pt_br.po", "ru.po", "sr.po",
+                    "tr.po", "uk.po", "zh_CN.po",
+                }
+            else
+                entries = { ".", "..", "sample_wallpaper.jpg" }
+            end
+        end
         local idx = 0
         local function iter(state)
             if state ~= dummy_state then
