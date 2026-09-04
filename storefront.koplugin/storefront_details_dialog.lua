@@ -1878,10 +1878,16 @@ tr:nth-child(even) td { background-color: #f5f5f5 !important; }
             end
 
             local rels = {}
+            local pre = repo.latest_prerelease or (repo.data and repo.data.latest_prerelease)
+            if pre and type(pre) == "table" and (pre.tag_name or pre.name or pre.version) then
+                table.insert(rels, pre)
+            end
             local lat = repo.latest_release or (repo.data and repo.data.latest_release)
             if lat and type(lat) == "table" and (lat.tag_name or lat.name or lat.version) then
-                table.insert(rels, lat)
-            elseif repo.tag_name or repo.latest_version or repo.version then
+                if not pre or pre.tag_name ~= lat.tag_name then
+                    table.insert(rels, lat)
+                end
+            elseif not pre and (repo.tag_name or repo.latest_version or repo.version) then
                 local tag = repo.tag_name or repo.latest_version or repo.version
                 table.insert(rels, {
                     tag_name = tag,

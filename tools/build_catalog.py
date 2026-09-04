@@ -103,6 +103,50 @@ def search_repositories(base_query):
             
     return all_items
 
+def is_prerelease_tag(tag):
+    if not tag or not isinstance(tag, str):
+        return False
+    tag_lower = tag.lower()
+    for kw in ["alpha", "beta", "rc", "dev", "preview", "test"]:
+        if kw in tag_lower:
+            return True
+    return False
+
+def parse_release_dict(rel):
+    if not rel or not isinstance(rel, dict) or "tag_name" not in rel:
+        return None
+    tag_name = rel.get("tag_name", "")
+    assets = rel.get("assets", [])
+    parsed_assets = []
+    download_url = None
+    for asset in assets:
+        asset_name = asset.get("name", "")
+        url = asset.get("browser_download_url", "")
+        if asset_name and url and asset_name.lower().endswith(".zip"):
+            parsed_assets.append({
+                "name": asset_name,
+                "browser_download_url": url,
+                "size": asset.get("size", 0),
+                "content_type": asset.get("content_type", ""),
+            })
+            if not download_url:
+                download_url = url
+    if not download_url and "zipball_url" in rel:
+        download_url = rel.get("zipball_url")
+    return {
+        "tag_name": tag_name,
+        "published_at": rel.get("published_at") or "",
+        "download_url": download_url,
+        "name": rel.get("name") or "",
+        "body": rel.get("body") or "",
+        "prerelease": rel.get("prerelease", False),
+        "assets": parsed_assets,
+    }
+
+def get_releases(owner, repo):
+    url = f"{BASE_URL}/repos/{owner}/{repo}/releases?per_page=5"
+    return make_request(url)
+
 def get_latest_release(owner, repo):
     url = f"{BASE_URL}/repos/{owner}/{repo}/releases/latest"
     return make_request(url)
@@ -191,37 +235,36 @@ def process_single_repo(repo_item, is_patch):
         "html_url": repo_item.get("html_url") or f"https://github.com/{full_name}",
     }
     
-    # Fetch latest release only for non-forks or starred forks
+    # Fetch latest release & pre-release only for non-forks or starred forks
     if not is_fork or stars > 0:
-        rel = get_latest_release(owner, repo_name)
-        if rel and type(rel) == dict and "tag_name" in rel:
-            tag_name = rel.get("tag_name", "")
-            assets = rel.get("assets", [])
-            parsed_assets = []
-            download_url = None
-            for asset in assets:
-                asset_name = asset.get("name", "")
-                url = asset.get("browser_download_url", "")
-                if asset_name and url and asset_name.lower().endswith(".zip"):
-                    parsed_assets.append({
-                        "name": asset_name,
-                        "browser_download_url": url,
-                        "size": asset.get("size", 0),
-                        "content_type": asset.get("content_type", ""),
-                    })
-                    if not download_url:
-                        download_url = url
-            if not download_url and "zipball_url" in rel:
-                download_url = rel.get("zipball_url")
-                
-            record["latest_release"] = {
-                "tag_name": tag_name,
-                "published_at": rel.get("published_at") or "",
-                "download_url": download_url,
-                "name": rel.get("name") or "",
-                "body": rel.get("body") or "",
-                "assets": parsed_assets,
-            }
+        releases = get_releases(owner, repo_name)
+        stable_rel = None
+        prerelease_rel = None
+        if releases and isinstance(releases, list) and len(releases) > 0:
+            for r in releases:
+                if not r or not isinstance(r, dict) or r.get("draft"):
+                    continue
+                is_pre = r.get("prerelease") or is_prerelease_tag(r.get("tag_name"))
+                if is_pre:
+                    if not prerelease_rel:
+                        prerelease_rel = r
+                else:
+                    if not stable_rel:
+                        stable_rel = r
+                if stable_rel and prerelease_rel:
+                    break
+        else:
+            stable_rel = get_latest_release(owner, repo_name)
+
+        if stable_rel:
+            parsed_stable = parse_release_dict(stable_rel)
+            if parsed_stable:
+                record["latest_release"] = parsed_stable
+
+        if prerelease_rel:
+            parsed_pre = parse_release_dict(prerelease_rel)
+            if parsed_pre and (not parsed_stable or parsed_pre.get("tag_name") != parsed_stable.get("tag_name")):
+                record["latest_prerelease"] = parsed_pre
     
     if is_patch:
         patch_files = fetch_patch_files(owner, repo_name, default_branch)

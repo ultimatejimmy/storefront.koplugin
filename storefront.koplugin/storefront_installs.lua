@@ -104,6 +104,7 @@ end
 function InstallStore.list()
     return readStore().plugins
 end
+InstallStore.getRecords = InstallStore.list
 
 -- Monotonic counter bumped on every write, so callers can cache data derived
 -- from the store (e.g. an installed-repo lookup) and know when to rebuild it.

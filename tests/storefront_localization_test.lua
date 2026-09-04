@@ -31,6 +31,7 @@ local function runTests()
     print("\n--- TEST 1: PO Parser & Language Discovery ---")
     
     local candidate_paths = {
+        script_dir .. "..",
         script_dir .. "../storefront.koplugin",
         script_dir .. "../storefront.koplugin/storefront.koplugin",
         "storefront.koplugin",

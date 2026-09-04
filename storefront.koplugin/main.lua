@@ -1659,10 +1659,36 @@ function Storefront:sanitizeRemoteInfo()
     end
 end
 
+local function isPreReleaseAllowedForPlugin(repo, record, dirname)
+    local keys = {}
+    if repo then
+        if repo.name then table.insert(keys, repo.name) end
+        if repo.full_name then table.insert(keys, repo.full_name) end
+    end
+    if record then
+        if record.repo then table.insert(keys, record.repo) end
+        if record.repo_full_name then table.insert(keys, record.repo_full_name) end
+        if record.dirname then table.insert(keys, record.dirname) end
+    end
+    if dirname then table.insert(keys, dirname) end
+    for _, key in ipairs(keys) do
+        if InstallStore.isPreReleaseAllowed(key) then
+            return true
+        end
+    end
+    return false
+end
+
+function Storefront:isPreReleaseAllowedForPlugin(repo, record, dirname)
+    return isPreReleaseAllowedForPlugin(repo, record, dirname)
+end
+
 function Storefront:populateRemoteInfoFromCatalog()
     self:ensureUpdatesState()
-    local installed = listInstalledPlugins()
-    local records = InstallStore.getRecords()
+    local installed = (self.listInstalledPlugins and self:listInstalledPlugins()) or listInstalledPlugins()
+    local records = (InstallStore.list and InstallStore.list())
+        or (InstallStore.getRecords and InstallStore.getRecords())
+        or {}
     local remote_info = self.updates_state.remote_info or {}
     local updated_count = 0
 
@@ -1677,7 +1703,26 @@ function Storefront:populateRemoteInfoFromCatalog()
                 cached_repo = Cache.getRepoByName(record.owner, record.repo)
             end
             if cached_repo then
+                local is_storefront = plugin.dirname == "storefront.koplugin"
+                    or (record.repo and record.repo:lower():match("storefront%.koplugin"))
+                local allow_beta = false
+                if is_storefront then
+                    local ok_ab, about_dialog = pcall(require, "storefront_about_dialog")
+                    if ok_ab and about_dialog and type(about_dialog.getChannel) == "function" then
+                        allow_beta = about_dialog.getChannel() == "beta"
+                    end
+                end
+                local allow_prerelease = allow_beta or isPreReleaseAllowedForPlugin(cached_repo, record, plugin.dirname)
                 local cat_rel = cached_repo.latest_release or (cached_repo.data and cached_repo.data.latest_release)
+                local pre_rel = cached_repo.latest_prerelease or (cached_repo.data and cached_repo.data.latest_prerelease)
+                if allow_prerelease and pre_rel and pre_rel.tag_name then
+                    local pre_ts = pre_rel.published_at and parseGitHubTimestamp(pre_rel.published_at) or 0
+                    local stable_ts = cat_rel and cat_rel.published_at and parseGitHubTimestamp(cat_rel.published_at) or 0
+                    local pre_newer = cat_rel and cat_rel.tag_name and isVersionNewer(pre_rel.tag_name, cat_rel.tag_name)
+                    if pre_newer or pre_ts >= stable_ts or not cat_rel then
+                        cat_rel = pre_rel
+                    end
+                end
                 local cat_tag = (cat_rel and cat_rel.tag_name)
                     or cached_repo.version
                     or (cached_repo.data and (cached_repo.data.version or cached_repo.data.tag_name or cached_repo.data.latest_version))
@@ -1844,29 +1889,7 @@ function Storefront:getPatchUpdatesSummaryText(summary)
     return table.concat(parts, " • ")
 end
 
-local function isPreReleaseAllowedForPlugin(repo, record, dirname)
-    local keys = {}
-    if repo then
-        if repo.name then table.insert(keys, repo.name) end
-        if repo.full_name then table.insert(keys, repo.full_name) end
-    end
-    if record then
-        if record.repo then table.insert(keys, record.repo) end
-        if record.repo_full_name then table.insert(keys, record.repo_full_name) end
-        if record.dirname then table.insert(keys, record.dirname) end
-    end
-    if dirname then table.insert(keys, dirname) end
-    for _, key in ipairs(keys) do
-        if InstallStore.isPreReleaseAllowed(key) then
-            return true
-        end
-    end
-    return false
-end
 
-function Storefront:isPreReleaseAllowedForPlugin(repo, record, dirname)
-    return isPreReleaseAllowedForPlugin(repo, record, dirname)
-end
 
 function Storefront:collectUpdateSummary()
     self:ensureUpdatesState()
@@ -1967,8 +1990,27 @@ function Storefront:collectUpdateSummary()
                 cached_repo = Cache.getRepoByName(record.owner, record.repo)
             end
             if cached_repo then
-                -- Pull release tag from catalog: prefer top-level latest_release, then data.latest_release, then version fields
+                local is_storefront = plugin.dirname == "storefront.koplugin"
+                    or (record.repo and record.repo:lower():match("storefront%.koplugin"))
+                local allow_beta = false
+                if is_storefront then
+                    local ok_ab, about_dialog = pcall(require, "storefront_about_dialog")
+                    if ok_ab and about_dialog and type(about_dialog.getChannel) == "function" then
+                        allow_beta = about_dialog.getChannel() == "beta"
+                    end
+                end
+                local allow_pre_for_plugin = allow_beta or isPreReleaseAllowedForPlugin(cached_repo, record, plugin.dirname)
+                -- Pull release tag from catalog: prefer top-level latest_release / latest_prerelease, then data, then version fields
                 local cat_rel = cached_repo.latest_release or (cached_repo.data and cached_repo.data.latest_release)
+                local pre_rel = cached_repo.latest_prerelease or (cached_repo.data and cached_repo.data.latest_prerelease)
+                if allow_pre_for_plugin and pre_rel and pre_rel.tag_name then
+                    local pre_ts = pre_rel.published_at and parseGitHubTimestamp(pre_rel.published_at) or 0
+                    local stable_ts = cat_rel and cat_rel.published_at and parseGitHubTimestamp(cat_rel.published_at) or 0
+                    local pre_newer = cat_rel and cat_rel.tag_name and isVersionNewer(pre_rel.tag_name, cat_rel.tag_name)
+                    if pre_newer or pre_ts >= stable_ts or not cat_rel then
+                        cat_rel = pre_rel
+                    end
+                end
                 local cat_tag = (cat_rel and cat_rel.tag_name)
                     or cached_repo.version
                     or (cached_repo.data and (cached_repo.data.version or cached_repo.data.tag_name or cached_repo.data.latest_version))
@@ -1983,7 +2025,6 @@ function Storefront:collectUpdateSummary()
                     -- unless the plugin explicitly allows prereleases.
                     local existing_tag = remote and remote.release_tag_name
                     local cat_is_prerelease = isPreReleaseTag(cat_tag)
-                    local allow_pre_for_plugin = isPreReleaseAllowedForPlugin(nil, record, plugin.dirname)
                     local catalog_tag_is_usable = not cat_is_prerelease or allow_pre_for_plugin
 
                     local should_use_catalog = catalog_tag_is_usable and (

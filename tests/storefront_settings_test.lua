@@ -300,7 +300,91 @@ do
     check("Manual checkAllUpdates invokes _scanUpdatesForDirectApi (live GitHub API)", direct_api_called == true)
 end
 
+-- 8. Test catalog pre-release update handling in populateRemoteInfoFromCatalog
+do
+    local InstallStore = require("storefront_installs")
+    local Cache = require("storefront_cache")
+
+    -- Mock cache entry with both stable and prerelease
+    local dummy_repo = {
+        id = 999999,
+        name = "test-plugin",
+        owner = "test-owner",
+        latest_release = {
+            tag_name = "v1.0.0",
+            published_at = "2026-01-01T00:00:00Z",
+        },
+        latest_prerelease = {
+            tag_name = "v1.1.0-beta1",
+            published_at = "2026-02-01T00:00:00Z",
+        },
+    }
+
+    local old_getRepo = Cache.getRepo
+    local old_getRepoByName = Cache.getRepoByName
+    Cache.getRepo = function(id)
+        if id == 999999 then return dummy_repo end
+        return old_getRepo and old_getRepo(id)
+    end
+    Cache.getRepoByName = function(owner, repo)
+        if repo == "test-plugin" then return dummy_repo end
+        return old_getRepoByName and old_getRepoByName(owner, repo)
+    end
+
+    -- Create dummy plugin directory to be discovered by listInstalledPlugins
+    local dummy_dir = "plugins/test_prerel.koplugin"
+    lfs.mkdir("plugins")
+    lfs.mkdir(dummy_dir)
+    local f = io.open(dummy_dir .. "/_meta.lua", "w")
+    if f then
+        f:write('return { name = "test_prerel", version = "1.0.0" }\n')
+        f:close()
+    end
+    MainStorefront:invalidateInstalledPluginsCache()
+
+    InstallStore.upsert("test_prerel.koplugin", {
+        repo_id = 999999,
+        owner = "test-owner",
+        repo = "test-plugin",
+        dirname = "test_prerel.koplugin",
+        version = "1.0.0",
+    })
+
+    local test_sf = {
+        updates_state = {},
+        ensureUpdatesState = function(self)
+            self.updates_state = self.updates_state or {}
+        end,
+        saveUpdatesState = function(self) end,
+        listInstalledPlugins = function(self)
+            return { { dirname = "test_prerel.koplugin" } }
+        end,
+    }
+
+    -- Default: prereleases not allowed
+    InstallStore.setPreReleaseAllowed("test_prerel.koplugin", false)
+    MainStorefront.populateRemoteInfoFromCatalog(test_sf)
+    local info = test_sf.updates_state.remote_info and test_sf.updates_state.remote_info["test_prerel.koplugin"]
+    check("populateRemoteInfoFromCatalog defaults to stable release v1.0.0", info and info.release_tag_name == "v1.0.0")
+
+    -- With prereleases allowed:
+    InstallStore.setPreReleaseAllowed("test_prerel.koplugin", true)
+    MainStorefront.populateRemoteInfoFromCatalog(test_sf)
+    info = test_sf.updates_state.remote_info and test_sf.updates_state.remote_info["test_prerel.koplugin"]
+    check("populateRemoteInfoFromCatalog selects latest_prerelease when allowed", info and info.release_tag_name == "v1.1.0-beta1")
+
+    -- Clean up
+    pcall(os.remove, dummy_dir .. "/_meta.lua")
+    pcall(lfs.rmdir, dummy_dir)
+    MainStorefront:invalidateInstalledPluginsCache()
+    Cache.getRepo = old_getRepo
+    Cache.getRepoByName = old_getRepoByName
+    InstallStore.setPreReleaseAllowed("test_prerel.koplugin", false)
+    InstallStore.remove("test_prerel.koplugin")
+end
+
 print(string.format("=== Settings Regression Tests Complete: %d Failures ===", failures))
 if failures > 0 then
     os.exit(1)
 end
+
