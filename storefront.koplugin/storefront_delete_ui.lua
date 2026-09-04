@@ -411,17 +411,38 @@ function DeleteUI:init(Storefront)
                 end
             end
             
-            if record then
-                InstallStore.remove(dirname)
-                InstallStore.remove(clean_dir)
-                InstallStore.remove(dir_with_ext)
+            InstallStore.remove(dirname)
+            InstallStore.remove(clean_dir)
+            InstallStore.remove(dir_with_ext)
+            if record and type(record) == "table" and record.dirname then
+                InstallStore.remove(record.dirname)
             end
+
+            if sf.invalidateInstalledPluginsCache then
+                sf:invalidateInstalledPluginsCache()
+            end
+            sf._installed_tab_items_cache = nil
+            sf._installed_lookup_cache = nil
+            sf._tab_menu_items_cache = nil
+
             StorefrontLogger.action(string.format("DELETED plugin %s from disk (%s)", tostring(dirname), plugin_path))
-            if sf.showRestartConfirmation then
-                sf:showRestartConfirmation(string.format(_("Plugin '%s' deleted."), display_name))
-            end
-            if sf.updates_menu then
+
+            if sf.updates_menu and sf.updateUpdatesDialog then
                 sf:updateUpdatesDialog()
+            end
+
+            local on_refreshed = function()
+                if sf.showRestartConfirmation then
+                    sf:showRestartConfirmation(string.format(_("Plugin '%s' deleted."), display_name))
+                end
+            end
+            if sf.refreshCurrentBrowserTab then
+                sf:refreshCurrentBrowserTab(on_refreshed)
+            else
+                if sf.softRefreshCurrentBrowserView then
+                    sf:softRefreshCurrentBrowserView()
+                end
+                on_refreshed()
             end
         else
             StorefrontLogger.err(string.format("DELETE failed for plugin %s: %s", tostring(dirname), tostring(err)))
@@ -455,7 +476,7 @@ function DeleteUI:init(Storefront)
         end)
     end
 
-    Storefront.deletePatch = function(sf, patch_filename)
+    Storefront.deletePatch = function(sf, patch_filename, record)
         if not patch_filename or patch_filename == "" then
             return
         end
@@ -464,22 +485,65 @@ function DeleteUI:init(Storefront)
             local PATCHES_ROOT = DataStorage:getDataDir() .. "/patches"
             local patch_path = PATCHES_ROOT .. "/" .. patch_filename
             local ok, err = os.remove(patch_path)
-            if not ok and not patch_filename:match("%.disabled$") then
-                ok, err = os.remove(patch_path .. ".disabled")
+            if not ok then
+                if not patch_filename:match("%.disabled$") then
+                    ok, err = os.remove(patch_path .. ".disabled")
+                else
+                    ok, err = os.remove(patch_path:gsub("%.disabled$", ""))
+                end
             end
+            local exists = (lfs.attributes(patch_path, "mode") ~= nil)
+                or (lfs.attributes(patch_path .. ".disabled", "mode") ~= nil)
+                or (lfs.attributes(patch_path:gsub("%.disabled$", ""), "mode") ~= nil)
+            if not ok and exists then
+                StorefrontLogger.err(string.format("DELETE failed for patch %s: %s", tostring(patch_filename), tostring(err)))
+                UIManager:show(InfoMessage:new{
+                    text = string.format(_("Failed to delete patch: %s"), tostring(err)),
+                    timeout = 5,
+                })
+                return
+            end
+
             InstallStore.removePatch(patch_filename)
+            InstallStore.removePatch(patch_filename:gsub("%.disabled$", ""))
+            InstallStore.removePatch(patch_filename .. ".disabled")
+            if record and type(record) == "table" and record.filename then
+                InstallStore.removePatch(record.filename)
+                InstallStore.removePatch(record.filename:gsub("%.disabled$", ""))
+                InstallStore.removePatch(record.filename .. ".disabled")
+            end
+
             if sf.invalidateInstalledPatchesCache then
                 sf:invalidateInstalledPatchesCache()
             end
-            StorefrontLogger.action(string.format("DELETED patch %s from disk", tostring(patch_filename)))
-            if sf.showRestartConfirmation then
-                sf:showRestartConfirmation(string.format(_("Patch '%s' deleted."), display_name))
+            if sf.invalidateInstalledPluginsCache then
+                sf:invalidateInstalledPluginsCache()
             end
-            if sf.updates_menu then
+            sf._installed_tab_items_cache = nil
+            sf._installed_lookup_cache = nil
+            sf._tab_menu_items_cache = nil
+
+            StorefrontLogger.action(string.format("DELETED patch %s from disk", tostring(patch_filename)))
+
+            if sf.updates_menu and sf.updateUpdatesDialog then
                 sf:updateUpdatesDialog()
             end
-            if sf.softRefreshCurrentBrowserView then
-                sf:softRefreshCurrentBrowserView()
+            if sf.patch_updates_menu and sf.updatePatchUpdatesDialog then
+                sf:updatePatchUpdatesDialog()
+            end
+
+            local on_refreshed = function()
+                if sf.showRestartConfirmation then
+                    sf:showRestartConfirmation(string.format(_("Patch '%s' deleted."), display_name))
+                end
+            end
+            if sf.refreshCurrentBrowserTab then
+                sf:refreshCurrentBrowserTab(on_refreshed)
+            else
+                if sf.softRefreshCurrentBrowserView then
+                    sf:softRefreshCurrentBrowserView()
+                end
+                on_refreshed()
             end
         end)
     end

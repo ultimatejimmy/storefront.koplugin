@@ -805,8 +805,9 @@ function StorefrontDetailsDialog:init()
             local patch_filename = (self.patch and self.patch.filename)
                 or (self.update_item and (self.update_item.filename or (self.update_item.patch and self.update_item.patch.filename)))
                 or (self.repo and self.repo.filename)
+            local rec = self.update_item and self.update_item.record
             if patch_filename and type(self.Storefront.deletePatch) == "function" then
-                self.Storefront:deletePatch(patch_filename)
+                self.Storefront:deletePatch(patch_filename, rec)
             end
         else
             local dirname = (self.update_item and self.update_item.plugin and self.update_item.plugin.dirname)
@@ -2683,6 +2684,9 @@ end
 
 function StorefrontDetailsDialog:onClose()
     self.is_closed = true
+    if RepoContent and RepoContent.cancelPendingImages then
+        RepoContent.cancelPendingImages()
+    end
     UIManager:close(self, "ui")
     local sf = self.Storefront
     local needs_refresh = self._ignore_toggled

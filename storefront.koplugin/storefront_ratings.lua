@@ -203,7 +203,8 @@ function StorefrontRatings.fetchRatings(callback, force_refresh)
     end
 
     is_fetching = true
-    local fetch_task = function()
+
+    local function execute_sync()
         local http_req = getHttpModule(StorefrontRatings.BASE_URL)
         local response_body = {}
 
@@ -226,21 +227,87 @@ function StorefrontRatings.fetchRatings(callback, force_refresh)
         end)
         socketutil:reset_timeout()
 
-        is_fetching = false
         local code = tonumber(res_code) or 0
         if ok_req and code == 200 then
             local body_str = table.concat(response_body)
             local ok_json, parsed = pcall(json.decode, body_str)
             if ok_json and type(parsed) == "table" then
-                local norm = normalizeRatingsTable(parsed)
-                StorefrontRatings.liveRatings = norm
-                saveLocalRatingsFile(norm)
-                logger.info("StorefrontRatings: successfully fetched live ratings")
-                if callback then UIManager:scheduleIn(0, function() callback(true, norm) end) end
-                return
+                return true, parsed
             end
         end
-        logger.warn("StorefrontRatings: failed to fetch ratings", res_code)
+        return false, res_code
+    end
+
+    local ok_ffi, ffiutil = pcall(require, "ffi/util")
+    if not ok_ffi then ok_ffi, ffiutil = pcall(require, "ffiutil") end
+
+    if ok_ffi and ffiutil and ffiutil.runInSubProcess then
+        local pid, parent_read_fd = ffiutil.runInSubProcess(function(pid, child_write_fd)
+            local ok, parsed_or_err = execute_sync()
+            if child_write_fd then
+                local res_payload = json.encode({ok = ok, result = parsed_or_err})
+                ffiutil.writeToFD(child_write_fd, res_payload, true)
+            end
+        end, true)
+
+        if pid then
+            local poll_attempts = 0
+            local MAX_POLL_ATTEMPTS = 60
+            local poll_func
+            poll_func = function()
+                poll_attempts = poll_attempts + 1
+                if poll_attempts > MAX_POLL_ATTEMPTS then
+                    is_fetching = false
+                    logger.warn("StorefrontRatings: fetch subprocess timed out")
+                    if callback then callback(false, nil) end
+                    return
+                end
+
+                if ffiutil.isSubProcessDone(pid) then
+                    is_fetching = false
+                    local read_func = ffiutil.readAllFromFD or ffiutil.readFromFD
+                    local ok_read, raw_msg = pcall(function()
+                        if read_func and parent_read_fd then
+                            return read_func(parent_read_fd)
+                        elseif read_func then
+                            return read_func(pid)
+                        end
+                    end)
+                    if ok_read and type(raw_msg) == "string" and raw_msg ~= "" then
+                        local ok_dec, res_data = pcall(json.decode, raw_msg)
+                        if ok_dec and res_data and res_data.ok and type(res_data.result) == "table" then
+                            local norm = normalizeRatingsTable(res_data.result)
+                            StorefrontRatings.liveRatings = norm
+                            saveLocalRatingsFile(norm)
+                            logger.info("StorefrontRatings: successfully fetched live ratings (async)")
+                            if callback then callback(true, norm) end
+                            return
+                        end
+                    end
+                    logger.warn("StorefrontRatings: subprocess failed to fetch live ratings")
+                    if callback then callback(false, nil) end
+                else
+                    UIManager:scheduleIn(0.5, poll_func)
+                end
+            end
+            UIManager:scheduleIn(0.5, poll_func)
+            return
+        end
+    end
+
+    -- Fallback to sync
+    local fetch_task = function()
+        local ok, parsed_or_err = execute_sync()
+        is_fetching = false
+        if ok and type(parsed_or_err) == "table" then
+            local norm = normalizeRatingsTable(parsed_or_err)
+            StorefrontRatings.liveRatings = norm
+            saveLocalRatingsFile(norm)
+            logger.info("StorefrontRatings: successfully fetched live ratings (fallback)")
+            if callback then UIManager:scheduleIn(0, function() callback(true, norm) end) end
+            return
+        end
+        logger.warn("StorefrontRatings: failed to fetch ratings (fallback)", parsed_or_err)
         if callback then UIManager:scheduleIn(0, function() callback(false, nil) end) end
     end
 
@@ -580,59 +647,118 @@ function StorefrontRatings.submitVote(item_or_id, direction, item_kind, callback
 
     local dispatch_task = function()
         logger.info("StorefrontRatings: submitting vote", repo_id, direction)
-        local http_req = getHttpModule(StorefrontRatings.BASE_URL)
-        local response_body = {}
-        local headers = {
-            ["User-Agent"] = "KOReader-Storefront-Plugin/1.0",
-            ["Content-Type"] = "application/json",
-            ["Accept"] = "application/json",
-            ["Content-Length"] = tostring(#payload),
-        }
-
-        socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-        local ok_req, res_code = pcall(function()
-            local payload_sent = false
-            local params = {
-                url = StorefrontRatings.BASE_URL,
-                method = "POST",
-                headers = headers,
-                source = function()
-                    if not payload_sent then payload_sent = true; return payload end
-                    return nil
-                end,
-                sink = function(chunk)
-                    if chunk then table.insert(response_body, chunk) end
-                    return 1
-                end,
+        
+        local function execute_sync()
+            local http_req = getHttpModule(StorefrontRatings.BASE_URL)
+            local response_body = {}
+            local headers = {
+                ["User-Agent"] = "KOReader-Storefront-Plugin/1.0",
+                ["Content-Type"] = "application/json",
+                ["Accept"] = "application/json",
+                ["Content-Length"] = tostring(#payload),
             }
-            local _, c = http_req.request(params)
-            return c
-        end)
-        socketutil:reset_timeout()
 
-        local code = tonumber(res_code) or 0
-        if ok_req and code == 200 then
-            local body_str = table.concat(response_body)
-            local ok_json, parsed = pcall(json.decode, body_str)
-            if ok_json and parsed and parsed.success then
-                -- Confirm with exact database values from Cloudflare
-                for _, k in ipairs(candidate_keys) do
-                    StorefrontRatings.liveRatings[k] = {
-                        up = tonumber(parsed.up) or 0,
-                        down = tonumber(parsed.down) or 0,
-                        wilson = tonumber(parsed.wilson) or 0,
-                    }
+            socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+            local ok_req, res_code = pcall(function()
+                local payload_sent = false
+                local params = {
+                    url = StorefrontRatings.BASE_URL,
+                    method = "POST",
+                    headers = headers,
+                    source = function()
+                        if not payload_sent then payload_sent = true; return payload end
+                        return nil
+                    end,
+                    sink = function(chunk)
+                        if chunk then table.insert(response_body, chunk) end
+                        return 1
+                    end,
+                }
+                local _, c = http_req.request(params)
+                return c
+            end)
+            socketutil:reset_timeout()
+
+            local code = tonumber(res_code) or 0
+            if ok_req and code == 200 then
+                local body_str = table.concat(response_body)
+                local ok_json, parsed = pcall(json.decode, body_str)
+                if ok_json and parsed and parsed.success then
+                    return true, parsed
                 end
-                UIManager:scheduleIn(1, function()
-                    saveLocalRatingsFile(StorefrontRatings.liveRatings)
-                end)
             end
+            return false, "HTTP " .. tostring(res_code)
+        end
+
+        local ok_ffi, ffiutil = pcall(require, "ffi/util")
+        if not ok_ffi then ok_ffi, ffiutil = pcall(require, "ffiutil") end
+
+        if ok_ffi and ffiutil and ffiutil.runInSubProcess then
+            local pid, parent_read_fd = ffiutil.runInSubProcess(function(pid, child_write_fd)
+                local ok, parsed_or_err = execute_sync()
+                if child_write_fd then
+                    local res_payload = json.encode({ok = ok, result = parsed_or_err})
+                    ffiutil.writeToFD(child_write_fd, res_payload, true)
+                end
+            end, true)
+
+            if pid then
+                local poll_func
+                poll_func = function()
+                    if ffiutil.isSubProcessDone(pid) then
+                        local read_func = ffiutil.readAllFromFD or ffiutil.readFromFD
+                        local ok_read, raw_msg = pcall(function()
+                            if read_func and parent_read_fd then
+                                return read_func(parent_read_fd)
+                            elseif read_func then
+                                return read_func(pid)
+                            end
+                        end)
+                        if ok_read and type(raw_msg) == "string" and raw_msg ~= "" then
+                            local ok_dec, res_data = pcall(json.decode, raw_msg)
+                            if ok_dec and res_data and res_data.ok then
+                                local parsed = res_data.result
+                                for _, k in ipairs(candidate_keys) do
+                                    StorefrontRatings.liveRatings[k] = {
+                                        up = tonumber(parsed.up) or 0,
+                                        down = tonumber(parsed.down) or 0,
+                                        wilson = tonumber(parsed.wilson) or 0,
+                                    }
+                                end
+                                saveLocalRatingsFile(StorefrontRatings.liveRatings)
+                                logger.info("StorefrontRatings: vote submitted successfully", repo_id)
+                                if callback then callback(true, nil) end
+                                return
+                            end
+                        end
+                        local err_msg = "Subprocess fetch failed"
+                        logger.warn("StorefrontRatings: vote submission returned", err_msg)
+                        if callback then callback(false, err_msg) end
+                    else
+                        UIManager:scheduleIn(0.5, poll_func)
+                    end
+                end
+                UIManager:scheduleIn(0.5, poll_func)
+                return
+            end
+        end
+
+        -- Fallback to sync
+        local ok, result = execute_sync()
+        if ok then
+            for _, k in ipairs(candidate_keys) do
+                StorefrontRatings.liveRatings[k] = {
+                    up = tonumber(result.up) or 0,
+                    down = tonumber(result.down) or 0,
+                    wilson = tonumber(result.wilson) or 0,
+                }
+            end
+            UIManager:scheduleIn(1, function() saveLocalRatingsFile(StorefrontRatings.liveRatings) end)
             logger.info("StorefrontRatings: vote submitted successfully", repo_id)
             if callback then UIManager:scheduleIn(0, function() callback(true, nil) end) end
         else
-            local err_msg = "HTTP " .. tostring(res_code)
-            logger.warn("StorefrontRatings: vote submission returned", err_msg)
-            if callback then UIManager:scheduleIn(0, function() callback(false, err_msg) end) end
+            logger.warn("StorefrontRatings: vote submission returned", result)
+            if callback then UIManager:scheduleIn(0, function() callback(false, result) end) end
         end
     end
 
@@ -671,56 +797,114 @@ function StorefrontRatings.trackDownload(item_or_id, item_kind, callback)
 
     local dispatch_task = function()
         logger.info("StorefrontRatings: tracking download", repo_id, item_kind)
-        local http_req = getHttpModule(StorefrontRatings.BASE_URL)
-        local response_body = {}
-        local headers = {
-            ["User-Agent"] = "KOReader-Storefront-Plugin/1.0",
-            ["Content-Type"] = "application/json",
-            ["Accept"] = "application/json",
-            ["Content-Length"] = tostring(#payload),
-        }
-
-        socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-        local ok_req, res_code = pcall(function()
-            local payload_sent = false
-            local params = {
-                url = StorefrontRatings.BASE_URL .. "/download",
-                method = "POST",
-                headers = headers,
-                source = function()
-                    if not payload_sent then payload_sent = true; return payload end
-                    return nil
-                end,
-                sink = function(chunk)
-                    if chunk then table.insert(response_body, chunk) end
-                    return 1
-                end,
+        
+        local function execute_sync()
+            local http_req = getHttpModule(StorefrontRatings.BASE_URL)
+            local response_body = {}
+            local headers = {
+                ["User-Agent"] = "KOReader-Storefront-Plugin/1.0",
+                ["Content-Type"] = "application/json",
+                ["Accept"] = "application/json",
+                ["Content-Length"] = tostring(#payload),
             }
-            local _, c = http_req.request(params)
-            return c
-        end)
-        socketutil:reset_timeout()
 
-        local code = tonumber(res_code) or 0
-        if ok_req and code == 200 then
-            local body_str = table.concat(response_body)
-            local ok_json, parsed = pcall(json.decode, body_str)
-            if ok_json and parsed and parsed.success and parsed.downloads then
-                for _, k in ipairs(candidate_keys) do
-                    local entry = StorefrontRatings.liveRatings[k] or { up = 0, down = 0, wilson = 0 }
-                    entry.downloads = tonumber(parsed.downloads) or entry.downloads
-                    StorefrontRatings.liveRatings[k] = entry
+            socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+            local ok_req, res_code = pcall(function()
+                local payload_sent = false
+                local params = {
+                    url = StorefrontRatings.BASE_URL .. "/download",
+                    method = "POST",
+                    headers = headers,
+                    source = function()
+                        if not payload_sent then payload_sent = true; return payload end
+                        return nil
+                    end,
+                    sink = function(chunk)
+                        if chunk then table.insert(response_body, chunk) end
+                        return 1
+                    end,
+                }
+                local _, c = http_req.request(params)
+                return c
+            end)
+            socketutil:reset_timeout()
+
+            local code = tonumber(res_code) or 0
+            if ok_req and code == 200 then
+                local body_str = table.concat(response_body)
+                local ok_json, parsed = pcall(json.decode, body_str)
+                if ok_json and parsed and parsed.success and parsed.downloads then
+                    return true, parsed
                 end
-                UIManager:scheduleIn(1, function()
-                    saveLocalRatingsFile(StorefrontRatings.liveRatings)
-                end)
             end
+            return false, "HTTP " .. tostring(res_code)
+        end
+
+        local ok_ffi, ffiutil = pcall(require, "ffi/util")
+        if not ok_ffi then ok_ffi, ffiutil = pcall(require, "ffiutil") end
+
+        if ok_ffi and ffiutil and ffiutil.runInSubProcess then
+            local pid, parent_read_fd = ffiutil.runInSubProcess(function(pid, child_write_fd)
+                local ok, parsed_or_err = execute_sync()
+                if child_write_fd then
+                    local res_payload = json.encode({ok = ok, result = parsed_or_err})
+                    ffiutil.writeToFD(child_write_fd, res_payload, true)
+                end
+            end, true)
+
+            if pid then
+                local poll_func
+                poll_func = function()
+                    if ffiutil.isSubProcessDone(pid) then
+                        local read_func = ffiutil.readAllFromFD or ffiutil.readFromFD
+                        local ok_read, raw_msg = pcall(function()
+                            if read_func and parent_read_fd then
+                                return read_func(parent_read_fd)
+                            elseif read_func then
+                                return read_func(pid)
+                            end
+                        end)
+                        if ok_read and type(raw_msg) == "string" and raw_msg ~= "" then
+                            local ok_dec, res_data = pcall(json.decode, raw_msg)
+                            if ok_dec and res_data and res_data.ok then
+                                local parsed = res_data.result
+                                for _, k in ipairs(candidate_keys) do
+                                    local entry = StorefrontRatings.liveRatings[k] or { up = 0, down = 0, wilson = 0 }
+                                    entry.downloads = tonumber(parsed.downloads) or entry.downloads
+                                    StorefrontRatings.liveRatings[k] = entry
+                                end
+                                saveLocalRatingsFile(StorefrontRatings.liveRatings)
+                                logger.info("StorefrontRatings: download tracked successfully", repo_id)
+                                if callback then callback(true, nil) end
+                                return
+                            end
+                        end
+                        local err_msg = "Subprocess fetch failed"
+                        logger.dbg("StorefrontRatings: download track returned", err_msg)
+                        if callback then callback(false, err_msg) end
+                    else
+                        UIManager:scheduleIn(0.5, poll_func)
+                    end
+                end
+                UIManager:scheduleIn(0.5, poll_func)
+                return
+            end
+        end
+
+        -- Fallback to sync
+        local ok, result = execute_sync()
+        if ok then
+            for _, k in ipairs(candidate_keys) do
+                local entry = StorefrontRatings.liveRatings[k] or { up = 0, down = 0, wilson = 0 }
+                entry.downloads = tonumber(result.downloads) or entry.downloads
+                StorefrontRatings.liveRatings[k] = entry
+            end
+            UIManager:scheduleIn(1, function() saveLocalRatingsFile(StorefrontRatings.liveRatings) end)
             logger.info("StorefrontRatings: download tracked successfully", repo_id)
             if callback then UIManager:scheduleIn(0, function() callback(true, nil) end) end
         else
-            local err_msg = "HTTP " .. tostring(res_code)
-            logger.dbg("StorefrontRatings: download track returned", err_msg)
-            if callback then UIManager:scheduleIn(0, function() callback(false, err_msg) end) end
+            logger.dbg("StorefrontRatings: download track returned", result)
+            if callback then UIManager:scheduleIn(0, function() callback(false, result) end) end
         end
     end
 

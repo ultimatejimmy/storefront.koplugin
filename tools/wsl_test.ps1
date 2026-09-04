@@ -121,6 +121,13 @@ function Run-Workflow {
         Write-Host "Non-Touch Tests FAILED." -ForegroundColor Red
         return $false
     }
+    Write-Host "Running Settings Button & Dialog unit tests..."
+    $SettingsTestCmd = "cd $AppDir && LUA_PATH='{0}/?.lua;./?.lua;./?/init.lua;frontend/?.lua;frontend/?/init.lua;libs/?.lua;common/?.lua;common/?/init.lua;;' ./luajit {0}/tests/storefront_settings_test.lua" -f $WSLDest
+    wsl bash -c `"$SettingsTestCmd`"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Settings Tests FAILED." -ForegroundColor Red
+        return $false
+    }
     Write-Host "Tests PASSED" -ForegroundColor Green
 
     # 3. Restart KOReader

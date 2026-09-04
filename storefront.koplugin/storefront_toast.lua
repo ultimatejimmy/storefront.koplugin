@@ -30,10 +30,10 @@ local StorefrontToastWidget = InputContainer:extend{
     dismissable = true,
 }
 
-function StorefrontToastWidget:init()
+function StorefrontToastWidget:buildCard()
     local sw = Device.screen:getWidth()
     local sh = Device.screen:getHeight()
-    local max_toast_w = math.min(sw - sc(32), sc(500))
+    local max_toast_w = math.min(sw - sc(32), sc(580))
 
     local icon = ImageWidget:new{
         file = getAssetPath("info.svg"),
@@ -44,11 +44,28 @@ function StorefrontToastWidget:init()
         alpha = true,
     }
 
+    local face = Font:getFace("cfont", storefront_theme.face_label_size or 18)
+    local max_line_w = 0
+    local ok_rt, RenderText = pcall(require, "ui/rendertext")
+    if ok_rt and RenderText and RenderText.sizeUtf8Text then
+        for line in (self.text or ""):gmatch("[^\r\n]+") do
+            local sz = RenderText:sizeUtf8Text(0, 0, face, line)
+            if sz and sz.x and sz.x > max_line_w then
+                max_line_w = sz.x
+            end
+        end
+    end
+
+    local label_w = max_toast_w - sc(70)
+    if max_line_w > 0 then
+        label_w = math.min(label_w, math.max(sc(180), max_line_w + sc(16)))
+    end
+
     local label = TextBoxWidget:new{
         text = self.text or "",
-        face = Font:getFace("cfont", storefront_theme.face_label_size or 18),
+        face = face,
         fgcolor = Blitbuffer.COLOR_BLACK,
-        width = max_toast_w - sc(70),
+        width = label_w,
         alignment = "center",
     }
     self.label_widget = label
@@ -59,12 +76,13 @@ function StorefrontToastWidget:init()
         HorizontalSpan:new{ width = sc(10) },
         label,
     }
+    self.row = row
 
     local border_val = (storefront_theme.border_window and storefront_theme.border_window > 0)
         and storefront_theme.border_window or sc(2)
 
     local card = FrameContainer:new{
-        padding = sc(12),
+        padding = sc(14),
         padding_left = sc(16),
         padding_right = sc(16),
         radius = 0,
@@ -73,15 +91,30 @@ function StorefrontToastWidget:init()
         background = storefront_theme.color_bg or Blitbuffer.COLOR_WHITE,
         row,
     }
-
     self.card = card
 
-    self.dimen = Geom:new{ w = sw, h = sh }
+    local size = card:getSize()
+    card.dimen = Geom:new{
+        x = math.floor((sw - size.w) / 2),
+        y = math.floor((sh - size.h) / 2),
+        w = size.w,
+        h = size.h,
+    }
 
     self[1] = CenterContainer:new{
         dimen = Geom:new{ w = sw, h = sh },
         card,
     }
+
+    return card
+end
+
+function StorefrontToastWidget:init()
+    local sw = Device.screen:getWidth()
+    local sh = Device.screen:getHeight()
+    self.dimen = Geom:new{ w = sw, h = sh }
+
+    self:buildCard()
 
     if self.dismissable ~= false then
         if Device:hasKeys() then
@@ -164,26 +197,53 @@ function StorefrontToastWidget:show()
 end
 
 function StorefrontToastWidget:setText(text)
-    self.text = text or ""
-    if self.label_widget then
-        self.label_widget:setText(self.text)
-        if self.card and self.card.init then
-            pcall(function() self.card:init() end)
-        end
-        if self[1] and self[1].init then
-            pcall(function() self[1]:init() end)
-        end
-        if UIManager.isShown and not UIManager:isShown(self) then
-            UIManager:show(self)
-        end
-        UIManager:setDirty(self, function()
-            return "ui", (self.card and self.card.dimen) or self.dimen
-        end)
-        if type(UIManager.forceRePaint) == "function" then
-            UIManager:forceRePaint()
-        elseif type(UIManager.forceRepaint) == "function" then
-            UIManager:forceRepaint()
-        end
+    text = text or ""
+    if text == self.text and self.card then
+        return
+    end
+    self.text = text
+
+    local old_card_dimen = self.card and self.card.dimen and Geom:new{
+        x = self.card.dimen.x,
+        y = self.card.dimen.y,
+        w = self.card.dimen.w,
+        h = self.card.dimen.h,
+    }
+
+    self:buildCard()
+
+    local new_card_dimen = self.card.dimen
+    local sw = self.dimen.w
+    local sh = self.dimen.h
+
+    local refresh_rect
+    if old_card_dimen then
+        local rx = math.min(old_card_dimen.x, new_card_dimen.x) - sc(4)
+        local ry = math.min(old_card_dimen.y, new_card_dimen.y) - sc(4)
+        local rx2 = math.max(old_card_dimen.x + old_card_dimen.w, new_card_dimen.x + new_card_dimen.w) + sc(4)
+        local ry2 = math.max(old_card_dimen.y + old_card_dimen.h, new_card_dimen.y + new_card_dimen.h) + sc(4)
+        refresh_rect = Geom:new{
+            x = math.max(0, rx),
+            y = math.max(0, ry),
+            w = math.min(sw, rx2 - rx),
+            h = math.min(sh, ry2 - ry),
+        }
+    else
+        refresh_rect = new_card_dimen
+    end
+
+    if UIManager.isShown and not UIManager:isShown(self) then
+        UIManager:show(self)
+    end
+
+    UIManager:setDirty(self, function()
+        return "ui", refresh_rect
+    end)
+
+    if type(UIManager.forceRePaint) == "function" then
+        UIManager:forceRePaint()
+    elseif type(UIManager.forceRepaint) == "function" then
+        UIManager:forceRepaint()
     end
 end
 

@@ -40,21 +40,35 @@ package.loaded["dispatcher"] = {
 }
 
 package.loaded["lfs"] = {
-    attributes = function(path) 
-        -- Basic mock: if it ends in .sdr, it's a directory
-        if path:match("%.sdr$") or path:match("%.sdr/$") then
-            return { mode = "directory" }
+    attributes = function(path, req)
+        if req == "mode" then
+            if path and (path:match("%.jpg$") or path:match("%.png$") or path:match("%.lua$") or path:match("%.zip$")) then
+                return "file"
+            end
+            return "directory"
         end
-        -- If we can open it, it's a file
-        local f = io.open(path, "r")
-        if f then
-            f:close()
-            return { mode = "file" }
+        if path and (path:match("%.jpg$") or path:match("%.png$") or path:match("%.lua$") or path:match("%.zip$")) then
+            return { mode = "file", size = 1234, modification = os.time() }
         end
-        return nil
+        return { mode = "directory", size = 4096, modification = os.time() }
     end,
-    mkdir = function() return true end
+    dir = function(path)
+        local dummy_state = { __name = "directory", path = path }
+        local entries = { ".", "..", "sample_wallpaper.jpg" }
+        local idx = 0
+        local function iter(state)
+            if state ~= dummy_state then
+                error("bad argument #1 to '(for generator)' (directory metatable expected, got " .. type(state) .. ")", 2)
+            end
+            idx = idx + 1
+            return entries[idx]
+        end
+        return iter, dummy_state
+    end,
+    mkdir = function() return true end,
+    rmdir = function() return true end,
 }
+package.loaded["libs/libkoreader-lfs"] = package.loaded["lfs"]
 
 package.loaded["logger"] = {
     info = function(...) end,
@@ -542,8 +556,16 @@ package.loaded["util"] = {
             table.insert(chars, c)
         end
         return chars
-    end
+    end,
+    makePath = function(path) return true end,
+    purgeDir = function(path) return true end,
+    realpath = function(p) return p end,
+    joinPath = function(...)
+        local parts = {...}
+        return table.concat(parts, "/")
+    end,
 }
+package.loaded["ffi/util"] = package.loaded["util"]
 local json_lib = nil
 local ok_json, real_json = pcall(require, "json")
 if ok_json and type(real_json) == "table" and type(real_json.decode) == "function" then

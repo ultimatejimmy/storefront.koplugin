@@ -25,6 +25,7 @@ local StorefrontScreensaverGallery = require("storefront_screensaver_gallery")
 local StorefrontScreensaverDetail = require("storefront_screensaver_detail")
 local StorefrontDetailsDialog = require("storefront_details_dialog")
 local StorefrontBrowserUI = require("storefront_browser_ui")
+local StorefrontSettingsCard = require("storefront_settings_card")
 
 print("=== Running Non-Touch & FocusManager Unit Tests ===")
 
@@ -290,6 +291,23 @@ do
     check("Down from Versions tab button lands on toggle_btn (y=4, x=1)", details.selected.y == 4 and details.selected.x == 1)
     details:onFocusMove({ 0, 1 })
     check("Down from toggle_btn lands on first version item (y=5, x=1)", details.selected.y == 5 and details.selected.x == 1)
+end
+
+-- 15. Settings Card Dialog
+do
+    _G.ui_tracker = { shown = {}, last_shown = nil, closed = {} }
+    local dummy_storefront = {
+        browser_state = { kind = "plugin" },
+        browserRefresh = function() end,
+        saveBrowserState = function() end,
+        getInstallRecordsMap = function() return {} end,
+        getPatchRecordsMap = function() return {} end,
+    }
+    StorefrontSettingsCard.show(dummy_storefront)
+    local overlay = _G.ui_tracker.last_shown
+    check("Settings Card dialog uses FocusManager", overlay and overlay.type == "FocusManager")
+    check("Settings Card dialog has 2D layout", overlay and type(overlay.layout) == "table" and #overlay.layout >= 2)
+    check("Settings Card dialog has Close key event", overlay and overlay.key_events and overlay.key_events.Close ~= nil)
 end
 
 print(string.format("=== Non-Touch & FocusManager Tests Complete: %d Failures ===", failures))

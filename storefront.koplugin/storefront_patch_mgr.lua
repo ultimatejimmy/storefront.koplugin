@@ -13,6 +13,8 @@ local UIManager = require("ui/uimanager")
 local util = require("util")
 local lfs = require("libs/libkoreader-lfs")
 local _ = require("gettext")
+local Blitbuffer = require("ffi/blitbuffer")
+local StorefrontInstaller = require("storefront_installer")
 
 local M = {}
 
@@ -48,8 +50,14 @@ local function getRepoDefaultBranch(repo)
     return "HEAD"
 end
 
+local MAX_SHA1_FILE_BYTES = 20 * 1024 * 1024  -- 20 MB
+
 local function computeFileSha1(filepath)
     if not filepath or filepath == "" then return nil end
+    local attr_size = lfs and lfs.attributes and lfs.attributes(filepath, "size")
+    if attr_size and attr_size > MAX_SHA1_FILE_BYTES then
+        return nil
+    end
     local file = io.open(filepath, "rb")
     if not file then return nil end
     local content = file:read("*all")
@@ -106,6 +114,11 @@ end
 
 local function invalidateInstalledPatchesCache()
     G_installed_patches_cache = nil
+    if Storefront and type(Storefront) == "table" then
+        Storefront._installed_tab_items_cache = nil
+        Storefront._installed_lookup_cache = nil
+        Storefront._tab_menu_items_cache = nil
+    end
 end
 
 local function getPatchRecordsMap()
@@ -212,31 +225,30 @@ local function fetchPatchEntriesFromGitHub(owner, repo, branch, callback)
         return
     end
     branch = branch or "HEAD"
-    GitHub.fetchRepoTree(owner, repo, branch, function(tree_entries, err)
-        if not tree_entries then
-            if callback then callback(nil, err or "Tree fetch failed") end
-            return
+    local tree_entries, err = GitHub.fetchRepoTree(owner, repo, branch)
+    if not tree_entries or type(tree_entries.tree) ~= "table" then
+        if callback then callback(nil, err or "Tree fetch failed") end
+        return
+    end
+    local patch_files = {}
+    for _, entry in ipairs(tree_entries.tree) do
+        if entry.type == "blob" and entry.path and entry.path:match("%.lua$") then
+            local filename = entry.path:match("([^/]+)$") or entry.path
+            local raw_url = string.format("https://raw.githubusercontent.com/%s/%s/%s/%s", owner, repo, branch, entry.path)
+            table.insert(patch_files, {
+                path = entry.path,
+                filename = filename,
+                branch = branch,
+                sha = entry.sha,
+                size = entry.size or 0,
+                download_url = raw_url,
+            })
         end
-        local patch_files = {}
-        for _, entry in ipairs(tree_entries) do
-            if entry.type == "blob" and entry.path and entry.path:match("%.lua$") then
-                local filename = entry.path:match("([^/]+)$") or entry.path
-                local raw_url = string.format("https://raw.githubusercontent.com/%s/%s/%s/%s", owner, repo, branch, entry.path)
-                table.insert(patch_files, {
-                    path = entry.path,
-                    filename = filename,
-                    branch = branch,
-                    sha = entry.sha,
-                    size = entry.size or 0,
-                    download_url = raw_url,
-                })
-            end
-        end
-        table.sort(patch_files, function(a, b)
-            return (a.filename or "") < (b.filename or "")
-        end)
-        if callback then callback(patch_files, nil) end
+    end
+    table.sort(patch_files, function(a, b)
+        return (a.filename or "") < (b.filename or "")
     end)
+    if callback then callback(patch_files, nil) end
 end
 
 local function storePatchEntriesForRepo(owner, repo, branch, entries)
@@ -294,13 +306,26 @@ function M:init(Storefront)
             return true
         end
         local old_path = PATCHES_ROOT .. "/" .. filename
-        local new_path = old_path .. ".disabled"
+        local new_filename = filename .. ".disabled"
+        local new_path = PATCHES_ROOT .. "/" .. new_filename
         local ok, err = os.rename(old_path, new_path)
         if not ok then
             StorefrontLogger.warn("Failed to disable patch:", filename, err)
             return false
         end
+        local records = getPatchRecordsMap()
+        local rec = records[filename]
+        if rec then
+            InstallStore.removePatch(filename)
+            rec.filename = new_filename
+            InstallStore.upsertPatch(new_filename, rec)
+        else
+            InstallStore.bumpGeneration()
+        end
         invalidateInstalledPatchesCache()
+        if self.invalidateInstalledPluginsCache then
+            self:invalidateInstalledPluginsCache()
+        end
         return true
     end
 
@@ -312,37 +337,27 @@ function M:init(Storefront)
             return true
         end
         local old_path = PATCHES_ROOT .. "/" .. filename
-        local new_path = old_path:gsub("%.disabled$", "")
+        local new_filename = filename:gsub("%.disabled$", "")
+        local new_path = PATCHES_ROOT .. "/" .. new_filename
         local ok, err = os.rename(old_path, new_path)
         if not ok then
             StorefrontLogger.warn("Failed to enable patch:", filename, err)
             return false
         end
-        invalidateInstalledPatchesCache()
-        return true
-    end
-
-    function Storefront:deletePatch(filename, record)
-        if not filename or filename == "" then
-            return
-        end
-        local display_name = filename
-        local patch_path = PATCHES_ROOT .. "/" .. filename
-        local ok, err = os.remove(patch_path)
-        if ok then
-            if record then
-                InstallStore.removePatch(filename)
-            end
-            invalidateInstalledPatchesCache()
-            if self.patch_updates_menu then
-                self:updatePatchUpdatesDialog()
-            end
+        local records = getPatchRecordsMap()
+        local rec = records[filename]
+        if rec then
+            InstallStore.removePatch(filename)
+            rec.filename = new_filename
+            InstallStore.upsertPatch(new_filename, rec)
         else
-            UIManager:show(InfoMessage:new{
-                text = string.format(_("Failed to delete patch: %s"), tostring(err)),
-                timeout = 5,
-            })
+            InstallStore.bumpGeneration()
         end
+        invalidateInstalledPatchesCache()
+        if self.invalidateInstalledPluginsCache then
+            self:invalidateInstalledPluginsCache()
+        end
+        return true
     end
 
     function Storefront:checkSinglePatch(record)
@@ -656,75 +671,74 @@ function M:init(Storefront)
         end
 
         local Trapper = require("ui/trapper")
-        local completed, res
         Trapper:wrap(function()
-            completed, res = Trapper:dismissableRunInSubprocess(function()
-                local dl_ok, dl_err = storefront_installer.downloadToFile(raw_url, target_path)
+            local completed, res = Trapper:dismissableRunInSubprocess(function()
+                local dl_ok, dl_err = StorefrontInstaller.downloadToFile(raw_url, target_path)
                 return { ok = dl_ok, err = dl_err }
             end, trap_widget)
+
+            if trap_widget and trap_widget ~= batch_toast and trap_widget.close then
+                trap_widget:close()
+            end
+
+            if not completed then
+                util.removeFile(target_path)
+                local Toast = require("storefront_toast")
+                Toast.show(_("Download cancelled."), 3)
+                if self.pending_patch_install and self.pending_patch_install.batch_callback then
+                    local cb = self.pending_patch_install.batch_callback
+                    self.pending_patch_install = nil
+                    cb(false, "Cancelled by user")
+                end
+                return
+            end
+
+            local ok_dl = res and res.ok
+            local dl_err = res and res.err
+
+            if not ok_dl then
+                util.removeFile(target_path)
+                if not is_batch then
+                    UIManager:show(InfoMessage:new{ text = string.format(_("Failed to download patch: %s"), tostring(dl_err)), timeout = 5 })
+                end
+                if self.pending_patch_install and self.pending_patch_install.batch_callback then
+                    local cb = self.pending_patch_install.batch_callback
+                    self.pending_patch_install = nil
+                    cb(false, tostring(dl_err))
+                end
+                return
+            end
+
+            local stored_record = buildPatchRecordFields(target_filename, repo, patch, true)
+            if stored_record then
+                InstallStore.upsertPatch(target_filename, stored_record)
+            end
+            invalidateInstalledPatchesCache()
+
+            local is_update = self.pending_patch_install and self.pending_patch_install.mode == "update"
+            local batch_cb = self.pending_patch_install and self.pending_patch_install.batch_callback
+            self.pending_patch_install = nil
+            if is_update then
+                StorefrontLogger.action(string.format("Updated patch \"%s\".", target_filename))
+                if not is_batch and not _G.G_storefront_batch_updating then
+                    self:showRestartConfirmation(string.format(_("Updated patch \"%s\"."), target_filename))
+                end
+                if self.patch_updates_menu then
+                    self:updatePatchUpdatesDialog()
+                end
+            else
+                StorefrontLogger.action(string.format("Installed patch \"%s\".", target_filename))
+                if not is_batch and not _G.G_storefront_batch_updating then
+                    self:showRestartConfirmation(string.format(_("Installed patch \"%s\"."), target_filename))
+                end
+            end
+            if stored_record then
+                self:updateSinglePatchStatus(target_filename, stored_record)
+            end
+            if batch_cb then
+                batch_cb(true)
+            end
         end)
-
-        if trap_widget and trap_widget ~= batch_toast and trap_widget.close then
-            trap_widget:close()
-        end
-
-        if not completed then
-            util.removeFile(target_path)
-            local Toast = require("storefront_toast")
-            Toast.show(_("Download cancelled."), 3)
-            if self.pending_patch_install and self.pending_patch_install.batch_callback then
-                local cb = self.pending_patch_install.batch_callback
-                self.pending_patch_install = nil
-                cb(false, "Cancelled by user")
-            end
-            return
-        end
-
-        local ok_dl = res and res.ok
-        local dl_err = res and res.err
-
-        if not ok_dl then
-            util.removeFile(target_path)
-            if not is_batch then
-                UIManager:show(InfoMessage:new{ text = string.format(_("Failed to download patch: %s"), tostring(dl_err)), timeout = 5 })
-            end
-            if self.pending_patch_install and self.pending_patch_install.batch_callback then
-                local cb = self.pending_patch_install.batch_callback
-                self.pending_patch_install = nil
-                cb(false, tostring(dl_err))
-            end
-            return
-        end
-
-        local stored_record = buildPatchRecordFields(target_filename, repo, patch, true)
-        if stored_record then
-            InstallStore.upsertPatch(target_filename, stored_record)
-        end
-        invalidateInstalledPatchesCache()
-
-        local is_update = self.pending_patch_install and self.pending_patch_install.mode == "update"
-        local batch_cb = self.pending_patch_install and self.pending_patch_install.batch_callback
-        self.pending_patch_install = nil
-        if is_update then
-            StorefrontLogger.action(string.format("Updated patch \"%s\".", target_filename))
-            if not is_batch and not _G.G_storefront_batch_updating then
-                self:showRestartConfirmation(string.format(_("Updated patch \"%s\"."), target_filename))
-            end
-            if self.patch_updates_menu then
-                self:updatePatchUpdatesDialog()
-            end
-        else
-            StorefrontLogger.action(string.format("Installed patch \"%s\".", target_filename))
-            if not is_batch and not _G.G_storefront_batch_updating then
-                self:showRestartConfirmation(string.format(_("Installed patch \"%s\"."), target_filename))
-            end
-        end
-        if stored_record then
-            self:updateSinglePatchStatus(target_filename, stored_record)
-        end
-        if batch_cb then
-            batch_cb(true)
-        end
     end
 
     function Storefront:buildPatchUpdateItems(summary)
@@ -788,5 +802,6 @@ M.getPatchRecordsMap = getPatchRecordsMap
 M.buildPatchRecordFields = buildPatchRecordFields
 M.buildPatchSummary = buildPatchSummary
 M.computeFileSha1 = computeFileSha1
+M.invalidateInstalledPatchesCache = invalidateInstalledPatchesCache
 
 return M

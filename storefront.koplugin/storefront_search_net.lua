@@ -98,10 +98,17 @@ local function performSearchPage(query, page, per_page)
     return response, err
 end
 
+local MAX_SEARCH_PAGES = 10
+
 local function paginateFromPage(query, append, start_page)
     local per_page = 100
     local page = start_page or 1
+    local pages_fetched = 0
     while true do
+        if pages_fetched >= MAX_SEARCH_PAGES then
+            logger.warn("Storefront: pagination page cap reached at", page, query)
+            break
+        end
         local response, err = performSearchPage(query, page, per_page)
         if not response then
             return err
@@ -117,6 +124,7 @@ local function paginateFromPage(query, append, start_page)
             return nil
         end
         page = page + 1
+        pages_fetched = pages_fetched + 1
     end
 end
 
@@ -279,8 +287,8 @@ function SearchNet:init(Storefront)
         local Toast = require("storefront_toast")
         local UIManager = require("ui/uimanager")
         local is_direct = GitHub.isDirectApiEnabled()
-        local initial_msg = is_direct and _("Refreshing catalog via Direct GitHub API…") or _("Refreshing catalog…")
-        local progress_toast = Toast.show(initial_msg, 0, { dismissable = false })
+        local initial_msg = is_direct and _("Refreshing catalog via Direct GitHub API…\nTap screen to cancel.") or _("Refreshing catalog…")
+        local progress_toast = Toast.show(initial_msg, 0, { dismissable = is_direct })
         if UIManager.forceRePaint then UIManager:forceRePaint() end
 
         local finishRefresh = function(ok, summary_msg, err_msg)
@@ -324,45 +332,52 @@ function SearchNet:init(Storefront)
             return
         end
 
-        UIManager:scheduleIn(0.05, function()
-            local ok, err = pcall(function()
-                local refresh_plugins = (kind == "plugin") or (kind == "all")
-                local refresh_patches = (kind == "patch") or (kind == "all")
-                local summary_parts = {}
-                if refresh_plugins then
-                    if progress_toast and progress_toast.setText then
-                        progress_toast:setText(_("Fetching plugins via Direct GitHub API…"))
-                        if UIManager.forceRePaint then UIManager:forceRePaint() end
+        local Trapper = require("ui/trapper")
+        Trapper:wrap(function()
+            local completed, result = Trapper:dismissableRunInSubprocess(function()
+                local ok, val_or_err = pcall(function()
+                    local refresh_plugins = (kind == "plugin") or (kind == "all")
+                    local refresh_patches = (kind == "patch") or (kind == "all")
+                    local summary_parts = {}
+                    if refresh_plugins then
+                        local plugin_total = sf:fetchAndStore("plugin", PLUGIN_TOPICS, "Plugin", PLUGIN_NAME_QUERIES)
+                        table.insert(summary_parts, string.format(_("Cached %s plugins."), tostring(plugin_total)))
                     end
-                    local plugin_total = sf:fetchAndStore("plugin", PLUGIN_TOPICS, "Plugin", PLUGIN_NAME_QUERIES)
-                    table.insert(summary_parts, string.format(_("Cached %s plugins."), tostring(plugin_total)))
-                end
-                if refresh_patches then
-                    if progress_toast and progress_toast.setText then
-                        progress_toast:setText(_("Fetching patches via Direct GitHub API…"))
-                        if UIManager.forceRePaint then UIManager:forceRePaint() end
-                    end
-                    local patch_total = sf:fetchAndStore("patch", PATCH_TOPICS, "Patch", PATCH_NAME_QUERIES)
-                    if sf.refreshPatchFileListings then
-                        if progress_toast and progress_toast.setText then
-                            progress_toast:setText(_("Fetching patch file listings…"))
-                            if UIManager.forceRePaint then UIManager:forceRePaint() end
+                    if refresh_patches then
+                        local patch_total = sf:fetchAndStore("patch", PATCH_TOPICS, "Patch", PATCH_NAME_QUERIES)
+                        if sf.refreshPatchFileListings then
+                            sf:refreshPatchFileListings()
                         end
-                        sf:refreshPatchFileListings()
+                        table.insert(summary_parts, string.format(_("Cached %s patch repositories."), tostring(patch_total)))
                     end
-                    table.insert(summary_parts, string.format(_("Cached %s patch repositories."), tostring(patch_total)))
+                    local sum = table.concat(summary_parts, " ")
+                    return (sum ~= "") and sum or _("Storefront cache refreshed.")
+                end)
+                if ok then
+                    return { ok = true, summary = val_or_err }
+                else
+                    return { ok = false, err = tostring(val_or_err) }
                 end
-                local summary = table.concat(summary_parts, " ")
-                if summary == "" then
-                    summary = _("Storefront cache refreshed.")
-                end
-                StorefrontSettings:saveSetting("status_text", summary)
-                StorefrontSettings:flush()
-                finishRefresh(true, summary, nil)
-            end)
+            end, progress_toast)
 
-            if not ok then
-                finishRefresh(false, nil, err)
+            if not completed then
+                sf.is_refreshing = false
+                if progress_toast and progress_toast.close then
+                    pcall(function() progress_toast:close() end)
+                end
+                Toast.show(_("Catalog refresh cancelled."), 3)
+                if callback then callback(false, "Cancelled") end
+                return
+            end
+
+            local summary = (result and result.ok and result.summary) or _("Storefront cache refreshed.")
+            StorefrontSettings:saveSetting("status_text", summary)
+            StorefrontSettings:flush()
+
+            if result and result.ok then
+                finishRefresh(true, summary, nil)
+            else
+                finishRefresh(false, nil, result and result.err)
             end
         end)
     end

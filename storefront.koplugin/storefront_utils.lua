@@ -396,8 +396,15 @@ function storefront_utils.createButton(opts)
     local initial_font_size = opts.text_font_size or 18
     local chosen_font_size = initial_font_size
 
+    local pad_h = opts.padding_h or opts.padding
+    local pad_v = opts.padding_v or opts.padding
+    if not pad_h and not pad_v and not btn_w then
+        pad_h = sc(12)
+        pad_v = sc(6)
+    end
+
     if btn_w and opts.text and opts.text ~= "" then
-        local max_text_w = math.max(10, btn_w - sc(16))
+        local max_text_w = math.max(10, btn_w - (pad_h and (2 * pad_h) or sc(16)))
         for sz = initial_font_size, 10, -1 do
             local test_face = Font:getFace(face_name, sz)
             local tw = TextWidget:new{
@@ -421,7 +428,9 @@ function storefront_utils.createButton(opts)
         text_font_bold = (opts.bold ~= false),
         bordersize = border_size,
         border_color = border_color,
-        padding = 0,
+        padding = opts.padding or (btn_w and 0 or nil),
+        padding_h = pad_h,
+        padding_v = pad_v,
         radius = radius,
         width = btn_w,
         height = btn_h,

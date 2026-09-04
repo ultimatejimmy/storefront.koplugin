@@ -764,14 +764,18 @@ function M:init(Storefront)
         local function copySingleFile(src_file, dst_file)
             local sf = io.open(src_file, "rb")
             if sf then
-                local content = sf:read("*all")
-                sf:close()
                 local df = io.open(dst_file, "wb")
                 if df then
-                    df:write(content)
+                    while true do
+                        local chunk = sf:read(16384)
+                        if not chunk then break end
+                        df:write(chunk)
+                    end
                     df:close()
+                    sf:close()
                     return true
                 end
+                sf:close()
             end
             return false
         end
@@ -1280,12 +1284,19 @@ function M:init(Storefront)
                 logger.warn("Storefront: error deleting font:", err)
             end
 
-            self:showRestartConfirmation(string.format(_("Font '%s' deleted."), display_name))
-
-            if self.updates_menu then
+            if self.updates_menu and self.updateUpdatesDialog then
                 self:updateUpdatesDialog()
             end
-            self:softRefreshCurrentBrowserView()
+
+            local on_refreshed = function()
+                self:showRestartConfirmation(string.format(_("Font '%s' deleted."), display_name))
+            end
+            if self.refreshCurrentBrowserTab then
+                self:refreshCurrentBrowserTab(on_refreshed)
+            else
+                self:softRefreshCurrentBrowserView()
+                on_refreshed()
+            end
         end)
     end
 end

@@ -111,6 +111,11 @@ function InstallStore.getGeneration()
     return generation
 end
 
+function InstallStore.bumpGeneration()
+    generation = generation + 1
+    return generation
+end
+
 function InstallStore.listPatches()
     return readStore().patches
 end
@@ -214,6 +219,7 @@ function InstallStore.remove(plugin_id)
     end
     local data = readStore()
     if data.plugins[plugin_id] == nil then
+        InstallStore.bumpGeneration()
         return true
     end
     data.plugins[plugin_id] = nil
@@ -226,6 +232,7 @@ function InstallStore.removePatch(filename)
     end
     local data = readStore()
     if data.patches[filename] == nil then
+        InstallStore.bumpGeneration()
         return true
     end
     data.patches[filename] = nil

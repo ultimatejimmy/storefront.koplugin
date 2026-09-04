@@ -218,9 +218,35 @@ for _, w in ipairs(widgets) do
 end
 
 package.loaded["libs/libkoreader-lfs"] = {
-    attributes = function() return nil end,
-    dir = function() return function() return nil end end,
+    attributes = function(path, req)
+        if req == "mode" then
+            if path and (path:match("%.jpg$") or path:match("%.png$") or path:match("%.lua$") or path:match("%.zip$")) then
+                return "file"
+            end
+            return "directory"
+        end
+        if path and (path:match("%.jpg$") or path:match("%.png$") or path:match("%.lua$") or path:match("%.zip$")) then
+            return { mode = "file", size = 1234, modification = os.time() }
+        end
+        return { mode = "directory", size = 4096, modification = os.time() }
+    end,
+    dir = function(path)
+        local dummy_state = { __name = "directory", path = path }
+        local entries = { ".", "..", "sample_wallpaper.jpg" }
+        local idx = 0
+        local function iter(state)
+            if state ~= dummy_state then
+                error("bad argument #1 to '(for generator)' (directory metatable expected, got " .. type(state) .. ")", 2)
+            end
+            idx = idx + 1
+            return entries[idx]
+        end
+        return iter, dummy_state
+    end,
+    mkdir = function() return true end,
+    rmdir = function() return true end,
 }
+package.loaded["lfs"] = package.loaded["libs/libkoreader-lfs"]
 
 package.loaded["storefront_plugin_paths"] = {
     getLookupPaths = function() return { "plugins" } end,
@@ -410,23 +436,46 @@ if ok_browser then
 
     -- Simulate tapping settings button
     local settings_tapped = false
-    browser.on_settings_tap = function() settings_tapped = true end
-    if browser._header_settings_btn.callback then
-        browser._header_settings_btn.callback()
+    local settings_dialog_opened = false
+    local mock_storefront_app = {
+        browser_state = { kind = "plugin" },
+        browserRefresh = function() end,
+        saveBrowserState = function() end,
+        getInstallRecordsMap = function() return {} end,
+        getPatchRecordsMap = function() return {} end,
+        showStorefrontSettingsDialog = function(self)
+            settings_dialog_opened = true
+            if ok_settings then
+                StorefrontSettingsDialog:show(self)
+            end
+        end,
+    }
+
+    browser.on_settings_tap = function()
+        settings_tapped = true
+        mock_storefront_app:showStorefrontSettingsDialog()
     end
-    check("Settings button callback executed", settings_tapped, true)
+
+    if browser._header_settings_btn.callback then
+        local tap_ok, tap_err = pcall(browser._header_settings_btn.callback)
+        check("Settings button callback executed without error", tap_ok, true)
+        if not tap_ok then print("Settings button tap error:", tap_err) end
+    end
+    check("Settings button callback triggered on_settings_tap", settings_tapped, true)
+    check("Settings button opens StorefrontSettingsDialog", settings_dialog_opened, true)
+
+    -- Test Screensaver Manager local directory listing with generator state protocol
+    local StorefrontScreensaverMgr = require("storefront_screensaver_mgr")
+    local ss_list_ok, local_wallpapers = pcall(function()
+        return StorefrontScreensaverMgr.listLocalScreensavers()
+    end)
+    check("listLocalScreensavers executes without generator state error", ss_list_ok, true)
+    check("listLocalScreensavers returns table of wallpapers", type(local_wallpapers) == "table", true)
 
     -- Test Settings Card rendering
     if ok_card then
-        local dummy_storefront = {
-            browser_state = { kind = "plugin" },
-            browserRefresh = function() end,
-            saveBrowserState = function() end,
-            getInstallRecordsMap = function() return {} end,
-            getPatchRecordsMap = function() return {} end,
-        }
         local show_ok, err = pcall(function()
-            StorefrontSettingsCard.show(dummy_storefront)
+            StorefrontSettingsCard.show(mock_storefront_app)
         end)
         check("Settings card show executed without crash", show_ok, true)
         if not show_ok then

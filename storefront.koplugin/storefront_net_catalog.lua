@@ -113,11 +113,6 @@ local function requestWithRedirects(target_url, sink_fn)
             elseif ok_req and (code == 301 or code == 302 or code == 303 or code == 307 or code == 308) then
                 break
             end
-
-            if attempt < max_retries then
-                local ok_sec, socket = pcall(require, "socket")
-                if ok_sec and socket and socket.sleep then socket.sleep(0.1) end
-            end
         end
 
         local code = tonumber(last_res_code) or 0
@@ -273,6 +268,22 @@ function CatalogClient.fetchCatalogToFile(url_to_fetch, dest_path)
 end
 
 function CatalogClient.cancelAsyncFetch()
+    local UIManager = require("ui/uimanager")
+    if CatalogClient._poll_func then
+        UIManager:unschedule(CatalogClient._poll_func)
+        CatalogClient._poll_func = nil
+    end
+    if CatalogClient._poll_fd then
+        pcall(function()
+            local ok_ffi, ffiutil = pcall(require, "ffi/util")
+            if not ok_ffi then ok_ffi, ffiutil = pcall(require, "ffiutil") end
+            if ok_ffi and ffiutil then
+                local read_fn = ffiutil.readAllFromFD or ffiutil.readFromFD
+                if read_fn then pcall(read_fn, CatalogClient._poll_fd) end
+            end
+        end)
+        CatalogClient._poll_fd = nil
+    end
     if CatalogClient._async_pid then
         local ok_ffi, ffiutil = pcall(require, "ffi/util")
         if not ok_ffi then ok_ffi, ffiutil = pcall(require, "ffiutil") end
@@ -505,12 +516,13 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback)
 
     if not (ok_ffi and ffiutil and ffiutil.runInSubProcess) then
         logger.warn("Storefront: ffiutil.runInSubProcess unavailable, falling back to sync catalog fetch")
-        local ok_dl, catalog_data = pcall(function() return CatalogClient.fetchCatalog(target_url) end)
-        if ok_dl and catalog_data then
-            local ok_update, err_update = CatalogClient.updateCacheFromCatalog(catalog_data)
-            if callback then callback(ok_update, err_update) end
+        local ok_dl, catalog_data_or_err = pcall(function() return CatalogClient.fetchCatalog(target_url) end)
+        if ok_dl and catalog_data_or_err then
+            local ok_update, err_update = CatalogClient.updateCacheFromCatalog(catalog_data_or_err)
+            if callback then callback(ok_update, type(err_update) == "string" and err_update or tostring(err_update)) end
         else
-            if callback then callback(false, "Sync catalog fetch failed") end
+            local err_str = type(catalog_data_or_err) == "string" and catalog_data_or_err or tostring(catalog_data_or_err)
+            if callback then callback(false, "Sync catalog fetch failed: " .. err_str) end
         end
         return
     end
@@ -578,19 +590,36 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback)
 
     CatalogClient._async_pid = pid
 
+    local poll_attempts = 0
+    local MAX_POLL_ATTEMPTS = 120  -- 2-minute hard ceiling
     local poll_func
     poll_func = function()
+        poll_attempts = poll_attempts + 1
+        if poll_attempts > MAX_POLL_ATTEMPTS then
+            CatalogClient._async_pid = nil
+            CatalogClient._poll_func = nil
+            CatalogClient._poll_fd = nil
+            logger.warn("Storefront: catalog subprocess timed out after 120s, aborting poll")
+            if StorefrontLogger then StorefrontLogger.warn("Storefront: catalog subprocess timed out") end
+            if callback then callback(false, "subprocess timeout") end
+            return
+        end
+
         if CatalogClient._async_pid ~= pid then
             -- Fetch was cancelled or superseded
             if parent_read_fd and (ffiutil.readAllFromFD or ffiutil.readFromFD) then
                 local close_func = ffiutil.readAllFromFD or ffiutil.readFromFD
                 close_func(parent_read_fd)
             end
+            CatalogClient._poll_func = nil
+            CatalogClient._poll_fd = nil
             return
         end
 
         if ffiutil.isSubProcessDone(pid) then
             CatalogClient._async_pid = nil
+            CatalogClient._poll_func = nil
+            CatalogClient._poll_fd = nil
 
             local read_func = ffiutil.readAllFromFD or ffiutil.readFromFD
             local ok_read, raw_msg = pcall(function()
@@ -611,12 +640,18 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback)
                 os.remove(dest)
                 local ok_ren = os.rename(src, dest)
                 if ok_ren then return true end
-                -- Fallback if rename fails
+                -- Fallback if rename fails (e.g. FAT32 lock)
                 local sf, s_err = io.open(src, "rb")
                 if not sf then return false end
                 local df, d_err = io.open(dest, "wb")
                 if not df then sf:close(); return false end
-                df:write(sf:read("*all"))
+                
+                while true do
+                    local chunk = sf:read(16384)
+                    if not chunk then break end
+                    df:write(chunk)
+                end
+                
                 sf:close()
                 df:close()
                 os.remove(src)
@@ -648,6 +683,9 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback)
             UIManager:scheduleIn(1.0, poll_func)
         end
     end
+
+    CatalogClient._poll_func = poll_func
+    CatalogClient._poll_fd = parent_read_fd
 
     UIManager:scheduleIn(1.0, poll_func)
 end

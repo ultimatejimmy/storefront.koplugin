@@ -39,6 +39,92 @@ local function getAssetPath(filename)
     return dir .. "assets/" .. filename
 end
 
+local function is12HourClockEnabled()
+    if G_reader_settings then
+        if type(G_reader_settings.isTrue) == "function" and G_reader_settings:isTrue("twelve_hour_clock") then
+            return true
+        end
+        if type(G_reader_settings.readSetting) == "function" then
+            local val = G_reader_settings:readSetting("twelve_hour_clock")
+            if val == true or val == "true" or val == "12h" or val == 1 then
+                return true
+            end
+        end
+    end
+
+    local ok_dt, datetime = pcall(require, "datetime")
+    if not ok_dt then ok_dt, datetime = pcall(require, "ui/datetime") end
+    if ok_dt and datetime then
+        if type(datetime.is12HourClock) == "function" then
+            local res = datetime.is12HourClock()
+            if res ~= nil then return res end
+        end
+        if type(datetime.has12HourClock) == "function" then
+            local res = datetime.has12HourClock()
+            if res ~= nil then return res end
+        end
+        if type(datetime.is12Hour) == "function" then
+            local res = datetime.is12Hour()
+            if res ~= nil then return res end
+        end
+    end
+
+    if G_reader_settings then
+        if type(G_reader_settings.isTrue) == "function" then
+            if G_reader_settings:isTrue("clock_12h")
+                or G_reader_settings:isTrue("clock_format_12h")
+                or G_reader_settings:isTrue("c_clock_12h")
+                or G_reader_settings:isTrue("c_time_12h")
+                or G_reader_settings:isTrue("time_12h")
+                or G_reader_settings:isTrue("12h_clock")
+                or G_reader_settings:isTrue("use_12h_clock")
+                or G_reader_settings:isTrue("is_12h_clock")
+                or G_reader_settings:isTrue("is_12h")
+                or G_reader_settings:isTrue("12_hour_clock")
+                or G_reader_settings:isTrue("c_12_hour_clock") then
+                return true
+            end
+        end
+
+        if type(G_reader_settings.readSetting) == "function" then
+            local keys = {
+                "c_time_format", "clock_format", "time_format", "c_clock_format",
+                "clock", "time_mode", "clock_mode", "time_display", "status_time_format"
+            }
+            for _, key in ipairs(keys) do
+                local val = G_reader_settings:readSetting(key)
+                if val ~= nil then
+                    local sval = tostring(val):lower()
+                    if sval:find("12") or sval == "true" then
+                        return true
+                    end
+                end
+            end
+        end
+    end
+
+    return false
+end
+
+local function formatDateTime(ts)
+    if not ts or type(ts) ~= "number" or ts <= 0 then
+        return _("Never")
+    end
+
+    local ok, formatted
+    if is12HourClockEnabled() then
+        ok, formatted = pcall(os.date, "%Y-%m-%d %I:%M%p", ts)
+        if ok and formatted then
+            return (formatted:lower():gsub(" 0(%d:)", " %1"))
+        end
+    end
+    ok, formatted = pcall(os.date, "%Y-%m-%d %H:%M", ts)
+    if ok and formatted then
+        return formatted
+    end
+    return _("Never")
+end
+
 function StorefrontSettingsCard.show(Storefront)
     local current_kind = (Storefront.browser_state and Storefront.browser_state.kind) or "plugin"
     local sw = Screen:getWidth()
@@ -302,86 +388,6 @@ function StorefrontSettingsCard.show(Storefront)
             refresh()
         end))
 
-local function is12HourClockEnabled()
-    if G_reader_settings then
-        if type(G_reader_settings.isTrue) == "function" and G_reader_settings:isTrue("twelve_hour_clock") then
-            return true
-        end
-        if type(G_reader_settings.readSetting) == "function" then
-            local val = G_reader_settings:readSetting("twelve_hour_clock")
-            if val == true or val == "true" or val == "12h" or val == 1 then
-                return true
-            end
-        end
-    end
-
-    local ok_dt, datetime = pcall(require, "datetime")
-    if not ok_dt then ok_dt, datetime = pcall(require, "ui/datetime") end
-    if ok_dt and datetime then
-        if type(datetime.is12HourClock) == "function" then
-            local res = datetime.is12HourClock()
-            if res ~= nil then return res end
-        end
-        if type(datetime.has12HourClock) == "function" then
-            local res = datetime.has12HourClock()
-            if res ~= nil then return res end
-        end
-        if type(datetime.is12Hour) == "function" then
-            local res = datetime.is12Hour()
-            if res ~= nil then return res end
-        end
-    end
-
-    if G_reader_settings then
-        if type(G_reader_settings.isTrue) == "function" then
-            if G_reader_settings:isTrue("clock_12h")
-                or G_reader_settings:isTrue("clock_format_12h")
-                or G_reader_settings:isTrue("c_clock_12h")
-                or G_reader_settings:isTrue("c_time_12h")
-                or G_reader_settings:isTrue("time_12h")
-                or G_reader_settings:isTrue("12h_clock")
-                or G_reader_settings:isTrue("use_12h_clock")
-                or G_reader_settings:isTrue("is_12h_clock")
-                or G_reader_settings:isTrue("is_12h")
-                or G_reader_settings:isTrue("12_hour_clock")
-                or G_reader_settings:isTrue("c_12_hour_clock") then
-                return true
-            end
-        end
-
-        if type(G_reader_settings.readSetting) == "function" then
-            local keys = {
-                "c_time_format", "clock_format", "time_format", "c_clock_format",
-                "clock", "time_mode", "clock_mode", "time_display", "status_time_format"
-            }
-            for _, key in ipairs(keys) do
-                local val = G_reader_settings:readSetting(key)
-                if val ~= nil then
-                    local sval = tostring(val):lower()
-                    if sval:find("12") or sval == "true" then
-                        return true
-                    end
-                end
-            end
-        end
-    end
-
-    return false
-end
-
-local function formatDateTime(ts)
-    if not ts or ts <= 0 then
-        return _("Never")
-    end
-
-    if is12HourClockEnabled() then
-        local formatted = os.date("%Y-%m-%d %I:%M%p", ts):lower()
-        return (formatted:gsub(" 0(%d:)", " %1"))
-    else
-        return os.date("%Y-%m-%d %H:%M", ts)
-    end
-end
-
         -- Refresh Catalog Row
         local is_currently_refreshing = Storefront.isRefreshing and Storefront:isRefreshing()
         local ts = Cache.getLastFetched(current_kind)
@@ -505,12 +511,13 @@ end
         table.insert(content_vg, create_section_header(_("Screensaver & Wallpapers")))
 
         local StorefrontScreensaverMgr = require("storefront_screensaver_mgr")
-        local ss_settings = StorefrontScreensaverMgr.getScreensaverSettings()
-        local ss_local = StorefrontScreensaverMgr.listLocalScreensavers()
+        local ss_settings = StorefrontScreensaverMgr.getScreensaverSettings() or {}
+        local ss_local = StorefrontScreensaverMgr.listLocalScreensavers() or {}
 
         local mode_display_str = _("Book Cover")
         if ss_settings.effective_mode == "single" then
-            local fname = (ss_settings.file ~= "") and ss_settings.file:match("([^/\\]+)$") or _("Single")
+            local file_str = ss_settings.file or ""
+            local fname = (file_str ~= "") and file_str:match("([^/\\]+)$") or _("Single")
             mode_display_str = _("Single") .. " (" .. fname .. ")"
         elseif ss_settings.effective_mode == "shuffle" then
             mode_display_str = string.format(_("Shuffle (%d)"), #ss_local)
@@ -554,8 +561,8 @@ end
 
         -- About Storefront Row
         local StorefrontAboutDialog = require("storefront_about_dialog")
-        local current_ch = StorefrontAboutDialog.getChannel()
-        local version_str = StorefrontAboutDialog.getVersion()
+        local current_ch = (StorefrontAboutDialog and StorefrontAboutDialog.getChannel and StorefrontAboutDialog.getChannel()) or "stable"
+        local version_str = (StorefrontAboutDialog and StorefrontAboutDialog.getVersion and StorefrontAboutDialog.getVersion()) or "1.0.0"
         local ver_widget = TextWidget:new{
             text = string.format("v%s", version_str),
             face = Font:getFace("cfont", subtext_font_size),

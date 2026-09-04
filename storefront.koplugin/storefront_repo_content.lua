@@ -113,10 +113,19 @@ end
 
 local downloadImage
 
+function RepoContent.cancelPendingImages()
+    if RepoContent._pending_image_timer then
+        local UIManager = require("ui/uimanager")
+        UIManager:unschedule(RepoContent._pending_image_timer)
+        RepoContent._pending_image_timer = nil
+    end
+    RepoContent.pending_images = {}
+end
+
 function RepoContent.resetPayloadTracker()
+    RepoContent.cancelPendingImages()
     RepoContent.cumulative_page_bytes = 0
     RepoContent.cumulative_uncompressed_bytes = 0
-    RepoContent.pending_images = {}
 end
 
 function RepoContent.processPendingImages(on_update_cb)
@@ -157,9 +166,16 @@ function RepoContent.processPendingImages(on_update_cb)
     -- More images to download? Schedule next tick.
     if RepoContent.pending_images and #RepoContent.pending_images > 0 and RepoContent.cumulative_page_bytes < MAX_PAGE_PAYLOAD_BYTES then
         local UIManager = require("ui/uimanager")
-        UIManager:scheduleIn(0.4, function()
+        if RepoContent._pending_image_timer then
+            UIManager:unschedule(RepoContent._pending_image_timer)
+        end
+        local timer_fn
+        timer_fn = function()
+            RepoContent._pending_image_timer = nil
             RepoContent.processPendingImages(on_update_cb)
-        end)
+        end
+        RepoContent._pending_image_timer = timer_fn
+        UIManager:scheduleIn(0.4, timer_fn)
         return
     end
 

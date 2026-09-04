@@ -185,23 +185,31 @@ function StorefrontClearCacheDialog.show(Storefront, on_close_callback)
                 sub_w,
             }
 
+            local action_btn_w = sc(92)
+            local action_btn_h = sc(32)
+
             local right_action
             if not has_items then
-                right_action = TextWidget:new{
-                    text = _("Empty"),
-                    face = Font:getFace("cfont", subtext_font_size),
-                    fgcolor = storefront_theme.color_label_dim,
+                right_action = CenterContainer:new{
+                    dimen = Geom:new{ w = action_btn_w, h = action_btn_h },
+                    TextWidget:new{
+                        text = _("Empty"),
+                        face = Font:getFace("cfont", subtext_font_size),
+                        fgcolor = storefront_theme.color_label_dim,
+                    }
                 }
             else
                 local StorefrontUtils = require("storefront_utils")
                 right_action = StorefrontUtils.createButton{
                     text = is_accent and _("Clear All") or _("Clear"),
-                    text_font_size = is_accent and (ui_font_size - 1) or (ui_font_size - 2),
+                    text_font_size = 14,
                     bold = true,
                     bordersize = storefront_theme.border_btn or sc(1),
                     radius = storefront_theme.radius_btn or sc(4),
-                    padding = sc(6),
-                    padding_h = sc(12),
+                    width = action_btn_w,
+                    height = action_btn_h,
+                    padding_h = sc(8),
+                    padding_v = sc(4),
                     background = is_accent and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_WHITE,
                     text_font_color = is_accent and Blitbuffer.COLOR_WHITE or Blitbuffer.COLOR_BLACK,
                     callback = on_clear,
@@ -378,7 +386,7 @@ function StorefrontClearCacheDialog.show(Storefront, on_close_callback)
 
         table.insert(content_vg, LineWidget:new{
             dimen = Geom:new{ w = dialog_w - sc(4), h = sc(1) },
-            background = Blitbuffer.COLOR_BLACK,
+            background = Blitbuffer.COLOR_DARK_GRAY,
         })
 
         -- Close Button at bottom

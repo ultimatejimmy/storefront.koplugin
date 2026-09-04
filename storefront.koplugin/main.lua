@@ -101,6 +101,11 @@ local INCLUDE_ZERO_STAR_FORKS_KEY = "include_zero_star_forks"
 local PATCH_CACHE_TTL = 10 * 60
 local MIN_CATALOG_CHECK_INTERVAL = 300
 local DEFAULT_SORT_MODE = "stars_desc"
+local MAX_SHA1_FILE_BYTES = 20 * 1024 * 1024
+
+local _session_bg_checks_done = false
+local _catalog_retry_timer_fn = nil
+local _catalog_show_timer_fn = nil
 
 local PluginPaths = require("storefront_plugin_paths")
 local PATCHES_ROOT = DataStorage:getDataDir() .. "/patches"
@@ -604,7 +609,7 @@ function Storefront:showConfirmDialog(opts)
 end
 
 local function showFetchingProgress(message)
-    if G_storefront_batch_updating then
+    if _G.G_storefront_batch_updating then
         return {
             close = function() end
         }
@@ -1042,6 +1047,11 @@ local function computeFileSha1(path)
     if not path or path == "" then
         return nil
     end
+    local ok_lfs2, lfs2 = pcall(require, "libs/libkoreader-lfs")
+    local fsize = ok_lfs2 and lfs2 and lfs2.attributes and lfs2.attributes(path, "size")
+    if fsize and fsize > MAX_SHA1_FILE_BYTES then
+        return nil
+    end
     local file = io.open(path, "rb")
     if not file then
         return nil
@@ -1158,24 +1168,29 @@ local function deleteDirectoryRecursive(path)
     if attr.mode ~= "directory" then
         return os.remove(path), "Not a directory"
     end
-    for entry in lfs.dir(path) do
-        if entry ~= "." and entry ~= ".." then
-            local full_path = path .. "/" .. entry
-            local entry_attr = lfs.attributes(full_path)
-            if entry_attr then
-                if entry_attr.mode == "directory" then
-                    local ok, err = deleteDirectoryRecursive(full_path)
-                    if not ok then
-                        return false, err
-                    end
-                else
-                    local ok, err = os.remove(full_path)
-                    if not ok then
-                        return false, err
+    local read_ok, read_err = pcall(function()
+        for entry in lfs.dir(path) do
+            if entry ~= "." and entry ~= ".." then
+                local full_path = path .. "/" .. entry
+                local entry_attr = lfs.attributes(full_path)
+                if entry_attr then
+                    if entry_attr.mode == "directory" then
+                        local ok, err = deleteDirectoryRecursive(full_path)
+                        if not ok then
+                            error(err or "Failed to delete subdirectory")
+                        end
+                    else
+                        local ok, err = os.remove(full_path)
+                        if not ok then
+                            error(err or "Failed to remove file")
+                        end
                     end
                 end
             end
         end
+    end)
+    if not read_ok then
+        return false, read_err
     end
     return lfs.rmdir(path)
 end
@@ -1445,6 +1460,13 @@ local function invalidateInstalledPluginsCache()
     local ok_fm, font_mgr = pcall(require, "storefront_font_mgr")
     if ok_fm and font_mgr and type(font_mgr.invalidateInstalledFontsCache) == "function" then
         font_mgr.invalidateInstalledFontsCache()
+    end
+    local ok_pm, patch_mgr = pcall(require, "storefront_patch_mgr")
+    if ok_pm and patch_mgr and type(patch_mgr.invalidateInstalledPatchesCache) == "function" then
+        patch_mgr.invalidateInstalledPatchesCache()
+    end
+    if Storefront and type(Storefront.invalidateInstalledPatchesCache) == "function" then
+        pcall(Storefront.invalidateInstalledPatchesCache, Storefront)
     end
 end
 
@@ -3824,10 +3846,12 @@ function Storefront:promptUpdateAction(plugin, record)
             callback = function()
                 UIManager:close(info_box)
                 self:enablePlugin(plugin.dirname)
-                showRestartConfirmation(string.format(_("Plugin '%s' enabled."), plugin.name or plugin.dirname))
                 if self.updates_menu then
                     self:updateUpdatesDialog()
                 end
+                self:refreshCurrentBrowserTab(function()
+                    showRestartConfirmation(string.format(_("Plugin '%s' enabled."), plugin.name or plugin.dirname))
+                end)
             end,
         })
     else
@@ -3837,10 +3861,12 @@ function Storefront:promptUpdateAction(plugin, record)
             callback = function()
                 UIManager:close(info_box)
                 self:disablePlugin(plugin.dirname)
-                showRestartConfirmation(string.format(_("Plugin '%s' disabled."), plugin.name or plugin.dirname))
                 if self.updates_menu then
                     self:updateUpdatesDialog()
                 end
+                self:refreshCurrentBrowserTab(function()
+                    showRestartConfirmation(string.format(_("Plugin '%s' disabled."), plugin.name or plugin.dirname))
+                end)
             end,
         })
     end
@@ -3981,10 +4007,12 @@ function Storefront:promptPatchUpdateAction(patch_item)
                 UIManager:close(info_box)
                 local ok = self:enablePatch(patch.filename)
                 if ok then
-                    showRestartConfirmation(string.format(_("Patch '%s' enabled."), patch.filename))
                     if self.patch_updates_menu then
                         self:updatePatchUpdatesDialog()
                     end
+                    self:refreshCurrentBrowserTab(function()
+                        showRestartConfirmation(string.format(_("Patch '%s' enabled."), patch.filename))
+                    end)
                 else
                     UIManager:show(InfoMessage:new{
                         text = string.format(_("Failed to enable patch '%s'."), patch.filename),
@@ -4001,10 +4029,12 @@ function Storefront:promptPatchUpdateAction(patch_item)
                 UIManager:close(info_box)
                 local ok = self:disablePatch(patch.filename)
                 if ok then
-                    showRestartConfirmation(string.format(_("Patch '%s' disabled."), patch.filename))
                     if self.patch_updates_menu then
                         self:updatePatchUpdatesDialog()
                     end
+                    self:refreshCurrentBrowserTab(function()
+                        showRestartConfirmation(string.format(_("Patch '%s' disabled."), patch.filename))
+                    end)
                 else
                     UIManager:show(InfoMessage:new{
                         text = string.format(_("Failed to disable patch '%s'."), patch.filename),
@@ -8127,6 +8157,14 @@ function Storefront:dismissProgressMessage(target)
 end
 
 function Storefront:closeBrowserMenu()
+    if _catalog_show_timer_fn then
+        UIManager:unschedule(_catalog_show_timer_fn)
+        _catalog_show_timer_fn = nil
+    end
+    if _catalog_retry_timer_fn then
+        UIManager:unschedule(_catalog_retry_timer_fn)
+        _catalog_retry_timer_fn = nil
+    end
     self:dismissProgressMessage()
     if self.browser_menu then
         UIManager:close(self.browser_menu)
@@ -8289,10 +8327,14 @@ end
 -- On other tabs, falls back to softRefreshCurrentBrowserView — just
 -- marking the frame dirty is sufficient because catalog-tab content
 -- is rebuilt from the cache which is already invalidated.
-function Storefront:refreshCurrentBrowserTab()
+function Storefront:refreshCurrentBrowserTab(callback)
     self:softRefreshCurrentBrowserView()
-    self._browser_refresh_mode_hint = "partial"
-    self:reopenBrowser()
+    if self.browser_menu then
+        self._browser_refresh_mode_hint = "partial"
+        self:reopenBrowser(nil, callback)
+    elseif callback then
+        UIManager:nextTick(callback)
+    end
 end
 
 function Storefront:maybeCheckCatalogBackground()
@@ -8371,8 +8413,8 @@ function Storefront:showBrowser(kind)
     local current_tab = self.browser_state.tab or "Plugins"
     
     -- Schedule deferred update and catalog background checks ONCE per session on launch (zero launch delay)
-    if not self._session_bg_checks_done then
-        self._session_bg_checks_done = true
+    if not _session_bg_checks_done then
+        _session_bg_checks_done = true
         UIManager:nextTick(function()
             pcall(function() self:syncPendingFontDownloads() end)
             pcall(function() self:maybeAutoCheckUpdates() end)
@@ -8380,9 +8422,14 @@ function Storefront:showBrowser(kind)
 
         local now = os.time()
         if not self._last_catalog_check_time or (now - self._last_catalog_check_time) >= MIN_CATALOG_CHECK_INTERVAL then
-            UIManager:scheduleIn(1.5, function()
+            if _catalog_show_timer_fn then
+                UIManager:unschedule(_catalog_show_timer_fn)
+            end
+            _catalog_show_timer_fn = function()
+                _catalog_show_timer_fn = nil
                 pcall(function() self:maybeCheckCatalogBackground() end)
-            end)
+            end
+            UIManager:scheduleIn(1.5, _catalog_show_timer_fn)
         end
     end
 
@@ -9891,8 +9938,8 @@ function Storefront:init()
         StorefrontSettings:flush()
     end
 
-    if not G_session_init_done then
-        G_session_init_done = true
+    if not _G.G_session_init_done then
+        _G.G_session_init_done = true
 
         -- Cleanup legacy test files from plugin directory if updating from an older version
         local plugin_dir = self.path or (PluginPaths.getDefaultPluginsRoot() .. "/storefront.koplugin")
@@ -10065,7 +10112,11 @@ function Storefront:init()
                     if Storefront.instance and not Storefront.instance._init_catalog_retried then
                         Storefront.instance._init_catalog_retried = true
                         local UIManager = require("ui/uimanager")
-                        UIManager:scheduleIn(60, function()
+                        if _catalog_retry_timer_fn then
+                            UIManager:unschedule(_catalog_retry_timer_fn)
+                        end
+                        _catalog_retry_timer_fn = function()
+                            _catalog_retry_timer_fn = nil
                             logger.info("Storefront init: retrying background catalog update after delay...")
                             if StorefrontLogger then StorefrontLogger.info("Storefront init: retrying background catalog update after delay...") end
                             CatalogClient.fetchAndUpdateCacheAsync(nil, function(retry_ok, retry_err)
@@ -10083,7 +10134,8 @@ function Storefront:init()
                                     end
                                 end
                             end)
-                        end)
+                        end
+                        UIManager:scheduleIn(60, _catalog_retry_timer_fn)
                     end
                 end
             end)

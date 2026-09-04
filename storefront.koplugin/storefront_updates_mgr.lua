@@ -261,6 +261,7 @@ function UpdatesMgr:init(Storefront)
         end)
 
         if not ok_dispatch then
+            _G.G_storefront_batch_updating = false
             next_step(false, "Dispatch error: " .. tostring(dispatch_err))
         end
     end

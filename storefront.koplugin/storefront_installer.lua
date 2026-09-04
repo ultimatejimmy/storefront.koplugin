@@ -152,7 +152,11 @@ local function downloadToFile(url, local_path)
         local in_f = io.open(temp_path, "rb")
         local out_f = io.open(local_path, "wb")
         if in_f and out_f then
-            out_f:write(in_f:read("*all"))
+            while true do
+                local chunk = in_f:read(16384)
+                if not chunk then break end
+                out_f:write(chunk)
+            end
             in_f:close()
             out_f:close()
             pcall(os.remove, temp_path)
