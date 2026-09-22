@@ -37,6 +37,7 @@ LANG_NAMES = {
     'pl': 'Polish',
     'pt_br': 'Portuguese (Brazil)',
     'ru': 'Russian',
+    'sk': 'Slovak',
     'sr': 'Serbian',
     'tr': 'Turkish',
     'uk': 'Ukrainian',

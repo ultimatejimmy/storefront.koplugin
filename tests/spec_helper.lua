@@ -74,7 +74,7 @@ package.loaded["lfs"] = {
                     ".", "..",
                     "ar.po", "de.po", "en.po", "es.po", "fr.po",
                     "hu.po", "id.po", "it.po", "ja.po", "ko.po",
-                    "nl.po", "pl.po", "pt_br.po", "ru.po", "sr.po",
+                    "nl.po", "pl.po", "pt_br.po", "ru.po", "sk.po", "sr.po",
                     "tr.po", "uk.po", "zh_CN.po",
                 }
             else

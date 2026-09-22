@@ -7,7 +7,7 @@ description: Guidelines and rules for translation management, key synchronizatio
 
 ## 1. Master Language & Key Synchronization
 - **English Master (`en.po`)**: `en.po` is the primary master translation template.
-- **100% Key Parity**: All translation keys referenced in Lua source code (`_("key")`, `loc:t("key")`, `KEY_ALIASES`, `FALLBACKS`) MUST exist in `en.po` and be synchronized across ALL 17 target `.po` files.
+- **100% Key Parity**: All translation keys referenced in Lua source code (`_("key")`, `loc:t("key")`, `KEY_ALIASES`, `FALLBACKS`) MUST exist in `en.po` and be synchronized across ALL 18 target `.po` files.
 - **Automated Synchronization & Auditing**:
   - Run `python tools/sync_translations.py` whenever adding or modifying translation keys.
   - Run `python tools/check_translations.py` to verify 100% key coverage across all languages with 0 missing, empty, or stale keys.

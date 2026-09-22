@@ -20,7 +20,7 @@ Storefront surfaces a curated list of plugins and patches from GitHub with filte
 - **Install/update pipeline** that handles `.koplugin` archives, verifies metadata, and copies files to the correct locations.
 - **Update tracking** for installed plugins and numbered patch files, complete with SHA comparisons and refreshable summaries.
 - **Versions tab** showing all published releases for any plugin or patch, with per-version installation, ignoring, and pre-release filtering.
-- **Multilingual**: Available in English, German, French, Spanish, Brazilian Portuguese, Russian, Ukrainian, Turkish, Simplified Chinese, Dutch, Hungarian, Polish, Indonesian, Arabic, Italian, Serbian, and Japanese.
+- **Multilingual**: Available in English, German, French, Spanish, Brazilian Portuguese, Russian, Ukrainian, Turkish, Simplified Chinese, Dutch, Hungarian, Polish, Indonesian, Arabic, Italian, Serbian, Slovak, and Japanese.
 - **Optional authentication** through a GitHub Personal Access Token (PAT) to increase API rate limits.
 
 ## Screenshots

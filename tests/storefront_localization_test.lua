@@ -49,18 +49,28 @@ local function runTests()
     end
     Localization:init(path)
 
-    assertTest(#Localization.available_languages == 18, "Discovered 18 Languages", "Found " .. tostring(#Localization.available_languages))
+    assertTest(#Localization.available_languages == 19, "Discovered 19 Languages", "Found " .. tostring(#Localization.available_languages))
     assertTest(Localization:languageExists("en"), "Language 'en' Exists")
     assertTest(Localization:languageExists("de"), "Language 'de' Exists")
     assertTest(Localization:languageExists("es"), "Language 'es' Exists")
     assertTest(Localization:languageExists("fr"), "Language 'fr' Exists")
     assertTest(Localization:languageExists("zh_CN"), "Language 'zh_CN' Exists")
     assertTest(Localization:languageExists("pt_br"), "Language 'pt_br' Exists")
+    assertTest(Localization:languageExists("sk"), "Language 'sk' Exists")
 
     -- ----------------------------------------------------
     -- TEST 2: System Language Detection & Normalization
     -- ----------------------------------------------------
     print("\n--- TEST 2: System Language Auto-Detection ---")
+
+    _G.G_reader_settings = {
+        readSetting = function(self, key)
+            if key == "language" then return "sk_SK" end
+            return nil
+        end
+    }
+    local detected_sk = Localization:detectSystemLanguage()
+    assertTest(detected_sk == "sk", "Detects KOReader Slovak 'sk_SK' System Language", "Got: " .. tostring(detected_sk))
 
     _G.G_reader_settings = {
         readSetting = function(self, key)
@@ -147,6 +157,12 @@ local function runTests()
     Localization:loadTranslations()
     local str_fr_cancel = Localization:t("btn_cancel")
     assertTest(str_fr_cancel == "Annuler", "French Translation 'btn_cancel'", "Got: " .. tostring(str_fr_cancel))
+
+    -- Test Slovak translation loading
+    Localization.current_language = "sk"
+    Localization:loadTranslations()
+    local str_sk_install = Localization:t("btn_install")
+    assertTest(str_sk_install == "Inštalovať", "Slovak Translation 'btn_install'", "Got: " .. tostring(str_sk_install))
 
     -- ----------------------------------------------------
     -- TEST 4: Fallback to English Master & Hardcoded Table
