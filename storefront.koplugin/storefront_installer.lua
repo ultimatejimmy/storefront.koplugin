@@ -300,8 +300,11 @@ function M:init(Storefront)
             StorefrontConfig = {}
         end
 
-        local ok_settings, LuaSettings = pcall(require, "luasettings")
-        local StorefrontSettings = ok_settings and LuaSettings:open(DataStorage:getSettingsDir() .. "/Storefront.lua")
+        local ok_settings, StorefrontSettings = pcall(require, "storefront_settings")
+        if not ok_settings or not StorefrontSettings then
+            local ok_ls, LuaSettings = pcall(require, "luasettings")
+            StorefrontSettings = ok_ls and LuaSettings:open(DataStorage:getSettingsDir() .. "/Storefront.lua")
+        end
 
         local config_override = StorefrontConfig.plugin_install_path
         local remembered_path = StorefrontSettings and StorefrontSettings:readSetting(REMEMBERED_PLUGIN_INSTALL_PATH_KEY)

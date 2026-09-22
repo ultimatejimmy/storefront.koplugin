@@ -2,8 +2,7 @@
 --- Core logic and persistence for Storefront update background notifications.
 -- Manages configuration (enabled, frequency, snooze, last checked) and decision logic.
 
-local DataStorage = require("datastorage")
-local LuaSettings = require("luasettings")
+local StorefrontSettings = require("storefront_settings")
 local ok_log, StorefrontLogger = pcall(require, "storefront_logger")
 if not ok_log then
     StorefrontLogger = {
@@ -32,17 +31,8 @@ local FREQUENCY_SECONDS = {
 
 local DEFAULT_FREQUENCY = "weekly"
 
-local settings_instance = nil
 local function getSettings()
-    if not settings_instance then
-        local ok, dir = pcall(function() return DataStorage:getSettingsDir() end)
-        if not ok or not dir then
-            dir = "./settings"
-        end
-        local path = dir .. "/Storefront.lua"
-        settings_instance = LuaSettings:open(path)
-    end
-    return settings_instance
+    return StorefrontSettings.getSettings()
 end
 
 NotificationMgr.getSettings = getSettings

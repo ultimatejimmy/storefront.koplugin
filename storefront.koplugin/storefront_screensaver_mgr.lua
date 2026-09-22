@@ -30,12 +30,9 @@ local function getReaderSettings()
 end
 
 local function getStorefrontSettings()
-    local ok_ds, DataStorage = pcall(require, "datastorage")
-    local settings_dir = (ok_ds and DataStorage and DataStorage.getSettingsDir) and DataStorage:getSettingsDir() or "/tmp/koreader/settings"
-    local settings_file = settings_dir .. "/Storefront.lua"
-    local ok_ls, LuaSettings = pcall(require, "luasettings")
-    if ok_ls and LuaSettings and LuaSettings.open then
-        return LuaSettings:open(settings_file)
+    local ok_ss, StorefrontSettings = pcall(require, "storefront_settings")
+    if ok_ss and StorefrontSettings then
+        return StorefrontSettings.getSettings()
     end
     return nil
 end

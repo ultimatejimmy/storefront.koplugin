@@ -28,8 +28,7 @@ local InstallStore = require("storefront_installs")
 local ok_log, StorefrontLogger = pcall(require, "storefront_logger")
 if not ok_log then StorefrontLogger = { action = function() end, err = function() end } end
 
-local SETTINGS_PATH = DataStorage:getSettingsDir() .. "/Storefront.lua"
-local StorefrontSettings = LuaSettings:open(SETTINGS_PATH)
+local StorefrontSettings = require("storefront_settings")
 
 local _asset_path_cache = {}
 local function getAssetPath(filename)

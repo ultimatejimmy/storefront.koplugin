@@ -135,6 +135,13 @@ function Run-Workflow {
         Write-Host "Notification Tests FAILED." -ForegroundColor Red
         return $false
     }
+    Write-Host "Running Settings Persistence & Non-Clobbering unit tests..."
+    $PersistenceTestCmd = "cd $AppDir && LUA_PATH='{0}/?.lua;./?.lua;./?/init.lua;frontend/?.lua;frontend/?/init.lua;libs/?.lua;common/?.lua;common/?/init.lua;;' ./luajit {0}/tests/storefront_settings_persistence_test.lua" -f $WSLDest
+    wsl bash -c `"$PersistenceTestCmd`"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Settings Persistence Tests FAILED." -ForegroundColor Red
+        return $false
+    }
     Write-Host "Running Branch Install unit tests..."
     $BranchTestCmd = "cd $AppDir && LUA_PATH='{0}/?.lua;./?.lua;./?/init.lua;frontend/?.lua;frontend/?/init.lua;libs/?.lua;common/?.lua;common/?/init.lua;;' ./luajit {0}/tests/storefront_branch_install_test.lua" -f $WSLDest
     wsl bash -c `"$BranchTestCmd`"

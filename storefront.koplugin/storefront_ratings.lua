@@ -14,8 +14,7 @@ local function getHttpModule(url)
     return require("socket.http")
 end
 
-local SETTINGS_PATH = DataStorage:getSettingsDir() .. "/Storefront.lua"
-local StorefrontSettings = LuaSettings:open(SETTINGS_PATH)
+local StorefrontSettings = require("storefront_settings")
 
 local UUID_KEY = "device_uuid"
 local VOTES_KEY = "user_votes"

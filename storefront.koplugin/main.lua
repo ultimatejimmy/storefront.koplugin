@@ -79,7 +79,7 @@ end
 setfenv(1, env)
 
 local SETTINGS_PATH = DataStorage:getSettingsDir() .. "/Storefront.lua"
-local StorefrontSettings = LuaSettings:open(SETTINGS_PATH)
+local StorefrontSettings = require("storefront_settings")
 
 local IGNORED_RELEASES_KEY = "ignored_releases"
 

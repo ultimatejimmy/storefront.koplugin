@@ -28,8 +28,7 @@ local CatalogClient = {}
 local DEFAULT_CATALOG_URL = "https://ultimatejimmy.github.io/storefront.koplugin/catalog.json"
 local USER_AGENT = "Mozilla/5.0 (compatible; KOReader-Storefront/1.0)"
 
-local SETTINGS_PATH = DataStorage:getSettingsDir() .. "/Storefront.lua"
-local StorefrontSettings = LuaSettings:open(SETTINGS_PATH)
+local StorefrontSettings = require("storefront_settings")
 local CATALOG_URL_KEY = "catalog_url"
 
 function CatalogClient.getCatalogUrl()

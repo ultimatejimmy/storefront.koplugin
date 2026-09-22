@@ -154,9 +154,7 @@ local function formatDateTime(ts)
 end
 
 local function getStorefrontSettings()
-    local ok_ds, DataStorage = pcall(require, "datastorage")
-    local sdir = (ok_ds and DataStorage and DataStorage.getSettingsDir and DataStorage:getSettingsDir()) or "/tmp/koreader/settings"
-    return require("luasettings"):open(sdir .. "/Storefront.lua")
+    return require("storefront_settings")
 end
 
 -- Generic helper to build a consistent setting row

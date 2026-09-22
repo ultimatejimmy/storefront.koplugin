@@ -9,8 +9,7 @@ local logger = require("logger")
 local ok_log, StorefrontLogger = pcall(require, "storefront_logger")
 if not ok_log then StorefrontLogger = { info = function() end, err = function() end, warn = function() end } end
 
-local SETTINGS_PATH = DataStorage:getSettingsDir() .. "/Storefront.lua"
-local StorefrontSettings = LuaSettings:open(SETTINGS_PATH)
+local StorefrontSettings = require("storefront_settings")
 
 local PLUGIN_TOPICS = { "koreader-plugin" }
 local PATCH_TOPICS = { "koreader-user-patch" }

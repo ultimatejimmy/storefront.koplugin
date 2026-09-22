@@ -294,19 +294,32 @@ function M.generateBlueprint(options)
 
     -- 5. Portable Preferences & Settings
     if options.include_settings ~= false then
-        local ok_ds, DataStorageMod = pcall(require, "datastorage")
-        local settings_dir = (ok_ds and DataStorageMod and DataStorageMod.getSettingsDir) and DataStorageMod:getSettingsDir() or "/tmp/koreader/settings"
-        local ok_ls, LuaSettingsMod = pcall(require, "luasettings")
-        if ok_ls and LuaSettingsMod and LuaSettingsMod.open then
-            local sf_settings = LuaSettingsMod:open(settings_dir .. "/Storefront.lua")
-            if sf_settings and sf_settings.readSetting then
-                bp.settings.storefront = {
-                    include_zero_star_forks = sf_settings:readSetting("include_zero_star_forks") == true,
-                    notifications_enabled = sf_settings:readSetting("notifications_enabled") == true,
-                    notification_frequency = sf_settings:readSetting("notification_frequency") or "weekly",
-                    catalog_mode = sf_settings:readSetting("catalog_mode") or "static",
-                }
+        local ok_ss, StorefrontSettings = pcall(require, "storefront_settings")
+        local sf_settings = ok_ss and StorefrontSettings and StorefrontSettings.getSettings and StorefrontSettings.getSettings()
+        if not sf_settings then
+            local ok_ds, DataStorageMod = pcall(require, "datastorage")
+            local settings_dir = (ok_ds and DataStorageMod and DataStorageMod.getSettingsDir) and DataStorageMod:getSettingsDir() or "/tmp/koreader/settings"
+            local ok_ls, LuaSettingsMod = pcall(require, "luasettings")
+            if ok_ls and LuaSettingsMod and LuaSettingsMod.open then
+                sf_settings = LuaSettingsMod:open(settings_dir .. "/Storefront.lua")
             end
+        end
+        if sf_settings and sf_settings.readSetting then
+            local notif_enabled = sf_settings:readSetting("notification_enabled")
+            if notif_enabled == nil then
+                notif_enabled = sf_settings:readSetting("notifications_enabled")
+            end
+            if notif_enabled == nil then
+                notif_enabled = true
+            else
+                notif_enabled = (notif_enabled == true or notif_enabled == "true" or notif_enabled == 1)
+            end
+            bp.settings.storefront = {
+                include_zero_star_forks = sf_settings:readSetting("include_zero_star_forks") == true,
+                notifications_enabled = notif_enabled,
+                notification_frequency = sf_settings:readSetting("notification_frequency") or "weekly",
+                catalog_mode = sf_settings:readSetting("catalog_mode") or "static",
+            }
         end
     end
 

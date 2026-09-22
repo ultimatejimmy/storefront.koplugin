@@ -59,6 +59,15 @@ do
 
     NotificationMgr.setFrequency("weekly")
     check("NotificationMgr.setFrequency('weekly') restores to weekly", NotificationMgr.getFrequency() == "weekly")
+
+    -- Regression test: verify frequency persists across saveBrowserState calls
+    local Main = require("main")
+    NotificationMgr.setFrequency("daily")
+    check("Frequency is daily before saveBrowserState", NotificationMgr.getFrequency() == "daily")
+    Main.browser_state = Main.browser_state or { page = 1, kind = "plugin" }
+    Main:saveBrowserState()
+    check("Frequency remains daily after saveBrowserState (no clobber)", NotificationMgr.getFrequency() == "daily")
+    NotificationMgr.setFrequency("weekly")
 end
 
 -- 3. Test markChecked and last_checked tracking
