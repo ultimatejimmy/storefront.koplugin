@@ -1484,6 +1484,12 @@ msgstr "Plugins cached: %s (last update: %s)"
 msgid "Pool size: %d wallpapers in rotation"
 msgstr "Pool size: %d wallpapers in rotation"
 
+msgid "Pre-installed Font"
+msgstr "Pre-installed Font"
+
+msgid "Pre-installed core KOReader font."
+msgstr "Pre-installed core KOReader font."
+
 msgid "Pre-installed core KOReader plugin."
 msgstr "Pre-installed core KOReader plugin."
 

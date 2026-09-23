@@ -1977,6 +1977,14 @@ msgstr "Plugins en caché: %s (última actualización: %s)"
 msgid "Pool size: %d wallpapers in rotation"
 msgstr "Tamaño del grupo: %d fondos en rotación"
 
+# en-hash: 13dbd8d7a7d318420a517a89f748e8e2
+msgid "Pre-installed Font"
+msgstr "Fuente preinstalada"
+
+# en-hash: 51842ded0530238eca5d0f6bdecadf96
+msgid "Pre-installed core KOReader font."
+msgstr "Fuente principal de KOReader preinstalada."
+
 # en-hash: e5ab942cd3fb2632d94b3cee3aa8b7db
 msgid "Pre-installed core KOReader plugin."
 msgstr "Complemento preinstalado del núcleo de KOReader."

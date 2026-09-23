@@ -1977,6 +1977,14 @@ msgstr "Plugins em cache: %s (última atualização: %s)"
 msgid "Pool size: %d wallpapers in rotation"
 msgstr "Tamanho do grupo: %d papéis de parede em rotação"
 
+# en-hash: 13dbd8d7a7d318420a517a89f748e8e2
+msgid "Pre-installed Font"
+msgstr "Fonte pré-instalada"
+
+# en-hash: 51842ded0530238eca5d0f6bdecadf96
+msgid "Pre-installed core KOReader font."
+msgstr "Fonte principal pré-instalada do KOReader."
+
 # en-hash: e5ab942cd3fb2632d94b3cee3aa8b7db
 msgid "Pre-installed core KOReader plugin."
 msgstr "Plugin nativo pré-instalado do KOReader."
@@ -2935,15 +2943,15 @@ msgstr "qualquer um"
 
 # en-hash: 13e880e5a3199e5274dbad89142671db
 msgid "branch: %s"
-msgstr "branch: %s"
+msgstr "ramific.: %s"
 
 # en-hash: fbd54111126fb5c3c6a1848139e835c9
 msgid "branch: %s (%s)"
-msgstr "branch: %s (%s)"
+msgstr "ramific.: %s (%s)"
 
 # en-hash: 13e880e5a3199e5274dbad89142671db
 msgid "branch_label"
-msgstr "branch: %s"
+msgstr "ramific.: %s"
 
 # en-hash: 9639e32cab248434a17ab32237cb3b71
 msgid "btn_apply"

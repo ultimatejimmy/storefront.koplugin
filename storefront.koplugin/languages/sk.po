@@ -427,7 +427,7 @@ msgstr "Changelog pre %s\n%s → %s"
 
 # en-hash: 4f52ad17d9ef55d023b50ecf6c5ac7c3
 msgid "Changelog: %s"
-msgstr "Changelog: %s"
+msgstr "Zoznam zmien: %s"
 
 # en-hash: f601e13e28ad92635fc93e879040c3ff
 msgid "Check Updates"
@@ -1099,7 +1099,7 @@ msgstr "Striedanie priečinka je zapnuté s touto tapetou!"
 
 # en-hash: 194f5394ae2e9c74dc3c441b92862d1d
 msgid "Font"
-msgstr "Font"
+msgstr "Písmo"
 
 # en-hash: db3f985617e1e6551cff24a6fe9188dc
 msgid "Font '%s' deleted."
@@ -1976,6 +1976,14 @@ msgstr "Uložené pluginy: %s (posledná aktualizácia: %s)"
 # en-hash: c69b2b2160fa59e049f0a588222d2902
 msgid "Pool size: %d wallpapers in rotation"
 msgstr "Veľkosť zoznamu: %d tapiet v rotácii"
+
+# en-hash: 13dbd8d7a7d318420a517a89f748e8e2
+msgid "Pre-installed Font"
+msgstr "Predinštalované písmo"
+
+# en-hash: 51842ded0530238eca5d0f6bdecadf96
+msgid "Pre-installed core KOReader font."
+msgstr "Predinštalované základné písmo KOReader."
 
 # en-hash: e5ab942cd3fb2632d94b3cee3aa8b7db
 msgid "Pre-installed core KOReader plugin."
@@ -3067,7 +3075,7 @@ msgstr "Dostupné aktualizácie"
 
 # en-hash: 47a282dfe68a42d302e22c4920ed9b5e
 msgid "font"
-msgstr "font"
+msgstr "písmo"
 
 # en-hash: 8ae3b1c71d59d1307a2ccfe7d632e71a
 msgid "ghp_..."

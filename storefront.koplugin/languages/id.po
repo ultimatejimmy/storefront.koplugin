@@ -1977,6 +1977,14 @@ msgstr "Plugin tersimpan: %s (pembaruan terakhir: %s)"
 msgid "Pool size: %d wallpapers in rotation"
 msgstr "Ukuran kolam: %d wallpaper berputar"
 
+# en-hash: 13dbd8d7a7d318420a517a89f748e8e2
+msgid "Pre-installed Font"
+msgstr "Font Pra-instalasi"
+
+# en-hash: 51842ded0530238eca5d0f6bdecadf96
+msgid "Pre-installed core KOReader font."
+msgstr "Font inti KOReader yang sudah terpasang."
+
 # en-hash: e5ab942cd3fb2632d94b3cee3aa8b7db
 msgid "Pre-installed core KOReader plugin."
 msgstr "Plugin inti KOReader bawaan."
@@ -2247,7 +2255,7 @@ msgstr "Pindai Kode QR Blueprint"
 
 # en-hash: 603fcc0a702da1e164d6d14e0ca47782
 msgid "Screensaver"
-msgstr "Screensaver"
+msgstr "Penyimpan Layar"
 
 # en-hash: 0a9573f725d45f05a9e834c86ee40e97
 msgid "Screensaver & Wallpapers"

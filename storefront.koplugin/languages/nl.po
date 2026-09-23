@@ -1977,6 +1977,14 @@ msgstr "Plugins gecachet: %s (laatste update: %s)"
 msgid "Pool size: %d wallpapers in rotation"
 msgstr "Poolgrootte: %d achtergronden in rotatie"
 
+# en-hash: 13dbd8d7a7d318420a517a89f748e8e2
+msgid "Pre-installed Font"
+msgstr "Voorgeïnstalleerd lettertype"
+
+# en-hash: 51842ded0530238eca5d0f6bdecadf96
+msgid "Pre-installed core KOReader font."
+msgstr "Voorgeïnstalleerd KOReader-kernlettertype."
+
 # en-hash: e5ab942cd3fb2632d94b3cee3aa8b7db
 msgid "Pre-installed core KOReader plugin."
 msgstr "Voorgeïnstalleerde KOReader-kernplugin."

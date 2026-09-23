@@ -1977,6 +1977,14 @@ msgstr "已缓存插件：%s（上次更新：%s）"
 msgid "Pool size: %d wallpapers in rotation"
 msgstr "轮换池容量：%d 张壁纸"
 
+# en-hash: 13dbd8d7a7d318420a517a89f748e8e2
+msgid "Pre-installed Font"
+msgstr "预装字体"
+
+# en-hash: 51842ded0530238eca5d0f6bdecadf96
+msgid "Pre-installed core KOReader font."
+msgstr "KOReader 内核预装字体。"
+
 # en-hash: e5ab942cd3fb2632d94b3cee3aa8b7db
 msgid "Pre-installed core KOReader plugin."
 msgstr "预装的 KOReader 核心插件。"

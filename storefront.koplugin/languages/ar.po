@@ -1977,6 +1977,14 @@ msgstr "الإضافات المخبأة: %s (آخر تحديث: %s)"
 msgid "Pool size: %d wallpapers in rotation"
 msgstr "حجم المجموعة: %d خلفيات بالتناوب"
 
+# en-hash: 13dbd8d7a7d318420a517a89f748e8e2
+msgid "Pre-installed Font"
+msgstr "خط مثبت مسبقاً"
+
+# en-hash: 51842ded0530238eca5d0f6bdecadf96
+msgid "Pre-installed core KOReader font."
+msgstr "خط KOReader الأساسي المثبت مسبقاً."
+
 # en-hash: e5ab942cd3fb2632d94b3cee3aa8b7db
 msgid "Pre-installed core KOReader plugin."
 msgstr "إضافة أساسية مثبتة مسبقاً في KOReader."
