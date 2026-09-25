@@ -198,6 +198,8 @@ do
     plug_row:onTapSelect()
     check("Include Plugins row remains highlighted after button toggle", plug_row.frame.invert == true)
     check("Focus position stayed on row 3", exp_overlay.selected.y == 3)
+    plug_row.onTap()
+    check("Include Plugins touch tap clears non-touch selector", plug_row.frame.invert ~= true)
 end
 
 -- 4. Test Diff Dialog Touch Responsiveness
@@ -281,8 +283,27 @@ do
     row1.onTap()
     check("Tapping checkbox toggles selected state", item1.selected == not orig_sel)
     row1 = multi_overlay.layout[1][1]
+    check("Tapping checkbox does not activate non-touch selector (row 1 invert is not true)", row1.frame and row1.frame.invert ~= true)
+    local row2 = multi_overlay.layout[2][1]
+    row2.onTap()
+    row1 = multi_overlay.layout[1][1]
+    row2 = multi_overlay.layout[2][1]
+    check("Tapping row 2 does not cause non-touch selector on row 1 or row 2", (row1.frame and row1.frame.invert ~= true) and (row2.frame and row2.frame.invert ~= true))
     row1.onTap()
+    row1 = multi_overlay.layout[1][1]
     check("Tapping checkbox again restores selected state", item1.selected == orig_sel)
+    check("Restored state does not show non-touch selector", row1.frame and row1.frame.invert ~= true)
+
+    -- Test non-touch arrow navigation and hardware key toggle
+    row1:onFocus()
+    check("Arrow focus inverts row 1", row1.frame and row1.frame.invert == true)
+    row1:onTapSelect()
+    row1 = multi_overlay.layout[1][1]
+    check("Hardware key toggle preserves non-touch focus highlight", row1.frame and row1.frame.invert == true)
+    -- Tapping clears any non-touch selector
+    row1.onTap()
+    row1 = multi_overlay.layout[1][1]
+    check("Subsequent touch tap clears non-touch selector", row1.frame and row1.frame.invert ~= true)
 
     -- Test page flipping
     local next_result = multi_overlay.onNextPage()

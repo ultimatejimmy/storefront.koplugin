@@ -163,6 +163,13 @@ function Run-Workflow {
         Write-Host "Blueprint System Tests FAILED." -ForegroundColor Red
         return $false
     }
+    Write-Host "Running Translation Audit..."
+    $AuditScript = if (Test-Path "./tools/audit_translations.py") { "./tools/audit_translations.py" } else { "./audit_translations.py" }
+    wsl python3 $AuditScript
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Translation Audit FAILED." -ForegroundColor Red
+        return $false
+    }
     Write-Host "Tests PASSED" -ForegroundColor Green
 
     # 3. Restart KOReader

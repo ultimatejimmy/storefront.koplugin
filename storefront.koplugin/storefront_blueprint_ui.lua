@@ -379,12 +379,14 @@ function StorefrontBlueprintUI.showExportDialog(Storefront, on_done)
     local saved_focus_x = 1
     local saved_focus_y = 1
     local was_refreshed = false
+    local keep_focus_highlight = false
 
-    refresh = function()
+    refresh = function(keep_highlight)
         if overlay then
             saved_focus_x = (overlay.selected and overlay.selected.x) or 1
             saved_focus_y = (overlay.selected and overlay.selected.y) or 1
             was_refreshed = true
+            keep_focus_highlight = (keep_highlight == true)
             local ov = overlay
             overlay = nil
             ov.onClose = nil
@@ -482,15 +484,18 @@ function StorefrontBlueprintUI.showExportDialog(Storefront, on_done)
                 row_hg[1] = icon_part
             end
 
-            row.callback = function()
+            row.callback = function(is_key_select)
                 if type(value) == "function" then
                     local new_val = not get_val()
                     on_toggle(new_val)
                     update_icon(new_val)
+                    if is_key_select == false and row.frame then
+                        row.frame.invert = false
+                    end
                     UIManager:setDirty(row.show_parent or row, "fast")
                 else
                     on_toggle()
-                    refresh()
+                    refresh(is_key_select == true)
                 end
             end
             row.ges_events = {
@@ -502,7 +507,10 @@ function StorefrontBlueprintUI.showExportDialog(Storefront, on_done)
                 }
             }
             row.onTap = function()
-                row.callback()
+                if row.frame then
+                    row.frame.invert = false
+                end
+                row.callback(false)
                 return true
             end
             row.isFocusable = function() return true end
@@ -521,7 +529,7 @@ function StorefrontBlueprintUI.showExportDialog(Storefront, on_done)
                 return true
             end
             row.onTapSelect = function(self)
-                if self.callback then self.callback() end
+                if self.callback then self.callback(true) end
                 return true
             end
             table.insert(focusable_rows, row)
@@ -638,7 +646,7 @@ function StorefrontBlueprintUI.showExportDialog(Storefront, on_done)
                 }
             }
         }
-        strat_row.callback = function()
+        strat_row.callback = function(is_key_select)
             version_strategy = (version_strategy == "latest") and "pinned" or "latest"
             local new_label = (version_strategy == "latest")
                 and _("Versions: Latest Releases (Recommended)")
@@ -649,10 +657,16 @@ function StorefrontBlueprintUI.showExportDialog(Storefront, on_done)
                 strat_widget.text = new_label
                 if strat_widget.args then strat_widget.args.text = new_label end
             end
+            if is_key_select == false and strat_row.frame then
+                strat_row.frame.invert = false
+            end
             UIManager:setDirty(strat_row.show_parent or strat_row, "fast")
         end
         strat_row.onTap = function()
-            strat_row.callback()
+            if strat_row.frame then
+                strat_row.frame.invert = false
+            end
+            strat_row.callback(false)
             return true
         end
         strat_row.isFocusable = function() return true end
@@ -671,7 +685,7 @@ function StorefrontBlueprintUI.showExportDialog(Storefront, on_done)
             return true
         end
         strat_row.onTapSelect = function(self)
-            if self.callback then self.callback() end
+            if self.callback then self.callback(true) end
             return true
         end
         table.insert(focusable_rows, strat_row)
@@ -833,7 +847,7 @@ function StorefrontBlueprintUI.showExportDialog(Storefront, on_done)
         share_btn.show_parent = overlay
         cancel_btn.show_parent = overlay
 
-        if was_refreshed then
+        if keep_focus_highlight then
             local cur_item = layout[saved_focus_y] and layout[saved_focus_y][saved_focus_x]
             if cur_item and cur_item.frame then
                 cur_item.frame.invert = true
@@ -1390,7 +1404,7 @@ function StorefrontBlueprintUI.showDiffDialog(Storefront, blueprint, on_done)
     local card
     local renderPage
 
-    renderPage = function(reset_focus)
+    renderPage = function(reset_focus, keep_focus_highlight)
         local saved_focus_x = (not reset_focus and overlay and overlay.selected and overlay.selected.x) or 1
         local saved_focus_y = (not reset_focus and overlay and overlay.selected and overlay.selected.y) or 1
 
@@ -1534,12 +1548,16 @@ function StorefrontBlueprintUI.showDiffDialog(Storefront, blueprint, on_done)
                 ic.dimen = Geom:new{ w = dialog_w - sc(20), h = row_h }
                 ic.frame = frame
                 ic.item = item
-                local toggle_item = function()
+                local row_layout_idx = #focusable_items + 1
+                local toggle_item = function(is_key_select)
                     item.selected = not item.selected
-                    renderPage()
+                    if overlay then
+                        overlay.selected = { x = 1, y = row_layout_idx }
+                    end
+                    renderPage(false, is_key_select == true)
                     return true
                 end
-                ic.callback = toggle_item
+                ic.callback = function() return toggle_item(true) end
                 ic.ges_events = {
                     Tap = {
                         GestureRange:new{
@@ -1548,8 +1566,12 @@ function StorefrontBlueprintUI.showDiffDialog(Storefront, blueprint, on_done)
                         }
                     }
                 }
-                ic.onTap = toggle_item
-                ic.onTapSelect = toggle_item
+                ic.onTap = function()
+                    return toggle_item(false)
+                end
+                ic.onTapSelect = function()
+                    return toggle_item(true)
+                end
                 ic.isFocusable = function() return true end
                 ic.onFocus = function(self)
                     if self.frame then
@@ -1806,9 +1828,11 @@ function StorefrontBlueprintUI.showDiffDialog(Storefront, blueprint, on_done)
                 if saved_focus_y > #layout then saved_focus_y = #layout end
                 if saved_focus_x > #layout[saved_focus_y] then saved_focus_x = #layout[saved_focus_y] end
                 overlay.selected = { x = saved_focus_x, y = saved_focus_y }
-                local cur_item = layout[saved_focus_y] and layout[saved_focus_y][saved_focus_x]
-                if cur_item and cur_item.frame then
-                    cur_item.frame.invert = true
+                if keep_focus_highlight then
+                    local cur_item = layout[saved_focus_y] and layout[saved_focus_y][saved_focus_x]
+                    if cur_item and cur_item.frame then
+                        cur_item.frame.invert = true
+                    end
                 end
             end
             for i, item in ipairs(focusable_items) do item.show_parent = overlay end

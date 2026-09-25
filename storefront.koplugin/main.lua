@@ -9156,8 +9156,9 @@ function Storefront:showBrowser(kind)
         end)
         if not ok then
             local InfoMessage = require("ui/widget/infomessage")
+            local err_msg = "Storefront Error:\n" .. tostring(err)
             UIManager:show(InfoMessage:new{
-                text = "Storefront Error:\n" .. tostring(err),
+                text = err_msg,
             })
         end
     end)
