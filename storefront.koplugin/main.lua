@@ -8876,10 +8876,12 @@ function Storefront:showBrowser(kind)
                     id = "blueprints",
                     text = _("Blueprint"),
                     callback = function()
-                        local ok_bp, BlueprintUI = pcall(require, "storefront_blueprint_ui")
-                        if ok_bp and BlueprintUI and BlueprintUI.showBlueprintsMenu then
-                            BlueprintUI.showBlueprintsMenu(self)
-                        end
+                        UIManager:nextTick(function()
+                            local ok_bp, BlueprintUI = pcall(require, "storefront_blueprint_ui")
+                            if ok_bp and BlueprintUI and BlueprintUI.showBlueprintsMenu then
+                                BlueprintUI.showBlueprintsMenu(self)
+                            end
+                        end)
                     end
                 })
                 end -- show_filter_bar_installed
