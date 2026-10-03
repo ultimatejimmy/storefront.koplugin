@@ -23,7 +23,7 @@ msgstr "%d patchov"
 
 # en-hash: c60876d1e8b218886df752b4fa8c7bad
 msgid "%d plugins"
-msgstr "%d pluginov"
+msgstr "%d doplnkov"
 
 # en-hash: 2462ceb6cb35cddddc731719d5c1372a
 msgid "%d updates available"
@@ -207,7 +207,7 @@ msgstr "Všetky položky sú aktuálne."
 
 # en-hash: 74b5ba3a2b04019147114dcd4faa63d3
 msgid "All of your custom plugin folders are currently hidden (see Manage plugin paths). Install to the default plugin folder anyway?"
-msgstr "Všetky vlastné priečinky s pluginmi sú momentálne skryté (pozri Spravovať cesty k pluginom). Nainštalovať napriek tomu do predvoleného priečinka?"
+msgstr "Všetky vlastné priečinky s doplnkami sú momentálne skryté (pozri Spravovať cesty k doplnkom). Nainštalovať napriek tomu do predvoleného priečinka?"
 
 # en-hash: e5b2ab04ccca28bb40e0f2798adeee89
 msgid "All patches"
@@ -215,11 +215,11 @@ msgstr "Všetky patche"
 
 # en-hash: 252b0b491fd81591620e237146bdee45
 msgid "All plugins"
-msgstr "Všetky pluginy"
+msgstr "Všetky doplnky"
 
 # en-hash: 2bf227129d5e962d93d1e35b024b9640
 msgid "All plugins are already matched."
-msgstr "Všetky pluginy sú už spárované."
+msgstr "Všetky doplnky sú už spárované."
 
 # en-hash: 2752d26362a92d6c6ca9729c93910dcb
 msgid "All selected items are already installed."
@@ -235,7 +235,7 @@ msgstr "Písmená a čísla"
 
 # en-hash: 48e0275016325dd3e427457844634dee
 msgid "Also delete plugin settings"
-msgstr "Odstrániť aj nastavenia pluginu"
+msgstr "Odstrániť aj nastavenia doplnku"
 
 # en-hash: e026151fe5c4615b8b062d26222339ce
 msgid "Always install here (don't ask again)"
@@ -251,7 +251,7 @@ msgstr "App Store · Nainštalované patche"
 
 # en-hash: 3a07742798b3fef4f6561f18e447cb4c
 msgid "App Store · Installed plugins"
-msgstr "App Store · Nainštalované pluginy"
+msgstr "App Store · Nainštalované doplnky"
 
 # en-hash: 9639e32cab248434a17ab32237cb3b71
 msgid "Apply"
@@ -363,7 +363,7 @@ msgstr "Uložených %s repozitárov s patchmi."
 
 # en-hash: 2ef4327a8f0a164f2b44d320cdd581f1
 msgid "Cached %s plugins."
-msgstr "Uložených %s pluginov."
+msgstr "Uložených %s doplnkov."
 
 # en-hash: bac5ba8e1c46212203ff0b78f54091f9
 msgid "Can't load readme...."
@@ -411,11 +411,11 @@ msgstr "Katalóg bol aktualizovaný"
 
 # en-hash: 4249cd63253ab5d3dd2627b96ddeff03
 msgid "Catalog updated: %d plugins, %d patches, %d fonts, %d screensavers."
-msgstr "Katalóg aktualizovaný: %d pluginov, %d patchov, %d fontov, %d šetričov."
+msgstr "Katalóg aktualizovaný: %d doplnkov, %d patchov, %d fontov, %d šetričov."
 
 # en-hash: d9c3997833636a589e7e5194bdee5d13
 msgid "Catalog updated: %d plugins, %d patches, %d fonts."
-msgstr "Katalóg aktualizovaný: %d pluginov, %d patchov, %d fontov."
+msgstr "Katalóg aktualizovaný: %d doplnkov, %d patchov, %d fontov."
 
 # en-hash: af1b98adf7f686b84cd0b443e022b7a0
 msgid "Categories"
@@ -459,7 +459,7 @@ msgstr "Skontrolovať tento patch"
 
 # en-hash: 42bffd543675fd6b14d43433a1f54d74
 msgid "Check this plugin"
-msgstr "Skontrolovať tento plugin"
+msgstr "Skontrolovať tento doplnok"
 
 # en-hash: bef1c1287016253dd146f119c597a2f5
 msgid "Checked %d patches: %d need updates, %d up to date."
@@ -467,7 +467,7 @@ msgstr "Skontrolovaných %d patchov: %d potrebuje aktualizáciu, %d je aktuálny
 
 # en-hash: 758fb20a7a4707a5703fe4fc3e3c49ad
 msgid "Checked %d plugin(s) for updates."
-msgstr "Skontrolovaných %d pluginov."
+msgstr "Skontrolovaných %d doplnkov."
 
 # en-hash: 11f27528042aaf4401908c7fc54cec47
 msgid "Checking %s…"
@@ -483,7 +483,7 @@ msgstr "Kontrolujem aktualizácie patchov…"
 
 # en-hash: 010600e4b0c20b08887a141c471a517f
 msgid "Checking plugin updates…"
-msgstr "Kontrolujem aktualizácie pluginov…"
+msgstr "Kontrolujem aktualizácie doplnkov…"
 
 # en-hash: 687b7dfc45c5765421d4ff52183093fd
 msgid "Choose Branch — %s"
@@ -635,7 +635,7 @@ msgstr "V archíve sa nepodarilo nájsť priečinok .koplugin"
 
 # en-hash: 8b4f90cf7829bf588a67afa2dbcd691b
 msgid "Could not detect plugin inside archive."
-msgstr "V archíve sa nepodarilo nájsť plugin."
+msgstr "V archíve sa nepodarilo nájsť doplnok."
 
 # en-hash: b00149f5c175fcc7f481d40a27a4bf0f
 msgid "Could not fetch branch SHA."
@@ -655,7 +655,7 @@ msgstr "Nepodarilo sa načítať vydania pre tento repozitár."
 
 # en-hash: 7ebb1e00943becb4ef83e628f1a9b592
 msgid "Could not locate plugin folder (_meta.lua) in archive."
-msgstr "V archíve sa nepodarilo nájsť priečinok pluginu (_meta.lua)."
+msgstr "V archíve sa nepodarilo nájsť priečinok doplnku (_meta.lua)."
 
 # en-hash: 4cde8e56b42ef01d45d676895e1f08cf
 msgid "Could not remove wallpaper"
@@ -739,11 +739,11 @@ msgstr "Odstrániť patch '%s'?"
 
 # en-hash: 1f000fabbc9da9aeed21999cb1d519d2
 msgid "Delete plugin"
-msgstr "Odstrániť plugin"
+msgstr "Odstrániť doplnok"
 
 # en-hash: 2fb5caa8680f8aba166fc7b75ee6b7e9
 msgid "Delete plugin '%s'?"
-msgstr "Odstrániť plugin '%s'?"
+msgstr "Odstrániť doplnok '%s'?"
 
 # en-hash: cf19afa8a32af7f7af9b34bba1fe4166
 msgid "Deleted %d cached README file(s)."
@@ -771,7 +771,7 @@ msgstr "Vypnúť patch"
 
 # en-hash: 6b31659dc0e2d6dee04a585454805b13
 msgid "Disable plugin"
-msgstr "Vypnúť plugin"
+msgstr "Vypnúť doplnok"
 
 # en-hash: b9f5c797ebbf55adccdd8539a65a0241
 msgid "Disabled"
@@ -883,7 +883,7 @@ msgstr "Zapnúť patch"
 
 # en-hash: fe0eee2eb31bfc64e307fe0c4575a6fe
 msgid "Enable plugin"
-msgstr "Zapnúť plugin"
+msgstr "Zapnúť doplnok"
 
 # en-hash: 00d23a76e43b46dae9ec7aa9dcbebb32
 msgid "Enabled"
@@ -903,7 +903,7 @@ msgstr "Zadajte číslo položky"
 
 # en-hash: 888bd819da7fe02d3297018a56143a94
 msgid "Enter plugin number"
-msgstr "Zadajte číslo pluginu"
+msgstr "Zadajte číslo doplnku"
 
 # en-hash: fe8de34692fd5f8fb2f887a047905c30
 msgid "Enter the 6-character shortcode (e.g. A8K2M9) to download the setup:"
@@ -959,7 +959,7 @@ msgstr "Nepodarilo sa odstrániť patch: %s"
 
 # en-hash: 4c75af0fca678cf2fe899492e0b02f92
 msgid "Failed to delete plugin: %s"
-msgstr "Nepodarilo sa odstrániť plugin: %s"
+msgstr "Nepodarilo sa odstrániť doplnok: %s"
 
 # en-hash: c160d9b95d4692de2b15d26fd202bd59
 msgid "Failed to delete: %s"
@@ -1043,7 +1043,7 @@ msgstr "Načítavam patche cez priame GitHub API…"
 
 # en-hash: b78a265ea8828cb2e572717c087743cf
 msgid "Fetching plugins via Direct GitHub API…"
-msgstr "Načítavam pluginy cez priame GitHub API…"
+msgstr "Načítavam doplnky cez priame GitHub API…"
 
 # en-hash: f63989d95ffad413b304939567794aa1
 msgid "Fetching release info…"
@@ -1075,7 +1075,7 @@ msgstr "Filtrovať a zoradiť patche"
 
 # en-hash: b7eecac15cc2b43333bf843d1c9b1d87
 msgid "Filter & Sort Plugins"
-msgstr "Filtrovať a zoradiť pluginy"
+msgstr "Filtrovať a zoradiť doplnky"
 
 # en-hash: 89d2f846ee1bbb47ca2e8b030e2e4189
 msgid "Filter & Sort Screensavers"
@@ -1087,7 +1087,7 @@ msgstr "Filtrovať nainštalované patche"
 
 # en-hash: 08035a4fa08d488eb8c5dfa0a24f6c82
 msgid "Filter Installed Plugins"
-msgstr "Filtrovať nainštalované pluginy"
+msgstr "Filtrovať nainštalované doplnky"
 
 # en-hash: e5a388bfcac9cbe6abccfed4a731f1ad
 msgid "Filter pre-releases"
@@ -1223,7 +1223,7 @@ msgstr "Zahrnúť fonty"
 
 # en-hash: d9105245ea9a8daaf1e11ce617453303
 msgid "Include Plugins"
-msgstr "Zahrnúť pluginy"
+msgstr "Zahrnúť doplnky"
 
 # en-hash: 05df3a76b632fddb72c3f0f8754344d2
 msgid "Include Storefront Settings"
@@ -1263,7 +1263,7 @@ msgstr "Inštalovať patch z GitHubu"
 
 # en-hash: fad698daedaa1d6488803cc1e24e92ae
 msgid "Install plugin from GitHub"
-msgstr "Inštalovať plugin z GitHubu"
+msgstr "Inštalovať doplnok z GitHubu"
 
 # en-hash: a2cea2e16db4682ca5a8da8e0d9d53cd
 msgid "Install to Default?"
@@ -1283,7 +1283,7 @@ msgstr "Inštalácia zlyhala: "
 
 # en-hash: bc641d0101b8079cb24f0c54e664173a
 msgid "Installation is currently only supported for plugins."
-msgstr "Inštalácia je momentálne podporovaná len pre pluginy."
+msgstr "Inštalácia je momentálne podporovaná len pre doplnky."
 
 # en-hash: 98dd43dfae05b11befe1f140e0ec787a
 msgid "Installed"
@@ -1295,7 +1295,7 @@ msgstr "Nastavenia nainštalovaných patchov"
 
 # en-hash: 77ba923ad0644f4300cae8cb5367d0b7
 msgid "Installed Plugins Settings"
-msgstr "Nastavenia nainštalovaných pluginov"
+msgstr "Nastavenia nainštalovaných doplnkov"
 
 # en-hash: 038f35c2f842d3e81468493c8f38723f
 msgid "Installed Regular font style offline for \"%s\". Full font family queued for download when reconnected."
@@ -1315,15 +1315,15 @@ msgstr "Nainštalovaný patch \"%s\"."
 
 # en-hash: 4bd81b06cd959054d5f7ffcda00b205a
 msgid "Installed plugin \"%s\" (%s)."
-msgstr "Nainštalovaný plugin \"%s\" (%s)."
+msgstr "Nainštalovaný doplnok \"%s\" (%s)."
 
 # en-hash: 1ea8b0189bc054c587a78d1b13f5dc9d
 msgid "Installed plugin \"%s\" (version %s)."
-msgstr "Nainštalovaný plugin \"%s\" (verzia %s)."
+msgstr "Nainštalovaný doplnok \"%s\" (verzia %s)."
 
 # en-hash: ea7009546a19031e6fddcf0ad7e2d5a9
 msgid "Installed plugin \"%s\"."
-msgstr "Nainštalovaný plugin \"%s\"."
+msgstr "Nainštalovaný doplnok \"%s\"."
 
 # en-hash: ee4f62a76d993e6c511eb20873325760
 msgid "Installing %d of %d: %s…"
@@ -1435,11 +1435,11 @@ msgstr "Lokálne: %s → Vzdialené: %s"
 
 # en-hash: 62f0842d75a169f04944c6c8514bf1d4
 msgid "Manage plugin paths"
-msgstr "Spravovať cesty k pluginom"
+msgstr "Spravovať cesty k doplnkom"
 
 # en-hash: f54d902bf6fa9de2c25b5e7fcff35637
 msgid "Manage plugin paths\n\nHiding a path only affects what Storefront shows/manages here. KOReader will still load plugins from it."
-msgstr "Spravovať cesty k pluginom\n\nSkrytie cesty ovplyvní len to, čo tu Storefront zobrazuje a spravuje. KOReader z nej bude pluginy naďalej načítavať."
+msgstr "Spravovať cesty k doplnkom\n\nSkrytie cesty ovplyvní len to, čo tu Storefront zobrazuje a spravuje. KOReader z nej bude doplnky naďalej načítavať."
 
 # en-hash: 6da89265a9a8b0b28eb4946bb2ec0c6d
 msgid "Match"
@@ -1455,11 +1455,11 @@ msgstr "Spárovať patch s repozitárom GitHub"
 
 # en-hash: 0ac0d37f606a0602273e784505c40efe
 msgid "Match plugin with GitHub repository"
-msgstr "Spárovať plugin s repozitárom GitHub"
+msgstr "Spárovať doplnok s repozitárom GitHub"
 
 # en-hash: e615c12b8887f4ce351bc8f8fa8e120b
 msgid "Match plugin: %s"
-msgstr "Spárovať plugin: %s"
+msgstr "Spárovať doplnok: %s"
 
 # en-hash: 94c938e73f50bbecb5ca5588b919066e
 msgid "Match this remote patch"
@@ -1499,7 +1499,7 @@ msgstr "Párujem patche: %s (repozitáre: %s / %s)"
 
 # en-hash: 87bd468c77a1b9b62ceff408774062a9
 msgid "Matching plugin: %s — tap to cancel"
-msgstr "Párujem plugin: %s — klepnutím zrušíte"
+msgstr "Párujem doplnok: %s — klepnutím zrušíte"
 
 # en-hash: 1b00479b9973909bf7d7e52b0a542a08
 msgid "Minimum stars"
@@ -1575,11 +1575,11 @@ msgstr "Upraviť patch"
 
 # en-hash: b57dc362d2c64058493d4d3877a25017
 msgid "Modify Plugin"
-msgstr "Upraviť plugin"
+msgstr "Upraviť doplnok"
 
 # en-hash: 9dbdd0c952fedc3db87f3a02d99591d4
 msgid "Modify Plugin: %s"
-msgstr "Upraviť plugin: %s"
+msgstr "Upraviť doplnok: %s"
 
 # en-hash: 9030e39f00132d583da4122532e509e9
 msgid "Monthly"
@@ -1595,7 +1595,7 @@ msgstr "Najpopulárnejšie"
 
 # en-hash: e7fe7f09186cbca01bbda9c023027023
 msgid "Multiple custom plugin folders are configured. Where should this plugin be installed?"
-msgstr "Je nastavených viacero vlastných priečinkov s pluginmi. Kam sa má tento plugin nainštalovať?"
+msgstr "Je nastavených viacero vlastných priečinkov s doplnkami. Kam sa má tento doplnok nainštalovať?"
 
 # en-hash: 3e4c3929bba389269bbcf346a50809ea
 msgid "My wallpaper collection"
@@ -1651,7 +1651,7 @@ msgstr "Bez výplne (priehľadné)"
 
 # en-hash: a57adf9d6921b10f559aef2f60f98ed4
 msgid "No Lua files found in plugin directory"
-msgstr "V priečinku pluginu sa nenašli žiadne súbory Lua"
+msgstr "V priečinku doplnku sa nenašli žiadne súbory Lua"
 
 # en-hash: 722ac1f55e069022e6f5121ab04c2f4b
 msgid "No README available."
@@ -1719,7 +1719,7 @@ msgstr "Nie sú spárované žiadne patche na kontrolu."
 
 # en-hash: f9852c172eb56b8f419ca9bd2604871b
 msgid "No matched plugins to check."
-msgstr "Nie sú spárované žiadne pluginy na kontrolu."
+msgstr "Nie sú spárované žiadne doplnky na kontrolu."
 
 # en-hash: c250ed3add5b171ba37f69df4bf40737
 msgid "No patch files found in %s/%s."
@@ -1743,19 +1743,19 @@ msgstr "Žiadne patche na zobrazenie."
 
 # en-hash: 57ef14caeb36cf1377f55cc7f8cefa15
 msgid "No plugin files were extracted"
-msgstr "Nebol rozbalený žiadny súbor pluginu"
+msgstr "Nebol rozbalený žiadny súbor doplnku"
 
 # en-hash: 44bcb443c85eb26db62aaa89da4ddc60
 msgid "No plugins need updates."
-msgstr "Žiadne pluginy nepotrebujú aktualizáciu."
+msgstr "Žiadne doplnky nepotrebujú aktualizáciu."
 
 # en-hash: 9f7e71426e7d9c095768dd12cff34a5c
 msgid "No plugins to display."
-msgstr "Žiadne pluginy na zobrazenie."
+msgstr "Žiadne doplnky na zobrazenie."
 
 # en-hash: 953753ce5197ee0fd284246514cb7b2f
 msgid "No plugins tracked yet."
-msgstr "Zatiaľ nie sú sledované žiadne pluginy."
+msgstr "Zatiaľ nie sú sledované žiadne doplnky."
 
 # en-hash: a10f66ad1e00d43bc02f5fa30796ccca
 msgid "No previous page in history"
@@ -1795,7 +1795,7 @@ msgstr "V tomto priečinku nie sú podpriečinky.\nKlepnutím na 'Vybrať prieč
 
 # en-hash: 3a4b0c3e394b06b711fdb675f6beeb6b
 msgid "No tracked plugins to check."
-msgstr "Nie sú sledované žiadne pluginy na kontrolu."
+msgstr "Nie sú sledované žiadne doplnky na kontrolu."
 
 # en-hash: af09a29159202c3e40315a0861655abf
 msgid "No wallpapers found in your screensavers folder.\n\nBrowse the Screensavers catalog in Storefront to download wallpapers!"
@@ -1955,51 +1955,51 @@ msgstr "Zadajte platný kód"
 
 # en-hash: 409c1892b68cb394799262ac57f6d4f1
 msgid "Plugin"
-msgstr "Zásuvný modul"
+msgstr "Doplnok"
 
 # en-hash: 55660a9f279ae6e277eb8c16a0f3f013
 msgid "Plugin %s has been %s."
-msgstr "Plugin %s bol %s."
+msgstr "Doplnok %s bol %s."
 
 # en-hash: ea44b3d2165c20ad1c9a9ffafca3c6d1
 msgid "Plugin '%s' deleted."
-msgstr "Plugin '%s' bol odstránený."
+msgstr "Doplnok '%s' bol odstránený."
 
 # en-hash: 8b8f597f17d0fc4e7023a94e26d39ad2
 msgid "Plugin '%s' disabled."
-msgstr "Plugin '%s' bol vypnutý."
+msgstr "Doplnok '%s' bol vypnutý."
 
 # en-hash: 025583a90e53c886a8dc2639d9bcc1ac
 msgid "Plugin '%s' enabled."
-msgstr "Plugin '%s' bol zapnutý."
+msgstr "Doplnok '%s' bol zapnutý."
 
 # en-hash: 5793f995e482c1d69a6b5246de072068
 msgid "Plugin and patch browser for KOReader."
-msgstr "Prehliadač pluginov a patchov pre KOReader."
+msgstr "Prehliadač doplnkov a patchov pre KOReader."
 
 # en-hash: d337cebbb781983be12661e42396acca
 msgid "Plugin cache is older than a week, consider refreshing."
-msgstr "Cache pluginov je staršia ako týždeň, zvážte obnovenie."
+msgstr "Cache doplnkov je staršia ako týždeň, zvážte obnovenie."
 
 # en-hash: 7b4d0de12a96a094bcbce0f294fa7947
 msgid "Plugin directory not found."
-msgstr "Priečinok pluginu sa nenašiel."
+msgstr "Priečinok doplnku sa nenašiel."
 
 # en-hash: e59b53e1ff95beae26b23bff6d6c0bf8
 msgid "Plugin folder not found."
-msgstr "Priečinok pluginu sa nenašiel."
+msgstr "Priečinok doplnku sa nenašiel."
 
 # en-hash: a5e47942c15643339e19f9c97ed56a59
 msgid "Plugin is not currently loaded, so settings cannot be deleted."
-msgstr "Plugin momentálne nie je načítaný, takže jeho nastavenia sa nedajú odstrániť."
+msgstr "Doplnok momentálne nie je načítaný, takže jeho nastavenia sa nedajú odstrániť."
 
 # en-hash: bb38096ab39160dc20d44f3ea6b44507
 msgid "Plugins"
-msgstr "Pluginy"
+msgstr "Doplnky"
 
 # en-hash: 765e45648076f663b54274a5ce9307e0
 msgid "Plugins cached: %s (last update: %s)"
-msgstr "Uložené pluginy: %s (posledná aktualizácia: %s)"
+msgstr "Uložené doplnky: %s (posledná aktualizácia: %s)"
 
 # en-hash: c69b2b2160fa59e049f0a588222d2902
 msgid "Pool size: %d wallpapers in rotation"
@@ -2015,7 +2015,7 @@ msgstr "Predinštalované základné písmo KOReader."
 
 # en-hash: e5ab942cd3fb2632d94b3cee3aa8b7db
 msgid "Pre-installed core KOReader plugin."
-msgstr "Predinštalovaný základný plugin KOReadera."
+msgstr "Predinštalovaný základný doplnok KOReadera."
 
 # en-hash: 14230d11143a03f4330c6433d5032a9d
 msgid "Prev"
@@ -2243,7 +2243,7 @@ msgstr "Obnoviť predvolené"
 
 # en-hash: b4b7e07793cb3e43bf8d0d9998ae6309
 msgid "Restart KOReader now to activate the new plugins and patches?"
-msgstr "Reštartovať KOReader teraz a aktivovať nové pluginy a patche?"
+msgstr "Reštartovať KOReader teraz a aktivovať nové doplnky a patche?"
 
 # en-hash: 2d9c2140c53daf05855033aaceeaa8fd
 msgid "Restart Now"
@@ -2275,7 +2275,7 @@ msgstr "Uložiť súbor"
 
 # en-hash: 106444a49519cca6fa85f4019282e315
 msgid "Save current plugins, patches, fonts & settings"
-msgstr "Uložiť aktuálne pluginy, patche, fonty a nastavenia"
+msgstr "Uložiť aktuálne doplnky, patche, fonty a nastavenia"
 
 # en-hash: f7db1a0e10a95eda5a3bed4dace9dcb2
 msgid "Saved blueprint to %s"
@@ -2371,7 +2371,7 @@ msgstr "Vyberte položku patchu v repozitári, ktorú spárujete s vybraným sú
 
 # en-hash: 3d190a9867210e4154510c4f0b651c6f
 msgid "Select a repository to match with the chosen plugin."
-msgstr "Vyberte repozitár, ktorý spárujete s vybraným pluginom."
+msgstr "Vyberte repozitár, ktorý spárujete s vybraným doplnkom."
 
 # en-hash: 9c5c40a67662e66d06e841a60c741c94
 msgid "Select patch file from %s"
@@ -2383,7 +2383,7 @@ msgstr "Vyberte patch v %s"
 
 # en-hash: 31ac932fd0524d22514aeae4fbd355e0
 msgid "Select plugin to match"
-msgstr "Vyberte plugin na spárovanie"
+msgstr "Vyberte doplnok na spárovanie"
 
 # en-hash: 48532f91308f78f51670fe7e8fd84e94
 msgid "Select repository"
@@ -2587,7 +2587,7 @@ msgstr "Prepnúť na nainštalované patche"
 
 # en-hash: ae002149ee123e54d73abed0a8fc1e7e
 msgid "Switch to installed plugins"
-msgstr "Prepnúť na nainštalované pluginy"
+msgstr "Prepnúť na nainštalované doplnky"
 
 # en-hash: ab9cb50c180fdf8953cbb354410c4db0
 msgid "Switch to patch list"
@@ -2599,7 +2599,7 @@ msgstr "Prepnúť na patche"
 
 # en-hash: 065be62239c91c37174533c2f0c72648
 msgid "Switch to plugin list"
-msgstr "Prepnúť na zoznam pluginov"
+msgstr "Prepnúť na zoznam doplnkov"
 
 # en-hash: 08d08d4342b48346ca14718012c405da
 msgid "Tag not found on GitHub (%s or %s)."
@@ -2611,7 +2611,7 @@ msgstr "Testovanie a ukážka"
 
 # en-hash: e60eb6a944962445b77455f99dd667be
 msgid "Text editor plugin is not available."
-msgstr "Plugin textového editora nie je k dispozícii."
+msgstr "Doplnok textového editora nie je k dispozícii."
 
 # en-hash: e4d909c290d0fb1ca068ffaddf22cbd0
 msgid "The quick brown fox jumps over the lazy dog."
@@ -2711,7 +2711,7 @@ msgstr "Spárovanie patchu sa nepodarilo uložiť."
 
 # en-hash: 32b379cd5cc2b3f84797b70dc8781d62
 msgid "Unable to store match for plugin."
-msgstr "Spárovanie pluginu sa nepodarilo uložiť."
+msgstr "Spárovanie doplnku sa nepodarilo uložiť."
 
 # en-hash: a27dfe771799a09fd55fea73286eb6ab
 msgid "Uninstall"
@@ -2783,7 +2783,7 @@ msgstr "Aktualizovať patch"
 
 # en-hash: 9d8ea88e41cfd4bdcf741262ccd22fe2
 msgid "Update plugin"
-msgstr "Aktualizovať plugin"
+msgstr "Aktualizovať doplnok"
 
 # en-hash: 523a95254799739122d7851c74241cc0
 msgid "Updated %d of %d item(s) (%d failed)."
@@ -2795,15 +2795,15 @@ msgstr "Aktualizovaný patch \"%s\"."
 
 # en-hash: f880f1649aab716c5a93877127a74c3b
 msgid "Updated plugin \"%s\" to %s."
-msgstr "Plugin \"%s\" aktualizovaný na %s."
+msgstr "Doplnok \"%s\" aktualizovaný na %s."
 
 # en-hash: ea03cc9fdc791c9e882185f9871e2d19
 msgid "Updated plugin \"%s\" to version %s."
-msgstr "Plugin \"%s\" aktualizovaný na verziu %s."
+msgstr "Doplnok \"%s\" aktualizovaný na verziu %s."
 
 # en-hash: cfba84643992b94389217ecb4b0e89c5
 msgid "Updated plugin \"%s\"."
-msgstr "Plugin \"%s\" bol aktualizovaný."
+msgstr "Doplnok \"%s\" bol aktualizovaný."
 
 # en-hash: 700f08e43a1a17d018812444cc9391e9
 msgid "Updated: %s"
@@ -2971,7 +2971,7 @@ msgstr "[AKTUALIZÁCIA]"
 
 # en-hash: d633fec4eb7598d17886e92c10438dcc
 msgid "[draft]"
-msgstr "[draft]"
+msgstr "[koncept]"
 
 # en-hash: 59db44a5d1552a390f72a7e83935bca0
 msgid "[pre]"
@@ -2979,7 +2979,7 @@ msgstr "[pre]"
 
 # en-hash: 452444be4c6a56f22e40e23472b8c748
 msgid "about_text"
-msgstr "Storefront je zabudovaný správca balíkov pre pluginy, patche a fonty KOReadera."
+msgstr "Storefront je zabudovaný správca balíkov pre doplnky, patche a fonty KOReadera."
 
 # en-hash: b1f8e4a5ec893d89ea440ddff299c0fc
 msgid "anyone"
@@ -3187,7 +3187,7 @@ msgstr "Storefront"
 
 # en-hash: 88311e0136525ece02a3ddc403fa9306
 msgid "menu_storefront_desc"
-msgstr "Prehľadávajte, inštalujte a aktualizujte pluginy, patche a fonty."
+msgstr "Prehľadávajte, inštalujte a aktualizujte doplnky, patche a fonty."
 
 # en-hash: 6219fef68ef3c131b9d8a45746d183f1
 msgid "msg_catalog_updated"
@@ -3195,11 +3195,11 @@ msgstr "Katalóg bol úspešne aktualizovaný."
 
 # en-hash: ea7009546a19031e6fddcf0ad7e2d5a9
 msgid "msg_installed_plugin"
-msgstr "Nainštalovaný plugin \"%s\"."
+msgstr "Nainštalovaný doplnok \"%s\"."
 
 # en-hash: 1ea8b0189bc054c587a78d1b13f5dc9d
 msgid "msg_installed_plugin_version"
-msgstr "Nainštalovaný plugin \"%s\" (verzia %s)."
+msgstr "Nainštalovaný doplnok \"%s\" (verzia %s)."
 
 # en-hash: 666d2dad00473f02da8e25031ea9c9fa
 msgid "msg_no_results"
@@ -3227,7 +3227,7 @@ msgstr "záplata"
 
 # en-hash: a24bcf2198b1b13ad985304483f7f324
 msgid "plugin"
-msgstr "zásuvný modul"
+msgstr "doplnok"
 
 # en-hash: c360639f51cb2625a9439974e865a683
 msgid "progress_please_wait"
@@ -3307,7 +3307,7 @@ msgstr "Patche"
 
 # en-hash: bb38096ab39160dc20d44f3ea6b44507
 msgid "tab_plugins"
-msgstr "Pluginy"
+msgstr "Doplnky"
 
 # en-hash: c47c7c7383225ab55ff591cb59c41e6b
 msgid "tab_readme"
