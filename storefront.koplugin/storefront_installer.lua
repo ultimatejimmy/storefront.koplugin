@@ -38,6 +38,7 @@ local logger = require("logger")
 local socket = require("socket")
 local socketutil = require("socketutil")
 local util = require("util")
+local startDownloadProgress = require("storefront_download_progress").start
 
 local M = {}
 
@@ -91,6 +92,7 @@ local function findMatchingAssetForUpdate(installed_asset_name, candidate_assets
 
     return nil
 end
+
 
 local function downloadToFile(url, local_path)
     if not url or url == "" then
@@ -1552,10 +1554,12 @@ function M:init(Storefront)
 
         local Trapper = require("ui/trapper")
         Trapper:wrap(function()
+            local stop_progress = startDownloadProgress(trap_widget, dl_msg, zip_path, nil)
             local completed, res = Trapper:dismissableRunInSubprocess(function()
                 local dl_ok, dl_err = downloadToFile(url, zip_path)
                 return { ok = dl_ok, err = dl_err }
             end, trap_widget)
+            stop_progress()
 
             if trap_widget and trap_widget ~= batch_toast and trap_widget.close then
                 trap_widget:close()
@@ -1761,10 +1765,12 @@ function M:init(Storefront)
 
         local Trapper = require("ui/trapper")
         Trapper:wrap(function()
+            local stop_progress = startDownloadProgress(trap_widget, dl_msg, zip_path, asset.size)
             local completed, res = Trapper:dismissableRunInSubprocess(function()
                 local dl_ok, dl_err = downloadToFile(asset.browser_download_url, zip_path)
                 return { ok = dl_ok, err = dl_err }
             end, trap_widget)
+            stop_progress()
 
             if trap_widget and trap_widget ~= batch_toast and trap_widget.close then
                 trap_widget:close()
@@ -1988,10 +1994,12 @@ function M:init(Storefront)
 
             local Trapper = require("ui/trapper")
             Trapper:wrap(function()
+                local stop_progress = startDownloadProgress(trap_widget, dl_msg, zip_path, nil)
                 local completed, res = Trapper:dismissableRunInSubprocess(function()
                     local dl_ok, dl_err = downloadToFile(url, zip_path)
                     return { ok = dl_ok, err = dl_err }
                 end, trap_widget)
+                stop_progress()
 
                 if trap_widget and trap_widget ~= batch_toast and trap_widget.close then
                     trap_widget:close()

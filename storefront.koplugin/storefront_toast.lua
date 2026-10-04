@@ -8,10 +8,13 @@ local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local ImageWidget = require("ui/widget/imagewidget")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local ProgressWidget = require("ui/widget/progresswidget")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
+local VerticalGroup = require("ui/widget/verticalgroup")
+local VerticalSpan = require("ui/widget/verticalspan")
 local storefront_theme = require("storefront_theme")
 
 local function sc(val)
@@ -60,6 +63,10 @@ function StorefrontToastWidget:buildCard()
     if max_line_w > 0 then
         label_w = math.min(label_w, math.max(sc(180), max_line_w + sc(16)))
     end
+    if self.progress then
+        -- Keep the bar wide enough to be readable even for short labels
+        label_w = math.max(label_w, math.min(max_toast_w - sc(70), sc(320)))
+    end
 
     local label = TextBoxWidget:new{
         text = self.text or "",
@@ -70,11 +77,28 @@ function StorefrontToastWidget:buildCard()
     }
     self.label_widget = label
 
+    local content = label
+    if self.progress then
+        content = VerticalGroup:new{
+            align = "center",
+            label,
+            VerticalSpan:new{ width = sc(10) },
+            ProgressWidget:new{
+                width = label_w,
+                height = sc(12),
+                percentage = math.max(0, math.min(1, self.progress)),
+                margin_h = 0,
+                margin_v = 0,
+                radius = 0,
+            },
+        }
+    end
+
     local row = HorizontalGroup:new{
         align = "center",
         icon,
         HorizontalSpan:new{ width = sc(10) },
-        label,
+        content,
     }
     self.row = row
 
@@ -198,9 +222,10 @@ end
 
 function StorefrontToastWidget:setText(text)
     text = text or ""
-    if text == self.text and self.card then
+    if text == self.text and self.card and not self._force_rebuild then
         return
     end
+    self._force_rebuild = nil
     self.text = text
 
     local old_card_dimen = self.card and self.card.dimen and Geom:new{
@@ -245,6 +270,17 @@ function StorefrontToastWidget:setText(text)
     elseif type(UIManager.forceRepaint) == "function" then
         UIManager:forceRepaint()
     end
+end
+
+--- Draw a progress bar under the text, or remove it.
+---@param fraction number|nil 0..1, or nil to remove the bar
+---@param text string|nil New text; keeps the current text when nil
+function StorefrontToastWidget:setProgress(fraction, text)
+    if fraction ~= self.progress then
+        self.progress = fraction
+        self._force_rebuild = true
+    end
+    self:setText(text or self.text)
 end
 
 local StorefrontToast = {}
