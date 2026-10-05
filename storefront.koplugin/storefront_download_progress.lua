@@ -13,16 +13,23 @@ local function formatMB(bytes)
     return string.format("%.1f MB", bytes / (1024 * 1024))
 end
 
---- Start polling local_path and updating widget once per second.
----@param widget table|nil Toast with setText (and optionally setProgress)
+---@param bytes number
+---@return string
+local function formatKB(bytes)
+    return string.format("%d KB", math.floor(bytes / 1024))
+end
+
+--- Start polling local_path and updating widget text once per second.
+---@param widget table|nil Toast with setText
 ---@param dl_msg string Message shown on the widget; progress goes after its first line
 ---@param local_path string Final path passed to downloadToFile
----@param total_bytes number|nil Expected size; nil or 0 shows downloaded MB only
----@return function stop Stops polling and clears the progress bar
+---@param total_bytes number|nil Expected size; nil or 0 shows downloaded size only
+---@return function stop Stops polling
 function DownloadProgress.start(widget, dl_msg, local_path, total_bytes)
     if not widget or not widget.setText then
         return function() end
     end
+    total_bytes = tonumber(total_bytes)
     if not total_bytes or total_bytes <= 0 then
         total_bytes = nil
     end
@@ -55,16 +62,18 @@ function DownloadProgress.start(widget, dl_msg, local_path, total_bytes)
             local line, fraction
             if total_bytes then
                 fraction = math.min(size / total_bytes, 1)
-                line = string.format("%s / %s (%d%%)", formatMB(size), formatMB(total_bytes), math.floor(fraction * 100))
+                local cur_str, total_str
+                if total_bytes >= 1024 * 1024 then
+                    cur_str, total_str = formatMB(size), formatMB(total_bytes)
+                else
+                    cur_str, total_str = formatKB(size), formatKB(total_bytes)
+                end
+                line = string.format("%s / %s (%d%%)", cur_str, total_str, math.floor(fraction * 100))
             else
-                line = formatMB(size)
+                line = (size >= 1024 * 1024) and formatMB(size) or formatKB(size)
             end
             local text = head .. "\n" .. line .. (tail and ("\n" .. tail) or "")
-            if fraction and widget.setProgress then
-                widget:setProgress(fraction, text)
-            else
-                widget:setText(text)
-            end
+            widget:setText(text)
         end
         UIManager:scheduleIn(1, poll)
         in_poll = false
@@ -75,10 +84,6 @@ function DownloadProgress.start(widget, dl_msg, local_path, total_bytes)
         active = false
         if UIManager.unschedule then
             UIManager:unschedule(poll)
-        end
-        if widget.progress then
-            widget.progress = nil
-            widget._force_rebuild = true
         end
     end
 end

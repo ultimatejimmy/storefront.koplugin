@@ -1404,6 +1404,7 @@ function M:init(Storefront)
         local function doInstall(ok, err)
             if not ok then
                 util.removeFile(zip_path)
+                util.removeFile(zip_path .. ".tmp")
                 if not is_repo_batch then
                     UIManager:show(InfoMessage:new{
                         text = _("Download failed: ") .. tostring(err),
@@ -1567,6 +1568,7 @@ function M:init(Storefront)
 
             if not completed then
                 util.removeFile(zip_path)
+                util.removeFile(zip_path .. ".tmp")
                 local Toast = require("storefront_toast")
                 Toast.show(_("Download cancelled."), 3)
                 if self.pending_install_context and self.pending_install_context.batch_callback then
@@ -1778,6 +1780,7 @@ function M:init(Storefront)
 
             if not completed then
                 util.removeFile(zip_path)
+                util.removeFile(zip_path .. ".tmp")
                 local Toast = require("storefront_toast")
                 Toast.show(_("Download cancelled."), 3)
                 if self.pending_install_context and self.pending_install_context.batch_callback then
@@ -2007,6 +2010,7 @@ function M:init(Storefront)
 
                 if not completed then
                     util.removeFile(zip_path)
+                    util.removeFile(zip_path .. ".tmp")
                     local Toast = require("storefront_toast")
                     Toast.show(_("Download cancelled."), 3)
                     if self.pending_install_context and self.pending_install_context.batch_callback then

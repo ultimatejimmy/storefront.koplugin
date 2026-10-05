@@ -192,6 +192,14 @@ package.loaded["ui/widget/progressbardialog"] = {
         return dialog
     end
 }
+package.loaded["ui/widget/progresswidget"] = {
+    new = function(a, b)
+        local args = b or a or {}
+        local pw = { type = "ProgressWidget", args = args, percentage = args.percentage }
+        pw.getSize = function() return { w = args.width or 100, h = args.height or 12 } end
+        return pw
+    end
+}
 package.loaded["ui/widget/buttondialog"] = {
     new = function(a, b) 
         local dialog = { type = "ButtonDialog", args = b or a }
