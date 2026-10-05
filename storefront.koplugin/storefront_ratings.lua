@@ -407,7 +407,8 @@ local function getCandidateKeys(item_or_id)
     if type(item_or_id) ~= "table" then
         local val = tostring(item_or_id or "")
         if val ~= "" then
-            if val == "storefront.koplugin" or val == "storefront" or val == "ultimatejimmy/storefront.koplugin" or val == "ultimatejimmy/storefront" then
+            local val_lower = val:lower()
+            if val_lower == "storefront.koplugin" or val_lower == "storefront" or val_lower == "ultimatejimmy/storefront.koplugin" or val_lower == "ultimatejimmy/storefront" then
                 add_key_variants(1304319884)
             end
             add_key_variants(val)
@@ -436,7 +437,15 @@ local function getCandidateKeys(item_or_id)
         or (item.record and (item.record.repo_id or item.record.id))
         or (item.plugin and item.plugin.id)
 
-    if not primary_id and (item.name == "storefront.koplugin" or item.name == "storefront" or item.dirname == "storefront.koplugin" or item.full_name == "ultimatejimmy/storefront.koplugin") then
+    local item_name = tostring(item.name or ""):lower()
+    local item_dirname = tostring(item.dirname or ""):lower()
+    local item_full_name = tostring(item.full_name or item.repo_full_name or ""):lower()
+
+    if not primary_id and (
+        item_name == "storefront" or item_name == "storefront.koplugin" or
+        item_dirname == "storefront" or item_dirname == "storefront.koplugin" or
+        item_full_name == "ultimatejimmy/storefront" or item_full_name == "ultimatejimmy/storefront.koplugin"
+    ) then
         primary_id = 1304319884
     end
 
@@ -501,17 +510,23 @@ function StorefrontRatings.getRating(item_or_id, entry)
     end
 
     local candidate_keys = getCandidateKeys(item_or_id)
+    local best_r = nil
     for _, key in ipairs(candidate_keys) do
         local num_k = tonumber(key)
         local r = StorefrontRatings.liveRatings[key] or (num_k and StorefrontRatings.liveRatings[num_k])
         if type(r) == "table" then
-            base_up = tonumber(r.up) or 0
-            base_down = tonumber(r.down) or 0
-            base_downloads = tonumber(r.downloads) or base_downloads
-            wilson = tonumber(r.wilson) or StorefrontRatings.computeWilsonScore(base_up, base_down)
-            has_live = true
-            break
+            if not best_r or (tonumber(r.up or 0) > tonumber(best_r.up or 0)) then
+                best_r = r
+            end
         end
+    end
+
+    if best_r then
+        base_up = tonumber(best_r.up) or 0
+        base_down = tonumber(best_r.down) or 0
+        base_downloads = tonumber(best_r.downloads) or base_downloads
+        wilson = tonumber(best_r.wilson) or StorefrontRatings.computeWilsonScore(base_up, base_down)
+        has_live = true
     end
 
     local final_up = base_up

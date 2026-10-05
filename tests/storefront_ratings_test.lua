@@ -172,4 +172,32 @@ describe("storefront_ratings", function()
         assert.is_number(res.bytes)
         assert.is_nil(StorefrontRatings.liveRatings["test_repo"])
     end)
+
+    it("should resolve Storefront aliases to canonical ID and pick best live rating", function()
+        StorefrontRatings.liveRatings["1304319884"] = {
+            up = 73,
+            down = 0,
+            wilson = 0.95,
+            downloads = 120,
+        }
+        StorefrontRatings.liveRatings["storefront.koplugin"] = {
+            up = 2,
+            down = 0,
+            wilson = 0.34,
+            downloads = 10,
+        }
+
+        local installed_sf = {
+            name = "Storefront",
+            dirname = "storefront.koplugin",
+        }
+        local r = StorefrontRatings.getRating(installed_sf)
+        assert.equals(73, r.up)
+        assert.equals(0, r.down)
+        assert.equals(120, r.downloads)
+
+        local string_sf = "storefront.koplugin"
+        local r_str = StorefrontRatings.getRating(string_sf)
+        assert.equals(73, r_str.up)
+    end)
 end)

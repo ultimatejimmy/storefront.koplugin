@@ -7182,6 +7182,11 @@ function Storefront:buildInstalledEntries(available_list_height)
                     badge_text = is_branch and _("repull_from_branch") or _("Update")
                 end
 
+                local item_repo_id = record and (record.repo_id or record.id)
+                if not item_repo_id and (plugin.dirname == "storefront.koplugin" or plugin.dirname == "storefront") then
+                    item_repo_id = 1304319884
+                end
+
                 table.insert(items, {
                     name = display_name,
                     owner = record and record.owner or "",
@@ -7198,6 +7203,16 @@ function Storefront:buildInstalledEntries(available_list_height)
                     is_disabled = disabled,
                     is_default = is_default,
                     dirname = plugin.dirname,
+                    id = item_repo_id,
+                    repo_id = item_repo_id,
+                    full_name = record and record.repo_full_name or (record and record.owner and (record.owner .. "/" .. plugin.dirname)) or nil,
+                    repo = record and {
+                        id = item_repo_id,
+                        repo_id = item_repo_id,
+                        name = record.repo or plugin.dirname,
+                        owner = record.owner or "",
+                        full_name = record.repo_full_name,
+                    } or nil,
                     on_badge_tap = function()
                         self:togglePluginDisabled(plugin.dirname)
                     end,

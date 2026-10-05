@@ -188,7 +188,10 @@ export default {
 
       // Handle Download Counter Endpoint
       if (url.pathname === "/download" || body.action === "download" || body.event_type === "download") {
-        const repo_id = String(body.repo_id || "");
+        let repo_id = String(body.repo_id || "");
+        if (repo_id === "storefront" || repo_id.toLowerCase() === "storefront.koplugin" || repo_id.toLowerCase() === "ultimatejimmy/storefront.koplugin" || repo_id.toLowerCase() === "ultimatejimmy/storefront") {
+          repo_id = "1304319884";
+        }
         if (!repo_id) {
           return new Response(
             JSON.stringify({ error: "Missing required field: repo_id" }),
@@ -224,7 +227,10 @@ export default {
       }
 
       // Handle Rating Vote Endpoint
-      const repo_id = String(body.repo_id || "");
+      let repo_id = String(body.repo_id || "");
+      if (repo_id === "storefront" || repo_id.toLowerCase() === "storefront.koplugin" || repo_id.toLowerCase() === "ultimatejimmy/storefront.koplugin" || repo_id.toLowerCase() === "ultimatejimmy/storefront") {
+        repo_id = "1304319884";
+      }
       const device_uuid = String(body.device_uuid || "");
       const direction = String(body.direction || "none").toLowerCase();
 
