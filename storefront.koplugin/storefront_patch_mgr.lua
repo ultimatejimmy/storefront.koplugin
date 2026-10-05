@@ -16,6 +16,7 @@ local _ = require("gettext")
 local Blitbuffer = require("ffi/blitbuffer")
 local StorefrontInstaller = require("storefront_installer")
 local StorefrontUtils = require("storefront_utils")
+local startDownloadProgress = require("storefront_download_progress").start
 
 local M = {}
 
@@ -676,10 +677,12 @@ function M:init(Storefront)
 
         local Trapper = require("ui/trapper")
         Trapper:wrap(function()
+            local stop_progress = startDownloadProgress(trap_widget, dl_msg, target_path, patch and patch.size)
             local completed, res = Trapper:dismissableRunInSubprocess(function()
                 local dl_ok, dl_err = StorefrontInstaller.downloadToFile(raw_url, target_path)
                 return { ok = dl_ok, err = dl_err }
             end, trap_widget)
+            stop_progress()
 
             if trap_widget and trap_widget ~= batch_toast and trap_widget.close then
                 trap_widget:close()
@@ -687,6 +690,7 @@ function M:init(Storefront)
 
             if not completed then
                 util.removeFile(target_path)
+                util.removeFile(target_path .. ".tmp")
                 local Toast = require("storefront_toast")
                 Toast.show(_("Download cancelled."), 3)
                 if self.pending_patch_install and self.pending_patch_install.batch_callback then
@@ -702,6 +706,7 @@ function M:init(Storefront)
 
             if not ok_dl then
                 util.removeFile(target_path)
+                util.removeFile(target_path .. ".tmp")
                 if not is_batch then
                     UIManager:show(InfoMessage:new{ text = string.format(_("Failed to download patch: %s"), tostring(dl_err)), timeout = 5 })
                 end
