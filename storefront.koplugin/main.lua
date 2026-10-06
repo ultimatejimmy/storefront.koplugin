@@ -141,6 +141,17 @@ storefront_patch_mgr:init(Storefront)
 
 Storefront.instance = Storefront
 
+-- Ensure NotoSerif fallback alias in Font.fontmap so any unhandled or external calls
+-- to Font:getFace("NotoSerif-Regular.ttf", size) never return nil.
+local ok_font, FontModule = pcall(require, "ui/font")
+if ok_font and FontModule and FontModule.fontmap then
+    local test_face = nil
+    pcall(function() test_face = FontModule:getFace("NotoSerif-Regular.ttf", 20) end)
+    if not test_face then
+        FontModule.fontmap["NotoSerif-Regular.ttf"] = FontModule.fontmap.cfont or "NotoSans-Regular.ttf"
+    end
+end
+
 function Storefront:init()
     Storefront.instance = self
 end
@@ -680,7 +691,7 @@ local function showFetchingProgress(message)
 
     local title_label = TextBoxWidget:new{
         text = progress_title,
-        face = Font:getFace("NotoSerif-Regular.ttf", dynamic_title_size),
+        face = StorefrontUtils.getTitleFace(dynamic_title_size),
         bold = true,
         fgcolor = Blitbuffer.COLOR_BLACK,
         width = inner_w,
@@ -695,7 +706,7 @@ local function showFetchingProgress(message)
 
     local body_widget = TextBoxWidget:new{
         text = message or _("Connecting to GitHub…\n\nPlease wait."),
-        face = Font:getFace("NotoSerif-Regular.ttf", ui_font_size),
+        face = StorefrontUtils.getFace("cfont", ui_font_size),
         fgcolor = Blitbuffer.COLOR_BLACK,
         width = dialog_w - sc(40),
         alignment = "center",
@@ -846,8 +857,9 @@ local function makeScrollableTextBoxForDialog(dialog, text)
     if TextWidget.getDefaultFace then
         default_face = TextWidget:getDefaultFace()
     end
-    if (not default_face) and Font and Font.getFace then
-        default_face = Font:getFace("infofont")
+    if not default_face then
+        local StorefrontUtils = require("storefront_utils")
+        default_face = StorefrontUtils.getFace("infofont")
     end
 
     local box = TextBoxWidget:new{
@@ -867,20 +879,19 @@ local function makeScrollableTextBoxForDialog(dialog, text)
     }
 end
 local function makeTextBox(text)
-    local args = {
-        text = text,
-        width = math.floor(Device.screen:getWidth() * 0.8),
-    }
-    local face
+    local StorefrontUtils = require("storefront_utils")
+    local face = nil
     if TextWidget.getDefaultFace then
         face = TextWidget:getDefaultFace()
     end
-    if not face and Font and Font.getFace then
-        face = Font:getFace("infofont")
+    if not face then
+        face = StorefrontUtils.getFace("infofont")
     end
-    if face then
-        args.face = face
-    end
+    local args = {
+        text = text,
+        width = math.floor(Device.screen:getWidth() * 0.8),
+        face = face,
+    }
     return TextBoxWidget:new(args)
 end
 
@@ -891,8 +902,9 @@ local function makeScrollableTextBox(text)
     if TextWidget.getDefaultFace then
         default_face = TextWidget:getDefaultFace()
     end
-    if (not default_face) and Font and Font.getFace then
-        default_face = Font:getFace("infofont")
+    if not default_face then
+        local StorefrontUtils = require("storefront_utils")
+        default_face = StorefrontUtils.getFace("infofont")
     end
     local box = TextBoxWidget:new{
         text = text,
@@ -9747,16 +9759,15 @@ function Storefront:buildListWidget(lines)
     if TextWidget.getDefaultFace then
         default_face = TextWidget:getDefaultFace()
     end
-    if (not default_face) and Font and Font.getFace then
-        default_face = Font:getFace("infofont")
+    if not default_face then
+        local StorefrontUtils = require("storefront_utils")
+        default_face = StorefrontUtils.getFace("infofont")
     end
     local text_box_args = {
         text = text,
         width = math.floor(Device.screen:getWidth() * 0.8),
+        face = default_face,
     }
-    if default_face then
-        text_box_args.face = default_face
-    end
     return CenterContainer:new{
         FrameContainer:new{
             padding = 20,

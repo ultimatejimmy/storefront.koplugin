@@ -474,7 +474,7 @@ function StorefrontFolderPicker.show(options)
             -- Title Row
             local title_label = TextWidget:new{
                 text = title_text,
-                face = Font:getFace("NotoSerif-Regular.ttf", title_font_size) or Font:getFace("cfont", title_font_size),
+                face = StorefrontUtils.getTitleFace(title_font_size),
                 bold = true,
                 fgcolor = Blitbuffer.COLOR_BLACK,
             }

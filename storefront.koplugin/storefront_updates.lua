@@ -30,12 +30,9 @@ local function getListFace()
     if TextWidget.getDefaultFace then
         face = TextWidget:getDefaultFace()
     end
-    if (not face) and Font and Font.getFace then
-        face = Font:getFace("smallinfofont")
-            or Font:getFace("infofont")
-            or Font:getFace("x_smalltfont")
-            or Font:getFace("ffont")
-            or Font:getFace("infont")
+    if not face then
+        local StorefrontUtils = require("storefront_utils")
+        face = StorefrontUtils.getFace("smallinfofont")
     end
     return face
 end

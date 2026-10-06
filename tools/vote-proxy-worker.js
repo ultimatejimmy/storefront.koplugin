@@ -65,7 +65,7 @@ async function purgeRatingsCache(origin) {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     if (request.method === "OPTIONS") {
       return new Response(null, { headers: corsHeaders });
     }
@@ -82,6 +82,24 @@ export default {
 
     // GET /ratings or /stats - Fetch all aggregated ratings & downloads
     if (request.method === "GET" && (url.pathname === "/ratings" || url.pathname === "/" || url.pathname === "/stats")) {
+      const hasCache = typeof caches !== "undefined" && caches.default;
+      const cacheKey = new Request(`${url.origin}${url.pathname}`, {
+        method: "GET",
+        headers: request.headers,
+      });
+
+      const bypassCache = url.searchParams.has("fresh") || url.searchParams.has("force");
+      if (!bypassCache && hasCache) {
+        try {
+          const cached = await caches.default.match(cacheKey);
+          if (cached) {
+            return cached;
+          }
+        } catch (e) {
+          // Cache match failover
+        }
+      }
+
       try {
         const { results: ratingRows } = await db.prepare("SELECT repo_id, up, down, wilson FROM ratings").all();
         let dlRows = [];
@@ -111,14 +129,28 @@ export default {
           }
         }
 
-        return new Response(JSON.stringify(ratingsMap), {
+        const response = new Response(JSON.stringify(ratingsMap), {
           status: 200,
           headers: {
             ...corsHeaders,
             "Content-Type": "application/json",
-            "Cache-Control": "public, max-age=60, s-maxage=1800, stale-while-revalidate=300",
+            "Cache-Control": "public, max-age=900, s-maxage=900", // 15 mins edge cache
           },
         });
+
+        if (hasCache) {
+          try {
+            if (ctx && typeof ctx.waitUntil === "function") {
+              ctx.waitUntil(caches.default.put(cacheKey, response.clone()));
+            } else {
+              await caches.default.put(cacheKey, response.clone());
+            }
+          } catch (e) {
+            // Cache write failover
+          }
+        }
+
+        return response;
       } catch (err) {
         // Return empty map on D1 limit or transient outage to allow client fallback gracefully
         return new Response(JSON.stringify({}), {
@@ -132,11 +164,20 @@ export default {
       }
     }
 
-    // Ensure database tables exist on write requests only
-    try {
-      await initSchema(db);
-    } catch (e) {
-      // Schema initialization failover
+    // Explicit Schema Initialization Endpoint (Admin/Setup)
+    if (url.pathname === "/admin/init" || url.pathname === "/init") {
+      try {
+        await initSchema(db);
+        return new Response(JSON.stringify({ success: true, message: "Schema initialized successfully" }), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      } catch (err) {
+        return new Response(JSON.stringify({ error: err.message }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     // POST /download or POST /vote
@@ -172,7 +213,11 @@ export default {
           batch.push(db.prepare("UPDATE downloads SET count = 120 WHERE repo_id = '1304319884'"));
           await db.batch(batch);
 
-          await purgeRatingsCache(url.origin);
+          if (ctx && typeof ctx.waitUntil === "function") {
+            ctx.waitUntil(purgeRatingsCache(url.origin));
+          } else {
+            await purgeRatingsCache(url.origin);
+          }
 
           return new Response(
             JSON.stringify({ success: true, message: "Ratings and votes seeded successfully" }),
@@ -212,7 +257,9 @@ export default {
           const row = await db.prepare("SELECT count FROM downloads WHERE repo_id = ?").bind(repo_id).first();
           const count = row ? row.count : 1;
 
-          await purgeRatingsCache(url.origin);
+          // Note: We do not purge the ratings cache on every download to avoid
+          // cache thrashing and excessive D1 row reads. Downloads update in D1
+          // and will be reflected on the next cache cycle (15 min) or vote.
 
           return new Response(
             JSON.stringify({ success: true, repo_id, downloads: count }),
@@ -297,7 +344,11 @@ export default {
             .run();
         }
 
-        await purgeRatingsCache(url.origin);
+        if (ctx && typeof ctx.waitUntil === "function") {
+          ctx.waitUntil(purgeRatingsCache(url.origin));
+        } else {
+          await purgeRatingsCache(url.origin);
+        }
 
         return new Response(
           JSON.stringify({ success: true, repo_id, up, down, wilson }),

@@ -30,6 +30,7 @@ local _ = function(key, ...) return Localization:t(key, ...) end
 
 local Input = Device.input
 local StorefrontListItem = require("storefront_list_item")
+local StorefrontUtils = require("storefront_utils")
 
 -- Resolves a file under this plugin's own assets/ directory, regardless of
 -- where the plugin was actually installed (bundled "plugins" dir vs a custom
@@ -148,7 +149,7 @@ function StorefrontBrowserDialog:buildTabBar()
     local tab_gap = sc(6)
 
     local font_size = 18
-    local font_face = Font:getFace("smallinfofont", font_size)
+    local font_face = StorefrontUtils.getFace("smallinfofont", font_size)
 
     local tab_focus_buttons = {}
     for i, tab_name in ipairs(tabs) do
@@ -171,7 +172,7 @@ function StorefrontBrowserDialog:buildTabBar()
             if self.updates_count > 0 then
                 local badge_inner = TextWidget:new{
                     text = tostring(self.updates_count),
-                    face = Font:getFace("smallinfofont", 12),
+                    face = StorefrontUtils.getFace("smallinfofont", 12),
                     bold = true,
                     fgcolor = Blitbuffer.COLOR_WHITE,
                 }
@@ -527,7 +528,7 @@ function StorefrontBrowserDialog:init()
 
     local title_label = TextWidget:new{
         text = self.title or "Storefront",
-        face = Font:getFace("NotoSerif-Regular.ttf", 22),
+        face = StorefrontUtils.getTitleFace(22),
         bold = true,
         fgcolor = Blitbuffer.COLOR_BLACK,
     }
@@ -697,7 +698,7 @@ function StorefrontBrowserDialog:init()
 
     local page_label = TextWidget:new{
         text = string.format(_("Page %d of %d"), self.page, math.max(1, self.total_pages)),
-        face = Font:getFace("cfont", 18),
+        face = StorefrontUtils.getFace("cfont", 18),
         fgcolor = Blitbuffer.COLOR_BLACK,
     }
     
@@ -825,7 +826,7 @@ function StorefrontBrowserDialog:init()
                     table.insert(grp, HorizontalSpan:new{ width = sc(4) })
                     table.insert(grp, TextWidget:new{
                         text = _("\xC2\xB7"),
-                        face = Font:getFace("NotoSerif-Regular.ttf", 14),
+                        face = StorefrontUtils.getTitleFace(14),
                         fgcolor = Blitbuffer.COLOR_BLACK,
                     })
                     table.insert(grp, HorizontalSpan:new{ width = sc(4) })

@@ -2039,6 +2039,78 @@ if ok_browser then
     end
 end
 
+-- =========================================================================
+-- Issue 5071: Missing NotoSerif-Regular.ttf Font Fallback Tests
+-- =========================================================================
+do
+    local StorefrontUtils = require("storefront_utils")
+    local Font = require("ui/font")
+    local orig_getFace = Font.getFace
+
+    -- Test 1: StorefrontUtils.getFace returns face when font is present
+    local normal_face = StorefrontUtils.getFace("cfont", 18)
+    check("StorefrontUtils.getFace returns face for valid font", type(normal_face) == "table", true)
+
+    -- Test 2: StorefrontUtils.getFace fallback when requested font returns nil
+    Font.getFace = function(self, name, size)
+        if name == "NotoSerif-Regular.ttf" or name == "missing_font.ttf" then
+            return nil
+        end
+        return orig_getFace(self, name, size)
+    end
+
+    local fallback_face = StorefrontUtils.getFace("missing_font.ttf", 20)
+    check("StorefrontUtils.getFace falls back to cfont when font is missing", fallback_face ~= nil and fallback_face.name == "cfont", true)
+
+    -- Test 3: StorefrontUtils.getTitleFace falls back to cfont when NotoSerif is missing
+    local title_face = StorefrontUtils.getTitleFace(22)
+    check("StorefrontUtils.getTitleFace falls back safely when NotoSerif is missing", title_face ~= nil and title_face.name == "cfont", true)
+
+    -- Test 4: calcDynamicFontSize when font face is missing/nil
+    local size = StorefrontUtils.calcDynamicFontSize("Hello World", 200, "NotoSerif-Regular.ttf", 22, 12, true)
+    check("calcDynamicFontSize calculates size without crash when NotoSerif is missing", type(size) == "number" and size > 0, true)
+
+    -- Test 5: Real StorefrontListItem instantiation when NotoSerif is missing
+    package.loaded["storefront_list_item"] = nil
+    local StorefrontListItem = require("storefront_list_item")
+    local item = StorefrontListItem:new{
+        entry = {
+            name = "Test Plugin",
+            is_entry = true,
+            description = "A great plugin",
+        },
+        width = 400,
+    }
+    check("StorefrontListItem instantiates cleanly without NotoSerif", item ~= nil, true)
+
+    -- Test 6: Verify resolveFontItemFace always returns non-nil face when NotoSerif is missing
+    local resolved_face = StorefrontListItem.resolveFontItemFace({ kind = "plugin" }, 22)
+    check("StorefrontListItem.resolveFontItemFace returns non-nil face when NotoSerif missing", resolved_face ~= nil, true)
+
+    -- Test 7: Verify simulate KOReader font.lua:386 getAdjustedFace error when face is nil
+    -- In KOReader:
+    -- function Font:getAdjustedFace(face, bold)
+    --     if face.is_real_bold then ...
+    -- If face is nil, it throws attempt to index local 'face' (a nil value).
+    -- Ensure StorefrontListItem:new with bold=true never passes face=nil
+    local simulated_crash = false
+    local function simulateFontGetAdjustedFace(face, bold)
+        if bold then
+            if not face then
+                error("frontend/ui/font.lua:386: attempt to index local 'face' (a nil value)")
+            end
+        end
+        return face
+    end
+
+    local test_name_face = StorefrontListItem.resolveFontItemFace({ kind = "plugin" }, 22)
+    local ok_sim, _ = pcall(simulateFontGetAdjustedFace, test_name_face, true)
+    check("simulated getAdjustedFace succeeds with protected font face", ok_sim, true)
+
+    -- Restore Font.getFace
+    Font.getFace = orig_getFace
+end
+
 if failures > 0 then
     print(string.format("UI TESTS FAILED: %d errors", failures))
     os.exit(1)

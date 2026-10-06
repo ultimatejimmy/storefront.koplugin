@@ -20,6 +20,7 @@ local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local Localization = require("localization_storefront")
+local StorefrontUtils = require("storefront_utils")
 local _ = function(key, ...) return Localization:t(key, ...) end
 local function sc(val) return Device.screen:scaleBySize(val) end
 local DataStorage = require("datastorage")
@@ -62,7 +63,7 @@ local _font_face_path_cache = {}
 local function resolveFontItemFace(e, size)
     size = size or 22
     if not (e and (e.kind == "font" or e.is_font)) then
-        return Font:getFace("NotoSerif-Regular.ttf", size)
+        return StorefrontUtils.getTitleFace(size)
     end
 
     local face = nil
@@ -208,11 +209,10 @@ local function resolveFontItemFace(e, size)
     end
 
     if not face then
-        local ok, f = pcall(Font.getFace, Font, "NotoSerif-Regular.ttf", size)
-        if ok and f then face = f end
+        face = StorefrontUtils.getTitleFace(size)
     end
 
-    return face or Font:getFace("cfont", size)
+    return face or StorefrontUtils.getFace("cfont", size)
 end
 
 local StorefrontListItem = InputContainer:extend{
@@ -264,7 +264,7 @@ function StorefrontListItem:init()
         self._clear_btn = btn
     elseif is_control then
         -- Control rows (Filter / Sort / Settings links) keep the existing TextBox representation with a frame
-        local face = Font:getFace("smallinfofont")
+        local face = StorefrontUtils.getFace("smallinfofont")
         local text_box = TextBoxWidget:new{
             text = entry.text or "",
             width = content_inner,
@@ -284,7 +284,7 @@ function StorefrontListItem:init()
         self.dimen = self.frame:getSize()
     elseif not entry.is_entry then
         -- Info/status/warning rows
-        local face = Font:getFace("smallinfofont")
+        local face = StorefrontUtils.getFace("smallinfofont")
         local text_box = TextBoxWidget:new{
             text = entry.text or "",
             width = content_inner,
@@ -328,7 +328,7 @@ function StorefrontListItem:init()
 
                 local badge_txt_w = TextWidget:new{
                     text = badge_text,
-                    face = Font:getFace("smallinfofont", 14),
+                    face = StorefrontUtils.getFace("smallinfofont", 14),
                     bold = is_solid_inverted,
                     fgcolor = badge_fg,
                 }
@@ -388,7 +388,7 @@ function StorefrontListItem:init()
 
         -- Line 1: Name
         local is_font_item = (entry.kind == "font" or entry.is_font)
-        local name_face = is_font_item and resolveFontItemFace(entry, 22) or Font:getFace("NotoSerif-Regular.ttf", 22)
+        local name_face = is_font_item and resolveFontItemFace(entry, 22) or StorefrontUtils.getTitleFace(22)
         local name_w = TextWidget:new{
             text = name_text,
             face = name_face,
@@ -398,7 +398,7 @@ function StorefrontListItem:init()
         }
 
         -- Line 2: Meta Line (owner · ★ stars · 👍 score · updated)
-        local meta_face = Font:getFace("cfont", 16)
+        local meta_face = StorefrontUtils.getFace("cfont", 16)
         local meta_w
         if entry.is_update_item then
             local meta_parts = {}
@@ -516,7 +516,7 @@ function StorefrontListItem:init()
                 meta_w,
             }
         else
-            local desc_face = Font:getFace("cfont", 14)
+            local desc_face = StorefrontUtils.getFace("cfont", 14)
             local desc_w = TextWidget:new{
                 text = desc_text,
                 face = desc_face,

@@ -25,6 +25,7 @@ local StorefrontToast = require("storefront_toast")
 local RepoContent = require("storefront_repo_content")
 local StorefrontScreensavers = require("storefront_screensavers_ui")
 local StorefrontRatings = require("storefront_ratings")
+local StorefrontUtils = require("storefront_utils")
 
 local StorefrontClearCacheDialog = {}
 
@@ -109,7 +110,7 @@ function StorefrontClearCacheDialog.show(Storefront, on_close_callback)
         -- Title Widget
         local title_label = TextWidget:new{
             text = _("Clear Cache"),
-            face = Font:getFace("NotoSerif-Regular.ttf", title_font_size),
+            face = StorefrontUtils.getTitleFace(title_font_size),
             bold = true,
             fgcolor = Blitbuffer.COLOR_BLACK,
         }

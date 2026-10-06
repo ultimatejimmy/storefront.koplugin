@@ -28,6 +28,7 @@ local RightContainer = require("ui/widget/container/rightcontainer")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local StorefrontImageModal = require("storefront_image_modal")
 local InstallStore = require("storefront_installs")
+local StorefrontUtils = require("storefront_utils")
 local InfoMessage = require("ui/widget/infomessage")
 local logger = require("logger")
 local GestureRange = require("ui/gesturerange")
@@ -555,7 +556,7 @@ function StorefrontDetailsDialog:init()
             title_face = StorefrontListItem.resolveFontItemFace(font_entry, 28)
         end
     end
-    title_face = title_face or Font:getFace("NotoSerif-Regular.ttf", 28) or Font:getFace("cfont", 28)
+    title_face = title_face or StorefrontUtils.getTitleFace(28)
     local title_label = TextWidget:new{
         text = title_text,
         face = title_face,

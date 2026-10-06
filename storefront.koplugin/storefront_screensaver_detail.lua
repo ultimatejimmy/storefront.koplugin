@@ -75,7 +75,7 @@ function StorefrontScreensaverDetail:init()
     -- -----------------------------------------------------------------------
     local title_label = TextWidget:new{
         text   = item.title or item.name or _("Screensaver"),
-        face   = Font:getFace("NotoSerif-Regular.ttf", 28) or Font:getFace("cfont", 28),
+        face   = StorefrontUtils.getTitleFace(28),
         bold   = true,
         fgcolor = Blitbuffer.COLOR_BLACK,
     }
@@ -357,7 +357,7 @@ function StorefrontScreensaverDetail:init()
             local dynamic_title_size = StorefrontUtils.calcDynamicFontSize(title_text, inner_w, "NotoSerif-Regular.ttf", storefront_theme.title_font_size or 22, 12, true)
             local title_label = TextBoxWidget:new{
                 text = title_text,
-                face = Font:getFace("NotoSerif-Regular.ttf", dynamic_title_size),
+                face = StorefrontUtils.getTitleFace(dynamic_title_size),
                 bold = true,
                 fgcolor = Blitbuffer.COLOR_BLACK,
                 width = inner_w,

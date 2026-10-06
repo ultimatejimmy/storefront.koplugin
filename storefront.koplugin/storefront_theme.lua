@@ -27,6 +27,14 @@ local storefront_theme = {
     title_font_size = 22,
     subtext_font_size = 16,
     section_header_font_size = 16,
+    getFace = function(face_name, size)
+        local StorefrontUtils = require("storefront_utils")
+        return StorefrontUtils.getFace(face_name, size)
+    end,
+    getTitleFace = function(size)
+        local StorefrontUtils = require("storefront_utils")
+        return StorefrontUtils.getTitleFace(size)
+    end,
 }
 
 return storefront_theme

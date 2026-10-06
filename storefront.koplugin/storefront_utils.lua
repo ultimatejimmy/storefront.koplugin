@@ -293,6 +293,32 @@ function storefront_utils.getMappedScreensaverCategories(cat_input)
     return result
 end
 
+--- Safely retrieves a valid font face object with progressive fallback
+-- to standard KOReader UI tokens ("cfont", "tfont", "smallinfofont", "infofont").
+function storefront_utils.getFace(face_name, size)
+    local Font = require("ui/font")
+    local ok, face
+    if face_name then
+        ok, face = pcall(Font.getFace, Font, face_name, size)
+        if ok and face then return face end
+    end
+    local fallbacks = { "cfont", "tfont", "smallinfofont", "infofont" }
+    for _, fb in ipairs(fallbacks) do
+        if fb ~= face_name then
+            ok, face = pcall(Font.getFace, Font, fb, size)
+            if ok and face then return face end
+        end
+    end
+    ok, face = pcall(Font.getFace, Font, "cfont")
+    if ok and face then return face end
+    return nil
+end
+
+--- Returns title/serif face if available, otherwise cleanly falls back to cfont
+function storefront_utils.getTitleFace(size)
+    return storefront_utils.getFace("NotoSerif-Regular.ttf", size)
+end
+
 function storefront_utils.calcDynamicFontSize(text, max_width, face_name, max_font_size, min_font_size, bold)
     if not text or text == "" or not max_width or max_width <= 0 then
         return max_font_size or 22
@@ -302,11 +328,13 @@ function storefront_utils.calcDynamicFontSize(text, max_width, face_name, max_fo
     min_font_size = min_font_size or 11
     if bold == nil then bold = true end
 
-    local Font = require("ui/font")
     local TextWidget = require("ui/widget/textwidget")
 
     for sz = max_font_size, min_font_size, -1 do
-        local face = Font:getFace(face_name, sz)
+        local face = storefront_utils.getFace(face_name, sz)
+        if not face then
+            return min_font_size
+        end
         local tw = TextWidget:new{ text = text, face = face, bold = bold }
         if tw:getSize().w <= max_width then
             return sz
@@ -320,7 +348,6 @@ function storefront_utils.calcGroupFontSize(
 )
     face_name = face_name or "cfont"
     local Device = require("device")
-    local Font = require("ui/font")
     local TextWidget = require("ui/widget/textwidget")
     local sc = function(val)
         return (Device and Device.screen and Device.screen.scaleBySize and Device.screen:scaleBySize(val)) or val
@@ -332,13 +359,17 @@ function storefront_utils.calcGroupFontSize(
     if num == 0 then return max_font_size end
     local gaps_total = gap * math.max(0, num - 1)
     for sz = max_font_size, min_font_size, -1 do
-        local face = Font:getFace(face_name, sz)
+        local face = storefront_utils.getFace(face_name, sz)
         local total_w = gaps_total
         for _, text in ipairs(texts) do
-            local tw = TextWidget:new{ text = text, face = face, bold = true }
-            local tw_sz = tw.getSize and tw:getSize()
-            local tw_w = (tw_sz and tw_sz.w) or (#text * 8)
-            total_w = total_w + tw_w + padding_per_item
+            if face then
+                local tw = TextWidget:new{ text = text, face = face, bold = true }
+                local tw_sz = tw.getSize and tw:getSize()
+                local tw_w = (tw_sz and tw_sz.w) or (#text * 8)
+                total_w = total_w + tw_w + padding_per_item
+            else
+                total_w = total_w + (#text * 8) + padding_per_item
+            end
         end
         if total_w <= total_avail_width then
             return sz
@@ -353,7 +384,6 @@ function storefront_utils.calcProportionalBtnWidths(button_texts, total_avail_wi
     if num_btns == 1 then return { total_avail_width } end
 
     local Device = require("device")
-    local Font = require("ui/font")
     local TextWidget = require("ui/widget/textwidget")
     local sc = function(val)
         return (Device and Device.screen and Device.screen.scaleBySize and Device.screen:scaleBySize(val)) or val
@@ -366,13 +396,16 @@ function storefront_utils.calcProportionalBtnWidths(button_texts, total_avail_wi
     local ideal_widths = {}
     local total_ideal = 0
     local padding_per_btn = sc(16)
-    local face = Font:getFace(face_name, font_size)
+    local face = storefront_utils.getFace(face_name, font_size)
 
     for i, text in ipairs(button_texts) do
-        local tw = TextWidget:new{ text = text, face = face, bold = true }
-        local sz = tw.getSize and tw:getSize()
-        local tw_w = (sz and sz.w) or (#text * 8)
-        local ideal = tw_w + padding_per_btn
+        local ideal = (#text * 8) + padding_per_btn
+        if face then
+            local tw = TextWidget:new{ text = text, face = face, bold = true }
+            local sz = tw.getSize and tw:getSize()
+            local tw_w = (sz and sz.w) or (#text * 8)
+            ideal = tw_w + padding_per_btn
+        end
         ideal_widths[i] = ideal
         total_ideal = total_ideal + ideal
     end
@@ -426,17 +459,19 @@ function storefront_utils.createButton(opts)
     if btn_w and opts.text and opts.text ~= "" then
         local max_text_w = math.max(10, btn_w - (pad_h and (2 * pad_h) or sc(16)))
         for sz = initial_font_size, min_font_size, -1 do
-            local test_face = Font:getFace(face_name, sz)
-            local tw = TextWidget:new{
-                text = opts.text,
-                face = test_face,
-                bold = (opts.bold ~= false),
-            }
-            local tw_sz = tw.getSize and tw:getSize()
-            local tw_w = (tw_sz and tw_sz.w) or (#opts.text * 8)
-            if tw_w <= max_text_w then
-                chosen_font_size = sz
-                break
+            local test_face = storefront_utils.getFace(face_name, sz)
+            if test_face then
+                local tw = TextWidget:new{
+                    text = opts.text,
+                    face = test_face,
+                    bold = (opts.bold ~= false),
+                }
+                local tw_sz = tw.getSize and tw:getSize()
+                local tw_w = (tw_sz and tw_sz.w) or (#opts.text * 8)
+                if tw_w <= max_text_w then
+                    chosen_font_size = sz
+                    break
+                end
             end
             chosen_font_size = sz
         end
@@ -514,7 +549,7 @@ function storefront_utils.showConfirmDialog(opts)
     )
     local title_label = TextBoxWidget:new{
         text = title_text,
-        face = Font:getFace("NotoSerif-Regular.ttf", dynamic_title_size),
+        face = storefront_utils.getTitleFace(dynamic_title_size),
         bold = true,
         fgcolor = Blitbuffer.COLOR_BLACK,
         width = inner_w,
@@ -526,7 +561,7 @@ function storefront_utils.showConfirmDialog(opts)
     if opts.text and opts.text ~= "" then
         local body_widget = TextBoxWidget:new{
             text = opts.text,
-            face = Font:getFace("cfont", ui_font_size),
+            face = storefront_utils.getFace("cfont", ui_font_size),
             fgcolor = Blitbuffer.COLOR_BLACK,
             width = inner_w,
             alignment = "center",

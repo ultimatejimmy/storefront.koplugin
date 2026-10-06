@@ -145,7 +145,7 @@ function StorefrontScreensaverGallery.show(Storefront, on_close_callback, on_set
         -- Header
         local title_label = TextWidget:new{
             text = _("Wallpaper Collection"),
-            face = Font:getFace("NotoSerif-Regular.ttf", storefront_theme.title_font_size or 22),
+            face = StorefrontUtils.getTitleFace(storefront_theme.title_font_size or 22),
             bold = true,
             fgcolor = Blitbuffer.COLOR_BLACK,
         }
@@ -348,7 +348,7 @@ function StorefrontScreensaverGallery.show(Storefront, on_close_callback, on_set
                 -- Middle Info Column
                 local title_txt = TextWidget:new{
                     text = current_item.title or current_item.filename,
-                    face = Font:getFace("NotoSerif-Regular.ttf", 15),
+                    face = StorefrontUtils.getTitleFace(15),
                     bold = true,
                     fgcolor = Blitbuffer.COLOR_BLACK,
                     max_width = mid_w,

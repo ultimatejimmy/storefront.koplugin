@@ -21,6 +21,7 @@ local VerticalSpan = require("ui/widget/verticalspan")
 local Localization = require("localization_storefront")
 local _ = function(key, ...) return Localization:t(key, ...) end
 local storefront_theme = require("storefront_theme")
+local StorefrontUtils = require("storefront_utils")
 
 local Event = require("ui/event")
 local FocusManager = require("ui/widget/focusmanager")
@@ -233,7 +234,7 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback, initial
         -- Title Widget
         local title_label = TextWidget:new{
             text = _("Screensaver Settings"),
-            face = Font:getFace("NotoSerif-Regular.ttf", title_font_size),
+            face = StorefrontUtils.getTitleFace(title_font_size),
             bold = true,
             fgcolor = Blitbuffer.COLOR_BLACK,
         }

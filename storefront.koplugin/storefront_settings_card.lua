@@ -386,7 +386,7 @@ function StorefrontSettingsCard.show(Storefront, initial_view, on_close)
         local dynamic_title_size = StorefrontUtils.calcDynamicFontSize(title_text, dialog_w - sc(24), "NotoSerif-Regular.ttf", title_font_size, 12, true)
         local title_label = TextBoxWidget:new{
             text = title_text,
-            face = Font:getFace("NotoSerif-Regular.ttf", dynamic_title_size),
+            face = StorefrontUtils.getTitleFace(dynamic_title_size),
             bold = true,
             fgcolor = Blitbuffer.COLOR_BLACK,
             width = dialog_w - sc(24),

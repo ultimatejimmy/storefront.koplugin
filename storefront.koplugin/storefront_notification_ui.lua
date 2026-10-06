@@ -107,7 +107,7 @@ function StorefrontNotificationUI.showSnoozePicker(on_snooze_selected)
 
     local title_label = TextBoxWidget:new{
         text = _("Remind Me Later"),
-        face = Font:getFace("NotoSerif-Regular.ttf", title_font_size),
+        face = StorefrontUtils.getTitleFace(title_font_size),
         bold = true,
         fgcolor = Blitbuffer.COLOR_BLACK,
         width = dialog_w - sc(24),
@@ -297,7 +297,7 @@ function StorefrontNotificationUI.show(Storefront, updates, opts)
     local title_text = "Storefront"
     local title_label = TextWidget:new{
         text = title_text,
-        face = Font:getFace("NotoSerif-Regular.ttf", title_font_size) or Font:getFace("cfont", title_font_size),
+        face = StorefrontUtils.getTitleFace(title_font_size),
         bold = true,
         fgcolor = Blitbuffer.COLOR_BLACK,
     }

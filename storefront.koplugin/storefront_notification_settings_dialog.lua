@@ -121,7 +121,7 @@ function StorefrontNotificationSettingsDialog.show(Storefront, on_close_callback
         -- Title
         local title_label = TextBoxWidget:new{
             text = _("Notification Settings"),
-            face = Font:getFace("NotoSerif-Regular.ttf", title_font_size),
+            face = StorefrontUtils.getTitleFace(title_font_size),
             bold = true,
             fgcolor = Blitbuffer.COLOR_BLACK,
             width = dialog_w - sc(24),
