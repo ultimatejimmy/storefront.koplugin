@@ -7960,6 +7960,11 @@ end
 
 function Storefront:warmupScreensaversCache()
     if self._filtered_screensavers_cache then return end
+    local StorefrontUtils = require("storefront_utils")
+    if StorefrontUtils.isLowMemory and StorefrontUtils.isLowMemory() then return end
+    local Device = require("device")
+    if Device.isKindle and Device:isKindle() then return end
+
     if not self.screensavers_cache then
         local ok_ss, StorefrontScreensavers = pcall(require, "storefront_screensavers_ui")
         if ok_ss and StorefrontScreensavers and StorefrontScreensavers.getCachedCatalog then
@@ -8773,6 +8778,15 @@ function Storefront:closeBrowserMenu()
         UIManager:close(self.browser_menu)
         self.browser_menu = nil
     end
+    self.screensavers_cache = nil
+    self._filtered_screensavers_cache = nil
+    pcall(function()
+        local ok_ss, StorefrontScreensavers = pcall(require, "storefront_screensavers_ui")
+        if ok_ss and StorefrontScreensavers and StorefrontScreensavers.invalidateMemCache then
+            StorefrontScreensavers.invalidateMemCache()
+        end
+    end)
+    collectgarbage("step", 200)
 end
 
 function Storefront:resetBrowserScrollState()
@@ -9063,8 +9077,12 @@ function Storefront:showBrowser(kind)
         end)
     end
 
-    -- Pre-warm screensavers catalog and default sort in background idle time
-    if not self._filtered_screensavers_cache and current_tab ~= "Screensavers" then
+    -- Pre-warm screensavers catalog and default sort in background idle time (skip on Kindle and low-memory devices)
+    local Device = require("device")
+    local is_kindle = Device.isKindle and Device:isKindle()
+    local StorefrontUtils = require("storefront_utils")
+    local is_low_mem = StorefrontUtils.isLowMemory and StorefrontUtils.isLowMemory()
+    if not is_kindle and not is_low_mem and not self._filtered_screensavers_cache and current_tab ~= "Screensavers" then
         UIManager:scheduleIn(0.2, function()
             pcall(function() self:warmupScreensaversCache() end)
         end)
@@ -10623,12 +10641,8 @@ function Storefront:init()
     local screensaver_count = 0
     pcall(function()
         local ok_ss, StorefrontScreensavers = pcall(require, "storefront_screensavers_ui")
-        if ok_ss and StorefrontScreensavers and StorefrontScreensavers.getCachedCatalog then
-            local cat = StorefrontScreensavers.getCachedCatalog()
-            if type(cat) == "table" then
-                screensaver_count = #cat
-                self.screensavers_cache = cat
-            end
+        if ok_ss and StorefrontScreensavers and StorefrontScreensavers.getCachedCount then
+            screensaver_count = StorefrontScreensavers.getCachedCount()
         end
     end)
     StorefrontLogger.info(string.format("Storefront initialized (Mode: %s, Cached: %d plugins, %d patches, %d fonts, %d screensavers)", mode_str, plugin_count or 0, patch_count or 0, font_count or 0, screensaver_count or 0))
@@ -10788,9 +10802,9 @@ function Storefront:init()
         end
 
         local StorefrontUtils = require("storefront_utils")
-        local is_low, avail_kb = StorefrontUtils.isLowMemory(30 * 1024)
+        local is_low, avail_kb = StorefrontUtils.isLowMemory()
         if is_low then
-            local msg = string.format("Storefront init: available memory is critically low (%d KB < 30 MB), skipping background catalog update to prevent OOM", avail_kb or 0)
+            local msg = string.format("Storefront init: available memory is critically low (%d KB), skipping background catalog update to prevent OOM", avail_kb or 0)
             logger.warn(msg)
             if StorefrontLogger then StorefrontLogger.warn(msg) end
             return
@@ -10808,8 +10822,7 @@ function Storefront:init()
         local ss_fetched = 0
         local ok_ss, StorefrontScreensavers = pcall(require, "storefront_screensavers_ui")
         if ok_ss and StorefrontScreensavers then
-            local cat = StorefrontScreensavers.getCachedCatalog and StorefrontScreensavers.getCachedCatalog()
-            if type(cat) == "table" then ss_count = #cat end
+            ss_count = StorefrontScreensavers.getCachedCount and StorefrontScreensavers.getCachedCount() or 0
             ss_fetched = StorefrontScreensavers.getLastFetched and StorefrontScreensavers.getLastFetched() or 0
         end
         local ss_age = (ss_fetched > 0) and (os.time() - ss_fetched) or 999999

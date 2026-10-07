@@ -9,9 +9,11 @@ if not ok_log then StorefrontLogger = nil end
 
 local StorefrontScreensavers = {}
 
-local DEFAULT_SCREENSAVER_CATALOG_URL = "https://ultimatejimmy.github.io/storefront-screensavers/screensavers.lite.json"
+local DEFAULT_SCREENSAVER_CATALOG_URL = "https://ultimatejimmy.github.io/storefront-screensavers/screensavers.unified.lite.json"
 
 local CATALOG_URL_CANDIDATES = {
+    "https://ultimatejimmy.github.io/storefront-screensavers/screensavers.unified.lite.json",
+    "https://raw.githubusercontent.com/ultimatejimmy/storefront-screensavers/main/screensavers.unified.lite.json",
     "https://ultimatejimmy.github.io/storefront-screensavers/screensavers.lite.json",
     "https://raw.githubusercontent.com/ultimatejimmy/storefront-screensavers/main/screensavers.lite.json",
     "https://ultimatejimmy.github.io/storefront-screensavers/screensavers.json",
@@ -266,6 +268,30 @@ function StorefrontScreensavers.getLastFetched()
     return 0
 end
 
+function StorefrontScreensavers.getCachedCount()
+    if cached_catalog_mem and type(cached_catalog_mem) == "table" and #cached_catalog_mem > 0 then
+        return #cached_catalog_mem
+    end
+    local ok_set, StorefrontSettings = pcall(require, "storefront_settings")
+    if ok_set and StorefrontSettings and StorefrontSettings.readSetting then
+        local count = StorefrontSettings:readSetting("cached_screensaver_count")
+        if count and tonumber(count) and tonumber(count) > 0 then
+            return tonumber(count)
+        end
+    end
+    local ok_ds, DataStorage = pcall(require, "datastorage")
+    if ok_ds and DataStorage and DataStorage.getDataDir then
+        local data_dir = DataStorage:getDataDir()
+        local sf_file = data_dir .. "/cache/storefront_screensavers_catalog.json"
+        local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
+        if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
+        if ok_lfs and lfs and lfs.attributes and lfs.attributes(sf_file, "mode") == "file" then
+            return 1
+        end
+    end
+    return 0
+end
+
 function StorefrontScreensavers.getCachedCatalog()
     if cached_catalog_mem and type(cached_catalog_mem) == "table" and #cached_catalog_mem > 0 then
         return cached_catalog_mem
@@ -276,10 +302,38 @@ function StorefrontScreensavers.getCachedCatalog()
         local sf_file = data_dir .. "/cache/storefront_screensavers_catalog.json"
         local rb_file = data_dir .. "/cache/storefront_readerbackdrop_catalog.json"
         local sf_items = loadCatalogFile(sf_file, "Storefront")
-        local rb_items = loadCatalogFile(rb_file, "ReaderBackdrop")
-        if (sf_items and #sf_items > 0) or (rb_items and #rb_items > 0) then
-            local merged = mergeCatalogs(sf_items, rb_items)
+
+        local merged = nil
+        if sf_items and #sf_items > 0 then
+            local is_unified = false
+            for i = 1, math.min(#sf_items, 200) do
+                if sf_items[i].source == "ReaderBackdrop" then
+                    is_unified = true
+                    break
+                end
+            end
+            if is_unified then
+                merged = sf_items
+            else
+                local rb_items = loadCatalogFile(rb_file, "ReaderBackdrop")
+                merged = mergeCatalogs(sf_items, rb_items)
+            end
+        else
+            local rb_items = loadCatalogFile(rb_file, "ReaderBackdrop")
+            if rb_items and #rb_items > 0 then
+                merged = rb_items
+            end
+        end
+
+        if merged and #merged > 0 then
             cached_catalog_mem = merged
+            pcall(function()
+                local ok_set, StorefrontSettings = pcall(require, "storefront_settings")
+                if ok_set and StorefrontSettings and StorefrontSettings.saveSetting then
+                    StorefrontSettings:saveSetting("cached_screensaver_count", #merged)
+                    StorefrontSettings:flush()
+                end
+            end)
             return merged
         end
     end
@@ -304,7 +358,9 @@ function StorefrontScreensavers.fetchCatalog(callback)
             sf_items = loadCatalogFile(sf_file, "Storefront")
         elseif data and type(data) == "table" and #data > 0 then
             for _, item in ipairs(data) do
-                item.source = "Storefront"
+                if not item.source or item.source == "" then
+                    item.source = "Storefront"
+                end
                 StorefrontScreensavers.normalizeItem(item)
             end
             sf_items = data
@@ -323,7 +379,9 @@ function StorefrontScreensavers.fetchCatalog(callback)
         local data, body_str = fetchCandidateList(CATALOG_URL_CANDIDATES)
         if data and type(data) == "table" and #data > 0 then
             for _, item in ipairs(data) do
-                item.source = "Storefront"
+                if not item.source or item.source == "" then
+                    item.source = "Storefront"
+                end
                 StorefrontScreensavers.normalizeItem(item)
             end
             sf_items = data
@@ -341,30 +399,49 @@ function StorefrontScreensavers.fetchCatalog(callback)
         end
     end
 
-    -- 2. Fetch ReaderBackdrop catalog
-    local rb_data, rb_body_str = fetchCandidateList(READERBACKDROP_CATALOG_URL_CANDIDATES)
-    if rb_data and type(rb_data) == "table" and #rb_data > 0 then
-        for _, item in ipairs(rb_data) do
-            item.source = "ReaderBackdrop"
-            StorefrontScreensavers.normalizeItem(item)
-        end
-        rb_items = rb_data
-        pcall(function()
-            local rb_file = data_dir .. "/cache/storefront_readerbackdrop_catalog.json"
-            local f = io.open(rb_file, "w")
-            if f then
-                f:write(rb_body_str or json.encode(rb_data))
-                f:close()
+    local sf_is_unified = false
+    if sf_items and #sf_items > 0 then
+        for i = 1, math.min(#sf_items, 200) do
+            if sf_items[i].source == "ReaderBackdrop" then
+                sf_is_unified = true
+                break
             end
-        end)
-    else
-        local rb_file = data_dir .. "/cache/storefront_readerbackdrop_catalog.json"
-        rb_items = loadCatalogFile(rb_file, "ReaderBackdrop")
+        end
+    end
+
+    -- 2. Fetch ReaderBackdrop catalog only if not already in unified feed
+    if not sf_is_unified then
+        local rb_data, rb_body_str = fetchCandidateList(READERBACKDROP_CATALOG_URL_CANDIDATES)
+        if rb_data and type(rb_data) == "table" and #rb_data > 0 then
+            for _, item in ipairs(rb_data) do
+                item.source = "ReaderBackdrop"
+                StorefrontScreensavers.normalizeItem(item)
+            end
+            rb_items = rb_data
+            pcall(function()
+                local rb_file = data_dir .. "/cache/storefront_readerbackdrop_catalog.json"
+                local f = io.open(rb_file, "w")
+                if f then
+                    f:write(rb_body_str or json.encode(rb_data))
+                    f:close()
+                end
+            end)
+        else
+            local rb_file = data_dir .. "/cache/storefront_readerbackdrop_catalog.json"
+            rb_items = loadCatalogFile(rb_file, "ReaderBackdrop")
+        end
     end
 
     if (sf_items and #sf_items > 0) or (rb_items and #rb_items > 0) then
-        local merged = mergeCatalogs(sf_items, rb_items)
+        local merged = (sf_is_unified and sf_items) or mergeCatalogs(sf_items, rb_items)
         cached_catalog_mem = merged
+        pcall(function()
+            local ok_set, StorefrontSettings = pcall(require, "storefront_settings")
+            if ok_set and StorefrontSettings and StorefrontSettings.saveSetting then
+                StorefrontSettings:saveSetting("cached_screensaver_count", #merged)
+                StorefrontSettings:flush()
+            end
+        end)
         local ok_net, CatalogClient = pcall(require, "storefront_net_catalog")
         if ok_net and CatalogClient and CatalogClient.setLastFetchedScreensavers then
             CatalogClient.setLastFetchedScreensavers(os.time())

@@ -243,6 +243,65 @@ do
     check("clearStoredReaderBackdropEtag clears readerbackdrop etag", CatalogClient.getStoredReaderBackdropEtag() == nil)
 end
 
+-- ----------------------------------------------------
+-- Test 7: Shmem accounting and isLowMemoryDevice on legacy Kindle kernels
+-- ----------------------------------------------------
+do
+    local tmp_meminfo = "/tmp/test_meminfo_kindle_shmem.txt"
+    local f = io.open(tmp_meminfo, "w")
+    if f then
+        f:write([[
+MemTotal:         247852 kB
+MemFree:            3584 kB
+Buffers:            1024 kB
+Cached:            20480 kB
+Shmem:             10240 kB
+SwapTotal:             0 kB
+SwapFree:              0 kB
+]])
+        f:close()
+
+        local mem = StorefrontUtils.getMemoryInfo(tmp_meminfo)
+        check("getMemoryInfo parses Shmem on Kindle", mem and mem.shmem_kb == 10240)
+        -- Fallback: MemFree (3584) + Buffers (1024) + clean Cached (20480 - 10240 = 10240) = 14848 kB
+        check("getMemoryInfo subtracts Shmem from clean Cached", mem and mem.available_kb == 14848)
+
+        local is_low_dev = StorefrontUtils.isLowMemoryDevice(tmp_meminfo)
+        check("isLowMemoryDevice is true for 256MB device", is_low_dev == true)
+
+        -- Default threshold should be elevated to 45MB on low-memory device
+        local is_low, avail = StorefrontUtils.isLowMemory(nil, tmp_meminfo)
+        check("isLowMemory defaults to elevated 45MB threshold on low-memory device", is_low == true and avail == 14848)
+
+        os.remove(tmp_meminfo)
+    else
+        print("SKIP\tCould not write temporary meminfo file")
+    end
+end
+
+-- ----------------------------------------------------
+-- Test 8: StorefrontScreensavers.getCachedCount zero-JSON decode resolution
+-- ----------------------------------------------------
+do
+    local ok_ss, StorefrontScreensavers = pcall(require, "storefront_screensavers_ui")
+    if ok_ss and StorefrontScreensavers then
+        -- Mock StorefrontSettings
+        package.loaded["storefront_settings"] = {
+            readSetting = function(self, key)
+                if key == "cached_screensaver_count" then return 3170 end
+                return nil
+            end,
+            saveSetting = function(self, key, val) end,
+            flush = function() end,
+        }
+
+        local count = StorefrontScreensavers.getCachedCount()
+        check("getCachedCount resolves stored count without parsing JSON", count == 3170)
+    else
+        print("SKIP\tstorefront_screensavers_ui not available")
+    end
+end
+
 print("=== Low-Memory Guard & Catalog Staging Tests Summary ===")
 print(string.format("Total Failures: %d", failures))
 if failures > 0 then

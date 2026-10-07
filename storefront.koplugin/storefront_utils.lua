@@ -682,18 +682,36 @@ function storefront_utils.getMemoryInfo(meminfo_path)
     local free_kb = info["MemFree"] or 0
     local buffers_kb = info["Buffers"] or 0
     local cached_kb = info["Cached"] or 0
-    local available_kb = info["MemAvailable"] or (free_kb + buffers_kb + cached_kb)
+    local shmem_kb = info["Shmem"] or 0
+    local clean_cached = math.max(0, cached_kb - shmem_kb)
+    local available_kb = info["MemAvailable"] or (free_kb + buffers_kb + clean_cached)
     return {
         total_kb = total_kb,
         free_kb = free_kb,
         available_kb = available_kb,
         buffers_kb = buffers_kb,
         cached_kb = cached_kb,
+        shmem_kb = shmem_kb,
     }
 end
 
+function storefront_utils.isLowMemoryDevice(meminfo_path)
+    local ok_dev, Device = pcall(require, "device")
+    if ok_dev and Device and Device.isKindle and Device:isKindle() then
+        return true
+    end
+    local mem = storefront_utils.getMemoryInfo(meminfo_path)
+    if mem and mem.total_kb > 0 and mem.total_kb <= (512 * 1024) then
+        return true
+    end
+    return false
+end
+
 function storefront_utils.isLowMemory(threshold_kb, meminfo_path)
-    threshold_kb = threshold_kb or (30 * 1024) -- Default 30 MB
+    local is_low_dev = storefront_utils.isLowMemoryDevice(meminfo_path)
+    if not threshold_kb then
+        threshold_kb = is_low_dev and (45 * 1024) or (30 * 1024)
+    end
     local mem = storefront_utils.getMemoryInfo(meminfo_path)
     if not mem or mem.available_kb <= 0 then
         return false, nil, nil

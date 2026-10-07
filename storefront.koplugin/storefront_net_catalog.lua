@@ -52,8 +52,9 @@ function CatalogClient.clearStoredEtag()
     StorefrontSettings:flush()
 end
 
-local DEFAULT_SCREENSAVER_CATALOG_URL = "https://ultimatejimmy.github.io/storefront-screensavers/screensavers.lite.json"
-local FALLBACK_SCREENSAVER_CATALOG_URL = "https://raw.githubusercontent.com/ultimatejimmy/storefront-screensavers/main/screensavers.lite.json"
+local DEFAULT_SCREENSAVER_CATALOG_URL = "https://ultimatejimmy.github.io/storefront-screensavers/screensavers.unified.lite.json"
+local FALLBACK_SCREENSAVER_CATALOG_URL = "https://raw.githubusercontent.com/ultimatejimmy/storefront-screensavers/main/screensavers.unified.lite.json"
+local LEGACY_SCREENSAVER_CATALOG_URL = "https://ultimatejimmy.github.io/storefront-screensavers/screensavers.lite.json"
 local SCREENSAVER_CATALOG_ETAG_KEY = "screensaver_catalog_etag"
 local SCREENSAVER_CATALOG_LAST_FETCHED_KEY = "screensaver_catalog_last_fetched"
 
@@ -393,6 +394,7 @@ function CatalogClient.fetchScreensaverCatalogToFile(dest_path)
     local urls_to_try = {
         DEFAULT_SCREENSAVER_CATALOG_URL,
         FALLBACK_SCREENSAVER_CATALOG_URL,
+        LEGACY_SCREENSAVER_CATALOG_URL,
     }
 
     local final_cat_path = DataStorage:getDataDir() .. "/cache/storefront_screensavers_catalog.json"
@@ -826,9 +828,9 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback, is_backg
 
     if is_background then
         local StorefrontUtils = require("storefront_utils")
-        local is_low, avail_kb = StorefrontUtils.isLowMemory(30 * 1024)
+        local is_low, avail_kb = StorefrontUtils.isLowMemory()
         if is_low then
-            local msg = string.format("Storefront: available memory is critically low (%d KB < 30 MB), skipping background catalog fetch to prevent OOM", avail_kb or 0)
+            local msg = string.format("Storefront: available memory is critically low (%d KB), skipping background catalog fetch to prevent OOM", avail_kb or 0)
             logger.warn(msg)
             if StorefrontLogger then StorefrontLogger.warn(msg) end
             if callback then callback(false, "low_memory") end
@@ -1173,9 +1175,8 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback, is_backg
                     local s_count = 0
                     pcall(function()
                         local ok_ss, StorefrontScreensavers = pcall(require, "storefront_screensavers_ui")
-                        if ok_ss and StorefrontScreensavers and StorefrontScreensavers.getCachedCatalog then
-                            local cat = StorefrontScreensavers.getCachedCatalog()
-                            if type(cat) == "table" then s_count = #cat end
+                        if ok_ss and StorefrontScreensavers and StorefrontScreensavers.getCachedCount then
+                            s_count = StorefrontScreensavers.getCachedCount()
                         end
                     end)
                     StorefrontLogger.info(string.format("Storefront: screensavers catalog unchanged (HTTP 304 Not Modified, %d screensavers cached)", s_count))
@@ -1200,8 +1201,9 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback, is_backg
                         local ok_ss, StorefrontScreensavers = pcall(require, "storefront_screensavers_ui")
                         if ok_ss and StorefrontScreensavers then
                             StorefrontScreensavers.invalidateMemCache()
-                            local cat = StorefrontScreensavers.getCachedCatalog()
-                            if type(cat) == "table" then s_count = #cat end
+                            if StorefrontScreensavers.getCachedCount then
+                                s_count = StorefrontScreensavers.getCachedCount()
+                            end
                         end
                     end)
                     if StorefrontLogger then StorefrontLogger.info(string.format("Storefront: screensavers catalog updated (%d screensavers cached)", s_count)) end
@@ -1210,9 +1212,8 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback, is_backg
                     local s_count = 0
                     pcall(function()
                         local ok_ss, StorefrontScreensavers = pcall(require, "storefront_screensavers_ui")
-                        if ok_ss and StorefrontScreensavers and StorefrontScreensavers.getCachedCatalog then
-                            local cat = StorefrontScreensavers.getCachedCatalog()
-                            if type(cat) == "table" then s_count = #cat end
+                        if ok_ss and StorefrontScreensavers and StorefrontScreensavers.getCachedCount then
+                            s_count = StorefrontScreensavers.getCachedCount()
                         end
                     end)
                     if StorefrontLogger then StorefrontLogger.info(string.format("Storefront: screensavers catalog unchanged (HTTP 304 Not Modified, %d screensavers cached)", s_count)) end
@@ -1230,6 +1231,7 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback, is_backg
                     if StorefrontLogger then StorefrontLogger.warn("Storefront: ReaderBackdrop catalog update failed: " .. tostring(rb_err_part)) end
                 end
 
+                collectgarbage("step", 100)
                 logger.info("Storefront: background catalog update finished and cache swap complete")
                 if StorefrontLogger then StorefrontLogger.info("Storefront: background catalog update finished and cache swap complete") end
                 if callback then callback(true, "updated") end
