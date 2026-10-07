@@ -113,12 +113,6 @@ msgstr "< Prev"
 msgid "?"
 msgstr "?"
 
-msgid "A -> Z"
-msgstr "A -> Z"
-
-msgid "A → Z"
-msgstr "A → Z"
-
 msgid "About"
 msgstr "About"
 
@@ -763,6 +757,9 @@ msgstr "Failed to save: %s"
 
 msgid "Failed to toggle patch status."
 msgstr "Failed to toggle patch status."
+
+msgid "Featured"
+msgstr "Featured"
 
 msgid "Fetching blueprint…"
 msgstr "Fetching blueprint…"
@@ -2203,12 +2200,6 @@ msgstr "Wiki Pages"
 
 msgid "Wiki pages & images"
 msgstr "Wiki pages & images"
-
-msgid "Z -> A"
-msgstr "Z -> A"
-
-msgid "Z → A"
-msgstr "Z → A"
 
 msgid "[ Loading preview... ]"
 msgstr "[ Loading preview... ]"

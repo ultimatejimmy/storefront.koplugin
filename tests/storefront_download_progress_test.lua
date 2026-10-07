@@ -108,6 +108,7 @@ local function run()
         stop()
     end)
     assertTest(ok and #w.texts == 1, "Synchronous scheduler polls once without recursion", #w.texts)
+    UIManager.scheduleIn = function(_, _, fn) table.insert(queue, fn) end
 
     -- Test 8: missing widget is a no-op
     local noop = DownloadProgress.start(nil, msg, "/tmp/foo.zip", MB)

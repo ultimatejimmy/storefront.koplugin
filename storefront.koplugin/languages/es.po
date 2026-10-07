@@ -149,14 +149,6 @@ msgstr "< Ant"
 msgid "?"
 msgstr "?"
 
-# en-hash: b9afad882e91ad086f4f7ae1d7df0288
-msgid "A -> Z"
-msgstr "A -> Z"
-
-# en-hash: 2bea5bec151d7f0543222a3fed8567cd
-msgid "A → Z"
-msgstr "A → Z"
-
 # en-hash: 8f7f4c1ce7a4f933663d10543562b096
 msgid "About"
 msgstr "Acerca de"
@@ -1016,6 +1008,10 @@ msgstr "Error al guardar: %s"
 # en-hash: b2b70bea56298693ab867c3578f69689
 msgid "Failed to toggle patch status."
 msgstr "Error al cambiar el estado del parche."
+
+# en-hash: 15422d54ec0d47000dc86a9820a5237e
+msgid "Featured"
+msgstr "Destacados"
 
 # en-hash: 32aa147344a73b401d36cbba44e08434
 msgid "Fetching blueprint…"
@@ -2936,14 +2932,6 @@ msgstr "Páginas wiki"
 # en-hash: f78c688bce00bf8bd27b83392711b180
 msgid "Wiki pages & images"
 msgstr "Páginas wiki e imágenes"
-
-# en-hash: 20c942c0130f3367917c5d16db658ce3
-msgid "Z -> A"
-msgstr "Z -> A"
-
-# en-hash: 93d846d0fcab50e65740af3b2eabafac
-msgid "Z → A"
-msgstr "Z → A"
 
 # en-hash: 035661797ec0fdd6b3ae3d5d36ab7d1a
 msgid "[ Loading preview... ]"

@@ -29,6 +29,7 @@ local BASE_IMAGE_URL = "https://raw.githubusercontent.com/ultimatejimmy/storefro
 
 function StorefrontScreensavers.normalizeItem(item)
     if not item or type(item) ~= "table" then return item end
+    if item._normalized then return item end
     if not item.id then return item end
     local id_str = tostring(item.id)
     if not item.source or item.source == "" then
@@ -66,6 +67,8 @@ function StorefrontScreensavers.normalizeItem(item)
             item.pluginThumbnailUrl = string.format("%s/thumbnails/plugin/%s.%s", BASE_IMAGE_URL, id_str, ext)
         end
     end
+    item.featured = (item.featured == 1 or item.featured == true)
+    item._normalized = true
     return item
 end
 

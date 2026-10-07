@@ -7592,11 +7592,12 @@ function Storefront:hasActiveFilters(tab)
         local cat = (self.browser_state and self.browser_state.screensaver_category or ""):lower()
         local cats = self.browser_state and self.browser_state.screensaver_categories
         local has_cats = type(cats) == "table" and next(cats) and not cats["all"]
-        local sort = self.browser_state and self.browser_state.screensaver_sort or "downloads"
+        local sort = self.browser_state and self.browser_state.screensaver_sort or "featured"
+        if sort == "az" or sort == "za" then sort = "featured" end
         local st = util.trim(self.browser_state and self.browser_state.search_text or "")
         local ow = util.trim(self.browser_state and self.browser_state.owner or "")
         local srch = (self.browser_state and self.browser_state.screensaver_search or ""):lower()
-        return has_cats or (cat ~= "" and cat ~= "all") or (sort ~= "downloads") or (st ~= "") or (ow ~= "") or (srch ~= "")
+        return has_cats or (cat ~= "" and cat ~= "all") or (sort ~= "featured") or (st ~= "") or (ow ~= "") or (srch ~= "")
     elseif tab == "Updates" then
         return false
     else
@@ -7653,32 +7654,367 @@ function Storefront:clearSearchAndFilters()
     self:reopenBrowser()
 end
 
-function Storefront:buildScreensaverEntries(available_list_height, available_list_width)
-    local StorefrontScreensavers = require("storefront_screensavers_ui")
-    local ok_ratings, StorefrontRatings = pcall(require, "storefront_ratings")
+function Storefront:filterAndSortScreensavers(catalog, opts)
+    opts = opts or {}
+    local active_sources = opts.active_sources or { storefront = true, readerbackdrop = true }
+    local ss_cats = opts.ss_cats
+    local ss_cat = (opts.ss_cat or ""):lower()
+    local raw_search = opts.raw_search or ""
+    local raw_owner = opts.raw_owner or ""
+    local ss_sort = opts.ss_sort or "featured"
+    if ss_sort == "az" or ss_sort == "za" then ss_sort = "featured" end
 
-    -- Fetch catalog (cached after first call).
-    -- Important: if the ReaderBackdrop cache file doesn't exist yet we must
-    -- call fetchCatalog even when the Storefront catalog is already loaded —
-    -- otherwise RB wallpapers are silently omitted.
-    if not self.screensavers_cache then
-        local rb_file_exists = false
-        pcall(function()
-            local ok_ds, DataStorage = pcall(require, "datastorage")
-            if ok_ds and DataStorage and DataStorage.getDataDir then
-                local rb_path = DataStorage:getDataDir() .. "/cache/storefront_readerbackdrop_catalog.json"
-                local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
-                if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
-                if ok_lfs and lfs and lfs.attributes and lfs.attributes(rb_path, "mode") == "file" then
-                    rb_file_exists = true
+    local search_terms = extractSearchTerms(raw_search)
+    local owner_term   = normalizedLower(raw_owner)
+
+    local filtered = {}
+    for cat_idx, entry in ipairs(catalog) do
+        entry._catalog_index = entry._catalog_index or cat_idx
+        local pass = true
+
+        -- 0. Source filter
+        local s = (entry.source or "Storefront"):lower()
+        local is_rb = s:find("reader") ~= nil
+        if is_rb then
+            if active_sources.readerbackdrop == false then
+                pass = false
+            end
+        else
+            if active_sources.storefront == false then
+                pass = false
+            end
+        end
+
+        -- 1. Category filter
+        if pass then
+            if type(ss_cats) == "table" and next(ss_cats) and not ss_cats["all"] then
+                local mapped_cats = entry._mapped_cats
+                if not mapped_cats then
+                    mapped_cats = StorefrontUtils.getMappedScreensaverCategories(entry.category)
+                    entry._mapped_cats = mapped_cats
+                end
+                local match_found = false
+                for _, mc in ipairs(mapped_cats) do
+                    if ss_cats[mc:lower()] then
+                        match_found = true
+                        break
+                    end
+                end
+                if not match_found then pass = false end
+            elseif ss_cat ~= "" and ss_cat ~= "all" then
+                local mapped_cats = entry._mapped_cats
+                if not mapped_cats then
+                    mapped_cats = StorefrontUtils.getMappedScreensaverCategories(entry.category)
+                    entry._mapped_cats = mapped_cats
+                end
+                local match_found = false
+                for _, mc in ipairs(mapped_cats) do
+                    if mc:lower() == ss_cat then
+                        match_found = true
+                        break
+                    end
+                end
+                if not match_found then pass = false end
+            end
+        end
+
+        -- 2. Main search bar: matches titles and tags
+        if pass and search_terms then
+            local title_val = entry._title_lower
+            if not title_val then
+                title_val = normalizedLower(entry.title or entry.name or "")
+                entry._title_lower = title_val
+            end
+            local tag_haystacks = entry._tag_haystacks
+            if not tag_haystacks then
+                tag_haystacks = {}
+                if type(entry.tags) == "table" then
+                    for _, tag in ipairs(entry.tags) do
+                        local t_norm = normalizedLower(tag)
+                        if t_norm ~= "" then
+                            table.insert(tag_haystacks, t_norm)
+                        end
+                    end
+                elseif type(entry.tags) == "string" and entry.tags ~= "" then
+                    for tag in entry.tags:gmatch("[^,]+") do
+                        local t_norm = normalizedLower(tag)
+                        if t_norm ~= "" then
+                            table.insert(tag_haystacks, t_norm)
+                        end
+                    end
+                end
+                entry._tag_haystacks = tag_haystacks
+            end
+
+            for _, term in ipairs(search_terms) do
+                local term_match = false
+                if title_val:find(term, 1, true) then
+                    term_match = true
+                else
+                    for _, tag_val in ipairs(tag_haystacks) do
+                        if tag_val:find(term, 1, true) then
+                            term_match = true
+                            break
+                        end
+                    end
+                end
+                if not term_match then
+                    pass = false
+                    break
                 end
             end
+        end
+
+        -- 3. Owner bar: matches submitter / author / attribution
+        if pass and owner_term ~= "" then
+            local owner_match = false
+            local author_val = normalizedLower(entry.author)
+            local submitter_val = normalizedLower(entry.submitter)
+            local attribution_val = normalizedLower(entry.attribution)
+
+            if (author_val ~= "" and author_val:find(owner_term, 1, true)) or
+               (submitter_val ~= "" and submitter_val:find(owner_term, 1, true)) or
+               (attribution_val ~= "" and attribution_val:find(owner_term, 1, true)) then
+                owner_match = true
+            end
+
+            if not owner_match then
+                pass = false
+            end
+        end
+
+        if pass then table.insert(filtered, entry) end
+    end
+
+    local both_sources_active = (active_sources.storefront ~= false and active_sources.readerbackdrop ~= false)
+
+    local function interleaveLists(list_a, list_b)
+        local interleaved = {}
+        local max_len = math.max(#list_a, #list_b)
+        for i = 1, max_len do
+            if list_a[i] then table.insert(interleaved, list_a[i]) end
+            if list_b[i] then table.insert(interleaved, list_b[i]) end
+        end
+        return interleaved
+    end
+
+    local ok_ratings, StorefrontRatings = pcall(require, "storefront_ratings")
+    local liveRatings = (ok_ratings and StorefrontRatings and StorefrontRatings.liveRatings) or nil
+    local has_live = liveRatings and (next(liveRatings) ~= nil)
+
+    local function getSortMetadata(list)
+        local dl_scores = {}
+        local scores = {}
+        local titles = {}
+        for _, entry in ipairs(list) do
+            local live_r = has_live and (liveRatings[entry.id] or (entry.name and liveRatings[entry.name])) or nil
+            dl_scores[entry] = (live_r and live_r.downloads) or entry.downloads or entry.download_count or entry.downloads_count or entry.installs or 0
+            scores[entry] = (live_r and (live_r.up - live_r.down)) or entry.likes or 0
+            titles[entry] = entry._title_lower or (entry.title or entry.name or ""):lower()
+            entry._title_lower = titles[entry]
+        end
+        return dl_scores, scores, titles
+    end
+
+    local function sortDownloads(list)
+        local dl_scores, scores, titles = getSortMetadata(list)
+        table.sort(list, function(a, b)
+            local dla = dl_scores[a] or 0
+            local dlb = dl_scores[b] or 0
+            if dla ~= dlb then return dla > dlb end
+            local sa = scores[a] or 0
+            local sb = scores[b] or 0
+            if sa ~= sb then return sa > sb end
+            local ta = titles[a] or ""
+            local tb = titles[b] or ""
+            if ta ~= tb then return ta < tb end
+            local ca = a._catalog_index or 0
+            local cb = b._catalog_index or 0
+            return ca < cb
         end)
+        return list
+    end
+
+    local function sortPopular(list)
+        local dl_scores, scores, titles = getSortMetadata(list)
+        table.sort(list, function(a, b)
+            local sa = scores[a] or 0
+            local sb = scores[b] or 0
+            if sa ~= sb then return sa > sb end
+            local dla = dl_scores[a] or 0
+            local dlb = dl_scores[b] or 0
+            if dla ~= dlb then return dla > dlb end
+            local ta = titles[a] or ""
+            local tb = titles[b] or ""
+            if ta ~= tb then return ta < tb end
+            local ca = a._catalog_index or 0
+            local cb = b._catalog_index or 0
+            return ca < cb
+        end)
+        return list
+    end
+
+    local function sortRecent(list)
+        table.sort(list, function(a, b)
+            local da = a.dateAdded or a.date_added or a.added or a.created_at
+            local db = b.dateAdded or b.date_added or b.added or b.created_at
+            if da and db and da ~= db then return da > db end
+            local ca = a._catalog_index or 0
+            local cb = b._catalog_index or 0
+            if ca ~= cb then return ca > cb end
+            return (a.title or a.name or "") < (b.title or b.name or "")
+        end)
+        return list
+    end
+
+    local function splitBySource(items)
+        local sf_items = {}
+        local rb_items = {}
+        for _, item in ipairs(items) do
+            if item.source == "ReaderBackdrop" then
+                table.insert(rb_items, item)
+            else
+                table.insert(sf_items, item)
+            end
+        end
+        return sf_items, rb_items
+    end
+
+    if ss_sort == "popular" then
+        if both_sources_active then
+            local sf_items, rb_items = splitBySource(filtered)
+            sortPopular(sf_items)
+            sortPopular(rb_items)
+            filtered = interleaveLists(sf_items, rb_items)
+        else
+            sortPopular(filtered)
+        end
+    elseif ss_sort == "recent" or ss_sort == "newest" then
+        if both_sources_active then
+            local sf_items, rb_items = splitBySource(filtered)
+            sortRecent(sf_items)
+            sortRecent(rb_items)
+            filtered = interleaveLists(sf_items, rb_items)
+        else
+            sortRecent(filtered)
+        end
+    elseif ss_sort == "downloads" then
+        if both_sources_active then
+            local sf_items, rb_items = splitBySource(filtered)
+            sortDownloads(sf_items)
+            sortDownloads(rb_items)
+            filtered = interleaveLists(sf_items, rb_items)
+        else
+            sortDownloads(filtered)
+        end
+    else
+        -- "featured" (default sort mode)
+        local sf_featured = {}
+        local sf_regular = {}
+        local rb_items = {}
+        for _, item in ipairs(filtered) do
+            if item.source == "ReaderBackdrop" then
+                table.insert(rb_items, item)
+            else
+                local is_feat = (item.featured == true or item.featured == 1)
+                if is_feat then
+                    table.insert(sf_featured, item)
+                else
+                    table.insert(sf_regular, item)
+                end
+            end
+        end
+
+        table.sort(sf_featured, function(a, b)
+            local pa = a.featuredPriority or 0
+            local pb = b.featuredPriority or 0
+            if pa ~= pb then return pa > pb end
+            local da = a.dateAdded or a.date_added or a.added or a.created_at
+            local db = b.dateAdded or b.date_added or b.added or b.created_at
+            if da and db and da ~= db then return da > db end
+            local ca = a._catalog_index or 0
+            local cb = b._catalog_index or 0
+            return ca < cb
+        end)
+
+        sortDownloads(sf_regular)
+        sortDownloads(rb_items)
+
+        if both_sources_active then
+            local interleaved_rest = interleaveLists(sf_regular, rb_items)
+            local result = {}
+            for _, item in ipairs(sf_featured) do table.insert(result, item) end
+            for _, item in ipairs(interleaved_rest) do table.insert(result, item) end
+            filtered = result
+        else
+            local result = {}
+            for _, item in ipairs(sf_featured) do table.insert(result, item) end
+            for _, item in ipairs(sf_regular) do table.insert(result, item) end
+            for _, item in ipairs(rb_items) do table.insert(result, item) end
+            filtered = result
+        end
+    end
+
+    return filtered
+end
+
+function Storefront:warmupScreensaversCache()
+    if self._filtered_screensavers_cache then return end
+    if not self.screensavers_cache then
+        local ok_ss, StorefrontScreensavers = pcall(require, "storefront_screensavers_ui")
+        if ok_ss and StorefrontScreensavers and StorefrontScreensavers.getCachedCatalog then
+            self.screensavers_cache = StorefrontScreensavers.getCachedCatalog()
+        end
+    end
+    if not self.screensavers_cache or #self.screensavers_cache == 0 then return end
+
+    self:ensureBrowserState()
+    local ss_cat  = (self.browser_state.screensaver_category or ""):lower()
+    local ss_cats = self.browser_state.screensaver_categories
+    local ss_sort = self.browser_state.screensaver_sort or "featured"
+    if ss_sort == "az" or ss_sort == "za" then ss_sort = "featured" end
+    local raw_search = util.trim((self.browser_state.search_text and self.browser_state.search_text ~= "") and self.browser_state.search_text or (self.browser_state.screensaver_search or ""))
+    local raw_owner  = util.trim(self.browser_state.owner or "")
+    local active_sources = self.browser_state.screensaver_sources or { storefront = true, readerbackdrop = true }
+
+    local cats_key = ""
+    if type(ss_cats) == "table" then
+        local cat_keys = {}
+        for k, v in pairs(ss_cats) do
+            if v then table.insert(cat_keys, k) end
+        end
+        table.sort(cat_keys)
+        cats_key = table.concat(cat_keys, ",")
+    end
+    local src_key_str = string.format("sf:%s,rb:%s", tostring(active_sources.storefront ~= false), tostring(active_sources.readerbackdrop ~= false))
+    local ss_cache_key = string.format("%s|%s|%s|%s|%s|%s|%d",
+        src_key_str, tostring(ss_cat), cats_key, tostring(ss_sort),
+        tostring(raw_search), tostring(raw_owner), #self.screensavers_cache)
+
+    local filtered = self:filterAndSortScreensavers(self.screensavers_cache, {
+        active_sources = active_sources,
+        ss_cats = ss_cats,
+        ss_cat = ss_cat,
+        raw_search = raw_search,
+        raw_owner = raw_owner,
+        ss_sort = ss_sort,
+    })
+
+    self._filtered_screensavers_cache = {
+        key = ss_cache_key,
+        filtered = filtered,
+    }
+end
+
+function Storefront:buildScreensaverEntries(available_list_height, available_list_width)
+    local StorefrontScreensavers = require("storefront_screensavers_ui")
+
+    -- Fetch catalog (cached after first call).
+    if not self.screensavers_cache then
         local local_mem = StorefrontScreensavers.getCachedCatalog and StorefrontScreensavers.getCachedCatalog()
-        if local_mem and #local_mem > 0 and rb_file_exists then
+        if local_mem and #local_mem > 0 then
             self.screensavers_cache = local_mem
         else
-            -- Either nothing cached yet, or the RB file is missing — fetch both feeds
             pcall(function()
                 StorefrontScreensavers.fetchCatalog(function(ok, catalog)
                     self.screensavers_cache = catalog
@@ -7728,11 +8064,10 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
     self:ensureBrowserState()
     local ss_cat  = (self.browser_state.screensaver_category or ""):lower()
     local ss_cats = self.browser_state.screensaver_categories
-    local ss_sort = self.browser_state.screensaver_sort or "downloads"  -- "downloads" | "recent" | "popular" | "az" | "za"
+    local ss_sort = self.browser_state.screensaver_sort or "featured"  -- "featured" | "downloads" | "recent" | "popular"
+    if ss_sort == "az" or ss_sort == "za" then ss_sort = "featured" end
     local raw_search = util.trim((self.browser_state.search_text and self.browser_state.search_text ~= "") and self.browser_state.search_text or (self.browser_state.screensaver_search or ""))
     local raw_owner  = util.trim(self.browser_state.owner or "")
-    local search_terms = extractSearchTerms(raw_search)
-    local owner_term   = normalizedLower(raw_owner)
 
     local cats_key = ""
     if type(ss_cats) == "table" then
@@ -7753,192 +8088,14 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
     if self._filtered_screensavers_cache and self._filtered_screensavers_cache.key == ss_cache_key then
         filtered = self._filtered_screensavers_cache.filtered
     else
-        filtered = {}
-        for cat_idx, entry in ipairs(catalog) do
-            entry._catalog_index = entry._catalog_index or cat_idx
-            local pass = true
-
-            -- 0. Source filter
-            local s = (entry.source or "Storefront"):lower()
-            local is_rb = s:find("reader") ~= nil
-            if is_rb then
-                if active_sources.readerbackdrop == false then
-                    pass = false
-                end
-            else
-                if active_sources.storefront == false then
-                    pass = false
-                end
-            end
-            -- 1. Category filter
-            if type(ss_cats) == "table" and next(ss_cats) and not ss_cats["all"] then
-                local mapped_cats = StorefrontUtils.getMappedScreensaverCategories(entry.category)
-                local match_found = false
-                for _, mc in ipairs(mapped_cats) do
-                    if ss_cats[mc:lower()] then
-                        match_found = true
-                        break
-                    end
-                end
-                if not match_found then pass = false end
-            elseif ss_cat ~= "" and ss_cat ~= "all" then
-                local mapped_cats = StorefrontUtils.getMappedScreensaverCategories(entry.category)
-                local match_found = false
-                for _, mc in ipairs(mapped_cats) do
-                    if mc:lower() == ss_cat then
-                        match_found = true
-                        break
-                    end
-                end
-                if not match_found then pass = false end
-            end
-
-            -- 2. Main search bar: matches titles and tags
-            if pass and search_terms then
-                local title_val = normalizedLower(entry.title or entry.name or "")
-                local tag_haystacks = {}
-                if type(entry.tags) == "table" then
-                    for _, tag in ipairs(entry.tags) do
-                        local t_norm = normalizedLower(tag)
-                        if t_norm ~= "" then
-                            table.insert(tag_haystacks, t_norm)
-                        end
-                    end
-                elseif type(entry.tags) == "string" and entry.tags ~= "" then
-                    for tag in entry.tags:gmatch("[^,]+") do
-                        local t_norm = normalizedLower(tag)
-                        if t_norm ~= "" then
-                            table.insert(tag_haystacks, t_norm)
-                        end
-                    end
-                end
-
-                for _, term in ipairs(search_terms) do
-                    local term_match = false
-                    if title_val:find(term, 1, true) then
-                        term_match = true
-                    else
-                        for _, tag_val in ipairs(tag_haystacks) do
-                            if tag_val:find(term, 1, true) then
-                                term_match = true
-                                break
-                            end
-                        end
-                    end
-                    if not term_match then
-                        pass = false
-                        break
-                    end
-                end
-            end
-
-            -- 3. Owner bar: matches submitter / author / attribution
-            if pass and owner_term ~= "" then
-                local owner_match = false
-                local author_val = normalizedLower(entry.author)
-                local submitter_val = normalizedLower(entry.submitter)
-                local attribution_val = normalizedLower(entry.attribution)
-
-                if (author_val ~= "" and author_val:find(owner_term, 1, true)) or
-                   (submitter_val ~= "" and submitter_val:find(owner_term, 1, true)) or
-                   (attribution_val ~= "" and attribution_val:find(owner_term, 1, true)) then
-                    owner_match = true
-                end
-
-                if not owner_match then
-                    pass = false
-                end
-            end
-
-            if pass then table.insert(filtered, entry) end
-        end
-
-        if ss_sort == "popular" then
-            local scores = {}
-            local dl_scores = {}
-            if ok_ratings and StorefrontRatings and StorefrontRatings.getRating then
-                for _, entry in ipairs(filtered) do
-                    local live_r = StorefrontRatings.getRating(entry)
-                    scores[entry] = (live_r and (live_r.up - live_r.down)) or entry.likes or 0
-                    dl_scores[entry] = (live_r and live_r.downloads) or entry.downloads or entry.download_count or entry.downloads_count or entry.installs or 0
-                end
-            else
-                for _, entry in ipairs(filtered) do
-                    scores[entry] = entry.likes or 0
-                    dl_scores[entry] = entry.downloads or entry.download_count or entry.downloads_count or entry.installs or 0
-                end
-            end
-            table.sort(filtered, function(a, b)
-                local sa = scores[a] or 0
-                local sb = scores[b] or 0
-                if sa ~= sb then return sa > sb end
-                local dla = dl_scores[a] or 0
-                local dlb = dl_scores[b] or 0
-                if dla ~= dlb then return dla > dlb end
-                local ta = (a.title or a.name or ""):lower()
-                local tb = (b.title or b.name or ""):lower()
-                if ta ~= tb then return ta < tb end
-                local ca = a._catalog_index or 0
-                local cb = b._catalog_index or 0
-                return ca < cb
-            end)
-        elseif ss_sort == "downloads" then
-            local dl_scores = {}
-            local scores = {}
-            if ok_ratings and StorefrontRatings and StorefrontRatings.getRating then
-                for _, entry in ipairs(filtered) do
-                    local live_r = StorefrontRatings.getRating(entry)
-                    dl_scores[entry] = (live_r and live_r.downloads) or entry.downloads or entry.download_count or entry.downloads_count or entry.installs or 0
-                    scores[entry] = (live_r and (live_r.up - live_r.down)) or entry.likes or 0
-                end
-            else
-                for _, entry in ipairs(filtered) do
-                    dl_scores[entry] = entry.downloads or entry.download_count or entry.downloads_count or entry.installs or 0
-                    scores[entry] = entry.likes or 0
-                end
-            end
-            table.sort(filtered, function(a, b)
-                local dla = dl_scores[a] or 0
-                local dlb = dl_scores[b] or 0
-                if dla ~= dlb then return dla > dlb end
-                local sa = scores[a] or 0
-                local sb = scores[b] or 0
-                if sa ~= sb then return sa > sb end
-                local ta = (a.title or a.name or ""):lower()
-                local tb = (b.title or b.name or ""):lower()
-                if ta ~= tb then return ta < tb end
-                local ca = a._catalog_index or 0
-                local cb = b._catalog_index or 0
-                return ca < cb
-            end)
-        elseif ss_sort == "recent" or ss_sort == "newest" then
-            table.sort(filtered, function(a, b)
-                local da = a.dateAdded or a.date_added or a.added or a.created_at
-                local db = b.dateAdded or b.date_added or b.added or b.created_at
-                if da and db and da ~= db then return da > db end
-                local ca = a._catalog_index or 0
-                local cb = b._catalog_index or 0
-                if ca ~= cb then return ca > cb end
-                return (a.title or a.name or "") < (b.title or b.name or "")
-            end)
-        elseif ss_sort == "az" then
-            local titles = {}
-            for _, entry in ipairs(filtered) do
-                titles[entry] = (entry.title or entry.name or ""):lower()
-            end
-            table.sort(filtered, function(a, b)
-                return (titles[a] or "") < (titles[b] or "")
-            end)
-        elseif ss_sort == "za" then
-            local titles = {}
-            for _, entry in ipairs(filtered) do
-                titles[entry] = (entry.title or entry.name or ""):lower()
-            end
-            table.sort(filtered, function(a, b)
-                return (titles[a] or "") > (titles[b] or "")
-            end)
-        end
-
+        filtered = self:filterAndSortScreensavers(catalog, {
+            active_sources = active_sources,
+            ss_cats = ss_cats,
+            ss_cat = ss_cat,
+            raw_search = raw_search,
+            raw_owner = raw_owner,
+            ss_sort = ss_sort,
+        })
         self._filtered_screensavers_cache = {
             key = ss_cache_key,
             filtered = filtered,
@@ -8054,8 +8211,10 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
         end
 
         -- Title (truncated)
+        local is_featured = (entry.featured == true or entry.featured == 1)
+        local display_title = (is_featured and "★ " or "") .. (entry.title or entry.name or "")
         local title_w = TextWidget:new{
-            text      = entry.title or entry.name or "",
+            text      = display_title,
             face      = name_face,
             bold      = true,
             fgcolor   = Blitbuffer.COLOR_BLACK,
@@ -8904,6 +9063,13 @@ function Storefront:showBrowser(kind)
         end)
     end
 
+    -- Pre-warm screensavers catalog and default sort in background idle time
+    if not self._filtered_screensavers_cache and current_tab ~= "Screensavers" then
+        UIManager:scheduleIn(0.2, function()
+            pcall(function() self:warmupScreensaversCache() end)
+        end)
+    end
+
     -- Check catalog if never checked or if MIN_CATALOG_CHECK_INTERVAL has elapsed
     local now = os.time()
     if not self._last_catalog_check_time or (now - self._last_catalog_check_time) >= MIN_CATALOG_CHECK_INTERVAL then
@@ -9091,7 +9257,8 @@ function Storefront:showBrowser(kind)
                     local effective_ss_owner  = util.trim(self.browser_state.owner or "")
                     local ss_cat  = self.browser_state.screensaver_category or ""
                     local ss_cats = self.browser_state.screensaver_categories
-                    local ss_sort = self.browser_state.screensaver_sort or "downloads"
+                    local ss_sort = self.browser_state.screensaver_sort or "featured"
+                    if ss_sort == "az" or ss_sort == "za" then ss_sort = "featured" end
 
                     if effective_ss_search ~= "" then
                         table.insert(toolbar_buttons, {
@@ -9142,18 +9309,17 @@ function Storefront:showBrowser(kind)
                         })
                     end
                     local sort_labels = {
+                        featured  = _("Featured"),
                         downloads = _("Most Downloaded"),
                         recent    = _("Recently Added"),
                         popular   = _("Most Popular"),
-                        az        = _("A → Z"),
-                        za        = _("Z → A"),
                     }
-                    local sort_cycle = { "downloads", "recent", "popular", "az", "za" }
+                    local sort_cycle = { "featured", "downloads", "recent", "popular" }
                     table.insert(toolbar_buttons, {
                         id = "ss_sort",
-                        text = sort_labels[ss_sort] or _("Most Downloaded"),
+                        text = sort_labels[ss_sort] or _("Featured"),
                         callback = function()
-                            local next_sort = "downloads"
+                            local next_sort = "featured"
                             for idx, s in ipairs(sort_cycle) do
                                 if ss_sort == s then
                                     next_sort = sort_cycle[(idx % #sort_cycle) + 1]
@@ -10459,7 +10625,10 @@ function Storefront:init()
         local ok_ss, StorefrontScreensavers = pcall(require, "storefront_screensavers_ui")
         if ok_ss and StorefrontScreensavers and StorefrontScreensavers.getCachedCatalog then
             local cat = StorefrontScreensavers.getCachedCatalog()
-            if type(cat) == "table" then screensaver_count = #cat end
+            if type(cat) == "table" then
+                screensaver_count = #cat
+                self.screensavers_cache = cat
+            end
         end
     end)
     StorefrontLogger.info(string.format("Storefront initialized (Mode: %s, Cached: %d plugins, %d patches, %d fonts, %d screensavers)", mode_str, plugin_count or 0, patch_count or 0, font_count or 0, screensaver_count or 0))

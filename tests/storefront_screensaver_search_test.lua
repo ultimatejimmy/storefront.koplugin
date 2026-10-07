@@ -234,7 +234,7 @@ local function resetState()
     Storefront.browser_state.screensaver_search = ""
     Storefront.browser_state.screensaver_category = ""
     Storefront.browser_state.screensaver_categories = nil
-    Storefront.browser_state.screensaver_sort = "downloads"
+    Storefront.browser_state.screensaver_sort = "featured"
     Storefront.browser_state.page = 1
 end
 
@@ -346,6 +346,59 @@ Storefront:clearSearchAndFilters()
 check("clearSearchAndFilters clears search_text", Storefront.browser_state.search_text, "")
 check("clearSearchAndFilters clears owner", Storefront.browser_state.owner, "")
 check("hasActiveFilters is false after clearSearchAndFilters", Storefront:hasActiveFilters("Screensavers"), false)
+
+-- Test 10: Featured sort puts featured item first, followed by interleaved sources
+resetState()
+local multi_source_catalog = {
+    { id = "sf-1", title = "SF Common 1", source = "Storefront", downloads = 100 },
+    { id = "sf-2", title = "SF Featured 2", source = "Storefront", downloads = 50, featured = true, featuredPriority = 10 },
+    { id = "sf-3", title = "SF Common 3", source = "Storefront", downloads = 200 },
+    { id = "rb-1", title = "RB Top 1", source = "ReaderBackdrop", downloads = 1000 },
+    { id = "rb-2", title = "RB Top 2", source = "ReaderBackdrop", downloads = 500 },
+}
+Storefront.screensavers_cache = multi_source_catalog
+Storefront.browser_state.screensaver_sources = { storefront = true, readerbackdrop = true }
+Storefront.browser_state.screensaver_sort = "featured"
+items = Storefront:buildScreensaverEntries()
+local card_ids = {}
+for _, card in ipairs(items[1].cards) do
+    table.insert(card_ids, card.entry.id)
+end
+check("Featured item is first", card_ids[1], "sf-2")
+check("First non-featured is interleaved SF (sf-3)", card_ids[2], "sf-3")
+check("Second non-featured is interleaved RB (rb-1)", card_ids[3], "rb-1")
+check("Third non-featured is interleaved SF (sf-1)", card_ids[4], "sf-1")
+check("Fourth non-featured is interleaved RB (rb-2)", card_ids[5], "rb-2")
+
+-- Test 11: Downloads sort performs 1:1 interleaving when both sources enabled
+resetState()
+Storefront.screensavers_cache = multi_source_catalog
+Storefront.browser_state.screensaver_sources = { storefront = true, readerbackdrop = true }
+Storefront.browser_state.screensaver_sort = "downloads"
+items = Storefront:buildScreensaverEntries()
+local dl_card_ids = {}
+for _, card in ipairs(items[1].cards) do
+    table.insert(dl_card_ids, card.entry.id)
+end
+check("Downloads sort 1st is top SF (sf-3)", dl_card_ids[1], "sf-3")
+check("Downloads sort 2nd is top RB (rb-1)", dl_card_ids[2], "rb-1")
+check("Downloads sort 3rd is 2nd SF (sf-1)", dl_card_ids[3], "sf-1")
+check("Downloads sort 4th is 2nd RB (rb-2)", dl_card_ids[4], "rb-2")
+check("Downloads sort 5th is 3rd SF (sf-2)", dl_card_ids[5], "sf-2")
+
+-- Test 12: Single source enabled does NOT interleave
+resetState()
+Storefront.screensavers_cache = multi_source_catalog
+Storefront.browser_state.screensaver_sources = { storefront = false, readerbackdrop = true }
+Storefront.browser_state.screensaver_sort = "downloads"
+items = Storefront:buildScreensaverEntries()
+local rb_only_ids = {}
+for _, card in ipairs(items[1].cards) do
+    table.insert(rb_only_ids, card.entry.id)
+end
+check("ReaderBackdrop only has 2 items", #rb_only_ids, 2)
+check("ReaderBackdrop 1st is rb-1", rb_only_ids[1], "rb-1")
+check("ReaderBackdrop 2nd is rb-2", rb_only_ids[2], "rb-2")
 
 if failures > 0 then
     print(string.format("\nFAILED: %d errors", failures))

@@ -1022,13 +1022,12 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
         return tostring(a):lower() < tostring(b):lower()
     end)
 
-    local sort_order = { "downloads", "recent", "popular", "az", "za" }
+    local sort_order = { "featured", "downloads", "recent", "popular" }
     local sort_labels = {
+        featured  = _("Featured"),
         downloads = _("Most Downloaded"),
         recent    = _("Recently Added"),
         popular   = _("Most Popular"),
-        az        = _("A -> Z"),
-        za        = _("Z -> A"),
     }
 
     local function getCategorySummary(set, legacy_cat)
@@ -1618,14 +1617,15 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
         table.insert(content_vg, make_section_header_local(_("Sorting")))
 
         -- Sort row
-        local cur_sort = state.screensaver_sort or "downloads"
+        local cur_sort = state.screensaver_sort or "featured"
+        if cur_sort == "az" or cur_sort == "za" then cur_sort = "featured" end
         local sort_widget = TextWidget:new{
-            text = sort_labels[cur_sort] or sort_labels.downloads,
+            text = sort_labels[cur_sort] or sort_labels.featured,
             face = Font:getFace("cfont", subtext_font_size),
             fgcolor = storefront_theme.color_label_dim,
         }
         table.insert(content_vg, create_setting_row(_("Sort mode"), sort_widget, function()
-            local next_s = "downloads"
+            local next_s = "featured"
             for idx, s in ipairs(sort_order) do
                 if cur_sort == s then next_s = sort_order[(idx % #sort_order) + 1]; break end
             end
@@ -1645,7 +1645,7 @@ function StorefrontFilterDialog.showScreensaverFilter(arg1, arg2)
             state.screensaver_sources = { storefront = true, readerbackdrop = true }
             state.screensaver_category = ""
             state.screensaver_categories = nil
-            state.screensaver_sort = "downloads"
+            state.screensaver_sort = "featured"
             state.screensaver_search = ""
             state.search_text = ""
             state.owner = ""
