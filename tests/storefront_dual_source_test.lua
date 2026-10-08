@@ -54,8 +54,18 @@ local function run()
     StorefrontScreensavers.normalizeItem(rb_item)
     assertTest(rb_item.source == "ReaderBackdrop", "ReaderBackdrop item detected from rb- prefix")
     assertTest(rb_item.fullUrl == "https://67n00ixa74.ufs.sh/f/0592cf39-1i9bny.png", "ReaderBackdrop fullUrl preserved")
-    assertTest(rb_item.thumbnailUrl == "https://67n00ixa74.ufs.sh/f/0592cf39-1i9bny.png", "ReaderBackdrop thumbnailUrl defaulted to fullUrl")
-    assertTest(rb_item.pluginThumbnailUrl == "https://67n00ixa74.ufs.sh/f/0592cf39-1i9bny.png", "ReaderBackdrop pluginThumbnailUrl preserved remote URL")
+    assertTest(rb_item.thumbnailUrl:find("thumbnails/rb/rb%-a9e46fd39d40fa3%.jpg") ~= nil, "ReaderBackdrop thumbnailUrl routed to lightweight CDN thumbnail")
+    assertTest(rb_item.pluginThumbnailUrl:find("thumbnails/rb/rb%-a9e46fd39d40fa3%.jpg") ~= nil, "ReaderBackdrop pluginThumbnailUrl routed to lightweight CDN thumbnail")
+
+    -- Test 2b: Preserve explicit remote thumbnail when distinct from fullUrl
+    local rb_custom = {
+        id = "rb-custom-1",
+        fullUrl = "https://example.com/large.png",
+        thumbnailUrl = "https://example.com/small_thumb.jpg",
+    }
+    StorefrontScreensavers.normalizeItem(rb_custom)
+    assertTest(rb_custom.thumbnailUrl == "https://example.com/small_thumb.jpg", "ReaderBackdrop explicit thumbnail preserved when distinct from fullUrl")
+    assertTest(rb_custom.pluginThumbnailUrl == "https://example.com/small_thumb.jpg", "ReaderBackdrop pluginThumbnailUrl inherited explicit remote thumbnail")
 
     -- Test 3: Source filtering simulation
     local catalog = { sf_item, rb_item }
