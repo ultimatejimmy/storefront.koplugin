@@ -278,6 +278,9 @@ msgstr "Cancel"
 msgid "Cancel matching"
 msgstr "Cancel matching"
 
+msgid "Cannot open image: file is missing or empty."
+msgstr "Cannot open image: file is missing or empty."
+
 msgid "Cannot read source file."
 msgstr "Cannot read source file."
 
@@ -407,11 +410,17 @@ msgstr "Cleared Wiki cache (%s freed)."
 msgid "Cleared all caches (%s freed, %d files)."
 msgstr "Cleared all caches (%s freed, %d files)."
 
+msgid "Cleared all caches (%s freed, %d files, %d active thumbnails preserved)."
+msgstr "Cleared all caches (%s freed, %d files, %d active thumbnails preserved)."
+
 msgid "Cleared ratings cache (%s freed)."
 msgstr "Cleared ratings cache (%s freed)."
 
 msgid "Cleared screensaver thumbnails (%s freed)."
 msgstr "Cleared screensaver thumbnails (%s freed)."
+
+msgid "Cleared screensaver thumbnails (%s freed, %d active preserved)."
+msgstr "Cleared screensaver thumbnails (%s freed, %d active preserved)."
 
 msgid "Close"
 msgstr "Close"
@@ -1820,6 +1829,9 @@ msgstr "Show needs update"
 msgid "Show reading progress banner overlay"
 msgstr "Show reading progress banner overlay"
 
+msgid "Showing thumbnail preview (original image could not be decoded)."
+msgstr "Showing thumbnail preview (original image could not be decoded)."
+
 msgid "Shows reading stats, percentage, and chapter progress"
 msgstr "Shows reading stats, percentage, and chapter progress"
 
@@ -2026,6 +2038,9 @@ msgstr "Unable to read README file"
 
 msgid "Unable to read README. Tap refresh to retry."
 msgstr "Unable to read README. Tap refresh to retry."
+
+msgid "Unable to render image (file may be corrupted or format unsupported)."
+msgstr "Unable to render image (file may be corrupted or format unsupported)."
 
 msgid "Unable to store match for patch."
 msgstr "Unable to store match for patch."

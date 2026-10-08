@@ -920,12 +920,21 @@ function StorefrontScreensavers.getThumbnailsCacheStats()
 end
 
 function StorefrontScreensavers.clearThumbnailsCache()
+    -- Identify active screensaver identifiers BEFORE clearing catalog
+    local protected_keys = {}
+    local ok_mgr, StorefrontScreensaverMgr = pcall(require, "storefront_screensaver_mgr")
+    if ok_mgr and StorefrontScreensaverMgr and StorefrontScreensaverMgr.getActiveScreensaverIdentifiers then
+        protected_keys = StorefrontScreensaverMgr.getActiveScreensaverIdentifiers() or {}
+    end
+
     StorefrontScreensavers.clearCachedCatalog()
     local cache_dir = DataStorage:getDataDir() .. "/cache/storefront_thumbs"
     local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
     if not ok_lfs or not lfs then ok_lfs, lfs = pcall(require, "lfs") end
     local removed = 0
     local bytes = 0
+    local protected_count = 0
+    local protected_bytes = 0
     local errors = {}
     if ok_lfs and lfs and lfs.attributes and lfs.attributes(cache_dir, "mode") == "directory" then
         for entry in lfs.dir(cache_dir) do
@@ -934,17 +943,30 @@ function StorefrontScreensavers.clearThumbnailsCache()
                 local attr = lfs.attributes(full)
                 if attr and attr.mode == "file" then
                     local sz = attr.size or 0
-                    if os.remove(full) then
-                        removed = removed + 1
-                        bytes = bytes + sz
+                    local entry_lower = entry:lower()
+                    local entry_stem = entry_lower:gsub("%..+$", "")
+                    if protected_keys[entry_lower] or protected_keys[entry_stem] then
+                        protected_count = protected_count + 1
+                        protected_bytes = protected_bytes + sz
                     else
-                        table.insert(errors, full)
+                        if os.remove(full) then
+                            removed = removed + 1
+                            bytes = bytes + sz
+                        else
+                            table.insert(errors, full)
+                        end
                     end
                 end
             end
         end
     end
-    return { removed = removed, bytes = bytes, errors = errors }
+    return {
+        removed = removed,
+        bytes = bytes,
+        protected = protected_count,
+        protected_bytes = protected_bytes,
+        errors = errors,
+    }
 end
 
 return StorefrontScreensavers

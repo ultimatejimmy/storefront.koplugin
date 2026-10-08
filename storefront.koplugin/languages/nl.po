@@ -369,6 +369,10 @@ msgstr "Annuleren"
 msgid "Cancel matching"
 msgstr "Koppelen annuleren"
 
+# en-hash: 2884f1aa03fc98d7f010cb664b7c26ec
+msgid "Cannot open image: file is missing or empty."
+msgstr "Kan afbeelding niet openen: bestand ontbreekt of is leeg."
+
 # en-hash: b73f6a7b52845e67dcb6adbad1b2ca63
 msgid "Cannot read source file."
 msgstr "Kan bronbestand niet lezen."
@@ -541,6 +545,10 @@ msgstr "Wiki-cache gewist (%s vrijgemaakt)."
 msgid "Cleared all caches (%s freed, %d files)."
 msgstr "Alle caches gewist (%s, %d bestanden vrijgemaakt)."
 
+# en-hash: e018ae9b8bb339082d75a63e446931b8
+msgid "Cleared all caches (%s freed, %d files, %d active thumbnails preserved)."
+msgstr "Alle caches gewist (%s vrijgemaakt, %d bestanden, %d actieve miniaturen behouden)."
+
 # en-hash: bc65074a011515ebf17e3273a55c8448
 msgid "Cleared ratings cache (%s freed)."
 msgstr "Beoordelingscache gewist (%s vrijgemaakt)."
@@ -548,6 +556,10 @@ msgstr "Beoordelingscache gewist (%s vrijgemaakt)."
 # en-hash: ee67ba4390450a1a5e45ac52eeeb86fc
 msgid "Cleared screensaver thumbnails (%s freed)."
 msgstr "Schermbeveiligingsminiaturen gewist (%s vrijgemaakt)."
+
+# en-hash: 8e67c7cb959062dccb18edc479eaefda
+msgid "Cleared screensaver thumbnails (%s freed, %d active preserved)."
+msgstr "Screensaver-miniaturen gewist (%s vrijgemaakt, %d actieve behouden)."
 
 # en-hash: d3d2e617335f08df83599665eef8a418
 msgid "Close"
@@ -2425,6 +2437,10 @@ msgstr "Toon update vereist"
 msgid "Show reading progress banner overlay"
 msgstr "Leesvoortgangsbanner weergeven"
 
+# en-hash: 299b5b57b7c3e04ff1b4909c2a9437b1
+msgid "Showing thumbnail preview (original image could not be decoded)."
+msgstr "Miniatuurvoorbeeld weergeven (originele afbeelding kon niet worden gedecodeerd)."
+
 # en-hash: 4fceb4bd855ed2529cef174e323c8b8d
 msgid "Shows reading stats, percentage, and chapter progress"
 msgstr "Toont leesstatistieken, percentage en hoofdstukvoortgang"
@@ -2701,6 +2717,10 @@ msgstr "Kan README-bestand niet lezen"
 msgid "Unable to read README. Tap refresh to retry."
 msgstr "Kan README niet lezen. Tik op vernieuwen om het opnieuw te proberen."
 
+# en-hash: e3dadedef9c0853a54f991e387a92c87
+msgid "Unable to render image (file may be corrupted or format unsupported)."
+msgstr "Kan afbeelding niet weergeven (bestand is mogelijk beschadigd of indeling wordt niet ondersteund)."
+
 # en-hash: ef46a966a56b65fc4922957b129d6a4c
 msgid "Unable to store match for patch."
 msgstr "Kan koppeling voor patch niet opslaan."
@@ -2975,15 +2995,15 @@ msgstr "iedereen"
 
 # en-hash: 13e880e5a3199e5274dbad89142671db
 msgid "branch: %s"
-msgstr "branch: %s"
+msgstr "tak: %s"
 
 # en-hash: fbd54111126fb5c3c6a1848139e835c9
 msgid "branch: %s (%s)"
-msgstr "branch: %s (%s)"
+msgstr "tak: %s (%s)"
 
 # en-hash: 13e880e5a3199e5274dbad89142671db
 msgid "branch_label"
-msgstr "branch: %s"
+msgstr "tak: %s"
 
 # en-hash: 9639e32cab248434a17ab32237cb3b71
 msgid "btn_apply"

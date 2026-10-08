@@ -648,9 +648,15 @@ function StorefrontScreensaverDetail:init()
         }
     end
 
+    local image_frame = FrameContainer:new{
+        bordersize = 0,
+        color      = Blitbuffer.COLOR_BLACK,
+        padding    = 0,
+        preview_widget,
+    }
     local image_container = CenterContainer:new{
         dimen  = Geom:new{ w = sw - sc(24), h = img_h },
-        preview_widget,
+        image_frame,
     }
 
     local tap_wrapper
@@ -658,7 +664,7 @@ function StorefrontScreensaverDetail:init()
     local ok_modal, StorefrontImageModal = pcall(require, "storefront_image_modal")
     if ok_modal and StorefrontImageModal and thumb_file then
         tap_wrapper = InputContainer:new{ image_container }
-        tap_wrapper.frame = image_container
+        tap_wrapper.frame = image_frame
         tap_wrapper.show_parent = self
         tap_wrapper.ges_events = {
             SfssImgTap = {
@@ -681,11 +687,17 @@ function StorefrontScreensaverDetail:init()
         end
         tap_wrapper.isFocusable = function(self) return true end
         tap_wrapper.onFocus = function(self)
-            if self.frame then self.frame.invert = true; UIManager:setDirty(self.show_parent or self, "fast") end
+            if self.frame then
+                self.frame.bordersize = sc(2)
+                UIManager:setDirty(self.show_parent or self, "fast")
+            end
             return true
         end
         tap_wrapper.onUnfocus = function(self)
-            if self.frame then self.frame.invert = false; UIManager:setDirty(self.show_parent or self, "fast") end
+            if self.frame then
+                self.frame.bordersize = 0
+                UIManager:setDirty(self.show_parent or self, "fast")
+            end
             return true
         end
         tap_wrapper.onTapSelect = function(self)

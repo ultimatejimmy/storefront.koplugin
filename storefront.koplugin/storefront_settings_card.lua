@@ -457,10 +457,10 @@ function StorefrontSettingsCard.show(Storefront, initial_view, on_close)
             -- Category 2: Screensavers & Wallpapers
             local StorefrontScreensaverMgr = require("storefront_screensaver_mgr")
             local ss_settings = StorefrontScreensaverMgr.getScreensaverSettings() or {}
-            local ss_local = StorefrontScreensaverMgr.listLocalScreensavers() or {}
+            local ss_count = StorefrontScreensaverMgr.countLocalScreensavers and StorefrontScreensaverMgr.countLocalScreensavers() or 0
             local ss_mode_str = _("Cover")
             if ss_settings.effective_mode == "shuffle" then
-                ss_mode_str = string.format(_("Shuffle (%d)"), #ss_local)
+                ss_mode_str = string.format(_("Shuffle (%d)"), ss_count)
             elseif ss_settings.effective_mode == "single" then
                 ss_mode_str = _("Single")
             end
@@ -611,7 +611,7 @@ function StorefrontSettingsCard.show(Storefront, initial_view, on_close)
         elseif current_view == "screensavers" then
             local StorefrontScreensaverMgr = require("storefront_screensaver_mgr")
             local ss_settings = StorefrontScreensaverMgr.getScreensaverSettings() or {}
-            local ss_local = StorefrontScreensaverMgr.listLocalScreensavers() or {}
+            local ss_count = StorefrontScreensaverMgr.countLocalScreensavers and StorefrontScreensaverMgr.countLocalScreensavers() or 0
 
             local mode_display_str = _("Book Cover")
             if ss_settings.effective_mode == "single" then
@@ -619,7 +619,7 @@ function StorefrontSettingsCard.show(Storefront, initial_view, on_close)
                 local fname = (file_str ~= "") and file_str:match("([^/\\]+)$") or _("Single")
                 mode_display_str = _("Single") .. " (" .. fname .. ")"
             elseif ss_settings.effective_mode == "shuffle" then
-                mode_display_str = string.format(_("Shuffle (%d)"), #ss_local)
+                mode_display_str = string.format(_("Shuffle (%d)"), ss_count)
             elseif ss_settings.effective_mode == "book_status" then
                 mode_display_str = _("Reading Progress")
             elseif ss_settings.effective_mode == "blank" then
@@ -641,7 +641,7 @@ function StorefrontSettingsCard.show(Storefront, initial_view, on_close)
 
             -- Row 2: Gallery
             local count_widget = TextWidget:new{
-                text = string.format(_("%d wallpapers ›"), #ss_local),
+                text = string.format(_("%d wallpapers ›"), ss_count),
                 face = Font:getFace("cfont", subtext_font_size),
                 fgcolor = storefront_theme.color_label_dim,
             }

@@ -369,6 +369,10 @@ msgstr "Zrušiť"
 msgid "Cancel matching"
 msgstr "Zrušiť párovanie"
 
+# en-hash: 2884f1aa03fc98d7f010cb664b7c26ec
+msgid "Cannot open image: file is missing or empty."
+msgstr "Obrázok nie je možné otvoriť: súbor chýba alebo je prázdny."
+
 # en-hash: b73f6a7b52845e67dcb6adbad1b2ca63
 msgid "Cannot read source file."
 msgstr "Zdrojový súbor sa nedá prečítať."
@@ -541,6 +545,10 @@ msgstr "Cache wiki vymazaná (uvoľnených %s)."
 msgid "Cleared all caches (%s freed, %d files)."
 msgstr "Všetky cache vymazané (uvoľnených %s, %d súborov)."
 
+# en-hash: e018ae9b8bb339082d75a63e446931b8
+msgid "Cleared all caches (%s freed, %d files, %d active thumbnails preserved)."
+msgstr "Všetky vyrovnávacie pamäte boli vymazané (uvolnené %s, %d súborov, zachovaných aktívnych miniatúr: %d)."
+
 # en-hash: bc65074a011515ebf17e3273a55c8448
 msgid "Cleared ratings cache (%s freed)."
 msgstr "Vyrovnávacia pamäť hodnotení vymazaná (uvoľnené %s)."
@@ -548,6 +556,10 @@ msgstr "Vyrovnávacia pamäť hodnotení vymazaná (uvoľnené %s)."
 # en-hash: ee67ba4390450a1a5e45ac52eeeb86fc
 msgid "Cleared screensaver thumbnails (%s freed)."
 msgstr "Náhľady šetričov vymazané (uvoľnených %s)."
+
+# en-hash: 8e67c7cb959062dccb18edc479eaefda
+msgid "Cleared screensaver thumbnails (%s freed, %d active preserved)."
+msgstr "Miniatúry šetriča obrazovky boli vymazané (uvolnené %s, zachovaných aktívnych: %d)."
 
 # en-hash: d3d2e617335f08df83599665eef8a418
 msgid "Close"
@@ -2425,6 +2437,10 @@ msgstr "Zobraziť potrebné aktualizácie"
 msgid "Show reading progress banner overlay"
 msgstr "Zobraziť pruh s postupom čítania"
 
+# en-hash: 299b5b57b7c3e04ff1b4909c2a9437b1
+msgid "Showing thumbnail preview (original image could not be decoded)."
+msgstr "Zobrazuje sa náhľad miniatúry (pôvodný obrázok sa nepodarilo dekódovať)."
+
 # en-hash: 4fceb4bd855ed2529cef174e323c8b8d
 msgid "Shows reading stats, percentage, and chapter progress"
 msgstr "Zobrazuje štatistiky čítania, percentá a postup v kapitole"
@@ -2700,6 +2716,10 @@ msgstr "Súbor README sa nedá prečítať"
 # en-hash: 56346840eef36c0a910297ed2be6e6ea
 msgid "Unable to read README. Tap refresh to retry."
 msgstr "README sa nedá prečítať. Klepnutím na obnovenie to skúste znova."
+
+# en-hash: e3dadedef9c0853a54f991e387a92c87
+msgid "Unable to render image (file may be corrupted or format unsupported)."
+msgstr "Obrázok sa nepodarilo vykresliť (súbor môže byť poškodený alebo formát nepodporovaný)."
 
 # en-hash: ef46a966a56b65fc4922957b129d6a4c
 msgid "Unable to store match for patch."

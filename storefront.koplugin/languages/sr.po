@@ -369,6 +369,10 @@ msgstr "Откажи"
 msgid "Cancel matching"
 msgstr "Откажи упаривање"
 
+# en-hash: 2884f1aa03fc98d7f010cb664b7c26ec
+msgid "Cannot open image: file is missing or empty."
+msgstr "Nije moguće otvoriti sliku: fajl nedostaje ili je prazan."
+
 # en-hash: b73f6a7b52845e67dcb6adbad1b2ca63
 msgid "Cannot read source file."
 msgstr "Није могуће прочитати изворну датотеку."
@@ -541,6 +545,10 @@ msgstr "Очишћена је Вики кеш меморија (ослобође
 msgid "Cleared all caches (%s freed, %d files)."
 msgstr "Очишћене су све кеш меморије (ослобођено %s, %d датотека)."
 
+# en-hash: e018ae9b8bb339082d75a63e446931b8
+msgid "Cleared all caches (%s freed, %d files, %d active thumbnails preserved)."
+msgstr "Očišćeni svi keševi (oslobođeno %s, %d fajlova, sačuvano aktivnih sličica: %d)."
+
 # en-hash: bc65074a011515ebf17e3273a55c8448
 msgid "Cleared ratings cache (%s freed)."
 msgstr "Кеш оцена је обрисан (%s ослобођено)."
@@ -548,6 +556,10 @@ msgstr "Кеш оцена је обрисан (%s ослобођено)."
 # en-hash: ee67ba4390450a1a5e45ac52eeeb86fc
 msgid "Cleared screensaver thumbnails (%s freed)."
 msgstr "Очишћене су сличице чувара екрана (ослобођено %s)."
+
+# en-hash: 8e67c7cb959062dccb18edc479eaefda
+msgid "Cleared screensaver thumbnails (%s freed, %d active preserved)."
+msgstr "Očišćene sličice čuvara ekrana (oslobođeno %s, sačuvano aktivnih: %d)."
 
 # en-hash: d3d2e617335f08df83599665eef8a418
 msgid "Close"
@@ -2425,6 +2437,10 @@ msgstr "Прикажи оне којима је потребно ажурира�
 msgid "Show reading progress banner overlay"
 msgstr "Прикажи траку напретка читања"
 
+# en-hash: 299b5b57b7c3e04ff1b4909c2a9437b1
+msgid "Showing thumbnail preview (original image could not be decoded)."
+msgstr "Prikaz predpregleda sličice (originalna slika se ne može dekodirati)."
+
 # en-hash: 4fceb4bd855ed2529cef174e323c8b8d
 msgid "Shows reading stats, percentage, and chapter progress"
 msgstr "Приказује статистику читања, проценат и напредак поглавља"
@@ -2700,6 +2716,10 @@ msgstr "Čitanje README datoteke nije uspelo"
 # en-hash: 56346840eef36c0a910297ed2be6e6ea
 msgid "Unable to read README. Tap refresh to retry."
 msgstr "Nije moguće pročitati README. Dodirnite osveži za ponovni pokušaj."
+
+# en-hash: e3dadedef9c0853a54f991e387a92c87
+msgid "Unable to render image (file may be corrupted or format unsupported)."
+msgstr "Nije moguće prikazati sliku (fajl je možda oštećen ili format nije podržan)."
 
 # en-hash: ef46a966a56b65fc4922957b129d6a4c
 msgid "Unable to store match for patch."

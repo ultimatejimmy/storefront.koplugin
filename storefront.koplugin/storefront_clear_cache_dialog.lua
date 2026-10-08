@@ -347,7 +347,11 @@ function StorefrontClearCacheDialog.show(Storefront, on_close_callback)
                         local freed_bytes = (r1.bytes or 0) + (r2.bytes or 0) + (r3.bytes or 0) + (r4.bytes or 0)
                         local freed_files = (r1.removed or 0) + (r2.removed or 0) + (r3.removed or 0) + (r4.removed or 0)
                         refresh()
-                        StorefrontToast.show(string.format(_("Cleared all caches (%s freed, %d files)."), formatSize(freed_bytes), freed_files), 3)
+                        if r3 and r3.protected and r3.protected > 0 then
+                            StorefrontToast.show(string.format(_("Cleared all caches (%s freed, %d files, %d active thumbnails preserved)."), formatSize(freed_bytes), freed_files, r3.protected), 4)
+                        else
+                            StorefrontToast.show(string.format(_("Cleared all caches (%s freed, %d files)."), formatSize(freed_bytes), freed_files), 3)
+                        end
                     end
                 )
             end,
@@ -415,7 +419,11 @@ function StorefrontClearCacheDialog.show(Storefront, on_close_callback)
                             Storefront.screensavers_cache = nil
                         end
                         refresh()
-                        StorefrontToast.show(string.format(_("Cleared screensaver thumbnails (%s freed)."), formatSize(res.bytes or 0)), 3)
+                        if res and res.protected and res.protected > 0 then
+                            StorefrontToast.show(string.format(_("Cleared screensaver thumbnails (%s freed, %d active preserved)."), formatSize(res.bytes or 0), res.protected), 4)
+                        else
+                            StorefrontToast.show(string.format(_("Cleared screensaver thumbnails (%s freed)."), formatSize(res.bytes or 0)), 3)
+                        end
                     end
                 )
             end,

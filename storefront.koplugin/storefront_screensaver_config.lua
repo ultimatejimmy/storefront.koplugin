@@ -229,7 +229,7 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback, initial
         end
 
         local settings = StorefrontScreensaverMgr.getScreensaverSettings()
-        local local_wallpapers = StorefrontScreensaverMgr.listLocalScreensavers()
+        local local_wallpapers_count = StorefrontScreensaverMgr.countLocalScreensavers()
 
         -- Title Widget
         local title_label = TextWidget:new{
@@ -436,7 +436,7 @@ function StorefrontScreensaverConfig.show(Storefront, on_close_callback, initial
         })
 
         -- Folder Shuffle Mode
-        local shuffle_desc = string.format(_("Pool size: %d wallpapers in rotation"), #local_wallpapers)
+        local shuffle_desc = string.format(_("Pool size: %d wallpapers in rotation"), local_wallpapers_count)
         local mode2_w, mode2_layout = create_mode_row("shuffle", _("Folder Shuffle"), shuffle_desc, _("Collection"), openGallery)
         table.insert(scroll_vg, mode2_w)
         table.insert(layout, mode2_layout)

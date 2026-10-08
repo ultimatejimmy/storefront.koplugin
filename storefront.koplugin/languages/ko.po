@@ -369,6 +369,10 @@ msgstr "취소"
 msgid "Cancel matching"
 msgstr "매칭 취소"
 
+# en-hash: 2884f1aa03fc98d7f010cb664b7c26ec
+msgid "Cannot open image: file is missing or empty."
+msgstr "이미지를 열 수 없습니다: 파일이 없거나 비어 있습니다."
+
 # en-hash: b73f6a7b52845e67dcb6adbad1b2ca63
 msgid "Cannot read source file."
 msgstr "원본 파일을 읽을 수 없습니다."
@@ -541,6 +545,10 @@ msgstr "Wiki 캐시 정리됨 (%s 확보)."
 msgid "Cleared all caches (%s freed, %d files)."
 msgstr "모든 캐시 정리됨 (%s, %d개 파일 확보)."
 
+# en-hash: e018ae9b8bb339082d75a63e446931b8
+msgid "Cleared all caches (%s freed, %d files, %d active thumbnails preserved)."
+msgstr "모든 캐시를 지웠습니다 (%s 확보, %d개 파일, 활성 썸네일 %d개 유지됨)."
+
 # en-hash: bc65074a011515ebf17e3273a55c8448
 msgid "Cleared ratings cache (%s freed)."
 msgstr "평가 캐시가 삭제되었습니다(%s 확보됨)."
@@ -548,6 +556,10 @@ msgstr "평가 캐시가 삭제되었습니다(%s 확보됨)."
 # en-hash: ee67ba4390450a1a5e45ac52eeeb86fc
 msgid "Cleared screensaver thumbnails (%s freed)."
 msgstr "스크린세이버 썸네일 정리됨 (%s 확보)."
+
+# en-hash: 8e67c7cb959062dccb18edc479eaefda
+msgid "Cleared screensaver thumbnails (%s freed, %d active preserved)."
+msgstr "화면 보호기 썸네일을 지웠습니다 (%s 확보, 활성 %d개 유지됨)."
 
 # en-hash: d3d2e617335f08df83599665eef8a418
 msgid "Close"
@@ -2043,7 +2055,7 @@ msgstr "배경화면 평가"
 
 # en-hash: 69c5012837c93f492f74b4433044e009
 msgid "ReaderBackdrop (Community)"
-msgstr "ReaderBackdrop (Community)"
+msgstr "ReaderBackdrop (커뮤니티)"
 
 # en-hash: 172bdcbf3c1298405f3292de568e54f0
 msgid "Reading Passage Specimen"
@@ -2425,6 +2437,10 @@ msgstr "업데이트 필요 항목 표시"
 msgid "Show reading progress banner overlay"
 msgstr "독서 진행률 배너 오버레이 표시"
 
+# en-hash: 299b5b57b7c3e04ff1b4909c2a9437b1
+msgid "Showing thumbnail preview (original image could not be decoded)."
+msgstr "썸네일 미리보기 표시 중 (원본 이미지 디코딩 실패)."
+
 # en-hash: 4fceb4bd855ed2529cef174e323c8b8d
 msgid "Shows reading stats, percentage, and chapter progress"
 msgstr "독서 통계, 백분율 및 챕터 진행률 표시"
@@ -2539,7 +2555,7 @@ msgstr "상태: 업데이트 가능"
 
 # en-hash: 696b31d8a8d2dd5377c9c3951af4b93d
 msgid "Storefront (Curated)"
-msgstr "Storefront (Curated)"
+msgstr "Storefront (큐레이션)"
 
 # en-hash: 7ade5d484a71e39d2c37c5eb72d01b80
 msgid "Storefront cache refreshed."
@@ -2700,6 +2716,10 @@ msgstr "README 파일을 읽을 수 없습니다"
 # en-hash: 56346840eef36c0a910297ed2be6e6ea
 msgid "Unable to read README. Tap refresh to retry."
 msgstr "README를 읽을 수 없습니다. 다시 시도하려면 새로고침을 탭하세요."
+
+# en-hash: e3dadedef9c0853a54f991e387a92c87
+msgid "Unable to render image (file may be corrupted or format unsupported)."
+msgstr "이미지를 렌더링할 수 없습니다 (파일이 손상되었거나 지원되지 않는 형식입니다)."
 
 # en-hash: ef46a966a56b65fc4922957b129d6a4c
 msgid "Unable to store match for patch."

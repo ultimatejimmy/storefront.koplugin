@@ -369,6 +369,10 @@ msgstr "取消"
 msgid "Cancel matching"
 msgstr "取消匹配"
 
+# en-hash: 2884f1aa03fc98d7f010cb664b7c26ec
+msgid "Cannot open image: file is missing or empty."
+msgstr "无法打开图像：文件丢失或为空。"
+
 # en-hash: b73f6a7b52845e67dcb6adbad1b2ca63
 msgid "Cannot read source file."
 msgstr "无法读取源文件。"
@@ -541,6 +545,10 @@ msgstr "已清理 Wiki 缓存（已释放 %s）。"
 msgid "Cleared all caches (%s freed, %d files)."
 msgstr "已清理所有缓存（已释放 %s，%d 个文件）。"
 
+# en-hash: e018ae9b8bb339082d75a63e446931b8
+msgid "Cleared all caches (%s freed, %d files, %d active thumbnails preserved)."
+msgstr "已清除所有缓存（释放 %s，共 %d 个文件，保留 %d 个活动缩略图）。"
+
 # en-hash: bc65074a011515ebf17e3273a55c8448
 msgid "Cleared ratings cache (%s freed)."
 msgstr "已清除评分缓存（已释放 %s）。"
@@ -548,6 +556,10 @@ msgstr "已清除评分缓存（已释放 %s）。"
 # en-hash: ee67ba4390450a1a5e45ac52eeeb86fc
 msgid "Cleared screensaver thumbnails (%s freed)."
 msgstr "已清理屏保缩略图（已释放 %s）。"
+
+# en-hash: 8e67c7cb959062dccb18edc479eaefda
+msgid "Cleared screensaver thumbnails (%s freed, %d active preserved)."
+msgstr "已清除屏保缩略图（释放 %s，保留 %d 个活动缩略图）。"
 
 # en-hash: d3d2e617335f08df83599665eef8a418
 msgid "Close"
@@ -2425,6 +2437,10 @@ msgstr "显示需要更新"
 msgid "Show reading progress banner overlay"
 msgstr "显示阅读进度横幅图层"
 
+# en-hash: 299b5b57b7c3e04ff1b4909c2a9437b1
+msgid "Showing thumbnail preview (original image could not be decoded)."
+msgstr "正在显示缩略图预览（无法解码原始图像）。"
+
 # en-hash: 4fceb4bd855ed2529cef174e323c8b8d
 msgid "Shows reading stats, percentage, and chapter progress"
 msgstr "显示阅读统计、百分比与章节进度"
@@ -2700,6 +2716,10 @@ msgstr "无法读取 README 文件"
 # en-hash: 56346840eef36c0a910297ed2be6e6ea
 msgid "Unable to read README. Tap refresh to retry."
 msgstr "无法读取 README。点击刷新重试。"
+
+# en-hash: e3dadedef9c0853a54f991e387a92c87
+msgid "Unable to render image (file may be corrupted or format unsupported)."
+msgstr "无法渲染图像（文件可能已损坏或格式不受支持）。"
 
 # en-hash: ef46a966a56b65fc4922957b129d6a4c
 msgid "Unable to store match for patch."

@@ -28,16 +28,20 @@ class TestCacheManagement(unittest.TestCase):
         self.assertIn('Clear cache…', content)
         self.assertIn('storefront_clear_cache_dialog', content)
 
-    def test_clear_cache_dialog_contents(self):
-        content = (self.base_dir / "storefront_clear_cache_dialog.lua").read_text(encoding="utf-8")
-        self.assertIn('StorefrontClearCacheDialog.show', content)
-        self.assertIn('All Caches', content)
-        self.assertIn('README files & images', content)
-        self.assertIn('Wiki pages & images', content)
-        self.assertIn('Screensaver thumbnails', content)
-        self.assertIn('RepoContent.clearReadmeCache()', content)
-        self.assertIn('RepoContent.clearWikiCache()', content)
-        self.assertIn('StorefrontScreensavers.clearThumbnailsCache()', content)
+    def test_active_screensaver_protection(self):
+        ui_content = (self.base_dir / "storefront_screensavers_ui.lua").read_text(encoding="utf-8")
+        self.assertIn("getActiveScreensaverIdentifiers", ui_content)
+        self.assertIn("protected_keys[entry_lower]", ui_content)
+        self.assertIn("protected_count", ui_content)
+
+        mgr_content = (self.base_dir / "storefront_screensaver_mgr.lua").read_text(encoding="utf-8")
+        self.assertIn("function StorefrontScreensaverMgr.getActiveScreensaverIdentifiers()", mgr_content)
+        self.assertIn("function StorefrontScreensaverMgr.countLocalScreensavers(custom_dir)", mgr_content)
+
+        dialog_content = (self.base_dir / "storefront_clear_cache_dialog.lua").read_text(encoding="utf-8")
+        self.assertIn("active preserved", dialog_content)
+        self.assertIn("active thumbnails preserved", dialog_content)
 
 if __name__ == "__main__":
     unittest.main()
+

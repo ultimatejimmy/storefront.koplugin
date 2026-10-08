@@ -369,6 +369,10 @@ msgstr "Cancelar"
 msgid "Cancel matching"
 msgstr "Cancelar vinculación"
 
+# en-hash: 2884f1aa03fc98d7f010cb664b7c26ec
+msgid "Cannot open image: file is missing or empty."
+msgstr "No se puede abrir la imagen: el archivo falta o está vacío."
+
 # en-hash: b73f6a7b52845e67dcb6adbad1b2ca63
 msgid "Cannot read source file."
 msgstr "No se puede leer el archivo de origen."
@@ -541,6 +545,10 @@ msgstr "Caché de Wiki borrada (%s liberados)."
 msgid "Cleared all caches (%s freed, %d files)."
 msgstr "Todas las cachés borradas (%s liberados, %d archivos)."
 
+# en-hash: e018ae9b8bb339082d75a63e446931b8
+msgid "Cleared all caches (%s freed, %d files, %d active thumbnails preserved)."
+msgstr "Cachés borradas (%s liberados, %d archivos, %d miniaturas activas conservadas)."
+
 # en-hash: bc65074a011515ebf17e3273a55c8448
 msgid "Cleared ratings cache (%s freed)."
 msgstr "Caché de valoraciones borrada (%s liberados)."
@@ -548,6 +556,10 @@ msgstr "Caché de valoraciones borrada (%s liberados)."
 # en-hash: ee67ba4390450a1a5e45ac52eeeb86fc
 msgid "Cleared screensaver thumbnails (%s freed)."
 msgstr "Miniaturas del salvapantallas borradas (%s liberados)."
+
+# en-hash: 8e67c7cb959062dccb18edc479eaefda
+msgid "Cleared screensaver thumbnails (%s freed, %d active preserved)."
+msgstr "Miniaturas de salvapantallas borradas (%s liberados, %d activas conservadas)."
 
 # en-hash: d3d2e617335f08df83599665eef8a418
 msgid "Close"
@@ -2425,6 +2437,10 @@ msgstr "Mostrar pendientes de actualización"
 msgid "Show reading progress banner overlay"
 msgstr "Mostrar banner de progreso de lectura"
 
+# en-hash: 299b5b57b7c3e04ff1b4909c2a9437b1
+msgid "Showing thumbnail preview (original image could not be decoded)."
+msgstr "Mostrando vista previa de miniatura (la imagen original no se pudo decodificar)."
+
 # en-hash: 4fceb4bd855ed2529cef174e323c8b8d
 msgid "Shows reading stats, percentage, and chapter progress"
 msgstr "Muestra estadísticas de lectura, porcentaje y progreso del capítulo"
@@ -2700,6 +2716,10 @@ msgstr "No se puede leer el archivo README"
 # en-hash: 56346840eef36c0a910297ed2be6e6ea
 msgid "Unable to read README. Tap refresh to retry."
 msgstr "No se pudo leer el README. Toca actualizar para reintentar."
+
+# en-hash: e3dadedef9c0853a54f991e387a92c87
+msgid "Unable to render image (file may be corrupted or format unsupported)."
+msgstr "No se pudo renderizar la imagen (el archivo puede estar dañado o el formato no es compatible)."
 
 # en-hash: ef46a966a56b65fc4922957b129d6a4c
 msgid "Unable to store match for patch."

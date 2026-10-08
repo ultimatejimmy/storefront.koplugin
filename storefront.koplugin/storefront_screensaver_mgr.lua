@@ -304,12 +304,116 @@ local function extractScreensaverTitleAndAuthor(filename, catalog_map)
     return clean_title, author
 end
 
+function StorefrontScreensaverMgr.countLocalScreensavers(custom_dir)
+    local dir = custom_dir or StorefrontScreensaverMgr.getScreensaverFolder()
+    local lfs = getLfs()
+    if not lfs or not lfs.attributes or lfs.attributes(dir, "mode") ~= "directory" then
+        return 0
+    end
+    local count = 0
+    pcall(function()
+        for filename in lfs.dir(dir) do
+            if filename:sub(1, 1) ~= "." then
+                local lower = filename:lower()
+                if lower:match("%.jpg$") or lower:match("%.jpeg$") or lower:match("%.png$") or lower:match("%.bmp$") or lower:match("%.webp$") then
+                    local fullpath = dir .. "/" .. filename
+                    local attr = lfs.attributes(fullpath)
+                    if attr and attr.mode == "file" and (attr.size or 0) > 0 then
+                        count = count + 1
+                    end
+                end
+            end
+        end
+    end)
+    return count
+end
+
+function StorefrontScreensaverMgr.getActiveScreensaverIdentifiers()
+    local settings = StorefrontScreensaverMgr.getScreensaverSettings()
+    local lfs = getLfs()
+    local protected_keys = {}
+
+    local function addIdentifier(filepath_or_filename)
+        if not filepath_or_filename or filepath_or_filename == "" then return end
+        local fname = filepath_or_filename:match("([^/\\]+)$") or filepath_or_filename
+        if fname:sub(1, 1) == "." then return end
+        local stem = fname:gsub("%..+$", "")
+        protected_keys[fname:lower()] = true
+        protected_keys[stem:lower()] = true
+    end
+
+    if settings.effective_mode == "single" then
+        addIdentifier(settings.file)
+    elseif settings.effective_mode == "shuffle" then
+        local dir = settings.dir or StorefrontScreensaverMgr.getScreensaverFolder()
+        if lfs and lfs.attributes and lfs.attributes(dir, "mode") == "directory" then
+            pcall(function()
+                for filename in lfs.dir(dir) do
+                    if filename:sub(1, 1) ~= "." then
+                        local lower = filename:lower()
+                        if lower:match("%.jpg$") or lower:match("%.jpeg$") or lower:match("%.png$") or lower:match("%.bmp$") or lower:match("%.webp$") then
+                            addIdentifier(filename)
+                        end
+                    end
+                end
+            end)
+        end
+    end
+
+    -- Correlate with catalog entries if available
+    local ok_ss, StorefrontScreensavers = pcall(require, "storefront_screensavers_ui")
+    if ok_ss and StorefrontScreensavers and StorefrontScreensavers.getCachedCatalog then
+        local cat = StorefrontScreensavers.getCachedCatalog()
+        if type(cat) == "table" then
+            for _, item in ipairs(cat) do
+                local id_str = item.id and tostring(item.id):lower()
+                local fname_str = item.filename and tostring(item.filename):lower()
+                if (id_str and protected_keys[id_str]) or (fname_str and (protected_keys[fname_str] or protected_keys[fname_str:gsub("%..+$", "")])) then
+                    if id_str then protected_keys[id_str] = true end
+                    if fname_str then
+                        protected_keys[fname_str] = true
+                        protected_keys[fname_str:gsub("%..+$", "")] = true
+                    end
+                end
+            end
+        end
+    end
+
+    return protected_keys
+end
+
 function StorefrontScreensaverMgr.listLocalScreensavers(custom_dir)
     local dir = custom_dir or StorefrontScreensaverMgr.getScreensaverFolder()
     local lfs = getLfs()
     local result = {}
 
     if not lfs or not lfs.attributes or lfs.attributes(dir, "mode") ~= "directory" then
+        return result
+    end
+
+    -- Collect local files first
+    local local_files = {}
+    pcall(function()
+        for filename in lfs.dir(dir) do
+            if filename:sub(1, 1) ~= "." then
+                local lower = filename:lower()
+                if lower:match("%.jpg$") or lower:match("%.jpeg$") or lower:match("%.png$") or lower:match("%.bmp$") or lower:match("%.webp$") then
+                    local fullpath = dir .. "/" .. filename
+                    local attr = lfs.attributes(fullpath)
+                    if attr and attr.mode == "file" and (attr.size or 0) > 0 then
+                        table.insert(local_files, {
+                            filename = filename,
+                            fullpath = fullpath,
+                            size = attr.size or 0,
+                            mtime = attr.modification or 0,
+                        })
+                    end
+                end
+            end
+        end
+    end)
+
+    if #local_files == 0 then
         return result
     end
 
@@ -334,49 +438,50 @@ function StorefrontScreensaverMgr.listLocalScreensavers(custom_dir)
         cache_dir = DataStorage:getDataDir() .. "/cache/storefront_thumbs"
     end
 
-    pcall(function()
-        for filename in lfs.dir(dir) do
-            if filename ~= "." and filename ~= ".." then
-                local lower = filename:lower()
-                if lower:match("%.jpg$") or lower:match("%.jpeg$") or lower:match("%.png$") or lower:match("%.bmp$") or lower:match("%.webp$") then
-                    local fullpath = dir .. "/" .. filename
-                    local attr = lfs.attributes(fullpath)
-                    if attr and attr.mode == "file" then
-                        local item_id = filename:gsub("%..+$", "")
-                        local matched = catalog_map[item_id:lower()] or catalog_map[filename:lower()]
-                        local clean_title, author = extractScreensaverTitleAndAuthor(filename, catalog_map)
+    for _, file_info in ipairs(local_files) do
+        local filename = file_info.filename
+        local fullpath = file_info.fullpath
+        local item_id = filename:gsub("%..+$", "")
+        local matched = catalog_map[item_id:lower()] or catalog_map[filename:lower()]
+        local clean_title, author = extractScreensaverTitleAndAuthor(filename, catalog_map)
 
-                        local active_file_str = tostring(active_file or "")
-                        local is_active = (active_file_str ~= "" and (fullpath == active_file_str or filename == (active_file_str:match("([^/\\]+)$") or active_file_str)))
+        local active_file_str = tostring(active_file or "")
+        local is_active = (active_file_str ~= "" and (fullpath == active_file_str or filename == (active_file_str:match("([^/\\]+)$") or active_file_str)))
 
-                        local thumb_file = nil
-                        if cache_dir and lfs.attributes then
-                            local p_png = cache_dir .. "/" .. tostring(item_id) .. ".png"
-                            local p_jpg = cache_dir .. "/" .. tostring(item_id) .. ".jpg"
-                            if lfs.attributes(p_png, "mode") == "file" then
-                                thumb_file = p_png
-                            elseif lfs.attributes(p_jpg, "mode") == "file" then
-                                thumb_file = p_jpg
-                            end
-                        end
-
-                        table.insert(result, {
-                            filename = filename,
-                            filepath = fullpath,
-                            title = clean_title,
-                            author = author,
-                            size = attr.size or 0,
-                            mtime = attr.modification or 0,
-                            is_active_single = is_active,
-                            id = item_id,
-                            thumbnail_file = thumb_file or fullpath,
-                            catalog_item = matched,
-                        })
-                    end
+        local thumb_file = nil
+        if cache_dir and lfs.attributes then
+            local candidates = {
+                cache_dir .. "/" .. tostring(item_id) .. ".png",
+                cache_dir .. "/" .. tostring(item_id) .. ".jpg",
+                cache_dir .. "/" .. tostring(item_id) .. ".jpeg",
+            }
+            if matched and matched.id and tostring(matched.id) ~= tostring(item_id) then
+                table.insert(candidates, cache_dir .. "/" .. tostring(matched.id) .. ".png")
+                table.insert(candidates, cache_dir .. "/" .. tostring(matched.id) .. ".jpg")
+                table.insert(candidates, cache_dir .. "/" .. tostring(matched.id) .. ".jpeg")
+            end
+            for _, cp in ipairs(candidates) do
+                local attr_c = lfs.attributes(cp)
+                if attr_c and attr_c.mode == "file" and (attr_c.size or 0) > 0 then
+                    thumb_file = cp
+                    break
                 end
             end
         end
-    end)
+
+        table.insert(result, {
+            filename = filename,
+            filepath = fullpath,
+            title = clean_title,
+            author = author,
+            size = file_info.size,
+            mtime = file_info.mtime,
+            is_active_single = is_active,
+            id = item_id,
+            thumbnail_file = thumb_file,
+            catalog_item = matched,
+        })
+    end
 
     table.sort(result, function(a, b)
         return (a.mtime or 0) > (b.mtime or 0)
@@ -408,6 +513,7 @@ function StorefrontScreensaverMgr.isWallpaperDownloaded(item)
             return true, path
         end
     end
+
     return false, nil
 end
 
@@ -463,22 +569,28 @@ function StorefrontScreensaverMgr.downloadWallpaper(item, callback)
 
     local ok, code = StorefrontScreensavers.requestWithRedirects(target_url, sink_fn)
     if ok and code == 200 then
-        local tmp_file = filename .. ".tmp"
-        local file = io.open(tmp_file, "wb")
-        if file then
-            file:write(table.concat(img_data))
-            file:close()
-            os.remove(filename)
-            local ok_ren = pcall(os.rename, tmp_file, filename)
-            if ok_ren then
-                local ok_r, StorefrontRatings = pcall(require, "storefront_ratings")
-                if ok_r and StorefrontRatings and StorefrontRatings.trackDownload then
-                    StorefrontRatings.trackDownload(item, "screensaver")
+        local content = table.concat(img_data)
+        if #content > 64 then
+            local tmp_file = filename .. ".tmp"
+            local file = io.open(tmp_file, "wb")
+            if file then
+                file:write(content)
+                file:close()
+                os.remove(filename)
+                local ok_ren = pcall(os.rename, tmp_file, filename)
+                if ok_ren then
+                    local ok_r, StorefrontRatings = pcall(require, "storefront_ratings")
+                    if ok_r and StorefrontRatings and StorefrontRatings.trackDownload then
+                        StorefrontRatings.trackDownload(item, "screensaver")
+                    end
+                    if StorefrontScreensavers.fetchThumbnailAsync then
+                        pcall(StorefrontScreensavers.fetchThumbnailAsync, item)
+                    end
+                    if callback then callback(true, filename) end
+                    return filename
+                else
+                    pcall(os.remove, tmp_file)
                 end
-                if callback then callback(true, filename) end
-                return filename
-            else
-                pcall(os.remove, tmp_file)
             end
         end
     end
@@ -488,3 +600,4 @@ function StorefrontScreensaverMgr.downloadWallpaper(item, callback)
 end
 
 return StorefrontScreensaverMgr
+

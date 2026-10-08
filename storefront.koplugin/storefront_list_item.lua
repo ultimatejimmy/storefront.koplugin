@@ -553,6 +553,7 @@ function StorefrontListItem:init()
                     end
                 end
                 if thumb_w then
+                    self.thumb_widget = thumb_w
                     table.insert(left_elements, thumb_w)
                     table.insert(left_elements, HorizontalSpan:new{ width = sc(12) })
                 end
@@ -661,6 +662,9 @@ function StorefrontListItem:onFocus()
         return true
     end
     self.frame.invert = true
+    if self.thumb_widget then
+        self.thumb_widget.invert = true
+    end
     UIManager:setDirty(self.show_parent or self, "fast")
     return true
 end
@@ -670,6 +674,9 @@ function StorefrontListItem:onUnfocus()
         return true
     end
     self.frame.invert = false
+    if self.thumb_widget then
+        self.thumb_widget.invert = false
+    end
     UIManager:setDirty(self.show_parent or self, "fast")
     return true
 end

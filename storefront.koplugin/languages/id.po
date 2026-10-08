@@ -369,6 +369,10 @@ msgstr "Batal"
 msgid "Cancel matching"
 msgstr "Batalkan pencocokan"
 
+# en-hash: 2884f1aa03fc98d7f010cb664b7c26ec
+msgid "Cannot open image: file is missing or empty."
+msgstr "Tidak dapat membuka gambar: file hilang atau kosong."
+
 # en-hash: b73f6a7b52845e67dcb6adbad1b2ca63
 msgid "Cannot read source file."
 msgstr "Gagal membaca berkas sumber."
@@ -541,6 +545,10 @@ msgstr "Cache Wiki dibersihkan (%s dibebaskan)."
 msgid "Cleared all caches (%s freed, %d files)."
 msgstr "Semua cache dibersihkan (%s dibebaskan, %d berkas)."
 
+# en-hash: e018ae9b8bb339082d75a63e446931b8
+msgid "Cleared all caches (%s freed, %d files, %d active thumbnails preserved)."
+msgstr "Semua cache dibersihkan (%s dibebaskan, %d file, %d thumbnail aktif dipertahankan)."
+
 # en-hash: bc65074a011515ebf17e3273a55c8448
 msgid "Cleared ratings cache (%s freed)."
 msgstr "Cache peringkat dibersihkan (%s dikosongkan)."
@@ -548,6 +556,10 @@ msgstr "Cache peringkat dibersihkan (%s dikosongkan)."
 # en-hash: ee67ba4390450a1a5e45ac52eeeb86fc
 msgid "Cleared screensaver thumbnails (%s freed)."
 msgstr "Thumbnail screensaver dibersihkan (%s dibebaskan)."
+
+# en-hash: 8e67c7cb959062dccb18edc479eaefda
+msgid "Cleared screensaver thumbnails (%s freed, %d active preserved)."
+msgstr "Thumbnail screensaver dibersihkan (%s dibebaskan, %d aktif dipertahankan)."
 
 # en-hash: d3d2e617335f08df83599665eef8a418
 msgid "Close"
@@ -2425,6 +2437,10 @@ msgstr "Tampilkan yang perlu pembaruan"
 msgid "Show reading progress banner overlay"
 msgstr "Tampilkan bilah progres membaca"
 
+# en-hash: 299b5b57b7c3e04ff1b4909c2a9437b1
+msgid "Showing thumbnail preview (original image could not be decoded)."
+msgstr "Menampilkan pratinjau thumbnail (gambar asli tidak dapat de-decode)."
+
 # en-hash: 4fceb4bd855ed2529cef174e323c8b8d
 msgid "Shows reading stats, percentage, and chapter progress"
 msgstr "Menampilkan statistik membaca, persentase, dan kemajuan bab"
@@ -2700,6 +2716,10 @@ msgstr "Gagal membaca berkas README"
 # en-hash: 56346840eef36c0a910297ed2be6e6ea
 msgid "Unable to read README. Tap refresh to retry."
 msgstr "Gagal membaca README. Ketuk segarkan untuk mencoba lagi."
+
+# en-hash: e3dadedef9c0853a54f991e387a92c87
+msgid "Unable to render image (file may be corrupted or format unsupported)."
+msgstr "Tidak dapat merender gambar (file mungkin rusak atau format tidak didukung)."
 
 # en-hash: ef46a966a56b65fc4922957b129d6a4c
 msgid "Unable to store match for patch."

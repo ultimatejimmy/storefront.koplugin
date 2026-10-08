@@ -302,4 +302,100 @@ describe("StorefrontScreensaverMgr", function()
             StorefrontScreensaverMgr.setScreensaverMode = orig
         end)
     end)
+
+    describe("countLocalScreensavers", function()
+        it("accurately counts only valid non-hidden image files with size > 0", function()
+            local files = {
+                ["."] = { mode = "directory" },
+                [".."] = { mode = "directory" },
+                ["wallpaper1.jpg"] = { mode = "file", size = 2048 },
+                ["wallpaper2.png"] = { mode = "file", size = 4096 },
+                ["._hidden.png"] = { mode = "file", size = 1024 }, -- Mac resource fork
+                ["empty.jpg"] = { mode = "file", size = 0 }, -- 0-byte corrupt
+                ["not_an_image.txt"] = { mode = "file", size = 100 },
+            }
+            local lfs = {
+                attributes = function(path, key)
+                    if path == "/test/screensavers" then
+                        return { mode = "directory" }
+                    end
+                    local fname = path:match("([^/\\]+)$") or path
+                    return files[fname]
+                end,
+                dir = function(path)
+                    local list = { "wallpaper1.jpg", "wallpaper2.png", "._hidden.png", "empty.jpg", "not_an_image.txt" }
+                    local i = 0
+                    return function()
+                        i = i + 1
+                        return list[i]
+                    end
+                end,
+            }
+            package.loaded["libs/libkoreader-lfs"] = lfs
+
+            local count = StorefrontScreensaverMgr.countLocalScreensavers("/test/screensavers")
+            assert.are.same(2, count)
+        end)
+    end)
+
+    describe("getActiveScreensaverIdentifiers", function()
+        it("returns identifier for single active mode", function()
+            dummy_settings["screensaver_type"] = "document_cover"
+            dummy_settings["screensaver_mode"] = "single"
+            dummy_settings["screensaver_file"] = "/screensavers/forest_view.jpg"
+
+            local ids = StorefrontScreensaverMgr.getActiveScreensaverIdentifiers()
+            assert.is_true(ids["forest_view.jpg"] == true)
+            assert.is_true(ids["forest_view"] == true)
+        end)
+
+        it("returns identifiers for shuffle mode", function()
+            dummy_settings["screensaver_type"] = "random_image"
+            dummy_settings["screensaver_dir"] = "/test/screensavers"
+
+            local lfs = {
+                attributes = function(path, key)
+                    return { mode = "directory" }
+                end,
+                dir = function(path)
+                    local list = { "ocean.png", "mountain.jpg" }
+                    local i = 0
+                    return function()
+                        i = i + 1
+                        return list[i]
+                    end
+                end,
+            }
+            package.loaded["libs/libkoreader-lfs"] = lfs
+
+            local ids = StorefrontScreensaverMgr.getActiveScreensaverIdentifiers()
+            assert.is_true(ids["ocean.png"] == true)
+            assert.is_true(ids["ocean"] == true)
+            assert.is_true(ids["mountain.jpg"] == true)
+            assert.is_true(ids["mountain"] == true)
+        end)
+    end)
+
+    describe("Thumbnail Focus Inversion Protection", function()
+        it("StorefrontListItem double-inverts thumbnail widget to preserve normal contrast on focus", function()
+            local StorefrontListItem = require("storefront_list_item")
+            local item = StorefrontListItem:new{
+                entry = {
+                    title = "Test Screensaver",
+                    callback = function() end,
+                },
+            }
+            item.frame = { invert = false }
+            item.thumb_widget = { invert = false }
+
+            item:onFocus()
+            assert.is_true(item.frame.invert == true)
+            assert.is_true(item.thumb_widget.invert == true)
+
+            item:onUnfocus()
+            assert.is_true(item.frame.invert == false)
+            assert.is_true(item.thumb_widget.invert == false)
+        end)
+    end)
 end)
+

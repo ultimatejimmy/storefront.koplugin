@@ -369,6 +369,10 @@ msgstr "キャンセル"
 msgid "Cancel matching"
 msgstr "照合をキャンセル"
 
+# en-hash: 2884f1aa03fc98d7f010cb664b7c26ec
+msgid "Cannot open image: file is missing or empty."
+msgstr "画像を開けません: ファイルがないか空です。"
+
 # en-hash: b73f6a7b52845e67dcb6adbad1b2ca63
 msgid "Cannot read source file."
 msgstr "ソースファイルを読み込めません。"
@@ -541,6 +545,10 @@ msgstr "Wiki キャッシュを消去しました (%s 解放)。"
 msgid "Cleared all caches (%s freed, %d files)."
 msgstr "すべてのキャッシュを消去しました (%s 解放、%d ファイル)。"
 
+# en-hash: e018ae9b8bb339082d75a63e446931b8
+msgid "Cleared all caches (%s freed, %d files, %d active thumbnails preserved)."
+msgstr "すべてのキャッシュをクリアしました（%s解放、%dファイル、%d個のアクティブなサムネイルを維持）。"
+
 # en-hash: bc65074a011515ebf17e3273a55c8448
 msgid "Cleared ratings cache (%s freed)."
 msgstr "評価キャッシュをクリアしました（%s 解放）。"
@@ -548,6 +556,10 @@ msgstr "評価キャッシュをクリアしました（%s 解放）。"
 # en-hash: ee67ba4390450a1a5e45ac52eeeb86fc
 msgid "Cleared screensaver thumbnails (%s freed)."
 msgstr "スクリーンセーバーのサムネイルを消去しました (%s 解放)。"
+
+# en-hash: 8e67c7cb959062dccb18edc479eaefda
+msgid "Cleared screensaver thumbnails (%s freed, %d active preserved)."
+msgstr "スクリーンセーバーのサムネイルをクリアしました（%s解放、%d個のアクティブを維持）。"
 
 # en-hash: d3d2e617335f08df83599665eef8a418
 msgid "Close"
@@ -2043,7 +2055,7 @@ msgstr "壁紙を評価"
 
 # en-hash: 69c5012837c93f492f74b4433044e009
 msgid "ReaderBackdrop (Community)"
-msgstr "ReaderBackdrop (Community)"
+msgstr "ReaderBackdrop (コミュニティ)"
 
 # en-hash: 172bdcbf3c1298405f3292de568e54f0
 msgid "Reading Passage Specimen"
@@ -2425,6 +2437,10 @@ msgstr "要更新のみ表示"
 msgid "Show reading progress banner overlay"
 msgstr "読書進捗バナーを表示"
 
+# en-hash: 299b5b57b7c3e04ff1b4909c2a9437b1
+msgid "Showing thumbnail preview (original image could not be decoded)."
+msgstr "サムネイルプレビューを表示中（元の画像をデコードできませんでした）。"
+
 # en-hash: 4fceb4bd855ed2529cef174e323c8b8d
 msgid "Shows reading stats, percentage, and chapter progress"
 msgstr "読書統計、パーセンテージ、章の進捗を表示します"
@@ -2539,7 +2555,7 @@ msgstr "ステータス: 更新あり"
 
 # en-hash: 696b31d8a8d2dd5377c9c3951af4b93d
 msgid "Storefront (Curated)"
-msgstr "Storefront (Curated)"
+msgstr "Storefront (キュレーション)"
 
 # en-hash: 7ade5d484a71e39d2c37c5eb72d01b80
 msgid "Storefront cache refreshed."
@@ -2700,6 +2716,10 @@ msgstr "READMEファイルを読み込めません"
 # en-hash: 56346840eef36c0a910297ed2be6e6ea
 msgid "Unable to read README. Tap refresh to retry."
 msgstr "README を読み込めません。再試行するには「更新」をタップしてください。"
+
+# en-hash: e3dadedef9c0853a54f991e387a92c87
+msgid "Unable to render image (file may be corrupted or format unsupported)."
+msgstr "画像を描画できません（ファイルが破損しているか、未対応の形式です）。"
 
 # en-hash: ef46a966a56b65fc4922957b129d6a4c
 msgid "Unable to store match for patch."
