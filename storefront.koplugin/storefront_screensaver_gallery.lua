@@ -410,11 +410,11 @@ function StorefrontScreensaverGallery.show(Storefront, on_close_callback, on_set
                     end
                 end
 
-                -- Strict guard: load verified small thumbnail files (< 3 MB)
+                -- Strict guard: load verified small thumbnail files (< 300 KB)
                 local source_file = nil
                 if thumb_file and lfs and lfs.attributes then
                     local attr_s = lfs.attributes(thumb_file)
-                    if attr_s and attr_s.mode == "file" and (attr_s.size or 0) > 0 and (attr_s.size or 0) < 3 * 1024 * 1024 then
+                    if attr_s and attr_s.mode == "file" and (attr_s.size or 0) > 0 and (attr_s.size or 0) <= 300 * 1024 then
                         source_file = thumb_file
                     end
                 end
@@ -422,7 +422,7 @@ function StorefrontScreensaverGallery.show(Storefront, on_close_callback, on_set
                 -- If no cached thumbnail was found, check if full local file is small enough to preview safely
                 if not source_file and current_item.filepath and lfs and lfs.attributes then
                     local attr_f = lfs.attributes(current_item.filepath)
-                    if attr_f and attr_f.mode == "file" and (attr_f.size or 0) > 0 and (attr_f.size or 0) <= 300 * 1024 then
+                    if attr_f and attr_f.mode == "file" and (attr_f.size or 0) > 0 and (attr_f.size or 0) <= 150 * 1024 then
                         source_file = current_item.filepath
                     end
                 end

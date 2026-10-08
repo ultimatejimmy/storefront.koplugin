@@ -56,14 +56,25 @@ function StorefrontScreensavers.normalizeItem(item)
         item.fullUrl = string.format("%s/%s.%s", BASE_IMAGE_URL, id_str, ext)
     end
     if not item.thumbnailUrl or item.thumbnailUrl == "" then
-        if is_remote and item.fullUrl and item.fullUrl ~= "" then
-            item.thumbnailUrl = item.fullUrl
+        if id_str:match("^rb%-") then
+            item.thumbnailUrl = string.format("%s/thumbnails/rb/%s.jpg", BASE_IMAGE_URL, id_str)
+        elseif is_remote and item.fullUrl and item.fullUrl ~= "" then
+            -- On e-ink devices, never download full-size wallpapers as thumbnails
+            item.thumbnailUrl = nil
         else
             item.thumbnailUrl = string.format("%s/thumbnails/%s.%s", BASE_IMAGE_URL, id_str, ext)
         end
+    elseif item.thumbnailUrl == item.fullUrl then
+        if id_str:match("^rb%-") then
+            item.thumbnailUrl = string.format("%s/thumbnails/rb/%s.jpg", BASE_IMAGE_URL, id_str)
+        else
+            item.thumbnailUrl = nil
+        end
     end
     if not item.pluginThumbnailUrl or item.pluginThumbnailUrl == "" then
-        if is_remote and item.thumbnailUrl and item.thumbnailUrl ~= "" then
+        if id_str:match("^rb%-") then
+            item.pluginThumbnailUrl = item.thumbnailUrl
+        elseif is_remote and item.thumbnailUrl and item.thumbnailUrl ~= "" then
             item.pluginThumbnailUrl = item.thumbnailUrl
         else
             item.pluginThumbnailUrl = string.format("%s/thumbnails/plugin/%s.%s", BASE_IMAGE_URL, id_str, ext)
@@ -492,11 +503,15 @@ end
 
 function StorefrontScreensavers.getThumbnailPath(item)
     local cache_dir = DataStorage:getDataDir() .. "/cache/storefront_thumbs"
+    local id_str = tostring(item.id or "")
+    if id_str:match("^rb%-") then
+        return cache_dir .. "/" .. id_str .. ".jpg", false
+    end
     local cat_str = type(item.category) == "table" and table.concat(item.category, " ") or tostring(item.category or "")
     local is_transparent = cat_str:lower():find("transparent", 1, true) ~= nil
     local raw_url = tostring(item.thumbnailUrl or ""):lower()
     local ext = (item.ext == "png" or is_transparent or raw_url:find("%.png")) and ".png" or ".jpg"
-    return cache_dir .. "/" .. tostring(item.id) .. ext, is_transparent
+    return cache_dir .. "/" .. id_str .. ext, is_transparent
 end
 
 function StorefrontScreensavers.fetchThumbnail(item, callback)
@@ -531,16 +546,20 @@ function StorefrontScreensavers.fetchThumbnail(item, callback)
     end
 
     if ok and code == 200 then
-        local tmp_path = thumb_path .. ".tmp"
-        local file = io.open(tmp_path, "wb")
-        if file then
-            file:write(table.concat(img_data))
-            file:close()
-            os.remove(thumb_path)
-            local ok_ren = os.rename(tmp_path, thumb_path)
-            if ok_ren then
-                if callback then callback(thumb_path) end
-                return thumb_path
+        local raw_bytes = table.concat(img_data)
+        -- Strict guard: thumbnails from CDN should be < 250 KB. Never save large wallpaper downloads as thumbnails!
+        if #raw_bytes > 0 and #raw_bytes <= 250 * 1024 then
+            local tmp_path = thumb_path .. ".tmp"
+            local file = io.open(tmp_path, "wb")
+            if file then
+                file:write(raw_bytes)
+                file:close()
+                os.remove(thumb_path)
+                local ok_ren = os.rename(tmp_path, thumb_path)
+                if ok_ren then
+                    if callback then callback(thumb_path) end
+                    return thumb_path
+                end
             end
         end
     end
@@ -588,15 +607,18 @@ function StorefrontScreensavers.fetchThumbnailAsync(item)
                 ok_req, code = requestWithRedirects(item.thumbnailUrl, sink_fn)
             end
             if ok_req and code == 200 then
-                local tmp_path = thumb_path .. ".tmp"
-                local file = io.open(tmp_path, "wb")
-                if file then
-                    file:write(table.concat(img_data))
-                    file:close()
-                    os.remove(thumb_path)
-                    local ok_ren = os.rename(tmp_path, thumb_path)
-                    if ok_ren then
-                        return thumb_path
+                local raw_bytes = table.concat(img_data)
+                if #raw_bytes > 0 and #raw_bytes <= 250 * 1024 then
+                    local tmp_path = thumb_path .. ".tmp"
+                    local file = io.open(tmp_path, "wb")
+                    if file then
+                        file:write(raw_bytes)
+                        file:close()
+                        os.remove(thumb_path)
+                        local ok_ren = os.rename(tmp_path, thumb_path)
+                        if ok_ren then
+                            return thumb_path
+                        end
                     end
                 end
             end
@@ -805,6 +827,15 @@ function StorefrontScreensavers.createCoverImageWidget(file_path, target_w, targ
     local Blitbuffer  = require("ffi/blitbuffer")
 
     if not file_path or not target_w or not target_h then return nil end
+
+    local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
+    if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
+    if ok_lfs and lfs and lfs.attributes then
+        local attr = lfs.attributes(file_path)
+        if not attr or attr.mode ~= "file" or (attr.size or 0) <= 0 or (attr.size or 0) > 300 * 1024 then
+            return nil
+        end
+    end
 
     local ok, orig_bb = pcall(function()
         return RenderImage:renderImageFile(file_path, false)
