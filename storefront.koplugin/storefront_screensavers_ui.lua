@@ -867,21 +867,46 @@ function StorefrontScreensavers.createCoverImageWidget(file_path, target_w, targ
     local crop_x = math.max(0, math.floor((scaled_bb:getWidth() - target_w) / 2))
     local crop_y = math.max(0, math.floor((scaled_bb:getHeight() - target_h) / 2))
 
-    -- Detect whether the source buffer carries an alpha channel.
+    -- Detect whether the display supports color (e.g. Kobo Colour, Android, desktop emulator)
+    local is_color_screen = false
+    local ok_dev, Device = pcall(require, "device")
+    if ok_dev and Device and Device.hasColorScreen then
+        local ok_has, has_color = pcall(function() return Device:hasColorScreen() end)
+        if ok_has and has_color then is_color_screen = true end
+    end
+    local Screen_mod = rawget(_G, "Screen")
+    if not is_color_screen and Screen_mod and Screen_mod.isColorScreen then
+        local ok_sc, sc_col = pcall(function()
+            if type(Screen_mod.isColorScreen) == "function" then
+                return Screen_mod:isColorScreen()
+            else
+                return Screen_mod.isColorScreen == true
+            end
+        end)
+        if ok_sc and sc_col then is_color_screen = true end
+    end
+    if not is_color_screen and Screen_mod and Screen_mod.bb and Screen_mod.bb.getType then
+        local ok_t, b_type = pcall(function() return Screen_mod.bb:getType() end)
+        if ok_t and b_type == Blitbuffer.TYPE_BBRGB32 then is_color_screen = true end
+    end
+
+    -- Detect whether the source buffer carries an alpha channel or is color.
     -- TYPE_BB8A=2 (8-bit gray + alpha), TYPE_BBRGB32=5 (RGB + alpha)
     local src_type = (scaled_bb.getType and scaled_bb:getType()) or 0
     local has_alpha = (src_type == 2 or src_type == 5)
+    local is_color = is_color_screen and (src_type == (Blitbuffer.TYPE_BBRGB32 or 5) or src_type == 5)
 
-    -- Always use a plain 8-bit grayscale destination (native e-ink format)
-    local dest_bb = Blitbuffer.new(target_w, target_h, Blitbuffer.TYPE_BB8 or 1)
-    pcall(function() dest_bb:fill(Blitbuffer.COLOR_WHITE) end)
+    -- On color displays with color sources, allocate RGB32; on monochrome e-ink, allocate BB8 (1 byte/pixel)
+    local dest_type = is_color and (Blitbuffer.TYPE_BBRGB32 or 5) or (Blitbuffer.TYPE_BB8 or 1)
+    local dest_bb = Blitbuffer.new(target_w, target_h, dest_type)
+    local white_color = is_color and (Blitbuffer.ColorRGB32 and Blitbuffer.ColorRGB32(0xFF, 0xFF, 0xFF) or Blitbuffer.COLOR_WHITE) or Blitbuffer.COLOR_WHITE
+    pcall(function() dest_bb:fill(white_color) end)
 
     if has_alpha then
         -- Draw a checkerboard pattern so transparent areas are visually distinct.
-        -- Two grays that are subtle on e-ink: white (0xFF) and light-gray (0xDD).
         local tile = 6  -- checkerboard tile size in pixels
-        local color_a = Blitbuffer.COLOR_WHITE
-        local color_b = Blitbuffer.COLOR_GRAY_D  -- 0xDD, a soft light gray
+        local color_a = white_color
+        local color_b = is_color and (Blitbuffer.ColorRGB32 and Blitbuffer.ColorRGB32(0xDD, 0xDD, 0xDD) or Blitbuffer.COLOR_GRAY_D) or Blitbuffer.COLOR_GRAY_D
         pcall(function()
             local y = 0
             while y < target_h do
