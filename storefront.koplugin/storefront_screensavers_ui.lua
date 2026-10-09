@@ -853,10 +853,10 @@ function StorefrontScreensavers.createCoverImageWidget(file_path, target_w, targ
         return nil
     end
 
-    -- Scale with cover mode (fill target box edge-to-edge, center-cropped)
-    local scale = math.max(target_w / orig_w, target_h / orig_h)
-    local scaled_w = math.max(1, math.ceil(orig_w * scale))
-    local scaled_h = math.max(1, math.ceil(orig_h * scale))
+    -- Scale with aspect-fit mode (preserve full artwork, zero cropping)
+    local scale = math.min(target_w / orig_w, target_h / orig_h)
+    local scaled_w = math.max(1, math.floor(orig_w * scale))
+    local scaled_h = math.max(1, math.floor(orig_h * scale))
 
     local ok_scale, scaled_bb = pcall(function()
         return RenderImage:scaleBlitBuffer(orig_bb, scaled_w, scaled_h, false)
@@ -864,8 +864,8 @@ function StorefrontScreensavers.createCoverImageWidget(file_path, target_w, targ
     if orig_bb.free then pcall(function() orig_bb:free() end) end
     if not ok_scale or not scaled_bb then return nil end
 
-    local crop_x = math.max(0, math.floor((scaled_bb:getWidth() - target_w) / 2))
-    local crop_y = math.max(0, math.floor((scaled_bb:getHeight() - target_h) / 2))
+    local dest_x = math.max(0, math.floor((target_w - scaled_w) / 2))
+    local dest_y = math.max(0, math.floor((target_h - scaled_h) / 2))
 
     -- Detect whether the display supports color (e.g. Kobo Colour, Android, desktop emulator)
     local is_color_screen = false
@@ -891,10 +891,13 @@ function StorefrontScreensavers.createCoverImageWidget(file_path, target_w, targ
     end
 
     -- Detect whether the source buffer carries an alpha channel or is color.
-    -- TYPE_BB8A=2 (8-bit gray + alpha), TYPE_BBRGB32=5 (RGB + alpha)
+    -- TYPE_BB8=1, TYPE_BB8A=2, TYPE_BBRGB16=3, TYPE_BBRGB24=4, TYPE_BBRGB32=5
     local src_type = (scaled_bb.getType and scaled_bb:getType()) or 0
     local has_alpha = (src_type == 2 or src_type == 5)
-    local is_color = is_color_screen and (src_type == (Blitbuffer.TYPE_BBRGB32 or 5) or src_type == 5)
+    local is_src_color = (src_type == 3 or src_type == 4 or src_type == 5 or
+                          src_type == (Blitbuffer.TYPE_BBRGB24 or 4) or
+                          src_type == (Blitbuffer.TYPE_BBRGB32 or 5))
+    local is_color = is_color_screen and is_src_color
 
     -- On color displays with color sources, allocate RGB32; on monochrome e-ink, allocate BB8 (1 byte/pixel)
     local dest_type = is_color and (Blitbuffer.TYPE_BBRGB32 or 5) or (Blitbuffer.TYPE_BB8 or 1)
@@ -926,15 +929,15 @@ function StorefrontScreensavers.createCoverImageWidget(file_path, target_w, targ
         -- Alpha-composite the image over the checkerboard
         pcall(function()
             if dest_bb.alphablitFrom then
-                dest_bb:alphablitFrom(scaled_bb, 0, 0, crop_x, crop_y, target_w, target_h)
+                dest_bb:alphablitFrom(scaled_bb, dest_x, dest_y, 0, 0, scaled_w, scaled_h)
             else
-                dest_bb:blitFrom(scaled_bb, 0, 0, crop_x, crop_y, target_w, target_h)
+                dest_bb:blitFrom(scaled_bb, dest_x, dest_y, 0, 0, scaled_w, scaled_h)
             end
         end)
     else
-        -- Fully opaque source — plain flat copy is faster
+        -- Fully opaque source — plain flat copy
         pcall(function()
-            dest_bb:blitFrom(scaled_bb, 0, 0, crop_x, crop_y, target_w, target_h)
+            dest_bb:blitFrom(scaled_bb, dest_x, dest_y, 0, 0, scaled_w, scaled_h)
         end)
     end
 
