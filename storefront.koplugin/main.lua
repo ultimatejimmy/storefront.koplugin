@@ -108,6 +108,7 @@ local _session_bg_checks_done = false
 local _catalog_retry_timer_fn = nil
 local _catalog_show_timer_fn = nil
 local _notification_timer_fn = nil
+local _screensaver_warmup_timer_fn = nil
 
 local PluginPaths = require("storefront_plugin_paths")
 local PATCHES_ROOT = DataStorage:getDataDir() .. "/patches"
@@ -5009,7 +5010,7 @@ function Storefront:promptPatchAction(repo, patch)
 end
 
 function StorefrontBrowserDialog:resetScroll()
-    if self.list_scroller then
+    if self.list_scroller and self.list_scroller.setScrolledOffset then
         self.list_scroller:setScrolledOffset({ x = 0, y = 0 })
     end
 end
@@ -7667,6 +7668,22 @@ function Storefront:filterAndSortScreensavers(catalog, opts)
     local search_terms = extractSearchTerms(raw_search)
     local owner_term   = normalizedLower(raw_owner)
 
+    local both_sources_active = (active_sources.storefront ~= false and active_sources.readerbackdrop ~= false)
+    local is_category_empty = (not ss_cat or ss_cat == "" or ss_cat == "all") and (not ss_cats or ss_cats["all"] == true or not next(ss_cats))
+
+    local ok_ratings, StorefrontRatings = pcall(require, "storefront_ratings")
+    local liveRatings = (ok_ratings and StorefrontRatings and StorefrontRatings.liveRatings) or nil
+    local has_live = liveRatings and (next(liveRatings) ~= nil)
+
+    if ss_sort == "featured" and both_sources_active and is_category_empty and (not search_terms or #search_terms == 0) and owner_term == "" then
+        local copy = {}
+        for idx, entry in ipairs(catalog) do
+            entry._catalog_index = entry._catalog_index or idx
+            copy[idx] = entry
+        end
+        return copy
+    end
+
     local filtered = {}
     for cat_idx, entry in ipairs(catalog) do
         entry._catalog_index = entry._catalog_index or cat_idx
@@ -7959,11 +7976,10 @@ function Storefront:filterAndSortScreensavers(catalog, opts)
 end
 
 function Storefront:warmupScreensaversCache()
+    if not self.browser_menu then return end
     if self._filtered_screensavers_cache then return end
     local StorefrontUtils = require("storefront_utils")
     if StorefrontUtils.isLowMemory and StorefrontUtils.isLowMemory() then return end
-    local Device = require("device")
-    if Device.isKindle and Device:isKindle() then return end
 
     if not self.screensavers_cache then
         local ok_ss, StorefrontScreensavers = pcall(require, "storefront_screensavers_ui")
@@ -8013,6 +8029,14 @@ end
 
 function Storefront:buildScreensaverEntries(available_list_height, available_list_width)
     local StorefrontScreensavers = require("storefront_screensavers_ui")
+    local StorefrontUtils = require("storefront_utils")
+
+    -- Emergency memory guard for extreme low-memory situations (< 6MB available)
+    if StorefrontUtils.isLowMemory and StorefrontUtils.isLowMemory(6 * 1024) then
+        self.screensavers_cache = nil
+        self._filtered_screensavers_cache = nil
+        collectgarbage("step", 200)
+    end
 
     -- Fetch catalog (cached after first call).
     if not self.screensavers_cache then
@@ -8139,6 +8163,9 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
     local _ss_local_asset_cache = {}
 
     local function makeCard(entry)
+        if StorefrontScreensavers and StorefrontScreensavers.normalizeItem then
+            StorefrontScreensavers.normalizeItem(entry)
+        end
         -- Thumbnail image (or grey placeholder)
         local thumb_file = nil
         pcall(function()
@@ -8764,7 +8791,8 @@ function Storefront:dismissProgressMessage(target)
     end
 end
 
-function Storefront:closeBrowserMenu()
+function Storefront:closeBrowserMenu(opts)
+    opts = opts or {}
     if _catalog_show_timer_fn then
         UIManager:unschedule(_catalog_show_timer_fn)
         _catalog_show_timer_fn = nil
@@ -8773,20 +8801,26 @@ function Storefront:closeBrowserMenu()
         UIManager:unschedule(_catalog_retry_timer_fn)
         _catalog_retry_timer_fn = nil
     end
+    if _screensaver_warmup_timer_fn then
+        UIManager:unschedule(_screensaver_warmup_timer_fn)
+        _screensaver_warmup_timer_fn = nil
+    end
     self:dismissProgressMessage()
     if self.browser_menu then
         UIManager:close(self.browser_menu)
         self.browser_menu = nil
     end
-    self.screensavers_cache = nil
-    self._filtered_screensavers_cache = nil
-    pcall(function()
-        local ok_ss, StorefrontScreensavers = pcall(require, "storefront_screensavers_ui")
-        if ok_ss and StorefrontScreensavers and StorefrontScreensavers.invalidateMemCache then
-            StorefrontScreensavers.invalidateMemCache()
-        end
-    end)
-    collectgarbage("step", 200)
+    if not opts.keep_screensaver_cache then
+        self.screensavers_cache = nil
+        self._filtered_screensavers_cache = nil
+        pcall(function()
+            local ok_ss, StorefrontScreensavers = pcall(require, "storefront_screensavers_ui")
+            if ok_ss and StorefrontScreensavers and StorefrontScreensavers.invalidateMemCache then
+                StorefrontScreensavers.invalidateMemCache()
+            end
+        end)
+        collectgarbage("step", 200)
+    end
 end
 
 function Storefront:resetBrowserScrollState()
@@ -8829,6 +8863,384 @@ function Storefront:reopenBrowser(kind, callback)
     end)
 end
 
+function Storefront:buildBrowserToolbar(current_tab)
+    self:ensureBrowserState()
+    local is_catalog_search_active = util.trim(self.browser_state and self.browser_state.search_text or "") ~= ""
+    local raw_installed_st = (self.installed_state and self.installed_state.search_text ~= "" and self.installed_state.search_text) or (self.browser_state and self.browser_state.search_text) or ""
+    local is_installed_search_active = util.trim(raw_installed_st) ~= ""
+    local is_ss_filter_active = self:hasActiveFilters("Screensavers")
+
+    local toolbar_buttons
+    local show_plugins_bar = (current_tab == "Plugins" and ((self.browser_state and self.browser_state.show_filter_bar_plugins == true) or is_catalog_search_active))
+    local show_patches_bar = (current_tab == "Patches" and ((self.browser_state and self.browser_state.show_filter_bar_patches == true) or is_catalog_search_active))
+    local show_fonts_bar = (current_tab == "Fonts" and ((self.browser_state and self.browser_state.show_filter_bar_fonts == true) or is_catalog_search_active))
+    if show_plugins_bar or show_patches_bar or show_fonts_bar then
+        toolbar_buttons = {}
+        if (self.browser_state.search_text or "") ~= "" then
+            table.insert(toolbar_buttons, {
+                id = "search",
+                text = _("Search: ") .. self.browser_state.search_text,
+                callback = function() self:showFilterDialog() end
+            })
+        end
+        if (self.browser_state.owner or "") ~= "" then
+            table.insert(toolbar_buttons, {
+                id = "owner",
+                text = _("Owner: ") .. self.browser_state.owner,
+                callback = function() self:showFilterDialog() end
+            })
+        end
+        if current_tab == "Fonts" and self.browser_state.font_category and self.browser_state.font_category ~= "all" then
+            table.insert(toolbar_buttons, {
+                id = "font_style",
+                text = _("Style: ") .. self.browser_state.font_category:lower(),
+                callback = function() self:showCatalogFilter() end
+            })
+        end
+        if (self.browser_state.min_stars or 0) > 0 then
+            table.insert(toolbar_buttons, {
+                id = "stars",
+                text = "★ " .. tostring(self.browser_state.min_stars) .. "+",
+                callback = function() self:showCatalogFilter() end
+            })
+        end
+        local sort_opt = self:getSortOption(self.browser_state.sort_mode)
+        table.insert(toolbar_buttons, {
+            id = "sort",
+            text = sort_opt and sort_opt.summary or _("Sort"),
+            callback = function() self:browserAdvanceSort() end
+        })
+        table.insert(toolbar_buttons, {
+            id = "filter_dialog",
+            text = _("Filter..."),
+            callback = function() self:showCatalogFilter() end
+        })
+    elseif current_tab == "Updates" then
+        toolbar_buttons = {}
+        table.insert(toolbar_buttons, {
+            id = "check_updates",
+            text = _("Check Updates"),
+            text_font_bold = true,
+            callback = function()
+                local installed_plugins = listInstalledPlugins()
+                local records = getInstallRecordsMap()
+                local plugin_repos = {}
+                for _, plugin in ipairs(installed_plugins) do
+                    local record = records[plugin.dirname]
+                    if record and record.owner and record.repo then
+                        record.dirname = plugin.dirname
+                        table.insert(plugin_repos, record)
+                    end
+                end
+                if #plugin_repos > 0 then
+                    self:_checkAllUpdatesInternal(plugin_repos)
+                else
+                    UIManager:show(InfoMessage:new{ text = _("No tracked plugins to check."), timeout = 4 })
+                end
+            end,
+        })
+        table.insert(toolbar_buttons, {
+            id = "update_all",
+            text = _("Update All"),
+            right_align = true,
+            is_primary = true,
+            callback = function() self:updateAllAvailable() end,
+        })
+    elseif current_tab == "Installed" then
+        self:ensureInstalledState()
+        if (self.browser_state and self.browser_state.show_filter_bar_installed ~= false) or is_installed_search_active then
+            toolbar_buttons = {}
+            local effective_installed_search = util.trim((self.installed_state.search_text and self.installed_state.search_text ~= "") and self.installed_state.search_text or (self.browser_state and self.browser_state.search_text or ""))
+            if effective_installed_search ~= "" then
+                table.insert(toolbar_buttons, {
+                    id = "search",
+                    text = _("Search: ") .. effective_installed_search,
+                    callback = function() self:showFilterDialog() end
+                })
+            end
+            if (self.browser_state and (self.browser_state.owner or "") ~= "") then
+                table.insert(toolbar_buttons, {
+                    id = "owner",
+                    text = _("Owner: ") .. self.browser_state.owner,
+                    callback = function() self:showFilterDialog() end
+                })
+            end
+            local type_label = _("All Types")
+            if self.installed_state.filter_type == "plugin" then type_label = _("Plugins")
+            elseif self.installed_state.filter_type == "patch" then type_label = _("Patches")
+            elseif self.installed_state.filter_type == "font" then type_label = _("Fonts")
+            elseif self.installed_state.filter_type == "screensaver" then type_label = _("Screensavers") end
+            table.insert(toolbar_buttons, {
+                id = "type",
+                text = type_label,
+                callback = function() self:showInstalledFilter() end
+            })
+            if self.installed_state.filter_default and self.installed_state.filter_default ~= "all" then
+                local def_label = (self.installed_state.filter_default == "default_only") and _("Default") or _("User Installed")
+                table.insert(toolbar_buttons, {
+                    id = "origin",
+                    text = def_label,
+                    callback = function() self:showInstalledFilter() end
+                })
+            end
+            if self.installed_state.filter_status and self.installed_state.filter_status ~= "all" then
+                local stat_label = (self.installed_state.filter_status == "enabled") and _("Enabled") or _("Disabled")
+                table.insert(toolbar_buttons, {
+                    id = "status",
+                    text = stat_label,
+                    callback = function() self:showInstalledFilter() end
+                })
+            end
+            local sort_map = {
+                name_asc = _("Sort: A-Z"),
+                name_desc = _("Sort: Z-A"),
+                date_desc = _("Sort: Updated"),
+                date_asc = _("Sort: Oldest"),
+                date = _("Sort: Updated"),
+                type = _("Sort: Type"),
+                status = _("Sort: Status"),
+            }
+            table.insert(toolbar_buttons, {
+                id = "sort",
+                text = sort_map[self.installed_state.sort_mode] or _("Sort"),
+                callback = function() self:browserAdvanceSort() end
+            })
+            table.insert(toolbar_buttons, {
+                id = "filter_dialog",
+                text = _("Filter..."),
+                callback = function() self:showInstalledFilter() end
+            })
+            table.insert(toolbar_buttons, {
+                id = "blueprints",
+                text = _("Blueprint"),
+                callback = function()
+                    UIManager:nextTick(function()
+                        local ok_bp, BlueprintUI = pcall(require, "storefront_blueprint_ui")
+                        if ok_bp and BlueprintUI and BlueprintUI.showBlueprintsMenu then
+                            BlueprintUI.showBlueprintsMenu(self)
+                        end
+                    end)
+                end
+            })
+        end
+    elseif current_tab == "Screensavers" then
+        is_ss_filter_active = self:hasActiveFilters("Screensavers")
+        if (self.browser_state and self.browser_state.show_filter_bar_screensavers ~= false) or is_ss_filter_active then
+            toolbar_buttons = {}
+            local effective_ss_search = util.trim((self.browser_state.search_text and self.browser_state.search_text ~= "") and self.browser_state.search_text or (self.browser_state.screensaver_search or ""))
+            local effective_ss_owner  = util.trim(self.browser_state.owner or "")
+            local ss_cat  = self.browser_state.screensaver_category or ""
+            local ss_cats = self.browser_state.screensaver_categories
+            local ss_sort = self.browser_state.screensaver_sort or "featured"
+            if ss_sort == "az" or ss_sort == "za" then ss_sort = "featured" end
+
+            if effective_ss_search ~= "" then
+                table.insert(toolbar_buttons, {
+                    id = "ss_srch",
+                    text = _("Search: ") .. effective_ss_search,
+                    callback = function() self:showFilterDialog() end
+                })
+            end
+            if effective_ss_owner ~= "" then
+                table.insert(toolbar_buttons, {
+                    id = "ss_owner",
+                    text = _("Owner: ") .. effective_ss_owner,
+                    callback = function() self:showFilterDialog() end
+                })
+            end
+
+            local active_cat_names = {}
+            if type(ss_cats) == "table" and next(ss_cats) and not ss_cats["all"] then
+                for k, v in pairs(ss_cats) do
+                    if v and k ~= "all" then
+                        local c_name = k:sub(1,1):upper() .. k:sub(2)
+                        if k == "scifi" or k == "sci-fi" then c_name = "Sci-Fi" end
+                        if k == "fine art" or k == "art" then c_name = "Art" end
+                        if k == "pop culture" then c_name = "Pop Culture" end
+                        local already_present = false
+                        for _, existing_c in ipairs(active_cat_names) do
+                            if existing_c == c_name then
+                                already_present = true
+                                break
+                            end
+                        end
+                        if not already_present then
+                            table.insert(active_cat_names, c_name)
+                        end
+                    end
+                end
+                table.sort(active_cat_names)
+            elseif ss_cat ~= "" and ss_cat ~= "all" then
+                table.insert(active_cat_names, ss_cat:sub(1,1):upper() .. ss_cat:sub(2))
+            end
+
+            if #active_cat_names > 0 then
+                local cat_str = #active_cat_names == 1 and active_cat_names[1] or string.format(_("%d Categories"), #active_cat_names)
+                table.insert(toolbar_buttons, {
+                    id = "ss_cat",
+                    text = _("Category: ") .. cat_str,
+                    callback = function() self:showScreensaverFilter() end
+                })
+            end
+            local sort_labels = {
+                featured  = _("Featured"),
+                downloads = _("Most Downloaded"),
+                recent    = _("Recently Added"),
+                popular   = _("Most Popular"),
+            }
+            local sort_cycle = { "featured", "downloads", "recent", "popular" }
+            table.insert(toolbar_buttons, {
+                id = "ss_sort",
+                text = sort_labels[ss_sort] or _("Featured"),
+                callback = function()
+                    local next_sort = "featured"
+                    for idx, s in ipairs(sort_cycle) do
+                        if ss_sort == s then
+                            next_sort = sort_cycle[(idx % #sort_cycle) + 1]
+                            break
+                        end
+                    end
+                    self.browser_state.screensaver_sort = next_sort
+                    self.browser_state.page = 1
+                    if self.browser_menu and self.browser_menu.updateTabContent then
+                        self:updateBrowserTabInPlace("Screensavers", 1)
+                    else
+                        self:reopenBrowser()
+                    end
+                end
+            })
+            table.insert(toolbar_buttons, {
+                id = "ss_filter",
+                text = _("Filter..."),
+                callback = function() self:showScreensaverFilter() end
+            })
+            table.insert(toolbar_buttons, {
+                id = "ss_settings",
+                text = _("⚙ Settings"),
+                callback = function()
+                    local StorefrontScreensaverConfig = require("storefront_screensaver_config")
+                    StorefrontScreensaverConfig.show(self, function()
+                        if self.browser_menu and self.browser_menu.updateTabContent then
+                            self:updateBrowserTabInPlace("Screensavers", self.browser_state.page or 1)
+                        else
+                            self:reopenBrowser()
+                        end
+                    end)
+                end
+            })
+        end
+    end
+    return toolbar_buttons
+end
+
+function Storefront:getBrowserUpdatesCount()
+    local current_generation = InstallStore.getGeneration and InstallStore.getGeneration() or 0
+    local remote_info_key = self.updates_state and self.updates_state.last_checked
+    local patch_remote_info_key = self.patch_updates_state and self.patch_updates_state.last_checked
+
+    if not self._cached_updates_count
+       or self._cached_updates_gen ~= current_generation
+       or self._cached_remote_info ~= remote_info_key
+       or self._cached_patch_remote_info ~= patch_remote_info_key then
+
+        pcall(function()
+            local p_sum = self:collectUpdateSummary()
+            local pt_sum = self:collectPatchUpdateSummary()
+            self._cached_updates_count = (p_sum.updates or 0) + (pt_sum.updates or 0)
+        end)
+        self._cached_updates_gen = current_generation
+        self._cached_remote_info = remote_info_key
+        self._cached_patch_remote_info = patch_remote_info_key
+    end
+    return self._cached_updates_count or 0
+end
+
+function Storefront:updateBrowserTabInPlace(tab_name, target_page, initial_focus)
+    if not self.browser_menu or not self.browser_menu.updateTabContent then
+        self.browser_state.tab = tab_name
+        self.browser_state.kind = (tab_name == "Patches" and "patch") or (tab_name == "Fonts" and "font") or (tab_name == "Screensavers" and "screensaver") or "plugin"
+        self.browser_state.page = target_page or 1
+        self.browser_state.scroll_offset = nil
+        self:saveBrowserState(true)
+        self:resetBrowserScrollState()
+        self:reopenBrowser()
+        return
+    end
+
+    local prev_tab = self.browser_state.tab
+    target_page = target_page or 1
+    if tab_name == prev_tab and (self.browser_state.page or 1) == target_page and not initial_focus then
+        return
+    end
+
+    self.browser_state.tab = tab_name
+    self.browser_state.kind = (tab_name == "Patches" and "patch") or (tab_name == "Fonts" and "font") or (tab_name == "Screensavers" and "screensaver") or "plugin"
+    self.browser_state.page = target_page
+    self.browser_state.scroll_offset = nil
+
+    if tab_name ~= prev_tab then
+        self:resetFiltersForRefresh()
+        -- Purge screensavers cache on tab leave ONLY if memory is critically low (< 6MB)
+        local StorefrontUtils = require("storefront_utils")
+        if prev_tab == "Screensavers" and StorefrontUtils.isLowMemory and StorefrontUtils.isLowMemory(6 * 1024) then
+            self.screensavers_cache = nil
+            self._filtered_screensavers_cache = nil
+            pcall(function()
+                local ok_ss, StorefrontScreensavers = pcall(require, "storefront_screensavers_ui")
+                if ok_ss and StorefrontScreensavers and StorefrontScreensavers.invalidateMemCache then
+                    StorefrontScreensavers.invalidateMemCache()
+                end
+            end)
+            collectgarbage("step", 200)
+        end
+    end
+
+    self:saveBrowserState(true)
+    self:resetBrowserScrollState()
+
+    local current_tab = self.browser_state.tab
+    local toolbar_buttons = self:buildBrowserToolbar(current_tab)
+    local updates_count = self:getBrowserUpdatesCount()
+
+    local is_catalog_search_active = util.trim(self.browser_state and self.browser_state.search_text or "") ~= ""
+    local raw_installed_st = (self.installed_state and self.installed_state.search_text ~= "" and self.installed_state.search_text) or (self.browser_state and self.browser_state.search_text) or ""
+    local is_installed_search_active = util.trim(raw_installed_st) ~= ""
+    local is_ss_filter_active = self:hasActiveFilters("Screensavers")
+
+    local active_search_text = ""
+    if current_tab == "Installed" then
+        active_search_text = util.trim(raw_installed_st)
+    elseif current_tab ~= "Updates" then
+        active_search_text = util.trim(self.browser_state.search_text or "")
+    end
+
+    local available_list_height, available_list_width = StorefrontBrowserDialog:measureListViewport{
+        title = "Storefront",
+        toolbar_buttons = toolbar_buttons,
+        current_tab = current_tab,
+        updates_count = updates_count,
+        show_filter_bar_plugins = (self.browser_state and self.browser_state.show_filter_bar_plugins == true) or is_catalog_search_active,
+        show_filter_bar_patches = (self.browser_state and self.browser_state.show_filter_bar_patches == true) or is_catalog_search_active,
+        show_filter_bar_fonts = (self.browser_state and self.browser_state.show_filter_bar_fonts == true) or is_catalog_search_active,
+        show_filter_bar_screensavers = (self.browser_state and self.browser_state.show_filter_bar_screensavers ~= false) or is_ss_filter_active,
+        show_filter_bar_installed = (self.browser_state and self.browser_state.show_filter_bar_installed ~= false) or is_installed_search_active,
+    }
+
+    local items, total_pages = self:buildBrowserEntries(available_list_height, available_list_width)
+
+    self.browser_menu:updateTabContent{
+        Storefront = self,
+        current_tab = current_tab,
+        page = self.browser_state.page,
+        total_pages = total_pages,
+        items = items,
+        toolbar_buttons = toolbar_buttons,
+        updates_count = updates_count,
+        active_search_text = active_search_text,
+        initial_focus = initial_focus,
+    }
+end
+
 -- Browser actions, shared by the gear menu, the Menu hardware key and the
 -- r/f/s/t hotkeys. Kept out of the list body so they are reachable from any
 -- scroll position / page without scrolling back to the top.
@@ -8848,16 +9260,20 @@ function Storefront:browserSwitchTab(tab_name)
             tab_name = "Plugins"
         end
     end
-    self.browser_state.tab = tab_name
-    self.browser_state.kind = (tab_name == "Patches" and "patch") or (tab_name == "Fonts" and "font") or (tab_name == "Screensavers" and "screensaver") or "plugin"
-    self.browser_state.page = 1
-    self.browser_state.scroll_offset = nil
-    self:resetFiltersForRefresh()
-    self:saveBrowserState(true)
-    self:resetBrowserScrollState()
-    self:closeBrowserMenu()
-    self._browser_refresh_mode_hint = "partial"
-    self:showBrowser()
+    if self.browser_menu and self.browser_menu.updateTabContent then
+        self:updateBrowserTabInPlace(tab_name, 1)
+    else
+        self.browser_state.tab = tab_name
+        self.browser_state.kind = (tab_name == "Patches" and "patch") or (tab_name == "Fonts" and "font") or (tab_name == "Screensavers" and "screensaver") or "plugin"
+        self.browser_state.page = 1
+        self.browser_state.scroll_offset = nil
+        self:resetFiltersForRefresh()
+        self:saveBrowserState(true)
+        self:resetBrowserScrollState()
+        self:closeBrowserMenu()
+        self._browser_refresh_mode_hint = "partial"
+        self:showBrowser()
+    end
 end
 
 function Storefront:browserRefresh()
@@ -9064,7 +9480,7 @@ function Storefront:showBrowser(kind)
     self:ensurePatchUpdatesState()
     self:ensureInstalledState()
     if self.browser_menu then
-        self:closeBrowserMenu()
+        self:closeBrowserMenu({ keep_screensaver_cache = (self.browser_state and self.browser_state.tab == "Screensavers") })
     end
     local current_tab = self.browser_state.tab or "Plugins"
     
@@ -9077,15 +9493,20 @@ function Storefront:showBrowser(kind)
         end)
     end
 
-    -- Pre-warm screensavers catalog and default sort in background idle time (skip on Kindle and low-memory devices)
-    local Device = require("device")
-    local is_kindle = Device.isKindle and Device:isKindle()
+    -- Pre-warm screensavers catalog and default sort in background idle time (skip on low-memory devices)
     local StorefrontUtils = require("storefront_utils")
     local is_low_mem = StorefrontUtils.isLowMemory and StorefrontUtils.isLowMemory()
-    if not is_kindle and not is_low_mem and not self._filtered_screensavers_cache and current_tab ~= "Screensavers" then
-        UIManager:scheduleIn(0.2, function()
+    if _screensaver_warmup_timer_fn then
+        UIManager:unschedule(_screensaver_warmup_timer_fn)
+        _screensaver_warmup_timer_fn = nil
+    end
+    if not is_low_mem and not self._filtered_screensavers_cache and current_tab ~= "Screensavers" then
+        _screensaver_warmup_timer_fn = function()
+            _screensaver_warmup_timer_fn = nil
+            if not self.browser_menu then return end
             pcall(function() self:warmupScreensaversCache() end)
-        end)
+        end
+        UIManager:scheduleIn(1.0, _screensaver_warmup_timer_fn)
     end
 
     -- Check catalog if never checked or if MIN_CATALOG_CHECK_INTERVAL has elapsed
@@ -9113,284 +9534,12 @@ function Storefront:showBrowser(kind)
             local is_installed_search_active = util.trim(raw_installed_st) ~= ""
             local is_ss_filter_active = self:hasActiveFilters("Screensavers")
 
-            local toolbar_buttons
-            local show_plugins_bar = (current_tab == "Plugins" and ((self.browser_state and self.browser_state.show_filter_bar_plugins == true) or is_catalog_search_active))
-            local show_patches_bar = (current_tab == "Patches" and ((self.browser_state and self.browser_state.show_filter_bar_patches == true) or is_catalog_search_active))
-            local show_fonts_bar = (current_tab == "Fonts" and ((self.browser_state and self.browser_state.show_filter_bar_fonts == true) or is_catalog_search_active))
-            if show_plugins_bar or show_patches_bar or show_fonts_bar then
-                toolbar_buttons = {}
-                if (self.browser_state.search_text or "") ~= "" then
-                    table.insert(toolbar_buttons, {
-                        id = "search",
-                        text = _("Search: ") .. self.browser_state.search_text,
-                        callback = function() self:showFilterDialog() end
-                    })
-                end
-                if (self.browser_state.owner or "") ~= "" then
-                    table.insert(toolbar_buttons, {
-                        id = "owner",
-                        text = _("Owner: ") .. self.browser_state.owner,
-                        callback = function() self:showFilterDialog() end
-                    })
-                end
-                if current_tab == "Fonts" and self.browser_state.font_category and self.browser_state.font_category ~= "all" then
-                    table.insert(toolbar_buttons, {
-                        id = "font_style",
-                        text = _("Style: ") .. self.browser_state.font_category:lower(),
-                        callback = function() self:showCatalogFilter() end
-                    })
-                end
-                if (self.browser_state.min_stars or 0) > 0 then
-                    table.insert(toolbar_buttons, {
-                        id = "stars",
-                        text = "★ " .. tostring(self.browser_state.min_stars) .. "+",
-                        callback = function() self:showCatalogFilter() end
-                    })
-                end
-                local sort_opt = self:getSortOption(self.browser_state.sort_mode)
-                table.insert(toolbar_buttons, {
-                    id = "sort",
-                    text = sort_opt and sort_opt.summary or _("Sort"),
-                    callback = function() self:browserAdvanceSort() end
-                })
-                table.insert(toolbar_buttons, {
-                    id = "filter_dialog",
-                    text = _("Filter..."),
-                    callback = function() self:showCatalogFilter() end
-                })
-            elseif current_tab == "Updates" then
-                toolbar_buttons = {}
-                table.insert(toolbar_buttons, {
-                    id = "check_updates",
-                    text = _("Check Updates"),
-                    text_font_bold = true,
-                    callback = function()
-                        local installed_plugins = listInstalledPlugins()
-                        local records = getInstallRecordsMap()
-                        local plugin_repos = {}
-                        for _, plugin in ipairs(installed_plugins) do
-                            local record = records[plugin.dirname]
-                            if record and record.owner and record.repo then
-                                record.dirname = plugin.dirname
-                                table.insert(plugin_repos, record)
-                            end
-                        end
-                        if #plugin_repos > 0 then
-                            self:_checkAllUpdatesInternal(plugin_repos)
-                        else
-                            UIManager:show(InfoMessage:new{ text = _("No tracked plugins to check."), timeout = 4 })
-                        end
-                    end,
-                })
-                table.insert(toolbar_buttons, {
-                    id = "update_all",
-                    text = _("Update All"),
-                    right_align = true,
-                    is_primary = true,
-                    callback = function() self:updateAllAvailable() end,
-                })
-            elseif current_tab == "Installed" then
-                self:ensureInstalledState()
-                if (self.browser_state and self.browser_state.show_filter_bar_installed ~= false) or is_installed_search_active then
-                toolbar_buttons = {}
-                local effective_installed_search = util.trim((self.installed_state.search_text and self.installed_state.search_text ~= "") and self.installed_state.search_text or (self.browser_state and self.browser_state.search_text or ""))
-                if effective_installed_search ~= "" then
-                    table.insert(toolbar_buttons, {
-                        id = "search",
-                        text = _("Search: ") .. effective_installed_search,
-                        callback = function() self:showFilterDialog() end
-                    })
-                end
-                if (self.browser_state and (self.browser_state.owner or "") ~= "") then
-                    table.insert(toolbar_buttons, {
-                        id = "owner",
-                        text = _("Owner: ") .. self.browser_state.owner,
-                        callback = function() self:showFilterDialog() end
-                    })
-                end
-                local type_label = _("All Types")
-                if self.installed_state.filter_type == "plugin" then type_label = _("Plugins")
-                elseif self.installed_state.filter_type == "patch" then type_label = _("Patches")
-                elseif self.installed_state.filter_type == "font" then type_label = _("Fonts")
-                elseif self.installed_state.filter_type == "screensaver" then type_label = _("Screensavers") end
-                table.insert(toolbar_buttons, {
-                    id = "type",
-                    text = type_label,
-                    callback = function() self:showInstalledFilter() end
-                })
-                if self.installed_state.filter_default and self.installed_state.filter_default ~= "all" then
-                    local def_label = (self.installed_state.filter_default == "default_only") and _("Default") or _("User Installed")
-                    table.insert(toolbar_buttons, {
-                        id = "origin",
-                        text = def_label,
-                        callback = function() self:showInstalledFilter() end
-                    })
-                end
-                if self.installed_state.filter_status and self.installed_state.filter_status ~= "all" then
-                    local stat_label = (self.installed_state.filter_status == "enabled") and _("Enabled") or _("Disabled")
-                    table.insert(toolbar_buttons, {
-                        id = "status",
-                        text = stat_label,
-                        callback = function() self:showInstalledFilter() end
-                    })
-                end
-                local sort_map = {
-                    name_asc = _("Sort: A-Z"),
-                    name_desc = _("Sort: Z-A"),
-                    date_desc = _("Sort: Updated"),
-                    date_asc = _("Sort: Oldest"),
-                    date = _("Sort: Updated"),
-                    type = _("Sort: Type"),
-                    status = _("Sort: Status"),
-                }
-                table.insert(toolbar_buttons, {
-                    id = "sort",
-                    text = sort_map[self.installed_state.sort_mode] or _("Sort"),
-                    callback = function() self:browserAdvanceSort() end
-                })
-                table.insert(toolbar_buttons, {
-                    id = "filter_dialog",
-                    text = _("Filter..."),
-                    callback = function() self:showInstalledFilter() end
-                })
-                table.insert(toolbar_buttons, {
-                    id = "blueprints",
-                    text = _("Blueprint"),
-                    callback = function()
-                        UIManager:nextTick(function()
-                            local ok_bp, BlueprintUI = pcall(require, "storefront_blueprint_ui")
-                            if ok_bp and BlueprintUI and BlueprintUI.showBlueprintsMenu then
-                                BlueprintUI.showBlueprintsMenu(self)
-                            end
-                        end)
-                    end
-                })
-                end -- show_filter_bar_installed
-            elseif current_tab == "Screensavers" then
-                is_ss_filter_active = self:hasActiveFilters("Screensavers")
-                if (self.browser_state and self.browser_state.show_filter_bar_screensavers ~= false) or is_ss_filter_active then
-                    -- Build toolbar: active search/owner pills + active category pill + sort cycle + Filter... button
-                    toolbar_buttons = {}
-                    local effective_ss_search = util.trim((self.browser_state.search_text and self.browser_state.search_text ~= "") and self.browser_state.search_text or (self.browser_state.screensaver_search or ""))
-                    local effective_ss_owner  = util.trim(self.browser_state.owner or "")
-                    local ss_cat  = self.browser_state.screensaver_category or ""
-                    local ss_cats = self.browser_state.screensaver_categories
-                    local ss_sort = self.browser_state.screensaver_sort or "featured"
-                    if ss_sort == "az" or ss_sort == "za" then ss_sort = "featured" end
-
-                    if effective_ss_search ~= "" then
-                        table.insert(toolbar_buttons, {
-                            id = "ss_srch",
-                            text = _("Search: ") .. effective_ss_search,
-                            callback = function() self:showFilterDialog() end
-                        })
-                    end
-                    if effective_ss_owner ~= "" then
-                        table.insert(toolbar_buttons, {
-                            id = "ss_owner",
-                            text = _("Owner: ") .. effective_ss_owner,
-                            callback = function() self:showFilterDialog() end
-                        })
-                    end
-
-                    local active_cat_names = {}
-                    if type(ss_cats) == "table" and next(ss_cats) and not ss_cats["all"] then
-                        for k, v in pairs(ss_cats) do
-                            if v and k ~= "all" then
-                                local c_name = k:sub(1,1):upper() .. k:sub(2)
-                                if k == "scifi" or k == "sci-fi" then c_name = "Sci-Fi" end
-                                if k == "fine art" or k == "art" then c_name = "Art" end
-                                if k == "pop culture" then c_name = "Pop Culture" end
-                                local already_present = false
-                                for _, existing_c in ipairs(active_cat_names) do
-                                    if existing_c == c_name then
-                                        already_present = true
-                                        break
-                                    end
-                                end
-                                if not already_present then
-                                    table.insert(active_cat_names, c_name)
-                                end
-                            end
-                        end
-                        table.sort(active_cat_names)
-                    elseif ss_cat ~= "" and ss_cat ~= "all" then
-                        table.insert(active_cat_names, ss_cat:sub(1,1):upper() .. ss_cat:sub(2))
-                    end
-
-                    if #active_cat_names > 0 then
-                        local cat_str = #active_cat_names == 1 and active_cat_names[1] or string.format(_("%d Categories"), #active_cat_names)
-                        table.insert(toolbar_buttons, {
-                            id = "ss_cat",
-                            text = _("Category: ") .. cat_str,
-                            callback = function() self:showScreensaverFilter() end
-                        })
-                    end
-                    local sort_labels = {
-                        featured  = _("Featured"),
-                        downloads = _("Most Downloaded"),
-                        recent    = _("Recently Added"),
-                        popular   = _("Most Popular"),
-                    }
-                    local sort_cycle = { "featured", "downloads", "recent", "popular" }
-                    table.insert(toolbar_buttons, {
-                        id = "ss_sort",
-                        text = sort_labels[ss_sort] or _("Featured"),
-                        callback = function()
-                            local next_sort = "featured"
-                            for idx, s in ipairs(sort_cycle) do
-                                if ss_sort == s then
-                                    next_sort = sort_cycle[(idx % #sort_cycle) + 1]
-                                    break
-                                end
-                            end
-                            self.browser_state.screensaver_sort = next_sort
-                            self.browser_state.page = 1
-                            self:reopenBrowser()
-                        end
-                    })
-                    table.insert(toolbar_buttons, {
-                        id = "ss_filter",
-                        text = _("Filter..."),
-                        callback = function() self:showScreensaverFilter() end
-                    })
-                    table.insert(toolbar_buttons, {
-                        id = "ss_settings",
-                        text = _("⚙ Settings"),
-                        callback = function()
-                            local StorefrontScreensaverConfig = require("storefront_screensaver_config")
-                            StorefrontScreensaverConfig.show(self, function()
-                                self:reopenBrowser()
-                            end)
-                        end
-                    })
-                end
-            end
-
-            local current_generation = InstallStore.getGeneration and InstallStore.getGeneration() or 0
-            local remote_info_key = self.updates_state and self.updates_state.last_checked
-            local patch_remote_info_key = self.patch_updates_state and self.patch_updates_state.last_checked
-            
-            if not self._cached_updates_count 
-               or self._cached_updates_gen ~= current_generation
-               or self._cached_remote_info ~= remote_info_key
-               or self._cached_patch_remote_info ~= patch_remote_info_key then
-               
-                pcall(function()
-                    local p_sum = self:collectUpdateSummary()
-                    local pt_sum = self:collectPatchUpdateSummary()
-                    self._cached_updates_count = (p_sum.updates or 0) + (pt_sum.updates or 0)
-                end)
-                self._cached_updates_gen = current_generation
-                self._cached_remote_info = remote_info_key
-                self._cached_patch_remote_info = patch_remote_info_key
-            end
-            local updates_count = self._cached_updates_count or 0
+            local toolbar_buttons = self:buildBrowserToolbar(current_tab)
+            local updates_count = self:getBrowserUpdatesCount()
 
             local active_search_text = ""
             if current_tab == "Installed" then
-                local raw_active_st = (self.installed_state and self.installed_state.search_text ~= "" and self.installed_state.search_text) or (self.browser_state and self.browser_state.search_text) or ""
-                active_search_text = util.trim(raw_active_st)
+                active_search_text = util.trim(raw_installed_st)
             elseif current_tab ~= "Updates" then
                 active_search_text = util.trim(self.browser_state.search_text or "")
             end
@@ -9409,6 +9558,7 @@ function Storefront:showBrowser(kind)
             local items, total_pages = self:buildBrowserEntries(available_list_height, available_list_width)
 
             local dialog = StorefrontBrowserDialog:new{
+                Storefront = self,
                 title = title,
                 items = items,
                 page = self.browser_state.page,
@@ -9428,114 +9578,162 @@ function Storefront:showBrowser(kind)
                 on_toggle_filter_bar = function(tab_name)
                     self:toggleFilterBar(tab_name)
                 end,
-        updates_filter_only_outdated = self.updates_state.filter_only_outdated,
-        on_updates_filter = function(outdated_only)
-            self.updates_state.filter_only_outdated = outdated_only
-            self.patch_updates_state.filter_only_outdated = outdated_only
-            self.browser_state.page = 1
-            self.browser_state.scroll_offset = nil
-            self:saveBrowserState()
-            self._browser_refresh_mode_hint = "partial"
-            self:reopenBrowser()
-        end,
-        on_tab_switch = function(tab_name)
-            self.browser_state.tab = tab_name
-            self.browser_state.kind = (tab_name == "Patches" and "patch") or (tab_name == "Fonts" and "font") or (tab_name == "Screensavers" and "screensaver") or "plugin"
-            self.browser_state.page = 1
-            self.browser_state.scroll_offset = nil
-            self:saveBrowserState(true)
-            self._browser_refresh_mode_hint = "partial"
-            self:reopenBrowser()
-        end,
-        on_settings_tap = function()
-            self:showStorefrontSettingsDialog()
-        end,
-        on_refresh = function()
-            if self.browser_state.tab == "Updates" then
-                self:checkAllUpdates()
-            else
-                self:browserRefresh()
-            end
-        end,
-        on_search = function() self:showFilterDialog() end,
-        on_filter = function() self:browserOpenFilter() end,
-        on_sort = function() self:browserAdvanceSort() end,
-        on_switch_tab = function() self:browserSwitchTab() end,
-        on_first_page = function()
-            if self.browser_state.page > 1 then
-                self:resetBrowserScrollState()
-                self.browser_focus_hint = self:computePageFlipFocus(self.browser_menu, false)
-                self.browser_state.page = 1
-                self.browser_state.scroll_offset = nil
-                self:saveBrowserState()
-                self._browser_refresh_mode_hint = "partial"
-                self:reopenBrowser()
-            end
-        end,
-        on_prev_page = function()
-            if self.browser_state.page > 1 then
-                self:resetBrowserScrollState()
-                self.browser_focus_hint = self:computePageFlipFocus(self.browser_menu, false)
-                self.browser_state.page = self.browser_state.page - 1
-                self.browser_state.scroll_offset = nil
-                self:saveBrowserState()
-                self._browser_refresh_mode_hint = "partial"
-                self:reopenBrowser()
-            end
-        end,
-        on_next_page = function()
-            local current_kind = (self.browser_state.tab == "Installed") and "installed" or (self.browser_state.tab == "Screensavers") and "screensaver" or (self.browser_state.kind or "plugin")
-            local total_pages = (self._last_total_kind == current_kind) and (self._last_total_pages or 1) or 1
-            if self.browser_state.page < total_pages then
-                self:resetBrowserScrollState()
-                self.browser_focus_hint = self:computePageFlipFocus(self.browser_menu, true)
-                self.browser_state.page = self.browser_state.page + 1
-                self.browser_state.scroll_offset = nil
-                self:saveBrowserState()
-                self._browser_refresh_mode_hint = "partial"
-                self:reopenBrowser()
-            end
-        end,
-        on_last_page = function()
-            local current_kind = (self.browser_state.tab == "Installed") and "installed" or (self.browser_state.tab == "Screensavers") and "screensaver" or (self.browser_state.kind or "plugin")
-            local total_pages = (self._last_total_kind == current_kind) and (self._last_total_pages or 1) or 1
-            if self.browser_state.page < total_pages then
-                self:resetBrowserScrollState()
-                self.browser_focus_hint = self:computePageFlipFocus(self.browser_menu, true)
-                self.browser_state.page = total_pages
-                self.browser_state.scroll_offset = nil
-                self:saveBrowserState()
-                self._browser_refresh_mode_hint = "partial"
-                self:reopenBrowser()
-            end
-        end,
-        on_goto_page = function(page_num)
-            local current_kind = (self.browser_state.tab == "Installed") and "installed" or (self.browser_state.tab == "Screensavers") and "screensaver" or (self.browser_state.kind or "plugin")
-            local total_pages = (self._last_total_kind == current_kind) and (self._last_total_pages or 1) or 1
-            if page_num >= 1 and page_num <= total_pages and page_num ~= self.browser_state.page then
-                local forward = page_num > self.browser_state.page
-                self:resetBrowserScrollState()
-                self.browser_focus_hint = self:computePageFlipFocus(self.browser_menu, forward)
-                self.browser_state.page = page_num
-                self.browser_state.scroll_offset = nil
-                self:saveBrowserState()
-                self._browser_refresh_mode_hint = "partial"
-                self:reopenBrowser()
-            end
-        end,
-        on_dismiss = function(offset)
-            if self.skip_scroll_save then
-                self.browser_state.scroll_offset = nil
-                self.skip_scroll_save = nil
-            else
-                self.browser_state.scroll_offset = normalizeScrollOffset(offset)
-            end
-            self:saveBrowserState()
-            self:dismissProgressMessage()
-            self.browser_menu = nil
-            self._ss_thumb_task_id = (self._ss_thumb_task_id or 0) + 1
-        end,
-    }
+                updates_filter_only_outdated = self.updates_state.filter_only_outdated,
+                on_updates_filter = function(outdated_only)
+                    self.updates_state.filter_only_outdated = outdated_only
+                    self.patch_updates_state.filter_only_outdated = outdated_only
+                    if self.browser_menu and self.browser_menu.updateTabContent then
+                        self:updateBrowserTabInPlace(self.browser_state.tab, 1)
+                    else
+                        self.browser_state.page = 1
+                        self.browser_state.scroll_offset = nil
+                        self:saveBrowserState()
+                        self._browser_refresh_mode_hint = "partial"
+                        self:reopenBrowser()
+                    end
+                end,
+                on_tab_switch = function(tab_name)
+                    if self.browser_menu and self.browser_menu.updateTabContent then
+                        self:updateBrowserTabInPlace(tab_name, 1)
+                    else
+                        self.browser_state.tab = tab_name
+                        self.browser_state.kind = (tab_name == "Patches" and "patch") or (tab_name == "Fonts" and "font") or (tab_name == "Screensavers" and "screensaver") or "plugin"
+                        self.browser_state.page = 1
+                        self.browser_state.scroll_offset = nil
+                        self:saveBrowserState(true)
+                        self._browser_refresh_mode_hint = "partial"
+                        self:reopenBrowser()
+                    end
+                end,
+                on_settings_tap = function()
+                    self:showStorefrontSettingsDialog()
+                end,
+                on_refresh = function()
+                    if self.browser_state.tab == "Updates" then
+                        self:checkAllUpdates()
+                    else
+                        self:browserRefresh()
+                    end
+                end,
+                on_search = function() self:showFilterDialog() end,
+                on_filter = function() self:browserOpenFilter() end,
+                on_sort = function() self:browserAdvanceSort() end,
+                on_switch_tab = function() self:browserSwitchTab() end,
+                on_first_page = function()
+                    if self.browser_state.page > 1 then
+                        self:resetBrowserScrollState()
+                        local focus_hint = self:computePageFlipFocus(self.browser_menu, false)
+                        if self.browser_menu and self.browser_menu.updateTabContent then
+                            self:updateBrowserTabInPlace(self.browser_state.tab, 1, focus_hint)
+                        else
+                            self.browser_focus_hint = focus_hint
+                            self.browser_state.page = 1
+                            self.browser_state.scroll_offset = nil
+                            self:saveBrowserState()
+                            self._browser_refresh_mode_hint = "partial"
+                            self:reopenBrowser()
+                        end
+                    end
+                end,
+                on_prev_page = function()
+                    if self.browser_state.page > 1 then
+                        self:resetBrowserScrollState()
+                        local focus_hint = self:computePageFlipFocus(self.browser_menu, false)
+                        local target_page = self.browser_state.page - 1
+                        if self.browser_menu and self.browser_menu.updateTabContent then
+                            self:updateBrowserTabInPlace(self.browser_state.tab, target_page, focus_hint)
+                        else
+                            self.browser_focus_hint = focus_hint
+                            self.browser_state.page = target_page
+                            self.browser_state.scroll_offset = nil
+                            self:saveBrowserState()
+                            self._browser_refresh_mode_hint = "partial"
+                            self:reopenBrowser()
+                        end
+                    end
+                end,
+                on_next_page = function()
+                    local current_kind = (self.browser_state.tab == "Installed") and "installed" or (self.browser_state.tab == "Screensavers") and "screensaver" or (self.browser_state.kind or "plugin")
+                    local total_pages = (self._last_total_kind == current_kind) and (self._last_total_pages or 1) or 1
+                    if self.browser_state.page < total_pages then
+                        self:resetBrowserScrollState()
+                        local focus_hint = self:computePageFlipFocus(self.browser_menu, true)
+                        local target_page = self.browser_state.page + 1
+                        if self.browser_menu and self.browser_menu.updateTabContent then
+                            self:updateBrowserTabInPlace(self.browser_state.tab, target_page, focus_hint)
+                        else
+                            self.browser_focus_hint = focus_hint
+                            self.browser_state.page = target_page
+                            self.browser_state.scroll_offset = nil
+                            self:saveBrowserState()
+                            self._browser_refresh_mode_hint = "partial"
+                            self:reopenBrowser()
+                        end
+                    end
+                end,
+                on_last_page = function()
+                    local current_kind = (self.browser_state.tab == "Installed") and "installed" or (self.browser_state.tab == "Screensavers") and "screensaver" or (self.browser_state.kind or "plugin")
+                    local total_pages = (self._last_total_kind == current_kind) and (self._last_total_pages or 1) or 1
+                    if self.browser_state.page < total_pages then
+                        self:resetBrowserScrollState()
+                        local focus_hint = self:computePageFlipFocus(self.browser_menu, true)
+                        if self.browser_menu and self.browser_menu.updateTabContent then
+                            self:updateBrowserTabInPlace(self.browser_state.tab, total_pages, focus_hint)
+                        else
+                            self.browser_focus_hint = focus_hint
+                            self.browser_state.page = total_pages
+                            self.browser_state.scroll_offset = nil
+                            self:saveBrowserState()
+                            self._browser_refresh_mode_hint = "partial"
+                            self:reopenBrowser()
+                        end
+                    end
+                end,
+                on_goto_page = function(page_num)
+                    local current_kind = (self.browser_state.tab == "Installed") and "installed" or (self.browser_state.tab == "Screensavers") and "screensaver" or (self.browser_state.kind or "plugin")
+                    local total_pages = (self._last_total_kind == current_kind) and (self._last_total_pages or 1) or 1
+                    if page_num >= 1 and page_num <= total_pages and page_num ~= self.browser_state.page then
+                        local forward = page_num > self.browser_state.page
+                        self:resetBrowserScrollState()
+                        local focus_hint = self:computePageFlipFocus(self.browser_menu, forward)
+                        if self.browser_menu and self.browser_menu.updateTabContent then
+                            self:updateBrowserTabInPlace(self.browser_state.tab, page_num, focus_hint)
+                        else
+                            self.browser_focus_hint = focus_hint
+                            self.browser_state.page = page_num
+                            self.browser_state.scroll_offset = nil
+                            self:saveBrowserState()
+                            self._browser_refresh_mode_hint = "partial"
+                            self:reopenBrowser()
+                        end
+                    end
+                end,
+                on_dismiss = function(offset)
+                    if self.skip_scroll_save then
+                        self.browser_state.scroll_offset = nil
+                        self.skip_scroll_save = nil
+                    else
+                        self.browser_state.scroll_offset = normalizeScrollOffset(offset)
+                    end
+                    self:saveBrowserState()
+                    self:dismissProgressMessage()
+                    if _screensaver_warmup_timer_fn then
+                        UIManager:unschedule(_screensaver_warmup_timer_fn)
+                        _screensaver_warmup_timer_fn = nil
+                    end
+                    self.browser_menu = nil
+                    self._ss_thumb_task_id = (self._ss_thumb_task_id or 0) + 1
+                    self.screensavers_cache = nil
+                    self._filtered_screensavers_cache = nil
+                    pcall(function()
+                        local ok_ss, StorefrontScreensavers = pcall(require, "storefront_screensavers_ui")
+                        if ok_ss and StorefrontScreensavers and StorefrontScreensavers.invalidateMemCache then
+                            StorefrontScreensavers.invalidateMemCache()
+                        end
+                    end)
+                    collectgarbage("step", 200)
+                end,
+            }
     if dialog._used_trapper_progress then
         Trapper:reset()
     end
@@ -9586,7 +9784,11 @@ function Storefront:toggleFilterBar(tab_name)
         self.browser_state.show_filter_bar_screensavers = not (self.browser_state.show_filter_bar_screensavers ~= false)
     end
     self:saveBrowserState()
-    self:reopenBrowser()
+    if self.browser_menu and self.browser_menu.updateTabContent then
+        self:updateBrowserTabInPlace(self.browser_state.tab, self.browser_state.page or 1)
+    else
+        self:reopenBrowser()
+    end
 end
 
 function Storefront:showStorefrontSettingsDialog()

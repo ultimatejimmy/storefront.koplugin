@@ -400,6 +400,29 @@ check("ReaderBackdrop only has 2 items", #rb_only_ids, 2)
 check("ReaderBackdrop 1st is rb-1", rb_only_ids[1], "rb-1")
 check("ReaderBackdrop 2nd is rb-2", rb_only_ids[2], "rb-2")
 
+-- Test 13: filterAndSortScreensavers fast-path returns catalog directly on default sort with no filters
+resetState()
+local direct_cat = {
+    { id = "ss-1", title = "Alpha", source = "Storefront", featured = true },
+    { id = "ss-2", title = "Beta", source = "ReaderBackdrop" },
+}
+local res_fast = Storefront:filterAndSortScreensavers(direct_cat, {
+    ss_sort = "featured",
+    active_sources = { storefront = true, readerbackdrop = true },
+})
+check("Default sort fast-path returns same number of items", #res_fast, 2)
+check("Default sort fast-path first item is ss-1", res_fast[1].id, "ss-1")
+check("Default sort fast-path second item is ss-2", res_fast[2].id, "ss-2")
+
+-- Test 14: closeBrowserMenu with keep_screensaver_cache preserves cache
+resetState()
+Storefront.screensavers_cache = direct_cat
+Storefront.browser_menu = dummy_widget:new{}
+Storefront:closeBrowserMenu({ keep_screensaver_cache = true })
+check("closeBrowserMenu with keep_screensaver_cache preserves screensavers_cache", Storefront.screensavers_cache ~= nil, true)
+Storefront:closeBrowserMenu()
+check("closeBrowserMenu without keep_screensaver_cache purges screensavers_cache", Storefront.screensavers_cache == nil, true)
+
 if failures > 0 then
     print(string.format("\nFAILED: %d errors", failures))
     os.exit(1)

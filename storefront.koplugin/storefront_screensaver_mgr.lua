@@ -546,6 +546,9 @@ end
 
 function StorefrontScreensaverMgr.downloadWallpaper(item, callback)
     local StorefrontScreensavers = require("storefront_screensavers_ui")
+    if StorefrontScreensavers and StorefrontScreensavers.normalizeItem then
+        StorefrontScreensavers.normalizeItem(item)
+    end
     local dir = StorefrontScreensaverMgr.getScreensaverFolder()
 
     local cat_str = type(item.category) == "table" and table.concat(item.category, " ") or tostring(item.category or "")

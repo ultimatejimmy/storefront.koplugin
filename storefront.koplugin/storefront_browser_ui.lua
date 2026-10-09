@@ -79,6 +79,37 @@ local function getAssetPath(filename)
     return fallback
 end
 
+local _tab_icon_bb_cache = {}
+local function getCachedTabIconWidget(filename, w, h)
+    local full_path = getAssetPath(filename)
+    local key = string.format("%s_%dx%d", full_path, w, h)
+    local cached_bb = _tab_icon_bb_cache[key]
+    if cached_bb then
+        return ImageWidget:new{
+            image = cached_bb,
+            image_disposable = false,
+            width = w,
+            height = h,
+            scale_factor = 0,
+            is_icon = true,
+            alpha = true,
+        }
+    end
+    local w_probe = ImageWidget:new{
+        file = full_path,
+        width = w,
+        height = h,
+        scale_factor = 0,
+        is_icon = true,
+        alpha = true,
+    }
+    if w_probe and w_probe.image then
+        w_probe.image_disposable = false
+        _tab_icon_bb_cache[key] = w_probe.image
+    end
+    return w_probe
+end
+
 local StorefrontBrowserDialog = FocusManager:extend{
     covers_fullscreen = true,
     Storefront = nil,
@@ -190,14 +221,7 @@ function StorefrontBrowserDialog:buildTabBar()
             end
         else
             local icon_file = is_active and (tab_icon_active_map[tab_name] or tab_icon_inactive_map[tab_name]) or (tab_icon_inactive_map[tab_name] or tab_icon_active_map[tab_name])
-            local icon_widget = ImageWidget:new{
-                file = getAssetPath(icon_file),
-                width = sc(22),
-                height = sc(22),
-                scale_factor = 0,
-                is_icon = true,
-                alpha = true,
-            }
+            local icon_widget = getCachedTabIconWidget(icon_file, sc(22), sc(22))
             table.insert(tab_elements, icon_widget)
 
             if is_active then
@@ -311,14 +335,7 @@ function StorefrontBrowserDialog:buildTabBar()
             has_active_filters = self:hasActiveFilters(self.current_tab)
         end
 
-        local filter_icon = ImageWidget:new{
-            file = getAssetPath("filter.svg"),
-            width = sc(20),
-            height = sc(20),
-            scale_factor = 0,
-            is_icon = true,
-            alpha = true,
-        }
+        local filter_icon = getCachedTabIconWidget("filter.svg", sc(20), sc(20))
 
         local icon_elements = { filter_icon }
         if has_active_filters then
@@ -459,6 +476,184 @@ function StorefrontBrowserDialog:measureListViewport(options)
     local res_w = math.max(1, viewport_w)
     _viewport_measurement_cache[cache_key] = { res_h, res_w }
     return res_h, res_w
+end
+
+function StorefrontBrowserDialog:buildListContent(items, initial_focus)
+    self._focusable_items = {}
+    self._focusable_row_offsets = {}
+    self._first_entry_index = nil
+    self._last_entry_index = nil
+    self._focus_target_index = nil
+
+    local list_group = VerticalGroup:new{}
+    local entry_width = self:getListEntryWidth()
+    local target_focus = initial_focus or self.initial_focus
+
+    if items then
+        -- Screensaver tab: render a 3-column portrait-thumbnail grid
+        if #items == 1 and items[1].is_screensaver_grid then
+            local grid_widget = items[1].grid_widget
+            if grid_widget then
+                list_group[#list_group + 1] = grid_widget
+            end
+            if items[1].cards then
+                for _, card in ipairs(items[1].cards) do
+                    self._focusable_items[#self._focusable_items + 1] = card
+                end
+            end
+        else
+            for idx, entry in ipairs(items) do
+                local item_widget = StorefrontListItem:new{
+                    entry = entry,
+                    width = entry_width,
+                    dialog = self,
+                    show_parent = self,
+                }
+                list_group[#list_group + 1] = item_widget
+                if item_widget:isFocusable() then
+                    self._focusable_items[#self._focusable_items + 1] = item_widget
+                    local fidx = #self._focusable_items
+                    if entry.is_entry then
+                        self._first_entry_index = self._first_entry_index or fidx
+                        self._last_entry_index = fidx
+                    end
+                    if target_focus and target_focus.id
+                            and entry.focus_id == target_focus.id then
+                        self._focus_target_index = fidx
+                    end
+                end
+                if entry.separator then
+                    if idx < #items then
+                        list_group[#list_group + 1] = LineWidget:new{
+                            background = Blitbuffer.COLOR_DARK_GRAY,
+                            dimen = Geom:new{ w = entry_width, h = Size.line.thin },
+                        }
+                    end
+                elseif idx < #items then
+                    list_group[#list_group + 1] = VerticalSpan:new{ width = Size.span.vertical_default }
+                end
+            end
+        end
+    end
+
+    local cursor_y = Size.padding.default
+    for _, child in ipairs(list_group) do
+        local size = child.getSize and child:getSize() or { h = 0 }
+        local h = size.h or 0
+        if child.isFocusable and child:isFocusable() then
+            self._focusable_row_offsets[child] = { y = cursor_y, h = h }
+        end
+        cursor_y = cursor_y + h
+    end
+
+    return list_group
+end
+
+function StorefrontBrowserDialog:buildToolbarWidget(toolbar_buttons)
+    if not toolbar_buttons or #toolbar_buttons == 0 then
+        self.toolbar = nil
+        self._toolbar_widgets = {}
+        self._toolbar_ids = {}
+        return nil, 0
+    end
+
+    local sc = function(val) return Device.screen:scaleBySize(val) end
+    local CenterContainer = require("ui/widget/container/centercontainer")
+
+    -- Split buttons into left and right groups (right_align = true goes to the right side)
+    local left_specs, right_specs = {}, {}
+    for _, spec in ipairs(toolbar_buttons) do
+        if spec.right_align then
+            table.insert(right_specs, spec)
+        else
+            table.insert(left_specs, spec)
+        end
+    end
+    local has_split = #left_specs > 0 and #right_specs > 0
+
+    local function buildButtonGroup(specs, force_primary)
+        local grp = HorizontalGroup:new{}
+        local widgets = {}
+        for i, spec in ipairs(specs) do
+            if i > 1 then
+                table.insert(grp, HorizontalSpan:new{ width = sc(4) })
+                table.insert(grp, TextWidget:new{
+                    text = _("\xC2\xB7"),
+                    face = StorefrontUtils.getTitleFace(14),
+                    fgcolor = Blitbuffer.COLOR_BLACK,
+                })
+                table.insert(grp, HorizontalSpan:new{ width = sc(4) })
+            end
+            local use_primary = spec.is_primary or force_primary
+            local btn = Button:new{
+                text           = spec.text,
+                text_font_size = 14,
+                text_font_bold = spec.text_font_bold or use_primary or false,
+                padding        = sc(3),
+                padding_h      = sc(6),
+                radius         = use_primary and sc(10) or sc(16),
+                bordersize     = use_primary and 0 or sc(1),
+                background     = use_primary and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_WHITE,
+                allow_flash    = false,
+                callback       = spec.callback,
+                show_parent    = self,
+            }
+            if use_primary and btn.label_widget then
+                btn.label_widget.fgcolor = Blitbuffer.COLOR_WHITE
+            end
+            table.insert(grp, btn)
+            table.insert(widgets, { btn = btn, id = spec.id })
+        end
+        return grp, widgets
+    end
+
+    self._toolbar_widgets = {}
+    self._toolbar_ids = {}
+
+    local tb
+    if has_split then
+        local left_grp, left_w = buildButtonGroup(left_specs, false)
+        local right_grp, right_w = buildButtonGroup(right_specs, false)
+        for _, w in ipairs(left_w) do
+            self._toolbar_widgets[#self._toolbar_widgets + 1] = w.btn
+            self._toolbar_ids[#self._toolbar_ids + 1] = { id = w.id }
+        end
+        for _, w in ipairs(right_w) do
+            self._toolbar_widgets[#self._toolbar_widgets + 1] = w.btn
+            self._toolbar_ids[#self._toolbar_ids + 1] = { id = w.id }
+        end
+        local inner_w = self.width - sc(24)
+        local left_sz = left_grp:getSize().w
+        local right_sz = right_grp:getSize().w
+        local spacer_w = math.max(sc(8), inner_w - left_sz - right_sz)
+        tb = HorizontalGroup:new{
+            left_grp,
+            HorizontalSpan:new{ width = spacer_w },
+            right_grp,
+        }
+    else
+        -- No split: centered layout (original behavior)
+        local all_grp, all_w = buildButtonGroup(toolbar_buttons, false)
+        for _, w in ipairs(all_w) do
+            self._toolbar_widgets[#self._toolbar_widgets + 1] = w.btn
+            self._toolbar_ids[#self._toolbar_ids + 1] = { id = w.id }
+        end
+        tb = all_grp
+    end
+
+    self.toolbar = FrameContainer:new{
+        padding_left   = sc(12),
+        padding_right  = sc(12),
+        padding_top    = sc(2),
+        padding_bottom = sc(2),
+        bordersize     = 0,
+        has_split and tb or CenterContainer:new{
+            dimen = Geom:new{ w = self.width - sc(24), h = tb:getSize().h },
+            tb,
+        },
+    }
+    local toolbar_height = self.toolbar:getSize().h + Size.span.vertical_default
+    return self.toolbar, toolbar_height
 end
 
 function StorefrontBrowserDialog:init()
@@ -617,60 +812,7 @@ function StorefrontBrowserDialog:init()
     self._header_settings_btn = settings_btn
     self._close_btn = close_btn
 
-    self._focusable_items = {}
-    self._focusable_row_offsets = {}
-
-    local list_group = VerticalGroup:new{}
-    local entry_width = self:getListEntryWidth()
-    local total_items = self.items and #self.items or 0
-
-    if self.items then
-        -- Screensaver tab: render a 3-column portrait-thumbnail grid
-        if #self.items == 1 and self.items[1].is_screensaver_grid then
-            local grid_widget = self.items[1].grid_widget
-            if grid_widget then
-                list_group[#list_group + 1] = grid_widget
-            end
-            if self.items[1].cards then
-                for _, card in ipairs(self.items[1].cards) do
-                    self._focusable_items[#self._focusable_items + 1] = card
-                end
-            end
-        else
-        for idx, entry in ipairs(self.items) do
-            local item_widget = StorefrontListItem:new{
-                entry = entry,
-                width = entry_width,
-                dialog = self,
-                show_parent = self,
-            }
-            list_group[#list_group + 1] = item_widget
-            if item_widget:isFocusable() then
-                self._focusable_items[#self._focusable_items + 1] = item_widget
-                local fidx = #self._focusable_items
-                if entry.is_entry then
-                    self._first_entry_index = self._first_entry_index or fidx
-                    self._last_entry_index = fidx
-                end
-                if self.initial_focus and self.initial_focus.id
-                        and entry.focus_id == self.initial_focus.id then
-                    self._focus_target_index = fidx
-                end
-            end
-            if entry.separator then
-                if idx < #self.items then
-                    list_group[#list_group + 1] = LineWidget:new{
-                        background = Blitbuffer.COLOR_DARK_GRAY,
-                        dimen = Geom:new{ w = entry_width, h = Size.line.thin },
-                    }
-                end
-            elseif idx < #self.items then
-                list_group[#list_group + 1] = VerticalSpan:new{ width = Size.span.vertical_default }
-            end
-        end
-        end -- end else (non-grid)
-    end
-
+    local list_group = self:buildListContent(self.items, self.initial_focus)
     self.list_container = FrameContainer:new{
         padding = Size.padding.default,
         bordersize = 0,
@@ -701,6 +843,7 @@ function StorefrontBrowserDialog:init()
         face = StorefrontUtils.getFace("cfont", 18),
         fgcolor = Blitbuffer.COLOR_BLACK,
     }
+    self._page_label = page_label
     
     local page_frame = FrameContainer:new{
         padding = sc(4),
@@ -805,108 +948,56 @@ function StorefrontBrowserDialog:init()
         }
     }
 
-    local toolbar_height = 0
-    if self.toolbar_buttons and #self.toolbar_buttons > 0 then
-        -- Split buttons into left and right groups (right_align = true goes to the right side)
-        local left_specs, right_specs = {}, {}
-        for _, spec in ipairs(self.toolbar_buttons) do
-            if spec.right_align then
-                table.insert(right_specs, spec)
-            else
-                table.insert(left_specs, spec)
-            end
-        end
-        local has_split = #left_specs > 0 and #right_specs > 0
+    self._prev_button = prev_button
+    self._page_button = page_button
+    self._next_button = next_button
 
-        local function buildButtonGroup(specs, force_primary)
-            local grp = HorizontalGroup:new{}
-            local widgets = {}
-            for i, spec in ipairs(specs) do
-                if i > 1 then
-                    table.insert(grp, HorizontalSpan:new{ width = sc(4) })
-                    table.insert(grp, TextWidget:new{
-                        text = _("\xC2\xB7"),
-                        face = StorefrontUtils.getTitleFace(14),
-                        fgcolor = Blitbuffer.COLOR_BLACK,
-                    })
-                    table.insert(grp, HorizontalSpan:new{ width = sc(4) })
-                end
-                local use_primary = spec.is_primary or force_primary
-                local btn = Button:new{
-                    text           = spec.text,
-                    text_font_size = 14,
-                    text_font_bold = spec.text_font_bold or use_primary or false,
-                    padding        = sc(3),
-                    padding_h      = sc(6),
-                    radius         = use_primary and sc(10) or sc(16),
-                    bordersize     = use_primary and 0 or sc(1),
-                    background     = use_primary and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_WHITE,
-                    allow_flash    = false,
-                    callback       = spec.callback,
-                    show_parent    = self,
-                }
-                if use_primary and btn.label_widget then
-                    btn.label_widget.fgcolor = Blitbuffer.COLOR_WHITE
-                end
-                table.insert(grp, btn)
-                table.insert(widgets, { btn = btn, id = spec.id })
-            end
-            return grp, widgets
-        end
+    local toolbar, toolbar_height = self:buildToolbarWidget(self.toolbar_buttons)
+    local tab_bar = self:buildTabBar()
+    self._tab_bar = tab_bar
 
-        self._toolbar_widgets = {}
-        self._toolbar_ids = {}
+    local ScrollableContainer = require("ui/widget/container/scrollablecontainer")
+    self.list_scroller = ScrollableContainer:new{
+        dimen = Geom:new{ w = self.width, h = math.floor(self.screen_h * 0.5) },
+        bordersize = 0,
+        padding = 0,
+        scroll_bar_width = 0,
+        ignore_events = { "swipe", "key_pg_back", "key_pg_fwd" },
+        self.list_container,
+    }
+    self.cropping_widget = self.list_scroller
 
-        local tb
-        if has_split then
-            local left_grp, left_w = buildButtonGroup(left_specs, false)
-            local right_grp, right_w = buildButtonGroup(right_specs, false)
-            for _, w in ipairs(left_w) do
-                self._toolbar_widgets[#self._toolbar_widgets + 1] = w.btn
-                self._toolbar_ids[#self._toolbar_ids + 1] = { id = w.id }
-            end
-            for _, w in ipairs(right_w) do
-                self._toolbar_widgets[#self._toolbar_widgets + 1] = w.btn
-                self._toolbar_ids[#self._toolbar_ids + 1] = { id = w.id }
-            end
-            local inner_w = self.width - sc(24)
-            local left_sz = left_grp:getSize().w
-            local right_sz = right_grp:getSize().w
-            local spacer_w = math.max(sc(8), inner_w - left_sz - right_sz)
-            tb = HorizontalGroup:new{
-                left_grp,
-                HorizontalSpan:new{ width = spacer_w },
-                right_grp,
-            }
-        else
-            -- No split: centered layout (original behavior)
-            local all_grp, all_w = buildButtonGroup(self.toolbar_buttons, false)
-            for _, w in ipairs(all_w) do
-                self._toolbar_widgets[#self._toolbar_widgets + 1] = w.btn
-                self._toolbar_ids[#self._toolbar_ids + 1] = { id = w.id }
-            end
-            tb = all_grp
-        end
+    self:rebuildContentHierarchy()
 
-        self.toolbar = FrameContainer:new{
-            padding_left   = sc(12),
-            padding_right  = sc(12),
-            padding_top    = sc(2),
-            padding_bottom = sc(2),
-            bordersize     = 0,
-            has_split and tb or CenterContainer:new{
-                dimen = Geom:new{ w = self.width - sc(24), h = tb:getSize().h },
-                tb,
-            },
-        }
-        toolbar_height = self.toolbar:getSize().h + Size.span.vertical_default
+    self[1] = FrameContainer:new{
+        background = Blitbuffer.COLOR_WHITE,
+        bordersize = 0,
+        padding = 0,
+        width = self.screen_w,
+        height = self.screen_h,
+        self.content,
+    }
+
+    self:rebuildFocusLayout(self.initial_focus)
+
+    if self.scroll_offset then
+        self:setScrollOffset(self.scroll_offset)
     end
 
-    local tab_bar = self:buildTabBar()
+    if Device:hasDPad() and #self.layout > 0 then
+        UIManager:nextTick(function()
+            self:moveFocusTo(self.selected.x, self.selected.y, FocusManager.FOCUS_ONLY_ON_NT)
+            self:_ensureFocusedVisible()
+        end)
+    end
+end
+
+function StorefrontBrowserDialog:rebuildContentHierarchy()
     local title_height = self.header:getSize().h
-    local tab_bar_height = tab_bar:getSize().h
+    local tab_bar_height = self._tab_bar:getSize().h
     local footer_height = self.footer:getSize().h
-    
+    local toolbar_height = self.toolbar and (self.toolbar:getSize().h + Size.span.vertical_default) or 0
+
     local divider_height = Size.line.thin + Size.span.vertical_default
     if self.toolbar then
         divider_height = divider_height + Size.line.thin + Size.span.vertical_default
@@ -916,21 +1007,15 @@ function StorefrontBrowserDialog:init()
         body_height = math.floor(self.screen_h * 0.5)
     end
 
-    local ScrollableContainer = require("ui/widget/container/scrollablecontainer")
-    self.list_scroller = ScrollableContainer:new{
-        dimen = Geom:new{ w = self.width, h = body_height },
-        bordersize = 0,
-        padding = 0,
-        scroll_bar_width = 0,
-        ignore_events = { "swipe", "key_pg_back", "key_pg_fwd" },
-        self.list_container,
-    }
-    self.cropping_widget = self.list_scroller
+    if self.list_scroller then
+        self.list_scroller.dimen = Geom:new{ w = self.width, h = body_height }
+        self.list_scroller[1] = self.list_container
+    end
 
     self.content = VerticalGroup:new{
         align = "left",
         self.header,
-        tab_bar,
+        self._tab_bar,
         LineWidget:new{ background = Blitbuffer.COLOR_DARK_GRAY, dimen = Geom:new{ w = self.width, h = Size.line.thin } },
         VerticalSpan:new{ width = Size.span.vertical_default },
     }
@@ -943,33 +1028,15 @@ function StorefrontBrowserDialog:init()
     table.insert(self.content, self.list_scroller)
     table.insert(self.content, self.footer)
 
-    self[1] = FrameContainer:new{
-        background = Blitbuffer.COLOR_WHITE,
-        bordersize = 0,
-        padding = 0,
-        width = self.screen_w,
-        height = self.screen_h,
-        self.content,
-    }
-
-    self._prev_button = prev_button
-    self._page_button = page_button
-    self._next_button = next_button
-
-    do
-        local cursor_y = Size.padding.default
-        for _, child in ipairs(list_group) do
-            local size = child.getSize and child:getSize() or { h = 0 }
-            local h = size.h or 0
-            if child.isFocusable and child:isFocusable() then
-                self._focusable_row_offsets[child] = { y = cursor_y, h = h }
-            end
-            cursor_y = cursor_y + h
-        end
+    if self[1] then
+        self[1][1] = self.content
     end
+end
 
+function StorefrontBrowserDialog:rebuildFocusLayout(target_focus)
     self.layout = {}
-    table.insert(self.layout, { search_btn, settings_btn, close_btn })
+    table.insert(self.layout, { self._header_search_btn, self._header_settings_btn, self._close_btn })
+
     local tab_row = {}
     if self._tab_buttons then
         for _, tb in ipairs(self._tab_buttons) do
@@ -983,43 +1050,113 @@ function StorefrontBrowserDialog:init()
         table.insert(self.layout, tab_row)
         self._tab_row_index = #self.layout
     end
+
     if self._toolbar_widgets and #self._toolbar_widgets > 0 then
         table.insert(self.layout, self._toolbar_widgets)
         self._toolbar_row_index = #self.layout
+    else
+        self._toolbar_row_index = nil
     end
+
     local first_list_row_index = #self.layout + 1
     self._first_list_row_index = first_list_row_index
     if self.items and #self.items == 1 and self.items[1].is_screensaver_grid and self.items[1].grid_rows then
         for _, row_cards in ipairs(self.items[1].grid_rows) do
             table.insert(self.layout, row_cards)
         end
-    else
+    elseif self._focusable_items then
         for _, item_widget in ipairs(self._focusable_items) do
             table.insert(self.layout, { item_widget })
         end
     end
+
     local footer_row = {}
     local footer_ids = {}
-    if self.page > 1 then
-        table.insert(footer_row, prev_button); table.insert(footer_ids, { id = "prev" })
+    if self.page > 1 and self._prev_button then
+        table.insert(footer_row, self._prev_button)
+        table.insert(footer_ids, { id = "prev" })
     end
-    if self.total_pages > 1 then
-        table.insert(footer_row, page_button); table.insert(footer_ids, { id = "page" })
+    if self.total_pages > 1 and self._page_button then
+        table.insert(footer_row, self._page_button)
+        table.insert(footer_ids, { id = "page" })
     end
-    if self.page < self.total_pages then
-        table.insert(footer_row, next_button); table.insert(footer_ids, { id = "next" })
+    if self.page < self.total_pages and self._next_button then
+        table.insert(footer_row, self._next_button)
+        table.insert(footer_ids, { id = "next" })
     end
     if #footer_row > 0 then
         table.insert(self.layout, footer_row)
         self._footer_row_index = #self.layout
         self._footer_buttons = footer_ids
+    else
+        self._footer_row_index = nil
+        self._footer_buttons = nil
     end
 
+    self.initial_focus = target_focus
     self.selected = self:_resolveInitialFocus(first_list_row_index)
+end
 
-    if self.scroll_offset then
-        self:setScrollOffset(self.scroll_offset)
+function StorefrontBrowserDialog:refreshFooterState()
+    if self._prev_button then
+        self._prev_button:enableDisable(self.page > 1)
     end
+    if self._next_button then
+        self._next_button:enableDisable(self.page < self.total_pages)
+    end
+    if self._page_label then
+        local label_text = string.format(_("Page %d of %d"), self.page, math.max(1, self.total_pages))
+        if self._page_label.setText then
+            self._page_label:setText(label_text)
+        else
+            self._page_label.text = label_text
+        end
+    end
+end
+
+function StorefrontBrowserDialog:updateTabContent(options)
+    options = options or {}
+
+    -- 1. Update state properties
+    if options.Storefront then
+        self.Storefront = options.Storefront
+    end
+    if options.current_tab then
+        self.current_tab = options.current_tab
+    end
+    self.page = options.page or 1
+    self.total_pages = options.total_pages or 1
+    self.items = options.items or {}
+    self.toolbar_buttons = options.toolbar_buttons
+    if options.updates_count ~= nil then
+        self.updates_count = options.updates_count
+    end
+    if options.active_search_text ~= nil then
+        self.active_search_text = options.active_search_text
+    end
+
+    -- 2. Rebuild tab bar and toolbar
+    self._tab_bar = self:buildTabBar()
+    self:buildToolbarWidget(self.toolbar_buttons)
+
+    -- 3. Rebuild list content inside existing list_container
+    local list_group = self:buildListContent(self.items, options.initial_focus)
+    self._list_group = list_group
+    self.list_container[1] = list_group
+
+    -- 4. Update footer button states and page label
+    self:refreshFooterState()
+
+    -- 5. Reassemble content hierarchy & body height
+    self:rebuildContentHierarchy()
+
+    -- 6. Reset scroll offset
+    if self.resetScroll then
+        self:resetScroll()
+    end
+
+    -- 7. Rebuild focus layout for D-pad navigation
+    self:rebuildFocusLayout(options.initial_focus)
 
     if Device:hasDPad() and #self.layout > 0 then
         UIManager:nextTick(function()
@@ -1027,6 +1164,9 @@ function StorefrontBrowserDialog:init()
             self:_ensureFocusedVisible()
         end)
     end
+
+    -- 8. Request single partial repaint
+    UIManager:setDirty(self, "partial")
 end
 
 function StorefrontBrowserDialog:getListEntryWidth()
@@ -1237,13 +1377,23 @@ function StorefrontBrowserDialog:onPress()
 end
 
 function StorefrontBrowserDialog:getScrollOffset()
+    if self.list_scroller and self.list_scroller.getScrolledOffset then
+        local pt = self.list_scroller:getScrolledOffset()
+        return pt and pt.y
+    end
     return nil
 end
 
 function StorefrontBrowserDialog:setScrollOffset(offset)
+    if self.list_scroller and self.list_scroller.setScrolledOffset and offset then
+        self.list_scroller:setScrolledOffset({ x = 0, y = offset })
+    end
 end
 
 function StorefrontBrowserDialog:resetScroll()
+    if self.list_scroller and self.list_scroller.setScrolledOffset then
+        self.list_scroller:setScrolledOffset({ x = 0, y = 0 })
+    end
 end
 
 return StorefrontBrowserDialog

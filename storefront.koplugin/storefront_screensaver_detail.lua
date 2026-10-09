@@ -57,6 +57,10 @@ function StorefrontScreensaverDetail:init()
     end
 
     local item = self.item or {}
+    local ok_ss, StorefrontScreensavers = pcall(require, "storefront_screensavers_ui")
+    if ok_ss and StorefrontScreensavers and StorefrontScreensavers.normalizeItem then
+        StorefrontScreensavers.normalizeItem(item)
+    end
 
     -- -----------------------------------------------------------------------
     -- 1. Back button

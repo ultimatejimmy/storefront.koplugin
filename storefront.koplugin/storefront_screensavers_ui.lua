@@ -1,4 +1,5 @@
-local json = require("json")
+local ok_rapid, rapidjson = pcall(require, "rapidjson")
+local json = (ok_rapid and rapidjson) and rapidjson or require("json")
 local logger = require("logger")
 local DataStorage = require("datastorage")
 local UIManager = require("ui/uimanager")
@@ -195,10 +196,14 @@ local function loadCatalogFile(file_path, default_source)
                 local ok_j, parsed = pcall(json.decode, content)
                 if ok_j and type(parsed) == "table" and #parsed > 0 then
                     for _, item in ipairs(parsed) do
-                        if default_source and (not item.source or item.source == "") then
-                            item.source = default_source
+                        if not item.source or item.source == "" then
+                            local id_str = tostring(item.id or "")
+                            if id_str:sub(1, 3) == "rb-" then
+                                item.source = "ReaderBackdrop"
+                            else
+                                item.source = default_source or "Storefront"
+                            end
                         end
-                        StorefrontScreensavers.normalizeItem(item)
                     end
                     return parsed
                 end
@@ -502,6 +507,9 @@ function StorefrontScreensavers.fetchCatalog(callback)
 end
 
 function StorefrontScreensavers.getThumbnailPath(item)
+    if item and not item._normalized then
+        StorefrontScreensavers.normalizeItem(item)
+    end
     local cache_dir = DataStorage:getDataDir() .. "/cache/storefront_thumbs"
     local id_str = tostring(item.id or "")
     if id_str:match("^rb%-") then

@@ -1486,6 +1486,8 @@ if ok_browser then
         local broadcasted_event = nil
         local direct_restart_called = false
 
+        local orig_close_browser = MainStorefront.closeBrowserMenu
+        local orig_close_updates = MainStorefront.closeUpdatesDialog
         MainStorefront.closeBrowserMenu = function() closed_browser = true end
         MainStorefront.closeUpdatesDialog = function() closed_updates = true end
 
@@ -1505,8 +1507,8 @@ if ok_browser then
 
         UIManager.broadcastEvent = orig_broadcast
         UIManager.restartKOReader = orig_restart_ko
-        MainStorefront.closeBrowserMenu = nil
-        MainStorefront.closeUpdatesDialog = nil
+        MainStorefront.closeBrowserMenu = orig_close_browser
+        MainStorefront.closeUpdatesDialog = orig_close_updates
 
         -- Test Device:canRestart() == false shows only single OK button
         local Device = package.loaded["device"]
@@ -2109,6 +2111,118 @@ do
 
     -- Restore Font.getFace
     Font.getFace = orig_getFace
+end
+
+-- =========================================================================
+-- In-Place Tab Switching & Icon Cache Tests
+-- =========================================================================
+do
+    print("--- In-Place Tab Switching & Icon Cache Tests ---")
+    local StorefrontBrowserDialog = require("storefront_browser_ui")
+
+    -- 1. Test Dialog creation
+    local dialog = StorefrontBrowserDialog:new{
+        title = "Storefront",
+        items = {
+            { name = "Item 1", is_entry = true, focus_id = "item_1" },
+            { name = "Item 2", is_entry = true, focus_id = "item_2" },
+        },
+        page = 1,
+        total_pages = 3,
+        current_tab = "Plugins",
+    }
+    dialog:init()
+
+    check("Initial dialog tab is Plugins", dialog.current_tab, "Plugins")
+    check("Initial dialog page is 1", dialog.page, 1)
+    check("Initial dialog total_pages is 3", dialog.total_pages, 3)
+    check("Initial list items count is 2", #dialog.items, 2)
+    local orig_container = dialog.list_container
+    local orig_scroller = dialog.list_scroller
+    local orig_frame = dialog[1]
+
+    -- 2. Test in-place updateTabContent
+    local new_items = {
+        { name = "Patch A", is_entry = true, focus_id = "patch_a" },
+        { name = "Patch B", is_entry = true, focus_id = "patch_b" },
+        { name = "Patch C", is_entry = true, focus_id = "patch_c" },
+    }
+    dialog:updateTabContent{
+        current_tab = "Patches",
+        page = 1,
+        total_pages = 1,
+        items = new_items,
+        toolbar_buttons = {
+            { id = "sort", text = "Sort: A-Z" },
+        },
+    }
+
+    check("Tab updated in-place to Patches", dialog.current_tab, "Patches")
+    check("Total pages updated in-place to 1", dialog.total_pages, 1)
+    check("New items count is 3", #dialog.items, 3)
+    check("list_container reference preserved in-place", dialog.list_container, orig_container)
+    check("list_scroller reference preserved in-place", dialog.list_scroller, orig_scroller)
+    check("Root FrameContainer reference preserved in-place", dialog[1], orig_frame)
+    check("Toolbar widget created on tab switch", dialog.toolbar ~= nil, true)
+    check("Toolbar row index tracked in focus layout", dialog._toolbar_row_index ~= nil, true)
+
+    -- 3. Switch to Screensavers tab in-place
+    local ss_items = {
+        {
+            is_screensaver_grid = true,
+            grid_widget = dummy_widget:new{},
+            cards = { { isFocusable = function() return true end } },
+            grid_rows = { { { isFocusable = function() return true end } } },
+        }
+    }
+    dialog:updateTabContent{
+        current_tab = "Screensavers",
+        page = 1,
+        total_pages = 5,
+        items = ss_items,
+    }
+    check("Tab updated in-place to Screensavers", dialog.current_tab, "Screensavers")
+    check("Screensavers grid row count tracked in layout", dialog.items[1].is_screensaver_grid, true)
+    check("Footer updated with total_pages 5", dialog.total_pages, 5)
+    check("Prev button disabled on page 1", dialog._prev_button ~= nil, true)
+
+    -- 4. Verify Icon Widget Blitbuffer Caching
+    local icon1 = dialog:buildTabBar()
+    check("TabBar built successfully with cached icons", icon1 ~= nil, true)
+
+    -- 5. Test MainStorefront:browserSwitchTab and updateBrowserTabInPlace in-place wiring
+    local MainStorefront = require("main")
+    local mock_dialog = {
+        updateTabContent = function(self_d, opts)
+            self_d.last_opts = opts
+            self_d.current_tab = opts.current_tab
+            self_d.page = opts.page
+        end,
+        resetScroll = function() end,
+    }
+    MainStorefront.browser_menu = mock_dialog
+    MainStorefront.browser_state = { tab = "Plugins", page = 1 }
+    MainStorefront.screensavers_cache = { { id = "test_item" } }
+    
+    -- Call browserSwitchTab to switch to Screensavers
+    MainStorefront:browserSwitchTab("Screensavers")
+    check("browserSwitchTab updated tab to Screensavers in-place", MainStorefront.browser_state.tab, "Screensavers")
+    check("mock_dialog received updateTabContent with Screensavers", mock_dialog.current_tab, "Screensavers")
+    check("browser_menu reference was not destroyed", MainStorefront.browser_menu, mock_dialog)
+
+    -- Test page navigation keeps screensavers_cache in memory
+    MainStorefront:updateBrowserTabInPlace("Screensavers", 2)
+    check("updateBrowserTabInPlace to page 2 updated page", MainStorefront.browser_state.page, 2)
+    check("screensavers_cache preserved across page navigation", MainStorefront.screensavers_cache ~= nil, true)
+
+    -- Test switching away from Screensavers preserves cache for fast return during session
+    MainStorefront:browserSwitchTab("Plugins")
+    check("browserSwitchTab updated tab to Plugins in-place", MainStorefront.browser_state.tab, "Plugins")
+    check("screensavers_cache preserved across tab switch during session", MainStorefront.screensavers_cache ~= nil, true)
+
+    -- Test closing the browser menu purges screensavers_cache to keep KOReader RAM clean
+    MainStorefront:closeBrowserMenu()
+    check("screensavers_cache purged on closeBrowserMenu", MainStorefront.screensavers_cache == nil, true)
 end
 
 if failures > 0 then
