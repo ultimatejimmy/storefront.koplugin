@@ -343,6 +343,7 @@ def main():
         item["user_thumbs_up"] = int(r_info.get("up", 0))
         item["user_thumbs_down"] = int(r_info.get("down", 0))
         item["wilson_score"] = float(r_info.get("wilson", 0.0))
+        item["downloads"] = int(r_info.get("downloads", 0))
 
     now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     script_dir = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() else os.getcwd()
@@ -363,6 +364,7 @@ def main():
         font_item["user_thumbs_up"] = int(r_info.get("up", 0))
         font_item["user_thumbs_down"] = int(r_info.get("down", 0))
         font_item["wilson_score"] = float(r_info.get("wilson", 0.0))
+        font_item["downloads"] = int(r_info.get("downloads", 0))
             
     catalog = {
         "version": 1,

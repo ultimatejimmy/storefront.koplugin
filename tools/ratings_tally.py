@@ -35,7 +35,8 @@ def fetch_ratings_from_worker():
                         ratings_data[key] = {
                             "up": int(v.get("up", 0)),
                             "down": int(v.get("down", 0)),
-                            "wilson": float(v.get("wilson", 0.0))
+                            "wilson": float(v.get("wilson", 0.0)),
+                            "downloads": int(v.get("downloads", 0)),
                         }
                 print(f"Fetched live ratings for {len(ratings_data)} items from D1 Worker.", file=sys.stderr)
                 return ratings_data
