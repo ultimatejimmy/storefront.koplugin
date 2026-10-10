@@ -9108,7 +9108,7 @@ function Storefront:buildBrowserToolbar(current_tab)
                     self.browser_state.screensaver_sort = next_sort
                     self.browser_state.page = 1
                     if self.browser_menu and self.browser_menu.updateTabContent then
-                        self:updateBrowserTabInPlace("Screensavers", 1)
+                        self:updateBrowserTabInPlace("Screensavers", 1, nil, true)
                     else
                         self:reopenBrowser()
                     end
@@ -9126,7 +9126,7 @@ function Storefront:buildBrowserToolbar(current_tab)
                     local StorefrontScreensaverConfig = require("storefront_screensaver_config")
                     StorefrontScreensaverConfig.show(self, function()
                         if self.browser_menu and self.browser_menu.updateTabContent then
-                            self:updateBrowserTabInPlace("Screensavers", self.browser_state.page or 1)
+                            self:updateBrowserTabInPlace("Screensavers", self.browser_state.page or 1, nil, true)
                         else
                             self:reopenBrowser()
                         end
@@ -9160,7 +9160,7 @@ function Storefront:getBrowserUpdatesCount()
     return self._cached_updates_count or 0
 end
 
-function Storefront:updateBrowserTabInPlace(tab_name, target_page, initial_focus)
+function Storefront:updateBrowserTabInPlace(tab_name, target_page, initial_focus, force_update)
     if not self.browser_menu or not self.browser_menu.updateTabContent then
         self.browser_state.tab = tab_name
         self.browser_state.kind = (tab_name == "Patches" and "patch") or (tab_name == "Fonts" and "font") or (tab_name == "Screensavers" and "screensaver") or "plugin"
@@ -9174,7 +9174,7 @@ function Storefront:updateBrowserTabInPlace(tab_name, target_page, initial_focus
 
     local prev_tab = self.browser_state.tab
     target_page = target_page or 1
-    if tab_name == prev_tab and (self.browser_state.page or 1) == target_page and not initial_focus then
+    if not force_update and tab_name == prev_tab and (self.browser_state.page or 1) == target_page and not initial_focus then
         return
     end
 
@@ -9243,6 +9243,11 @@ function Storefront:updateBrowserTabInPlace(tab_name, target_page, initial_focus
         updates_count = updates_count,
         active_search_text = active_search_text,
         initial_focus = initial_focus,
+        show_filter_bar_plugins = (self.browser_state and self.browser_state.show_filter_bar_plugins == true) or is_catalog_search_active,
+        show_filter_bar_patches = (self.browser_state and self.browser_state.show_filter_bar_patches == true) or is_catalog_search_active,
+        show_filter_bar_fonts = (self.browser_state and self.browser_state.show_filter_bar_fonts == true) or is_catalog_search_active,
+        show_filter_bar_screensavers = (self.browser_state and self.browser_state.show_filter_bar_screensavers ~= false) or is_ss_filter_active,
+        show_filter_bar_installed = (self.browser_state and self.browser_state.show_filter_bar_installed ~= false) or is_installed_search_active,
     }
 end
 
@@ -9588,7 +9593,7 @@ function Storefront:showBrowser(kind)
                     self.updates_state.filter_only_outdated = outdated_only
                     self.patch_updates_state.filter_only_outdated = outdated_only
                     if self.browser_menu and self.browser_menu.updateTabContent then
-                        self:updateBrowserTabInPlace(self.browser_state.tab, 1)
+                        self:updateBrowserTabInPlace(self.browser_state.tab, 1, nil, true)
                     else
                         self.browser_state.page = 1
                         self.browser_state.scroll_offset = nil
@@ -9777,6 +9782,7 @@ end
 
 function Storefront:toggleFilterBar(tab_name)
     self:ensureBrowserState()
+    tab_name = tab_name or (self.browser_state and self.browser_state.tab) or "Plugins"
     if tab_name == "Plugins" then
         self.browser_state.show_filter_bar_plugins = not self.browser_state.show_filter_bar_plugins
     elseif tab_name == "Patches" then
@@ -9790,7 +9796,7 @@ function Storefront:toggleFilterBar(tab_name)
     end
     self:saveBrowserState()
     if self.browser_menu and self.browser_menu.updateTabContent then
-        self:updateBrowserTabInPlace(self.browser_state.tab, self.browser_state.page or 1)
+        self:updateBrowserTabInPlace(self.browser_state.tab, self.browser_state.page or 1, nil, true)
     else
         self:reopenBrowser()
     end

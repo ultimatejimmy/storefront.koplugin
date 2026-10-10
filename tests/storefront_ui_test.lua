@@ -1081,6 +1081,68 @@ if ok_browser then
         MainStorefront:toggleFilterBar("Plugins")
         check("toggleFilterBar Plugins toggles show_filter_bar_plugins back to false", MainStorefront.browser_state.show_filter_bar_plugins, false)
 
+        -- Test toggleFilterBar with active browser_menu (in-place update)
+        do
+            local update_content_called = false
+            local captured_update_options = nil
+            MainStorefront.browser_state.tab = "Plugins"
+            MainStorefront.browser_state.page = 1
+            MainStorefront.browser_state.show_filter_bar_plugins = false
+            MainStorefront.browser_menu = {
+                updateTabContent = function(self_menu, opts)
+                    update_content_called = true
+                    captured_update_options = opts
+                end
+            }
+            MainStorefront:toggleFilterBar("Plugins")
+            check("toggleFilterBar with active browser_menu invokes updateTabContent", update_content_called, true)
+            check("toggleFilterBar updates show_filter_bar_plugins to true", MainStorefront.browser_state.show_filter_bar_plugins, true)
+            check("updateTabContent received show_filter_bar_plugins = true", captured_update_options and captured_update_options.show_filter_bar_plugins, true)
+            check("updateTabContent received toolbar_buttons", (captured_update_options and captured_update_options.toolbar_buttons and #captured_update_options.toolbar_buttons > 0), true)
+
+            -- Toggle closed in-place
+            update_content_called = false
+            captured_update_options = nil
+            MainStorefront:toggleFilterBar("Plugins")
+            check("toggleFilterBar toggles closed with active browser_menu", update_content_called, true)
+            check("toggleFilterBar updates show_filter_bar_plugins back to false", MainStorefront.browser_state.show_filter_bar_plugins, false)
+            check("updateTabContent received show_filter_bar_plugins = false", captured_update_options and captured_update_options.show_filter_bar_plugins, false)
+            check("updateTabContent toolbar_buttons is nil when closed and no search", captured_update_options and captured_update_options.toolbar_buttons == nil, true)
+            MainStorefront.browser_menu = nil
+
+            -- Test StorefrontBrowserDialog filter button tap and touch range
+            local filter_toggled_tab = nil
+            local test_browser = StorefrontBrowserDialog:new{
+                title = "Storefront",
+                items = {},
+                current_tab = "Plugins",
+                on_toggle_filter_bar = function(tab)
+                    filter_toggled_tab = tab
+                end,
+            }
+            test_browser:init()
+            check("StorefrontBrowserDialog creates _filter_btn on Plugins tab", test_browser._filter_btn ~= nil, true)
+            if test_browser._filter_btn then
+                local Geom = require("ui/geometry")
+                check("_filter_btn is focusable", test_browser._filter_btn:isFocusable(), true)
+                check("_filter_btn has onTap", type(test_browser._filter_btn.onTap), "function")
+                check("_filter_btn has ges_events.Tap", test_browser._filter_btn.ges_events and test_browser._filter_btn.ges_events.Tap ~= nil, true)
+                test_browser._filter_btn.dimen = { x = (test_browser.width or 800) - 50, y = 50, w = 32, h = 28 }
+                local gr = test_browser._filter_btn.ges_events.Tap[1]
+                local range_fn = (gr.args and gr.args.range) or gr.range
+                local tap_range = type(range_fn) == "function" and range_fn() or range_fn
+                check("_filter_btn tap range covers minimum touch width (>= 48px)", tap_range.w >= 48, true)
+                check("_filter_btn tap range covers minimum touch height (>= 44px)", tap_range.h >= 44, true)
+                check("_filter_btn tap range extends to right edge", (tap_range.x + tap_range.w) >= (test_browser.width or 800), true)
+                local test_x = (test_browser.width or 800) - 2
+                local test_y = 55
+                local in_range = test_x >= tap_range.x and test_x <= (tap_range.x + tap_range.w) and test_y >= tap_range.y and test_y <= (tap_range.y + tap_range.h)
+                check("_filter_btn tap range contains point near right bezel", in_range, true)
+                test_browser._filter_btn.onTap()
+                check("_filter_btn onTap invokes on_toggle_filter_bar with current tab", filter_toggled_tab, "Plugins")
+            end
+        end
+
         -- Test tab switch retains closed filter bar state
         MainStorefront.browser_state.search_text = ""
         MainStorefront.browser_state.show_filter_bar_plugins = false

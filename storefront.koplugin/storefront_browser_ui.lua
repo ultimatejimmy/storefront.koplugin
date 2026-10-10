@@ -389,11 +389,18 @@ function StorefrontBrowserDialog:buildTabBar()
                     ges = "tap",
                     range = function()
                         local dim = filter_btn.dimen or { x = 0, y = 0, w = 0, h = 0 }
+                        local pad_h = sc(10)
+                        local pad_v = sc(8)
+                        local x = math.max(0, (dim.x or 0) - pad_h)
+                        local y = math.max(0, (dim.y or 0) - pad_v)
+                        local right_edge = math.max((dim.x or 0) + (dim.w or 0), self.width or 0)
+                        local w = math.max(sc(48), right_edge - x)
+                        local h = math.max(sc(44), (dim.h or 0) + 2 * pad_v)
                         return Geom:new{
-                            x = dim.x or 0,
-                            y = dim.y or 0,
-                            w = dim.w or 0,
-                            h = dim.h or 0
+                            x = x,
+                            y = y,
+                            w = w,
+                            h = h,
                         }
                     end,
                 }
@@ -1126,6 +1133,21 @@ function StorefrontBrowserDialog:updateTabContent(options)
     end
     if options.active_search_text ~= nil then
         self.active_search_text = options.active_search_text
+    end
+    if options.show_filter_bar_plugins ~= nil then
+        self.show_filter_bar_plugins = options.show_filter_bar_plugins
+    end
+    if options.show_filter_bar_patches ~= nil then
+        self.show_filter_bar_patches = options.show_filter_bar_patches
+    end
+    if options.show_filter_bar_fonts ~= nil then
+        self.show_filter_bar_fonts = options.show_filter_bar_fonts
+    end
+    if options.show_filter_bar_screensavers ~= nil then
+        self.show_filter_bar_screensavers = options.show_filter_bar_screensavers
+    end
+    if options.show_filter_bar_installed ~= nil then
+        self.show_filter_bar_installed = options.show_filter_bar_installed
     end
 
     -- 2. Rebuild tab bar and toolbar
