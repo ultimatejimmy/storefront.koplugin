@@ -328,4 +328,30 @@ describe("storefront_ratings", function()
         package.loaded["storefront_toast"] = nil
         package.loaded["storefront_utils"] = nil
     end)
+
+    it("should sort items by most liked using catalog ratings and wilson score", function()
+        local item_high_likes = { id = 1, name = "HighLikes", user_thumbs_up = 10, user_thumbs_down = 0, wilson_score = 0.72, stars = 50 }
+        local item_mid_likes = { id = 2, name = "MidLikes", user_thumbs_up = 3, user_thumbs_down = 0, wilson_score = 0.44, stars = 10 }
+        local item_no_likes_high_stars = { id = 3, name = "NoLikesHighStars", user_thumbs_up = 0, user_thumbs_down = 0, wilson_score = 0.0, stars = 5000 }
+        local item_no_likes_low_stars = { id = 4, name = "NoLikesLowStars", user_thumbs_up = 0, user_thumbs_down = 0, wilson_score = 0.0, stars = 100 }
+
+        local list = { item_no_likes_high_stars, item_mid_likes, item_no_likes_low_stars, item_high_likes }
+
+        table.sort(list, function(a, b)
+            local r_a = a and StorefrontRatings.getRating(a, a)
+            local r_b = b and StorefrontRatings.getRating(b, b)
+            local sa = r_a and r_a.wilson or 0
+            local sb = r_b and r_b.wilson or 0
+            if sa ~= sb then return sa > sb end
+            local ua = r_a and r_a.up or 0
+            local ub = r_b and r_b.up or 0
+            if ua ~= ub then return ua > ub end
+            return (a.stars or 0) > (b.stars or 0)
+        end)
+
+        assert.equals("HighLikes", list[1].name)
+        assert.equals("MidLikes", list[2].name)
+        assert.equals("NoLikesHighStars", list[3].name)
+        assert.equals("NoLikesLowStars", list[4].name)
+    end)
 end)

@@ -5975,15 +5975,18 @@ end
 
 local function compareRepoWilsonScoreDesc(a, b)
     local StorefrontRatings = require("storefront_ratings")
-    local id_a = a and (a.id or a.repo_id)
-    local id_b = b and (b.id or b.repo_id)
-    local r_a = id_a and StorefrontRatings.getRating(id_a)
-    local r_b = id_b and StorefrontRatings.getRating(id_b)
+    local r_a = a and StorefrontRatings.getRating(a, a)
+    local r_b = b and StorefrontRatings.getRating(b, b)
 
     local sa = r_a and r_a.wilson or 0
     local sb = r_b and r_b.wilson or 0
     if sa ~= sb then
         return sa > sb
+    end
+    local ua = r_a and r_a.up or 0
+    local ub = r_b and r_b.up or 0
+    if ua ~= ub then
+        return ua > ub
     end
     return compareRepoStarsDesc(a, b)
 end
@@ -5992,16 +5995,18 @@ local function comparePatchWilsonScoreDesc(a, b)
     local StorefrontRatings = require("storefront_ratings")
     local r_item_a = a and (a.repo or a)
     local r_item_b = b and (b.repo or b)
-    local id_a = r_item_a and (r_item_a.id or r_item_a.repo_id)
-    local id_b = r_item_b and (r_item_b.id or r_item_b.repo_id)
-
-    local r_a = id_a and StorefrontRatings.getRating(id_a)
-    local r_b = id_b and StorefrontRatings.getRating(id_b)
+    local r_a = r_item_a and StorefrontRatings.getRating(r_item_a, r_item_a)
+    local r_b = r_item_b and StorefrontRatings.getRating(r_item_b, r_item_b)
 
     local sa = r_a and r_a.wilson or 0
     local sb = r_b and r_b.wilson or 0
     if sa ~= sb then
         return sa > sb
+    end
+    local ua = r_a and r_a.up or 0
+    local ub = r_b and r_b.up or 0
+    if ua ~= ub then
+        return ua > ub
     end
     return comparePatchStarsDesc(a, b)
 end

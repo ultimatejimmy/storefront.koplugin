@@ -224,6 +224,10 @@ function Cache.storeRepos(kind, repos, custom_fetched_at)
             homepage = repo.homepage ~= json.null and tostring(repo.homepage or "") or "",
             version = version,
             latest_release = latest_rel,
+            user_thumbs_up = tonumber(repo.user_thumbs_up or (repo.data and repo.data.user_thumbs_up)) or 0,
+            user_thumbs_down = tonumber(repo.user_thumbs_down or (repo.data and repo.data.user_thumbs_down)) or 0,
+            wilson_score = tonumber(repo.wilson_score or (repo.data and repo.data.wilson_score)) or 0,
+            downloads = tonumber(repo.downloads or (repo.data and repo.data.downloads)) or 0,
             fetched_at = fetched_at,
             data = repo,
         }

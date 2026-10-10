@@ -556,10 +556,10 @@ function StorefrontRatings.getRating(item_or_id, entry)
 
     local e = type(entry) == "table" and entry or (type(item_or_id) == "table" and item_or_id or nil)
     if e then
-        base_up = tonumber(e.user_thumbs_up or (e.repo and e.repo.user_thumbs_up) or (e.plugin and e.plugin.user_thumbs_up) or (e.record and e.record.user_thumbs_up) or e.user_thumbs_up_base or e.likes) or 0
-        base_down = tonumber(e.user_thumbs_down or (e.repo and e.repo.user_thumbs_down) or (e.plugin and e.plugin.user_thumbs_down) or (e.record and e.record.user_thumbs_down) or e.user_thumbs_down_base) or 0
-        wilson = tonumber(e.wilson_score or (e.repo and e.repo.wilson_score) or e.wilson) or 0
-        base_downloads = tonumber(e.downloads or e.download_count or e.downloads_count or (e.repo and (e.repo.downloads or e.repo.download_count)) or e.installs) or 0
+        base_up = tonumber(e.user_thumbs_up or (e.data and e.data.user_thumbs_up) or (e.repo and e.repo.user_thumbs_up) or (e.plugin and e.plugin.user_thumbs_up) or (e.record and e.record.user_thumbs_up) or e.user_thumbs_up_base or e.likes) or 0
+        base_down = tonumber(e.user_thumbs_down or (e.data and e.data.user_thumbs_down) or (e.repo and e.repo.user_thumbs_down) or (e.plugin and e.plugin.user_thumbs_down) or (e.record and e.record.user_thumbs_down) or e.user_thumbs_down_base) or 0
+        wilson = tonumber(e.wilson_score or (e.data and e.data.wilson_score) or (e.repo and e.repo.wilson_score) or e.wilson) or 0
+        base_downloads = tonumber(e.downloads or (e.data and e.data.downloads) or e.download_count or e.downloads_count or (e.repo and (e.repo.downloads or e.repo.download_count)) or e.installs) or 0
     end
 
     local candidate_keys = getCandidateKeys(item_or_id)
@@ -593,7 +593,9 @@ function StorefrontRatings.getRating(item_or_id, entry)
         elseif user_vote == "down" then
             final_down = base_down + 1
         end
-        wilson = StorefrontRatings.computeWilsonScore(final_up, final_down)
+        if user_vote or (wilson == 0 and (final_up > 0 or final_down > 0)) then
+            wilson = StorefrontRatings.computeWilsonScore(final_up, final_down)
+        end
     end
 
     return {
