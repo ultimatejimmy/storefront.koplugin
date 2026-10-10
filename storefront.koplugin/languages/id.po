@@ -2589,6 +2589,10 @@ msgstr "Regangkan gambar ke layar penuh"
 msgid "Style: "
 msgstr "Gaya: "
 
+# en-hash: b4dea082889b319864c2981cedfedb6b
+msgid "Submitting vote..."
+msgstr "Mengirim suara..."
+
 # en-hash: df30b0a7f63ac7248425b965ff0c47b8
 msgid "Successfully updated %d item(s)."
 msgstr "Berhasil memperbarui %d item."

@@ -2589,6 +2589,10 @@ msgstr "画面全体に合わせて拡大"
 msgid "Style: "
 msgstr "スタイル: "
 
+# en-hash: b4dea082889b319864c2981cedfedb6b
+msgid "Submitting vote..."
+msgstr "投票を送信中..."
+
 # en-hash: df30b0a7f63ac7248425b965ff0c47b8
 msgid "Successfully updated %d item(s)."
 msgstr "%d 個の項目を更新しました。"

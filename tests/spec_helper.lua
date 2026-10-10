@@ -610,7 +610,12 @@ package.loaded["socket.http"] = {}
 package.loaded["ssl.https"] = {}
 package.loaded["ltn12"] = {}
 package.loaded["socket"] = {}
-package.loaded["socketutil"] = {}
+package.loaded["socketutil"] = {
+    FILE_BLOCK_TIMEOUT = 15,
+    FILE_TOTAL_TIMEOUT = 30,
+    set_timeout = function() end,
+    reset_timeout = function() end,
+}
 package.loaded["ffi/archiver"] = {}
 package.loaded["ffi/sha2"] = {}
 package.loaded["util"] = {

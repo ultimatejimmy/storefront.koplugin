@@ -4,11 +4,20 @@
 ---
 --- @module StorefrontRatings
 
+local _ = require("gettext")
 local json = require("json")
 local logger = require("logger")
 local DataStorage = require("datastorage")
 local LuaSettings = require("luasettings")
-local socketutil = require("socketutil")
+local ok_su, socketutil = pcall(require, "socketutil")
+if not ok_su or not socketutil then
+    socketutil = {
+        FILE_BLOCK_TIMEOUT = 15,
+        FILE_TOTAL_TIMEOUT = 30,
+        set_timeout = function() end,
+        reset_timeout = function() end,
+    }
+end
 
 local function getHttpModule(url)
     return require("socket.http")
@@ -26,13 +35,20 @@ local function normalizeRatingsTable(tbl)
     local normalized = {}
     for k, v in pairs(tbl) do
         if type(v) == "table" then
-            local str_key = tostring(k)
-            normalized[str_key] = {
-                up = tonumber(v.up) or 0,
-                down = tonumber(v.down) or 0,
-                wilson = tonumber(v.wilson) or 0,
-                downloads = tonumber(v.downloads) or 0,
-            }
+            local up = tonumber(v.up) or 0
+            local down = tonumber(v.down) or 0
+            local wilson = tonumber(v.wilson) or 0
+            local downloads = tonumber(v.downloads) or 0
+            -- Sparse normalization: only retain entries with community votes, downloads, or ranking
+            if up > 0 or down > 0 or downloads > 0 or wilson > 0 then
+                local str_key = tostring(k)
+                normalized[str_key] = {
+                    up = up,
+                    down = down,
+                    wilson = wilson,
+                    downloads = downloads,
+                }
+            end
         end
     end
     return normalized
@@ -220,6 +236,20 @@ function StorefrontRatings.clearCache()
     return { removed = removed, bytes = freed_bytes }
 end
 
+local function terminateAndCleanupSubProcess(pid, parent_read_fd)
+    local ok_ffi, ffiutil = pcall(require, "ffi/util")
+    if not ok_ffi then ok_ffi, ffiutil = pcall(require, "ffiutil") end
+    if ok_ffi and ffiutil then
+        if pid and ffiutil.terminateSubProcess then
+            pcall(ffiutil.terminateSubProcess, pid)
+        end
+        if parent_read_fd then
+            local read_func = ffiutil.readAllFromFD or ffiutil.readFromFD
+            if read_func then pcall(read_func, parent_read_fd) end
+        end
+    end
+end
+
 --- Fetches all live ratings from the Cloudflare D1 backend asynchronously.
 --- @param callback function|nil Called with (success, ratings_table)
 --- @param force_refresh boolean|nil If true, bypasses session cache & cooldown
@@ -247,6 +277,23 @@ function StorefrontRatings.fetchRatings(callback, force_refresh)
         return
     end
 
+    -- Guard against low memory conditions to prevent OOM
+    local StorefrontUtils = require("storefront_utils")
+    local is_low, avail_kb = StorefrontUtils.isLowMemory()
+    if is_low then
+        logger.info(string.format("StorefrontRatings: available memory is low (%d KB), skipping background ratings fetch to prevent OOM", avail_kb or 0))
+        if callback then UIManager:scheduleIn(0, function() callback(true, StorefrontRatings.liveRatings) end) end
+        return
+    end
+
+    -- Avoid dual forks if catalog update is already running
+    local ok_cat, CatalogClient = pcall(require, "storefront_net_catalog")
+    if ok_cat and CatalogClient and CatalogClient.isRefreshing and CatalogClient.isRefreshing() then
+        logger.info("StorefrontRatings: catalog fetch in progress, deferring ratings fetch")
+        if callback then UIManager:scheduleIn(0, function() callback(true, StorefrontRatings.liveRatings) end) end
+        return
+    end
+
     if is_fetching then
         if callback then UIManager:scheduleIn(0, function() callback(true, StorefrontRatings.liveRatings) end) end
         return
@@ -258,7 +305,9 @@ function StorefrontRatings.fetchRatings(callback, force_refresh)
         local http_req = getHttpModule(StorefrontRatings.BASE_URL)
         local response_body = {}
 
-        socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+        if socketutil and socketutil.set_timeout then
+            socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT or 15, socketutil.FILE_TOTAL_TIMEOUT or 30)
+        end
         local ok_req, res_code = pcall(function()
             local params = {
                 url = StorefrontRatings.BASE_URL .. "/ratings",
@@ -275,7 +324,9 @@ function StorefrontRatings.fetchRatings(callback, force_refresh)
             local _, c = http_req.request(params)
             return c
         end)
-        socketutil:reset_timeout()
+        if socketutil and socketutil.reset_timeout then
+            socketutil:reset_timeout()
+        end
 
         local code = tonumber(res_code) or 0
         if ok_req and code == 200 then
@@ -308,7 +359,8 @@ function StorefrontRatings.fetchRatings(callback, force_refresh)
                 poll_attempts = poll_attempts + 1
                 if poll_attempts > MAX_POLL_ATTEMPTS then
                     is_fetching = false
-                    logger.warn("StorefrontRatings: fetch subprocess timed out")
+                    terminateAndCleanupSubProcess(pid, parent_read_fd)
+                    logger.warn("StorefrontRatings: fetch subprocess timed out, child terminated")
                     if callback then callback(false, nil) end
                     return
                 end
@@ -323,6 +375,7 @@ function StorefrontRatings.fetchRatings(callback, force_refresh)
                             return read_func(pid)
                         end
                     end)
+                    terminateAndCleanupSubProcess(nil, parent_read_fd)
                     if ok_read and type(raw_msg) == "string" and raw_msg ~= "" then
                         local ok_dec, res_data = pcall(json.decode, raw_msg)
                         if ok_dec and res_data and res_data.ok and type(res_data.result) == "table" then
@@ -737,8 +790,11 @@ function StorefrontRatings.submitVote(item_or_id, direction, item_kind, callback
 
     local dispatch_task = function()
         logger.info("StorefrontRatings: submitting vote", repo_id, direction)
-        
-        local function execute_sync()
+
+        local StorefrontUtils = require("storefront_utils")
+        local is_low_mem = StorefrontUtils.isLowMemory and StorefrontUtils.isLowMemory()
+
+        local function execute_sync(custom_timeout)
             local http_req = getHttpModule(StorefrontRatings.BASE_URL)
             local response_body = {}
             local headers = {
@@ -748,7 +804,11 @@ function StorefrontRatings.submitVote(item_or_id, direction, item_kind, callback
                 ["Content-Length"] = tostring(#payload),
             }
 
-            socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+            local block_to = custom_timeout or (socketutil and socketutil.FILE_BLOCK_TIMEOUT) or 15
+            local total_to = custom_timeout and (custom_timeout + 2) or (socketutil and socketutil.FILE_TOTAL_TIMEOUT) or 30
+            if socketutil and socketutil.set_timeout then
+                socketutil:set_timeout(block_to, total_to)
+            end
             local ok_req, res_code = pcall(function()
                 local payload_sent = false
                 local params = {
@@ -767,7 +827,9 @@ function StorefrontRatings.submitVote(item_or_id, direction, item_kind, callback
                 local _, c = http_req.request(params)
                 return c
             end)
-            socketutil:reset_timeout()
+            if socketutil and socketutil.reset_timeout then
+                socketutil:reset_timeout()
+            end
 
             local code = tonumber(res_code) or 0
             if ok_req and code == 200 then
@@ -783,7 +845,9 @@ function StorefrontRatings.submitVote(item_or_id, direction, item_kind, callback
         local ok_ffi, ffiutil = pcall(require, "ffi/util")
         if not ok_ffi then ok_ffi, ffiutil = pcall(require, "ffiutil") end
 
-        if ok_ffi and ffiutil and ffiutil.runInSubProcess then
+        local can_fork = ok_ffi and ffiutil and ffiutil.runInSubProcess and ffiutil.isSubProcessDone and not is_low_mem
+
+        if can_fork then
             local pid, parent_read_fd = ffiutil.runInSubProcess(function(pid, child_write_fd)
                 local ok, parsed_or_err = execute_sync()
                 if child_write_fd then
@@ -793,8 +857,18 @@ function StorefrontRatings.submitVote(item_or_id, direction, item_kind, callback
             end, true)
 
             if pid then
+                local poll_attempts = 0
+                local MAX_POLL_ATTEMPTS = 30 -- 15-second hard ceiling
                 local poll_func
                 poll_func = function()
+                    poll_attempts = poll_attempts + 1
+                    if poll_attempts > MAX_POLL_ATTEMPTS then
+                        terminateAndCleanupSubProcess(pid, parent_read_fd)
+                        logger.warn("StorefrontRatings: vote submission subprocess timed out, child terminated")
+                        if callback then callback(false, "Subprocess timed out") end
+                        return
+                    end
+
                     if ffiutil.isSubProcessDone(pid) then
                         local read_func = ffiutil.readAllFromFD or ffiutil.readFromFD
                         local ok_read, raw_msg = pcall(function()
@@ -804,6 +878,7 @@ function StorefrontRatings.submitVote(item_or_id, direction, item_kind, callback
                                 return read_func(pid)
                             end
                         end)
+                        terminateAndCleanupSubProcess(nil, parent_read_fd)
                         if ok_read and type(raw_msg) == "string" and raw_msg ~= "" then
                             local ok_dec, res_data = pcall(json.decode, raw_msg)
                             if ok_dec and res_data and res_data.ok then
@@ -838,8 +913,17 @@ function StorefrontRatings.submitVote(item_or_id, direction, item_kind, callback
             end
         end
 
-        -- Fallback to sync
-        local ok, result = execute_sync()
+        -- Low memory or fork unavailable: inform user with toast message and execute lightweight direct HTTP
+        if is_low_mem then
+            pcall(function()
+                local ok_toast, StorefrontToast = pcall(require, "storefront_toast")
+                if ok_toast and StorefrontToast and StorefrontToast.show then
+                    StorefrontToast.show(_("Submitting vote..."), 1)
+                end
+            end)
+        end
+
+        local ok, result = execute_sync(3) -- 3-second tight timeout
         if ok then
             local cur_entry = StorefrontRatings.liveRatings[key] or (num_id and StorefrontRatings.liveRatings[num_id])
             local entry_val = {
@@ -854,7 +938,7 @@ function StorefrontRatings.submitVote(item_or_id, direction, item_kind, callback
                 if num_k then StorefrontRatings.liveRatings[num_k] = entry_val end
             end
             UIManager:scheduleIn(1, function() saveLocalRatingsFile(StorefrontRatings.liveRatings) end)
-            logger.info("StorefrontRatings: vote submitted successfully", repo_id)
+            logger.info("StorefrontRatings: vote submitted successfully (direct)", repo_id)
             if callback then UIManager:scheduleIn(0, function() callback(true, nil) end) end
         else
             logger.warn("StorefrontRatings: vote submission returned", result)
@@ -897,8 +981,16 @@ function StorefrontRatings.trackDownload(item_or_id, item_kind, callback)
 
     local dispatch_task = function()
         logger.info("StorefrontRatings: tracking download", repo_id, item_kind)
-        
-        local function execute_sync()
+
+        local StorefrontUtils = require("storefront_utils")
+        local is_low_mem = StorefrontUtils.isLowMemory and StorefrontUtils.isLowMemory()
+        if is_low_mem then
+            logger.dbg("StorefrontRatings: skipping download telemetry ping due to low memory")
+            if callback then callback(true, nil) end
+            return
+        end
+
+        local function execute_sync(custom_timeout)
             local http_req = getHttpModule(StorefrontRatings.BASE_URL)
             local response_body = {}
             local headers = {
@@ -908,7 +1000,11 @@ function StorefrontRatings.trackDownload(item_or_id, item_kind, callback)
                 ["Content-Length"] = tostring(#payload),
             }
 
-            socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+            local block_to = custom_timeout or (socketutil and socketutil.FILE_BLOCK_TIMEOUT) or 15
+            local total_to = custom_timeout and (custom_timeout + 2) or (socketutil and socketutil.FILE_TOTAL_TIMEOUT) or 30
+            if socketutil and socketutil.set_timeout then
+                socketutil:set_timeout(block_to, total_to)
+            end
             local ok_req, res_code = pcall(function()
                 local payload_sent = false
                 local params = {
@@ -927,7 +1023,9 @@ function StorefrontRatings.trackDownload(item_or_id, item_kind, callback)
                 local _, c = http_req.request(params)
                 return c
             end)
-            socketutil:reset_timeout()
+            if socketutil and socketutil.reset_timeout then
+                socketutil:reset_timeout()
+            end
 
             local code = tonumber(res_code) or 0
             if ok_req and code == 200 then
@@ -943,7 +1041,9 @@ function StorefrontRatings.trackDownload(item_or_id, item_kind, callback)
         local ok_ffi, ffiutil = pcall(require, "ffi/util")
         if not ok_ffi then ok_ffi, ffiutil = pcall(require, "ffiutil") end
 
-        if ok_ffi and ffiutil and ffiutil.runInSubProcess then
+        local can_fork = ok_ffi and ffiutil and ffiutil.runInSubProcess and ffiutil.isSubProcessDone and not is_low_mem
+
+        if can_fork then
             local pid, parent_read_fd = ffiutil.runInSubProcess(function(pid, child_write_fd)
                 local ok, parsed_or_err = execute_sync()
                 if child_write_fd then
@@ -953,8 +1053,18 @@ function StorefrontRatings.trackDownload(item_or_id, item_kind, callback)
             end, true)
 
             if pid then
+                local poll_attempts = 0
+                local MAX_POLL_ATTEMPTS = 30 -- 15-second hard ceiling
                 local poll_func
                 poll_func = function()
+                    poll_attempts = poll_attempts + 1
+                    if poll_attempts > MAX_POLL_ATTEMPTS then
+                        terminateAndCleanupSubProcess(pid, parent_read_fd)
+                        logger.dbg("StorefrontRatings: download track subprocess timed out, child terminated")
+                        if callback then callback(false, "Subprocess timed out") end
+                        return
+                    end
+
                     if ffiutil.isSubProcessDone(pid) then
                         local read_func = ffiutil.readAllFromFD or ffiutil.readFromFD
                         local ok_read, raw_msg = pcall(function()
@@ -964,6 +1074,7 @@ function StorefrontRatings.trackDownload(item_or_id, item_kind, callback)
                                 return read_func(pid)
                             end
                         end)
+                        terminateAndCleanupSubProcess(nil, parent_read_fd)
                         if ok_read and type(raw_msg) == "string" and raw_msg ~= "" then
                             local ok_dec, res_data = pcall(json.decode, raw_msg)
                             if ok_dec and res_data and res_data.ok then
@@ -993,7 +1104,7 @@ function StorefrontRatings.trackDownload(item_or_id, item_kind, callback)
         end
 
         -- Fallback to sync
-        local ok, result = execute_sync()
+        local ok, result = execute_sync(3)
         if ok then
             local canon_k = tostring(repo_id)
             local num_k = tonumber(repo_id)
@@ -1002,7 +1113,7 @@ function StorefrontRatings.trackDownload(item_or_id, item_kind, callback)
             StorefrontRatings.liveRatings[canon_k] = entry
             if num_k then StorefrontRatings.liveRatings[num_k] = entry end
             UIManager:scheduleIn(1, function() saveLocalRatingsFile(StorefrontRatings.liveRatings) end)
-            logger.info("StorefrontRatings: download tracked successfully", repo_id)
+            logger.info("StorefrontRatings: download tracked successfully (direct)", repo_id)
             if callback then UIManager:scheduleIn(0, function() callback(true, nil) end) end
         else
             logger.dbg("StorefrontRatings: download track returned", result)

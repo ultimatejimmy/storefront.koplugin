@@ -1943,6 +1943,9 @@ msgstr "Stretch image to fill entire screen"
 msgid "Style: "
 msgstr "Style: "
 
+msgid "Submitting vote..."
+msgstr "Submitting vote..."
+
 msgid "Successfully updated %d item(s)."
 msgstr "Successfully updated %d item(s)."
 

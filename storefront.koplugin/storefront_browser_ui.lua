@@ -657,13 +657,6 @@ function StorefrontBrowserDialog:buildToolbarWidget(toolbar_buttons)
 end
 
 function StorefrontBrowserDialog:init()
-    if not self.is_probe then
-        local ok_ratings, StorefrontRatings = pcall(require, "storefront_ratings")
-        if ok_ratings and StorefrontRatings and StorefrontRatings.fetchRatings then
-            StorefrontRatings.fetchRatings()
-        end
-    end
-
     self.show_parent = self
     self.screen_w = Device.screen:getWidth()
     self.screen_h = Device.screen:getHeight()

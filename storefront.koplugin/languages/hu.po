@@ -2589,6 +2589,10 @@ msgstr "Kép nyújtása teljes képernyőre"
 msgid "Style: "
 msgstr "Stílus: "
 
+# en-hash: b4dea082889b319864c2981cedfedb6b
+msgid "Submitting vote..."
+msgstr "Szavazat beküldése..."
+
 # en-hash: df30b0a7f63ac7248425b965ff0c47b8
 msgid "Successfully updated %d item(s)."
 msgstr "%d elem sikeresen frissítve."

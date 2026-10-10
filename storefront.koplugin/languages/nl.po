@@ -2055,7 +2055,7 @@ msgstr "Achtergrond beoordelen"
 
 # en-hash: 69c5012837c93f492f74b4433044e009
 msgid "ReaderBackdrop (Community)"
-msgstr "ReaderBackdrop (Community)"
+msgstr "ReaderBackdrop (Gemeenschap)"
 
 # en-hash: 172bdcbf3c1298405f3292de568e54f0
 msgid "Reading Passage Specimen"
@@ -2588,6 +2588,10 @@ msgstr "Afbeelding schermvullend uitrekken"
 # en-hash: a2af7968373489748ae4a88c961e5b4d
 msgid "Style: "
 msgstr "Stijl: "
+
+# en-hash: b4dea082889b319864c2981cedfedb6b
+msgid "Submitting vote..."
+msgstr "Stem indienen..."
 
 # en-hash: df30b0a7f63ac7248425b965ff0c47b8
 msgid "Successfully updated %d item(s)."

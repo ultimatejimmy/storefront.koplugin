@@ -2589,6 +2589,10 @@ msgstr "Bild auf den gesamten Bildschirm strecken"
 msgid "Style: "
 msgstr "Stil: "
 
+# en-hash: b4dea082889b319864c2981cedfedb6b
+msgid "Submitting vote..."
+msgstr "Stimme abgeben..."
+
 # en-hash: df30b0a7f63ac7248425b965ff0c47b8
 msgid "Successfully updated %d item(s)."
 msgstr "%d Element(e) erfolgreich aktualisiert."

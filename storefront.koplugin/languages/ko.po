@@ -2589,6 +2589,10 @@ msgstr "화면 전체에 맞춰 이미지 늘리기"
 msgid "Style: "
 msgstr "스타일: "
 
+# en-hash: b4dea082889b319864c2981cedfedb6b
+msgid "Submitting vote..."
+msgstr "투표 제출 중..."
+
 # en-hash: df30b0a7f63ac7248425b965ff0c47b8
 msgid "Successfully updated %d item(s)."
 msgstr "%d개 항목 업데이트 성공."

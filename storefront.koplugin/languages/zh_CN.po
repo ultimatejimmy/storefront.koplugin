@@ -2589,6 +2589,10 @@ msgstr "拉伸图片以铺满全屏"
 msgid "Style: "
 msgstr "样式： "
 
+# en-hash: b4dea082889b319864c2981cedfedb6b
+msgid "Submitting vote..."
+msgstr "正在提交投票..."
+
 # en-hash: df30b0a7f63ac7248425b965ff0c47b8
 msgid "Successfully updated %d item(s)."
 msgstr "已成功更新 %d 个项目。"

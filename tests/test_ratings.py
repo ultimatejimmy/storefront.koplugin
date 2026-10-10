@@ -119,5 +119,28 @@ class TestRatingsTally(unittest.TestCase):
         self.assertEqual(cur_down, 0)
         self.assertEqual(net_score, 1)
 
+    def test_sparse_normalization_pruning(self):
+        # Simulates the sparse normalization in storefront_ratings.lua
+        raw_items = {
+            "item1": {"up": 0, "down": 0, "wilson": 0, "downloads": 0},
+            "item2": {"up": 10, "down": 1, "wilson": 0.72, "downloads": 100},
+            "item3": {"up": 0, "down": 0, "wilson": 0, "downloads": 5},
+            "item4": {"up": "0", "down": "0", "wilson": "0", "downloads": "0"},
+        }
+        sparse = {}
+        for k, v in raw_items.items():
+            up = int(v.get("up", 0))
+            down = int(v.get("down", 0))
+            wilson = float(v.get("wilson", 0.0))
+            downloads = int(v.get("downloads", 0))
+            if up > 0 or down > 0 or downloads > 0 or wilson > 0:
+                sparse[k] = {"up": up, "down": down, "wilson": wilson, "downloads": downloads}
+
+        self.assertNotIn("item1", sparse)
+        self.assertIn("item2", sparse)
+        self.assertIn("item3", sparse)
+        self.assertNotIn("item4", sparse)
+        self.assertEqual(len(sparse), 2)
+
 if __name__ == "__main__":
     unittest.main()

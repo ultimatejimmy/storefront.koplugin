@@ -1085,6 +1085,7 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback, is_backg
     end
 
     CatalogClient._async_pid = pid
+    CatalogClient._poll_fd = parent_read_fd
 
     local poll_attempts = 0
     local MAX_POLL_ATTEMPTS = 120  -- 2-minute hard ceiling
@@ -1092,10 +1093,8 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback, is_backg
     poll_func = function()
         poll_attempts = poll_attempts + 1
         if poll_attempts > MAX_POLL_ATTEMPTS then
-            CatalogClient._async_pid = nil
-            CatalogClient._poll_func = nil
-            CatalogClient._poll_fd = nil
-            logger.warn("Storefront: catalog subprocess timed out after 120s, aborting poll")
+            CatalogClient.cancelCatalogFetch()
+            logger.warn("Storefront: catalog subprocess timed out after 120s, aborting poll and terminating child")
             if StorefrontLogger then StorefrontLogger.warn("Storefront: catalog subprocess timed out") end
             if callback then callback(false, "subprocess timeout") end
             return

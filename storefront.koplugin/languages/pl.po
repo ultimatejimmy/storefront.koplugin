@@ -2589,6 +2589,10 @@ msgstr "Rozciągnij obraz na cały ekran"
 msgid "Style: "
 msgstr "Styl: "
 
+# en-hash: b4dea082889b319864c2981cedfedb6b
+msgid "Submitting vote..."
+msgstr "Wysyłanie głosu..."
+
 # en-hash: df30b0a7f63ac7248425b965ff0c47b8
 msgid "Successfully updated %d item(s)."
 msgstr "Pomyślnie zaktualizowano %d elementów."

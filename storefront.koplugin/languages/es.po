@@ -2589,6 +2589,10 @@ msgstr "Estirar imagen para llenar toda la pantalla"
 msgid "Style: "
 msgstr "Estilo: "
 
+# en-hash: b4dea082889b319864c2981cedfedb6b
+msgid "Submitting vote..."
+msgstr "Enviando voto..."
+
 # en-hash: df30b0a7f63ac7248425b965ff0c47b8
 msgid "Successfully updated %d item(s)."
 msgstr "Se actualizaron con éxito %d elemento(s)."

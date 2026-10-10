@@ -2589,6 +2589,10 @@ msgstr "Розтягнути зображення на весь екран"
 msgid "Style: "
 msgstr "Стиль: "
 
+# en-hash: b4dea082889b319864c2981cedfedb6b
+msgid "Submitting vote..."
+msgstr "Nadscylannia holosu..."
+
 # en-hash: df30b0a7f63ac7248425b965ff0c47b8
 msgid "Successfully updated %d item(s)."
 msgstr "Успішно оновлено елементів: %d."

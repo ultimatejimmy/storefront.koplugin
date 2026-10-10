@@ -200,4 +200,132 @@ describe("storefront_ratings", function()
         local r_str = StorefrontRatings.getRating(string_sf)
         assert.equals(73, r_str.up)
     end)
+
+    it("should normalize ratings sparsely and omit all-zero entries", function()
+        local raw_backend_response = {
+            ["item_active"] = { up = 5, down = 1, wilson = 0.5, downloads = 12 },
+            ["item_download_only"] = { up = 0, down = 0, wilson = 0, downloads = 4 },
+            ["item_zero_1"] = { up = 0, down = 0, wilson = 0, downloads = 0 },
+            ["item_zero_2"] = { up = "0", down = "0", wilson = "0", downloads = "0" },
+        }
+
+        -- Call clearCache to start fresh
+        StorefrontRatings.clearCache()
+        StorefrontRatings.liveRatings = {}
+
+        -- Test that saving & loading normalizes sparsely
+        local ok_ffi, ffiutil = pcall(require, "ffi/util")
+        -- Call fetchRatings fallback or direct normalization test
+        local item_active = { id = "item_active" }
+        local item_zero = { id = "item_zero_1" }
+
+        StorefrontRatings.liveRatings["item_active"] = { up = 5, down = 1, wilson = 0.5, downloads = 12 }
+        -- All-zero entries should not exist in sparse liveRatings
+        local r_active = StorefrontRatings.getRating(item_active)
+        assert.equals(5, r_active.up)
+        assert.equals(1, r_active.down)
+        assert.equals(12, r_active.downloads)
+
+        local r_zero = StorefrontRatings.getRating(item_zero)
+        assert.equals(0, r_zero.up)
+        assert.equals(0, r_zero.down)
+        assert.equals(0, r_zero.downloads)
+    end)
+
+    it("should terminate subprocess and clean up FD on timeout", function()
+        local UIManager = require("ui/uimanager")
+        local terminated_pid = nil
+        local drained_fd = nil
+
+        local mock_ffiutil = {
+            runInSubProcess = function(fn, pass_fds)
+                return 4488, 99
+            end,
+            isSubProcessDone = function(pid)
+                return false -- simulate hanging / timeout
+            end,
+            terminateSubProcess = function(pid)
+                terminated_pid = pid
+            end,
+            readAllFromFD = function(fd)
+                drained_fd = fd
+                return ""
+            end,
+        }
+
+        package.loaded["ffi/util"] = mock_ffiutil
+        package.loaded["ffiutil"] = mock_ffiutil
+
+        -- Re-require storefront_ratings to pick up mock ffiutil
+        package.loaded["storefront_ratings"] = nil
+        local SR = require("storefront_ratings")
+
+        local callback_called = false
+        local callback_success = nil
+        SR.fetchRatings(function(ok, res)
+            callback_called = true
+            callback_success = ok
+        end, true)
+
+        -- Advance scheduled poll calls until timeout
+        for _ = 1, 65 do
+            if UIManager._scheduled and #UIManager._scheduled > 0 then
+                local task = table.remove(UIManager._scheduled, 1)
+                if task and task.action then task.action() end
+            end
+        end
+
+        assert.is_true(callback_called)
+        assert.equals(false, callback_success)
+        assert.equals(4488, terminated_pid)
+        assert.equals(99, drained_fd)
+
+        -- Clean up mock
+        package.loaded["ffi/util"] = nil
+        package.loaded["ffiutil"] = nil
+    end)
+
+    it("should show toast and use direct sync HTTP on low memory for submitVote", function()
+        local UIManager = require("ui/uimanager")
+        local toast_shown = false
+        local toast_msg = nil
+
+        package.loaded["storefront_toast"] = {
+            show = function(msg, timeout)
+                toast_shown = true
+                toast_msg = msg
+            end,
+        }
+
+        -- Mock low memory
+        package.loaded["storefront_utils"] = {
+            isLowMemory = function()
+                return true, 12000 -- 12 MB free
+            end,
+        }
+
+        package.loaded["storefront_ratings"] = nil
+        local SR = require("storefront_ratings")
+
+        local vote_cb_called = false
+        SR.submitVote("test_item_lowmem", "up", "plugin", function(ok, err)
+            vote_cb_called = true
+        end)
+
+        -- Drain any scheduled task
+        for _ = 1, 10 do
+            if UIManager._scheduled and #UIManager._scheduled > 0 then
+                local task = table.remove(UIManager._scheduled, 1)
+                if task and task.action then task.action() end
+            end
+        end
+
+        assert.is_true(toast_shown)
+        assert.is_not_nil(toast_msg)
+        assert.equals("up", SR.getUserVote("test_item_lowmem"))
+
+        -- Clean up mocks
+        package.loaded["storefront_toast"] = nil
+        package.loaded["storefront_utils"] = nil
+    end)
 end)

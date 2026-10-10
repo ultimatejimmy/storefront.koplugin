@@ -355,6 +355,15 @@ function SearchNet:init(Storefront)
 
                     StorefrontSettings:saveSetting("status_text", summary)
                     StorefrontSettings:flush()
+                    local StorefrontUtils = require("storefront_utils")
+                    if StorefrontUtils.isLowMemory and not StorefrontUtils.isLowMemory() then
+                        pcall(function()
+                            local ok_ratings, StorefrontRatings = pcall(require, "storefront_ratings")
+                            if ok_ratings and StorefrontRatings and StorefrontRatings.fetchRatings then
+                                StorefrontRatings.fetchRatings(nil, true)
+                            end
+                        end)
+                    end
                     finishRefresh(true, summary, nil)
                 else
                     logger.warn("Storefront static catalog update failed:", catalog_err)
