@@ -242,12 +242,29 @@ local function terminateAndCleanupSubProcess(pid, parent_read_fd)
     if ok_ffi and ffiutil then
         if pid and ffiutil.terminateSubProcess then
             pcall(ffiutil.terminateSubProcess, pid)
+            if ffiutil.isSubProcessDone then
+                pcall(ffiutil.isSubProcessDone, pid, true)
+            end
         end
         if parent_read_fd then
             local read_func = ffiutil.readAllFromFD or ffiutil.readFromFD
             if read_func then pcall(read_func, parent_read_fd) end
         end
     end
+end
+
+StorefrontRatings._active_requests = {}
+
+function StorefrontRatings.cancelPendingRequests()
+    is_fetching = false
+    local UIManager = require("ui/uimanager")
+    for _, req in ipairs(StorefrontRatings._active_requests or {}) do
+        if req.poll_fn then
+            pcall(UIManager.unschedule, UIManager, req.poll_fn)
+        end
+        terminateAndCleanupSubProcess(req.pid, req.fd)
+    end
+    StorefrontRatings._active_requests = {}
 end
 
 --- Fetches all live ratings from the Cloudflare D1 backend asynchronously.
@@ -356,6 +373,14 @@ function StorefrontRatings.fetchRatings(callback, force_refresh)
             local MAX_POLL_ATTEMPTS = 60
             local poll_func
             poll_func = function()
+                local ok_dev, Device = pcall(require, "device")
+                if ok_dev and Device and ((Device.isSuspended and Device:isSuspended()) or Device.screen_saver_mode) then
+                    is_fetching = false
+                    terminateAndCleanupSubProcess(pid, parent_read_fd)
+                    if callback then callback(false, "device_suspended") end
+                    return
+                end
+
                 poll_attempts = poll_attempts + 1
                 if poll_attempts > MAX_POLL_ATTEMPTS then
                     is_fetching = false
@@ -863,6 +888,13 @@ function StorefrontRatings.submitVote(item_or_id, direction, item_kind, callback
                 local MAX_POLL_ATTEMPTS = 30 -- 15-second hard ceiling
                 local poll_func
                 poll_func = function()
+                    local ok_dev, Device = pcall(require, "device")
+                    if ok_dev and Device and ((Device.isSuspended and Device:isSuspended()) or Device.screen_saver_mode) then
+                        terminateAndCleanupSubProcess(pid, parent_read_fd)
+                        if callback then callback(false, "device_suspended") end
+                        return
+                    end
+
                     poll_attempts = poll_attempts + 1
                     if poll_attempts > MAX_POLL_ATTEMPTS then
                         terminateAndCleanupSubProcess(pid, parent_read_fd)
@@ -1059,6 +1091,13 @@ function StorefrontRatings.trackDownload(item_or_id, item_kind, callback)
                 local MAX_POLL_ATTEMPTS = 30 -- 15-second hard ceiling
                 local poll_func
                 poll_func = function()
+                    local ok_dev, Device = pcall(require, "device")
+                    if ok_dev and Device and ((Device.isSuspended and Device:isSuspended()) or Device.screen_saver_mode) then
+                        terminateAndCleanupSubProcess(pid, parent_read_fd)
+                        if callback then callback(false, "device_suspended") end
+                        return
+                    end
+
                     poll_attempts = poll_attempts + 1
                     if poll_attempts > MAX_POLL_ATTEMPTS then
                         terminateAndCleanupSubProcess(pid, parent_read_fd)

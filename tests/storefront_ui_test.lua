@@ -2285,6 +2285,50 @@ do
     -- Test closing the browser menu purges screensavers_cache to keep KOReader RAM clean
     MainStorefront:closeBrowserMenu()
     check("screensavers_cache purged on closeBrowserMenu", MainStorefront.screensavers_cache == nil, true)
+
+    -- Test onSuspend lifecycle cleanup
+    MainStorefront.screensavers_cache = { { id = 1 }, { id = 2 } }
+    MainStorefront._screensavers_all_cache = { { id = 1 }, { id = 2 } }
+    local mock_terminated_pid = nil
+    local mock_reaped_pid = nil
+    local mock_closed_fd = nil
+    local ok_ffi, ffiutil = pcall(require, "ffi/util")
+    if not ok_ffi then ok_ffi, ffiutil = pcall(require, "ffiutil") end
+
+    MainStorefront._active_thumb_worker = {
+        pid = 99999,
+        fd = 88888,
+    }
+
+    local CatalogClient = require("storefront_net_catalog")
+    CatalogClient._async_pid = 77777
+    CatalogClient._poll_fd = 66666
+    CatalogClient._poll_func = function() end
+
+    local orig_term = ffiutil and ffiutil.terminateSubProcess
+    local orig_done = ffiutil and ffiutil.isSubProcessDone
+    local orig_read = ffiutil and (ffiutil.readAllFromFD or ffiutil.readFromFD)
+
+    if ffiutil then
+        ffiutil.terminateSubProcess = function(pid) mock_terminated_pid = pid return true end
+        ffiutil.isSubProcessDone = function(pid, wait) mock_reaped_pid = pid return true end
+        ffiutil.readAllFromFD = function(fd) mock_closed_fd = fd return "" end
+    end
+
+    MainStorefront:onSuspend()
+
+    check("onSuspend purged screensavers_cache", MainStorefront.screensavers_cache == nil, true)
+    check("onSuspend purged _screensavers_all_cache", MainStorefront._screensavers_all_cache == nil, true)
+    check("onSuspend cleared _active_thumb_worker", MainStorefront._active_thumb_worker == nil, true)
+    check("onSuspend called CatalogClient.cancelCatalogFetch", CatalogClient._async_pid == nil, true)
+    check("onSuspend cleared CatalogClient._poll_fd", CatalogClient._poll_fd == nil, true)
+    check("onSuspend cleared CatalogClient._poll_func", CatalogClient._poll_func == nil, true)
+
+    if ffiutil then
+        ffiutil.terminateSubProcess = orig_term
+        ffiutil.isSubProcessDone = orig_done
+        ffiutil.readAllFromFD = orig_read
+    end
 end
 
 if failures > 0 then

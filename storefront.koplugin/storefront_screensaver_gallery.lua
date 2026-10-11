@@ -443,8 +443,11 @@ function StorefrontScreensaverGallery.show(Storefront, on_close_callback, on_set
                             end
                         end
                     end
-                    if cat_item and StorefrontScreensavers.fetchThumbnailAsync then
-                        pcall(StorefrontScreensavers.fetchThumbnailAsync, cat_item)
+                    if cat_item and StorefrontScreensavers.getThumbnailPath then
+                        local t_path = StorefrontScreensavers.getThumbnailPath(cat_item)
+                        if t_path and lfs and lfs.attributes and lfs.attributes(t_path, "mode") == "file" then
+                            source_file = t_path
+                        end
                     end
                 end
 

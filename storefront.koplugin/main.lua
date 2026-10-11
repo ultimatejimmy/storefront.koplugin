@@ -8471,12 +8471,18 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
             if not worker then return end
             if worker.pid and ok_ffi and ffiutil and ffiutil.terminateSubProcess then
                 pcall(ffiutil.terminateSubProcess, worker.pid)
+                if ffiutil.isSubProcessDone then
+                    pcall(ffiutil.isSubProcessDone, worker.pid, true)
+                end
             end
             if worker.fd and ok_ffi and ffiutil then
                 pcall(function()
                     local read_func = ffiutil.readAllFromFD or ffiutil.readFromFD
                     if read_func then read_func(worker.fd) end
                 end)
+            end
+            if worker.pid and StorefrontScreensavers and StorefrontScreensavers.releaseThumbnailWorker then
+                StorefrontScreensavers.releaseThumbnailWorker(worker.pid)
             end
         end
 
@@ -8495,11 +8501,23 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
 
         local pollQueue
         pollQueue = function()
+            -- Abort if device entered suspend or screensaver mode
+            local Device = require("device")
+            if (Device.isSuspended and Device:isSuspended()) or Device.screen_saver_mode then
+                if current_worker then
+                    cleanupWorker(current_worker)
+                    current_worker = nil
+                    self_ref._active_thumb_worker = nil
+                end
+                return
+            end
+
             -- Abort if page changed or user navigated away
             if self_ref._ss_thumb_task_id ~= task_id or not self_ref.browser_menu or (self_ref.browser_state and self_ref.browser_state.tab ~= "Screensavers") then
                 if current_worker then
                     cleanupWorker(current_worker)
                     current_worker = nil
+                    self_ref._active_thumb_worker = nil
                 end
                 return
             end
@@ -8520,6 +8538,12 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
                     if read_func and current_worker.fd then
                         pcall(function() msg = read_func(current_worker.fd) end)
                     end
+                    if pid and ok_ffi and ffiutil and ffiutil.isSubProcessDone then
+                        pcall(ffiutil.isSubProcessDone, pid, true)
+                    end
+                    if pid and StorefrontScreensavers and StorefrontScreensavers.releaseThumbnailWorker then
+                        StorefrontScreensavers.releaseThumbnailWorker(pid)
+                    end
                     local thumb_path = current_worker.thumb_path
                     if (msg and msg:find("^OK")) or (thumb_path and ok_lfs and lfs and lfs.attributes and lfs.attributes(thumb_path, "mode") == "file") then
                         applyThumbnail(current_worker.card, thumb_path, current_worker.inner_w, current_worker.img_h)
@@ -8529,11 +8553,18 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
                         end
                     end
                     current_worker = nil
+                    self_ref._active_thumb_worker = nil
                 else
                     -- Still in flight: poll again in 150ms without blocking UI
                     UIManager:scheduleIn(0.15, pollQueue)
                     return
                 end
+            end
+
+            -- Check for low memory before spawning next worker
+            local is_low, _ = StorefrontUtils.isLowMemory()
+            if is_low then
+                return
             end
 
             -- 2. Dispatch next card in queue (1 worker at a time for low memory / Kindle safety)
@@ -8560,6 +8591,7 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
                             img_h = c_img_h,
                             thumb_path = t_path,
                         }
+                        self_ref._active_thumb_worker = current_worker
                         -- Poll for completion after 150ms
                         UIManager:scheduleIn(0.15, pollQueue)
                         return
@@ -10863,6 +10895,16 @@ function Storefront:init()
     self.cache_dir = ensureCacheDir()
     self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
+    if self.ui and self.ui.registerModule then
+        pcall(self.ui.registerModule, self.ui, "storefront", self, true)
+    end
+    pcall(function()
+        local UIManager = require("ui/uimanager")
+        if UIManager and UIManager.event_hook and UIManager.event_hook.registerWidget then
+            UIManager.event_hook:registerWidget("Suspend", self)
+            UIManager.event_hook:registerWidget("Resume", self)
+        end
+    end)
     
     -- Migrate settings to page size 5 if not set
     if StorefrontSettings:readSetting(BROWSER_PAGE_SIZE_KEY) ~= 5 or StorefrontSettings:readSetting(MANAGE_PAGE_SIZE_KEY) ~= 5 then
@@ -10989,7 +11031,17 @@ function Storefront:init()
     -- Trigger non-blocking silent catalog update on startup (deferred by 60s so it doesn't collide with KOReader startup)
     -- NOTE: We intentionally do NOT use NetworkMgr:runWhenOnline here because that prompts the user
     -- to enable wifi when offline. This is a background operation; silently skip if not connected.
-    UIManager:scheduleIn(60, function()
+    local _bg_catalog_init_fn
+    _bg_catalog_init_fn = function()
+        _bg_catalog_init_fn = nil
+        Storefront._bg_catalog_init_timer_fn = nil
+
+        local ok_dev, Device = pcall(require, "device")
+        if ok_dev and Device and ((Device.isSuspended and Device:isSuspended()) or Device.screen_saver_mode) then
+            logger.info("Storefront init: skipping background catalog update — device suspended or in screensaver mode")
+            return
+        end
+
         local ok_nm, NotificationMgr = pcall(require, "storefront_notification_mgr")
         if ok_nm and NotificationMgr and not NotificationMgr.isEnabled() then
             logger.info("Storefront init: skipping background catalog update — notifications disabled")
@@ -11117,7 +11169,9 @@ function Storefront:init()
                 end
             end)
         end
-    end)
+    end
+    Storefront._bg_catalog_init_timer_fn = _bg_catalog_init_fn
+    UIManager:scheduleIn(60, _bg_catalog_init_fn)
 
     pcall(function() self:scheduleNotificationTimer() end)
 end
@@ -11197,6 +11251,104 @@ function Storefront:onNetworkConnected()
             end
         end, true)
     end
+end
+
+function Storefront:onSuspend()
+    logger.info("Storefront: onSuspend received — aborting active tasks and purging memory")
+    if StorefrontLogger then StorefrontLogger.info("Storefront: onSuspend received — aborting active tasks and purging memory") end
+
+    -- 1. Cancel in-flight screensaver thumbnail queue & terminate active worker
+    self._ss_thumb_task_id = (self._ss_thumb_task_id or 0) + 1
+    if self._active_thumb_worker then
+        local w = self._active_thumb_worker
+        self._active_thumb_worker = nil
+        pcall(function()
+            local ok_ffi, ffiutil = pcall(require, "ffi/util")
+            if not ok_ffi then ok_ffi, ffiutil = pcall(require, "ffiutil") end
+            if ok_ffi and ffiutil then
+                if w.pid and ffiutil.terminateSubProcess then
+                    pcall(ffiutil.terminateSubProcess, w.pid)
+                    if ffiutil.isSubProcessDone then
+                        pcall(ffiutil.isSubProcessDone, w.pid, true)
+                    end
+                end
+                if w.fd and (ffiutil.readAllFromFD or ffiutil.readFromFD) then
+                    local read_fn = ffiutil.readAllFromFD or ffiutil.readFromFD
+                    pcall(read_fn, w.fd)
+                end
+            end
+        end)
+    end
+    pcall(function()
+        local ok_ss, StorefrontScreensavers = pcall(require, "storefront_screensavers_ui")
+        if ok_ss and StorefrontScreensavers and StorefrontScreensavers.cancelAllThumbnailFetches then
+            StorefrontScreensavers.cancelAllThumbnailFetches()
+        end
+    end)
+
+    -- 2. Cancel in-flight background catalog sync & any pending poll timers
+    pcall(function()
+        local ok_cat, CatalogClient = pcall(require, "storefront_net_catalog")
+        if ok_cat and CatalogClient then
+            if CatalogClient.cancelCatalogFetch then
+                CatalogClient.cancelCatalogFetch()
+            elseif CatalogClient.cancelAsyncFetch then
+                CatalogClient.cancelAsyncFetch()
+            end
+        end
+    end)
+
+    -- 3. Cancel ratings subprocesses
+    pcall(function()
+        local ok_rat, StorefrontRatings = pcall(require, "storefront_ratings")
+        if ok_rat and StorefrontRatings and StorefrontRatings.cancelPendingRequests then
+            StorefrontRatings.cancelPendingRequests()
+        end
+    end)
+
+    -- 4. Unschedule pending timers
+    if Storefront._bg_catalog_init_timer_fn then
+        UIManager:unschedule(Storefront._bg_catalog_init_timer_fn)
+        Storefront._bg_catalog_init_timer_fn = nil
+    end
+    if _catalog_retry_timer_fn then
+        UIManager:unschedule(_catalog_retry_timer_fn)
+        _catalog_retry_timer_fn = nil
+    end
+    if _catalog_show_timer_fn then
+        UIManager:unschedule(_catalog_show_timer_fn)
+        _catalog_show_timer_fn = nil
+    end
+    if _screensaver_warmup_timer_fn then
+        UIManager:unschedule(_screensaver_warmup_timer_fn)
+        _screensaver_warmup_timer_fn = nil
+    end
+    if _notification_timer_fn then
+        UIManager:unschedule(_notification_timer_fn)
+        _notification_timer_fn = nil
+    end
+
+    -- 5. Free large in-memory caches to prevent Kindle OOM killer
+    self.screensavers_cache = nil
+    self._screensavers_all_cache = nil
+    pcall(function()
+        local ok_ss, StorefrontScreensavers = pcall(require, "storefront_screensavers_ui")
+        if ok_ss and StorefrontScreensavers and StorefrontScreensavers.invalidateMemCache then
+            StorefrontScreensavers.invalidateMemCache()
+        end
+    end)
+
+    -- 6. Trigger Lua garbage collector immediately before device goes to sleep
+    collectgarbage("collect")
+end
+
+function Storefront:onResume()
+    logger.info("Storefront: onResume received")
+    if StorefrontLogger then StorefrontLogger.info("Storefront: onResume received") end
+end
+
+function Storefront:onCloseWidget()
+    self:onSuspend()
 end
 
 

@@ -604,14 +604,32 @@ function CatalogClient.cancelAsyncFetch()
         CatalogClient._poll_fd = nil
     end
     if CatalogClient._async_pid then
+        local pid = CatalogClient._async_pid
+        CatalogClient._async_pid = nil
         local ok_ffi, ffiutil = pcall(require, "ffi/util")
         if not ok_ffi then ok_ffi, ffiutil = pcall(require, "ffiutil") end
-        if ok_ffi and ffiutil and ffiutil.terminateSubProcess then
-            ffiutil.terminateSubProcess(CatalogClient._async_pid)
+        if ok_ffi and ffiutil then
+            if ffiutil.terminateSubProcess then
+                pcall(ffiutil.terminateSubProcess, pid)
+            end
+            if ffiutil.isSubProcessDone then
+                pcall(ffiutil.isSubProcessDone, pid, true)
+            end
         end
-        CatalogClient._async_pid = nil
     end
+
+    pcall(function()
+        local DataStorage = require("datastorage")
+        local cache_dir = DataStorage:getDataDir() .. "/cache/Storefront"
+        os.remove(cache_dir .. "/catalog_download.json.tmp")
+        os.remove(cache_dir .. "/storefront_plugins.json.tmp")
+        os.remove(cache_dir .. "/storefront_patches.json.tmp")
+        os.remove(cache_dir .. "/storefront_fonts.json.tmp")
+        os.remove(cache_dir .. "/storefront_screensavers_catalog.json.tmp")
+        os.remove(cache_dir .. "/storefront_readerbackdrop_catalog.json.tmp")
+    end)
 end
+CatalogClient.cancelCatalogFetch = CatalogClient.cancelAsyncFetch
 
 function CatalogClient.isRefreshing()
     if CatalogClient._async_pid then
@@ -844,6 +862,13 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback, is_backg
             if callback then callback(false, "low_memory") end
             return
         end
+    end
+
+    local ok_dev, Device = pcall(require, "device")
+    if ok_dev and Device and ((Device.isSuspended and Device:isSuspended()) or Device.screen_saver_mode) then
+        logger.info("Storefront: skipping catalog fetch because device is suspended or in screensaver mode")
+        if callback then callback(false, "device_suspended") end
+        return
     end
 
     if CatalogClient._async_pid then
@@ -1099,6 +1124,14 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback, is_backg
     local MAX_POLL_ATTEMPTS = 120  -- 2-minute hard ceiling
     local poll_func
     poll_func = function()
+        local ok_dev, Device = pcall(require, "device")
+        if ok_dev and Device and ((Device.isSuspended and Device:isSuspended()) or Device.screen_saver_mode) then
+            logger.info("Storefront: device entered suspend during catalog fetch, cancelling subprocess")
+            CatalogClient.cancelCatalogFetch()
+            if callback then callback(false, "device_suspended") end
+            return
+        end
+
         poll_attempts = poll_attempts + 1
         if poll_attempts > MAX_POLL_ATTEMPTS then
             CatalogClient.cancelCatalogFetch()

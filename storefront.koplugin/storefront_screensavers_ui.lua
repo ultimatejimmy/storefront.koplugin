@@ -576,7 +576,40 @@ function StorefrontScreensavers.fetchThumbnail(item, callback)
     return nil
 end
 
+local _active_async_thumbs = {}
+
+function StorefrontScreensavers.releaseThumbnailWorker(pid)
+    if pid and _active_async_thumbs[pid] then
+        _active_async_thumbs[pid] = nil
+    end
+end
+
+function StorefrontScreensavers.cancelAllThumbnailFetches()
+    local ok_ffi, ffiutil = pcall(require, "ffi/util")
+    if not ok_ffi then ok_ffi, ffiutil = pcall(require, "ffiutil") end
+    for pid, entry in pairs(_active_async_thumbs) do
+        if ok_ffi and ffiutil then
+            if pid and ffiutil.terminateSubProcess then
+                pcall(ffiutil.terminateSubProcess, pid)
+            end
+            if pid and ffiutil.isSubProcessDone then
+                pcall(ffiutil.isSubProcessDone, pid, true)
+            end
+            if entry and entry.fd and (ffiutil.readAllFromFD or ffiutil.readFromFD) then
+                local close_func = ffiutil.readAllFromFD or ffiutil.readFromFD
+                pcall(close_func, entry.fd)
+            end
+        end
+    end
+    _active_async_thumbs = {}
+end
+
 function StorefrontScreensavers.fetchThumbnailAsync(item)
+    local ok_dev, Device = pcall(require, "device")
+    if ok_dev and Device and ((Device.isSuspended and Device:isSuspended()) or Device.screen_saver_mode) then
+        return nil, nil, nil
+    end
+
     local cache_dir = DataStorage:getDataDir() .. "/cache/storefront_thumbs"
     local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
     if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
@@ -643,6 +676,7 @@ function StorefrontScreensavers.fetchThumbnailAsync(item)
         return nil, nil, res
     end
 
+    _active_async_thumbs[pid] = { fd = parent_read_fd }
     return pid, parent_read_fd, nil
 end
 

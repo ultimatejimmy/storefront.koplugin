@@ -586,9 +586,6 @@ function StorefrontScreensaverMgr.downloadWallpaper(item, callback)
                     if ok_r and StorefrontRatings and StorefrontRatings.trackDownload then
                         StorefrontRatings.trackDownload(item, "screensaver")
                     end
-                    if StorefrontScreensavers.fetchThumbnailAsync then
-                        pcall(StorefrontScreensavers.fetchThumbnailAsync, item)
-                    end
                     if callback then callback(true, filename) end
                     return filename
                 else
