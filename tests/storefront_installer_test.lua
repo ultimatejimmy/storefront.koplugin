@@ -236,4 +236,149 @@ describe("storefront_installer", function()
             _G.os.exit = orig_os_exit
         end)
     end)
+
+    describe("archive root detection", function()
+        ---@param paths string[] Archive file paths in iteration order.
+        ---@return table reader In-memory archive reader; never writes files.
+        local function archive(paths)
+            return {
+                iterate = function()
+                    local index = 0
+                    return function()
+                        index = index + 1
+                        if paths[index] then
+                            return { path = paths[index], mode = "file" }
+                        end
+                    end
+                end,
+            }
+        end
+
+        it("keeps the outer plugin when components have their own metadata", function()
+            local info = storefront_installer.detectPluginFromArchive(archive({
+                "orbitui.koplugin/_meta.lua",
+                "orbitui.koplugin/components/bookshelf/_meta.lua",
+                "orbitui.koplugin/components/simpleui/_meta.lua",
+            }), { name = "orbitui.koplugin" })
+            assert.equal("orbitui.koplugin", info.plugin_dirname)
+            assert.equal("orbitui.koplugin/", info.prefix)
+            assert.equal("orbitui.koplugin/_meta.lua", info.meta_entry.path)
+        end)
+
+        it("finds the outer metadata regardless of archive order", function()
+            local info = storefront_installer.detectPluginFromArchive(archive({
+                "orbitui.koplugin/components/simpleui/_meta.lua",
+                "orbitui.koplugin/_meta.lua",
+                "orbitui.koplugin/components/bookshelf/_meta.lua",
+            }), { name = "orbitui.koplugin" })
+            assert.equal("orbitui.koplugin", info.plugin_dirname)
+            assert.equal("orbitui.koplugin/", info.prefix)
+        end)
+
+        it("handles a GitHub source wrapper containing embedded components", function()
+            local info = storefront_installer.detectPluginFromArchive(archive({
+                "owner-orbitui.koplugin-abc123/_meta.lua",
+                "owner-orbitui.koplugin-abc123/components/simpleui/_meta.lua",
+            }), { name = "orbitui.koplugin" })
+            assert.equal("orbitui.koplugin", info.plugin_dirname)
+            assert.equal("owner-orbitui.koplugin-abc123/", info.prefix)
+        end)
+
+        it("still detects a plugin nested inside a repository wrapper", function()
+            local info = storefront_installer.detectPluginFromArchive(archive({
+                "storefront-main/README.md",
+                "storefront-main/storefront.koplugin/_meta.lua",
+                "storefront-main/storefront.koplugin/main.lua",
+            }), { name = "storefront.koplugin" })
+            assert.equal("storefront.koplugin", info.plugin_dirname)
+            assert.equal("storefront-main/storefront.koplugin/", info.prefix)
+        end)
+
+        it("supports metadata at the archive root", function()
+            local info = storefront_installer.detectPluginFromArchive(archive({
+                "_meta.lua",
+                "main.lua",
+                "components/simpleui/_meta.lua",
+            }), { name = "orbitui.koplugin" })
+            assert.equal("orbitui.koplugin", info.plugin_dirname)
+            assert.equal("", info.prefix)
+        end)
+
+        for _, plugin_first in ipairs({ false, true }) do
+            it("prefers a .koplugin sibling on equal depth (plugin first: " .. tostring(plugin_first) .. ")", function()
+                local paths = { "wrapper/docs/_meta.lua", "wrapper/sample.koplugin/_meta.lua" }
+                if plugin_first then paths[1], paths[2] = paths[2], paths[1] end
+                local info = storefront_installer.detectPluginFromArchive(archive(paths), { name = "sample.koplugin" })
+                assert.equal("sample.koplugin", info.plugin_dirname)
+                assert.equal("wrapper/sample.koplugin/", info.prefix)
+            end)
+        end
+
+        it("does not prefer a deeper .koplugin component over its outer plugin", function()
+            local info = storefront_installer.detectPluginFromArchive(archive({
+                "wrapper/_meta.lua",
+                "wrapper/embedded.koplugin/_meta.lua",
+            }), { name = "wrapper" })
+            assert.equal("wrapper.koplugin", info.plugin_dirname)
+            assert.equal("wrapper/", info.prefix)
+        end)
+
+        for _, suffix in ipairs({ "", ".koplugin" }) do
+            it("resolves remaining equal-depth ties consistently (suffix: " .. suffix .. ")", function()
+                local paths = { "wrapper/a" .. suffix .. "/_meta.lua", "wrapper/z" .. suffix .. "/_meta.lua" }
+                local first = storefront_installer.detectPluginFromArchive(archive(paths))
+                paths[1], paths[2] = paths[2], paths[1]
+                local reversed = storefront_installer.detectPluginFromArchive(archive(paths))
+                assert.equal("wrapper/a" .. suffix .. "/_meta.lua", first.meta_entry.path)
+                assert.equal(first.meta_entry.path, reversed.meta_entry.path)
+            end)
+        end
+
+        it("does not treat a similarly named Lua file as plugin metadata", function()
+            local info = storefront_installer.detectPluginFromArchive(archive({
+                "sample.koplugin/_meta.lua",
+                "sample.koplugin/lib/not_meta.lua",
+            }), { name = "sample.koplugin" })
+            assert.equal("sample.koplugin", info.plugin_dirname)
+            assert.equal("sample.koplugin/", info.prefix)
+        end)
+
+        it("ignores directory entries named _meta.lua", function()
+            local reader = archive({ "sample.koplugin/_meta.lua" })
+            reader.iterate = function()
+                local entries = {
+                    { path = "sample.koplugin/_meta.lua", mode = "file" },
+                    { path = "_meta.lua", mode = "directory" },
+                }
+                local index = 0
+                return function()
+                    index = index + 1
+                    return entries[index]
+                end
+            end
+            local info = storefront_installer.detectPluginFromArchive(reader, { name = "sample.koplugin" })
+            assert.equal("sample.koplugin/", info.prefix)
+        end)
+
+        it("extracts the whole outer plugin into its own directory", function()
+            local paths = {
+                "orbitui.koplugin/_meta.lua",
+                "orbitui.koplugin/main.lua",
+                "orbitui.koplugin/components/simpleui/_meta.lua",
+                "orbitui.koplugin/components/simpleui/main.lua",
+            }
+            local reader = archive(paths)
+            local extracted = {}
+            reader.extractToPath = function(_, source, target)
+                extracted[source] = target
+            end
+            local info = storefront_installer.detectPluginFromArchive(reader, { name = "orbitui.koplugin" })
+            local ok, target = storefront_installer.extractPluginToUserDir(reader, info, "/plugins")
+            assert.is_true(ok)
+            assert.equal("/plugins/orbitui.koplugin", target)
+            for _, path in ipairs(paths) do
+                assert.equal("/plugins/" .. path, extracted[path])
+            end
+        end)
+    end)
 end)
