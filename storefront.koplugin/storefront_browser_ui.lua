@@ -608,6 +608,63 @@ function StorefrontBrowserDialog:buildToolbarWidget(toolbar_buttons)
             if use_primary and btn.label_widget then
                 btn.label_widget.fgcolor = Blitbuffer.COLOR_WHITE
             end
+            if spec.icon then
+                local icon_name = spec.icon
+                if use_primary and not icon_name:find("-active%.svg") then
+                    local active_candidate = icon_name:gsub("%.svg$", "-active.svg")
+                    local test_path = getAssetPath(active_candidate)
+                    local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
+                    if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
+                    if test_path and ok_lfs and lfs and lfs.attributes and lfs.attributes(test_path, "mode") == "file" then
+                        icon_name = active_candidate
+                    end
+                end
+                local icon_path = getAssetPath(icon_name)
+                local icon_w = ImageWidget:new{
+                    file = icon_path,
+                    width = sc(13),
+                    height = sc(13),
+                    scale_factor = 0,
+                    is_icon = true,
+                }
+                local text_w = nil
+                local combo
+                if spec.text and spec.text ~= "" then
+                    text_w = TextWidget:new{
+                        text = spec.text,
+                        face = Font:getFace("cfont", 14),
+                        bold = spec.text_font_bold or use_primary or false,
+                        fgcolor = use_primary and Blitbuffer.COLOR_WHITE or Blitbuffer.COLOR_BLACK,
+                    }
+                    combo = HorizontalGroup:new{
+                        icon_w,
+                        HorizontalSpan:new{ width = sc(3) },
+                        text_w,
+                    }
+                else
+                    combo = icon_w
+                end
+                combo.fgcolor = use_primary and Blitbuffer.COLOR_WHITE or Blitbuffer.COLOR_BLACK
+                if text_w then
+                    local orig_paint = combo.paintTo
+                    combo.paintTo = function(c_self, bb, x, y)
+                        if text_w and c_self.fgcolor then
+                            text_w.fgcolor = c_self.fgcolor
+                        end
+                        orig_paint(c_self, bb, x, y)
+                    end
+                end
+                btn.label_widget = combo
+                if btn.label_container then
+                    btn.label_container[1] = combo
+                    btn.label_container.dimen = Geom:new{
+                        w = combo:getSize().w,
+                        h = combo:getSize().h,
+                    }
+                end
+                btn.width = combo:getSize().w + (sc(6) * 2)
+                btn.text = nil
+            end
             table.insert(grp, btn)
             table.insert(widgets, { btn = btn, id = spec.id })
         end

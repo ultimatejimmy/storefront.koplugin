@@ -7604,6 +7604,7 @@ function Storefront:hasActiveFilters(tab)
         local sm = self.installed_state.sort_mode or "name_asc"
         return st ~= "" or ft ~= "all" or fd ~= "all" or fs ~= "all" or sm ~= "name_asc"
     elseif tab == "Screensavers" then
+        local col = self.browser_state and self.browser_state.screensaver_collection
         local cat = (self.browser_state and self.browser_state.screensaver_category or ""):lower()
         local cats = self.browser_state and self.browser_state.screensaver_categories
         local has_cats = type(cats) == "table" and next(cats) and not cats["all"]
@@ -7612,7 +7613,7 @@ function Storefront:hasActiveFilters(tab)
         local st = util.trim(self.browser_state and self.browser_state.search_text or "")
         local ow = util.trim(self.browser_state and self.browser_state.owner or "")
         local srch = (self.browser_state and self.browser_state.screensaver_search or ""):lower()
-        return has_cats or (cat ~= "" and cat ~= "all") or (sort ~= "featured") or (st ~= "") or (ow ~= "") or (srch ~= "")
+        return (col ~= nil and col ~= "") or has_cats or (cat ~= "" and cat ~= "all") or (sort ~= "featured") or (st ~= "") or (ow ~= "") or (srch ~= "")
     elseif tab == "Updates" then
         return false
     else
@@ -7648,6 +7649,7 @@ function Storefront:clearSearchAndFilters()
     self.browser_state.sort_mode = "stars_desc"
     self.browser_state.screensaver_category = ""
     self.browser_state.screensaver_categories = nil
+    self.browser_state.screensaver_collection = nil
     self.browser_state.page = 1
     self.browser_state.scroll_offset = nil
 
@@ -7679,6 +7681,26 @@ function Storefront:filterAndSortScreensavers(catalog, opts)
     local ss_sort = opts.ss_sort or "featured"
     if ss_sort == "az" or ss_sort == "za" then ss_sort = "featured" end
 
+    local ss_col_id = opts.screensaver_collection or (self.browser_state and self.browser_state.screensaver_collection)
+    local col_item_order = nil
+    if ss_col_id and ss_col_id ~= "" then
+        local StorefrontScreensavers = require("storefront_screensavers_ui")
+        local collections = StorefrontScreensavers.getCachedCollections() or {}
+        local found_col = nil
+        for _, c in ipairs(collections) do
+            if c.id == ss_col_id then
+                found_col = c
+                break
+            end
+        end
+        if found_col and found_col.items then
+            col_item_order = {}
+            for pos, id in ipairs(found_col.items) do
+                col_item_order[tostring(id)] = pos
+            end
+        end
+    end
+
     local search_terms = extractSearchTerms(raw_search)
     local owner_term   = normalizedLower(raw_owner)
 
@@ -7689,7 +7711,7 @@ function Storefront:filterAndSortScreensavers(catalog, opts)
     local liveRatings = (ok_ratings and StorefrontRatings and StorefrontRatings.liveRatings) or nil
     local has_live = liveRatings and (next(liveRatings) ~= nil)
 
-    if ss_sort == "featured" and both_sources_active and is_category_empty and (not search_terms or #search_terms == 0) and owner_term == "" then
+    if not col_item_order and ss_sort == "featured" and both_sources_active and is_category_empty and (not search_terms or #search_terms == 0) and owner_term == "" then
         local copy = {}
         for idx, entry in ipairs(catalog) do
             entry._catalog_index = entry._catalog_index or idx
@@ -7712,6 +7734,13 @@ function Storefront:filterAndSortScreensavers(catalog, opts)
             end
         else
             if active_sources.storefront == false then
+                pass = false
+            end
+        end
+
+        -- 0a. Collection membership filter
+        if pass and col_item_order then
+            if not col_item_order[tostring(entry.id)] then
                 pass = false
             end
         end
@@ -7985,6 +8014,17 @@ function Storefront:filterAndSortScreensavers(catalog, opts)
         end
     end
 
+    if col_item_order and ss_sort == "featured" then
+        table.sort(filtered, function(a, b)
+            local oa = col_item_order[tostring(a.id)] or 999
+            local ob = col_item_order[tostring(b.id)] or 999
+            if oa ~= ob then return oa < ob end
+            local ca = a._catalog_index or 0
+            local cb = b._catalog_index or 0
+            return ca < cb
+        end)
+    end
+
     return filtered
 end
 
@@ -8011,6 +8051,7 @@ function Storefront:warmupScreensaversCache()
     local raw_owner  = util.trim(self.browser_state.owner or "")
     local active_sources = self.browser_state.screensaver_sources or { storefront = true, readerbackdrop = true }
 
+    local ss_col = tostring(self.browser_state.screensaver_collection or "")
     local cats_key = ""
     if type(ss_cats) == "table" then
         local cat_keys = {}
@@ -8021,9 +8062,9 @@ function Storefront:warmupScreensaversCache()
         cats_key = table.concat(cat_keys, ",")
     end
     local src_key_str = string.format("sf:%s,rb:%s", tostring(active_sources.storefront ~= false), tostring(active_sources.readerbackdrop ~= false))
-    local ss_cache_key = string.format("%s|%s|%s|%s|%s|%s|%d",
+    local ss_cache_key = string.format("%s|%s|%s|%s|%s|%s|%s|%d",
         src_key_str, tostring(ss_cat), cats_key, tostring(ss_sort),
-        tostring(raw_search), tostring(raw_owner), #self.screensavers_cache)
+        tostring(raw_search), tostring(raw_owner), ss_col, #self.screensavers_cache)
 
     local filtered = self:filterAndSortScreensavers(self.screensavers_cache, {
         active_sources = active_sources,
@@ -8032,6 +8073,7 @@ function Storefront:warmupScreensaversCache()
         raw_search = raw_search,
         raw_owner = raw_owner,
         ss_sort = ss_sort,
+        screensaver_collection = ss_col,
     })
 
     self._filtered_screensavers_cache = {
@@ -8111,6 +8153,7 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
     local raw_search = util.trim((self.browser_state.search_text and self.browser_state.search_text ~= "") and self.browser_state.search_text or (self.browser_state.screensaver_search or ""))
     local raw_owner  = util.trim(self.browser_state.owner or "")
 
+    local ss_col = tostring(self.browser_state.screensaver_collection or "")
     local cats_key = ""
     if type(ss_cats) == "table" then
         local cat_keys = {}
@@ -8122,9 +8165,9 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
     end
     local active_sources = self.browser_state.screensaver_sources or { storefront = true, readerbackdrop = true }
     local src_key_str = string.format("sf:%s,rb:%s", tostring(active_sources.storefront ~= false), tostring(active_sources.readerbackdrop ~= false))
-    local ss_cache_key = string.format("%s|%s|%s|%s|%s|%s|%d",
+    local ss_cache_key = string.format("%s|%s|%s|%s|%s|%s|%s|%d",
         src_key_str, tostring(ss_cat), cats_key, tostring(ss_sort),
-        tostring(raw_search), tostring(raw_owner), #catalog)
+        tostring(raw_search), tostring(raw_owner), ss_col, #catalog)
 
     local filtered
     if self._filtered_screensavers_cache and self._filtered_screensavers_cache.key == ss_cache_key then
@@ -8137,6 +8180,7 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
             raw_search = raw_search,
             raw_owner = raw_owner,
             ss_sort = ss_sort,
+            screensaver_collection = ss_col,
         })
         self._filtered_screensavers_cache = {
             key = ss_cache_key,
@@ -9158,6 +9202,55 @@ function Storefront:buildBrowserToolbar(current_tab)
                     callback = function() self:showScreensaverFilter() end
                 })
             end
+
+            local ss_col_id = self.browser_state.screensaver_collection
+            if ss_col_id and ss_col_id ~= "" then
+                local StorefrontScreensavers = require("storefront_screensavers_ui")
+                local collections = StorefrontScreensavers.getCachedCollections() or {}
+                local col_title = _("Collection")
+                local col_obj = nil
+                for _, c in ipairs(collections) do
+                    if c.id == ss_col_id then
+                        col_title = c.title or col_title
+                        col_obj = c
+                        break
+                    end
+                end
+                table.insert(toolbar_buttons, {
+                    id = "ss_col_active",
+                    icon = "layers.svg",
+                    text = col_title .. " ✕",
+                    callback = function()
+                        self.browser_state.screensaver_collection = nil
+                        self.browser_state.page = 1
+                        if self.browser_menu and self.browser_menu.updateTabContent then
+                            self:updateBrowserTabInPlace("Screensavers", 1, nil, true)
+                        else
+                            self:reopenBrowser()
+                        end
+                    end
+                })
+                table.insert(toolbar_buttons, {
+                    id = "ss_col_download_all",
+                    icon = "download.svg",
+                    text = _("Download All"),
+                    callback = function()
+                        local StorefrontCollectionsDialog = require("storefront_collections_dialog")
+                        if col_obj and StorefrontCollectionsDialog.downloadAllInCollection then
+                            StorefrontCollectionsDialog.downloadAllInCollection(col_obj)
+                        end
+                    end
+                })
+            else
+                table.insert(toolbar_buttons, {
+                    id = "ss_collections",
+                    icon = "layers.svg",
+                    text = _("Collections"),
+                    callback = function()
+                        self:showCollectionsDialog()
+                    end
+                })
+            end
             local sort_labels = {
                 featured  = _("Featured"),
                 downloads = _("Most Downloaded"),
@@ -9192,7 +9285,8 @@ function Storefront:buildBrowserToolbar(current_tab)
             })
             table.insert(toolbar_buttons, {
                 id = "ss_settings",
-                text = _("⚙ Settings"),
+                icon = "settings.svg",
+                text = _("Settings"),
                 callback = function()
                     local StorefrontScreensaverConfig = require("storefront_screensaver_config")
                     StorefrontScreensaverConfig.show(self, function()
@@ -9840,6 +9934,10 @@ end
 
 function Storefront:showScreensaverFilter()
     require("storefront_filter_dialog").showScreensaverFilter(self)
+end
+
+function Storefront:showCollectionsDialog(callback)
+    require("storefront_collections_dialog").show(self, callback)
 end
 
 function Storefront:showInstalledFilter()
@@ -11363,7 +11461,24 @@ function Storefront:onNetworkConnected()
     end
 end
 
-function Storefront:onSuspend()
+function Storefront:onSuspend(is_widget_close)
+    local UIManager = require("ui/uimanager")
+    if not is_widget_close and self._is_suspended then
+        -- Fast-path deduplication: already suspended in this sleep cycle.
+        -- Ensure any tasks are cancelled idempotently, but skip duplicate logging and double-GC.
+        pcall(function()
+            local ok_cat, CatalogClient = pcall(require, "storefront_net_catalog")
+            if ok_cat and CatalogClient and CatalogClient.cancelCatalogFetch then
+                CatalogClient.cancelCatalogFetch()
+            end
+        end)
+        return
+    end
+
+    if not is_widget_close then
+        self._is_suspended = true
+    end
+
     logger.info("Storefront: onSuspend received — aborting active tasks and purging memory")
     if StorefrontLogger then StorefrontLogger.info("Storefront: onSuspend received — aborting active tasks and purging memory") end
 
@@ -11417,24 +11532,32 @@ function Storefront:onSuspend()
     end)
 
     -- 4. Unschedule pending timers
-    if Storefront._bg_catalog_init_timer_fn then
-        UIManager:unschedule(Storefront._bg_catalog_init_timer_fn)
+    if UIManager and UIManager.unschedule then
+        if Storefront._bg_catalog_init_timer_fn then
+            UIManager:unschedule(Storefront._bg_catalog_init_timer_fn)
+            Storefront._bg_catalog_init_timer_fn = nil
+        end
+        if _catalog_retry_timer_fn then
+            UIManager:unschedule(_catalog_retry_timer_fn)
+            _catalog_retry_timer_fn = nil
+        end
+        if _catalog_show_timer_fn then
+            UIManager:unschedule(_catalog_show_timer_fn)
+            _catalog_show_timer_fn = nil
+        end
+        if _screensaver_warmup_timer_fn then
+            UIManager:unschedule(_screensaver_warmup_timer_fn)
+            _screensaver_warmup_timer_fn = nil
+        end
+        if _notification_timer_fn then
+            UIManager:unschedule(_notification_timer_fn)
+            _notification_timer_fn = nil
+        end
+    else
         Storefront._bg_catalog_init_timer_fn = nil
-    end
-    if _catalog_retry_timer_fn then
-        UIManager:unschedule(_catalog_retry_timer_fn)
         _catalog_retry_timer_fn = nil
-    end
-    if _catalog_show_timer_fn then
-        UIManager:unschedule(_catalog_show_timer_fn)
         _catalog_show_timer_fn = nil
-    end
-    if _screensaver_warmup_timer_fn then
-        UIManager:unschedule(_screensaver_warmup_timer_fn)
         _screensaver_warmup_timer_fn = nil
-    end
-    if _notification_timer_fn then
-        UIManager:unschedule(_notification_timer_fn)
         _notification_timer_fn = nil
     end
 
@@ -11460,6 +11583,10 @@ function Storefront:onSuspend()
 end
 
 function Storefront:onResume()
+    if self._is_suspended == false then
+        return
+    end
+    self._is_suspended = false
     logger.info("Storefront: onResume received")
     if StorefrontLogger then StorefrontLogger.info("Storefront: onResume received") end
     pcall(function()
@@ -11470,7 +11597,7 @@ function Storefront:onResume()
 end
 
 function Storefront:onCloseWidget()
-    self:onSuspend()
+    self:onSuspend(true)
 end
 
 

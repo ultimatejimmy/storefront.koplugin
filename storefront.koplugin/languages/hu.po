@@ -13,6 +13,10 @@ msgstr "\"Drága Bennet úr!\" – mondta egy nap a felesége –, \"hallotta, h
 msgid "%d Categories"
 msgstr "%d kategória"
 
+# en-hash: 9afd5d48c856630a833bcfa1606ceec6
+msgid "%d Curated Collections"
+msgstr "%d válogatott gyűjtemény"
+
 # en-hash: 430ab9ecc3e885b5ef157014db4d22f9
 msgid "%d missing · %d updates · %d installed"
 msgstr "%d hiányzik · %d frissítés · %d telepítve"
@@ -217,6 +221,10 @@ msgstr "Minden bővítmény már párosítva van."
 msgid "All selected items are already installed."
 msgstr "Minden kijelölt elem már telepítve van."
 
+# en-hash: 631cd9dc08c51ac3aba1540ec5d02ef5
+msgid "All wallpapers in this collection are already downloaded!"
+msgstr "A gyűjtemény összes háttérképe már le van töltve!"
+
 # en-hash: 6836fa6186eda79c3e6b4e081e1e3af7
 msgid "Allow pre-release updates"
 msgstr "Előzetes kiadások frissítésének engedélyezése"
@@ -324,6 +332,10 @@ msgstr "A tulajdonos és a tárhely neve is kötelező."
 # en-hash: 52fc24b91c11bee9a8ca2aa275f0af46
 msgid "Branch: %s"
 msgstr "Ág: %s"
+
+# en-hash: 67c581a76da7755e43d04038962ee5ca
+msgid "Browse Collection ›"
+msgstr "Gyűjtemény böngészése ›"
 
 # en-hash: 261dba00113a7f7e9754902b83293f85
 msgid "Browse Wallpapers in Storefront"
@@ -573,6 +585,14 @@ msgstr "A felhőbe tölés sikertelen: "
 msgid "Collection"
 msgstr "Gyűjtemény"
 
+# en-hash: a9fc91939a389c7c73e7a3f3cbf411cd
+msgid "Collections"
+msgstr "Gyűjtemények"
+
+# en-hash: 25755c59e9d85a9f80a6e32dfa212d1b
+msgid "Collections will appear here once published from the studio."
+msgstr "A gyűjtemények itt fognak megjelenteni, amint közzéteszik őket a stúdióból."
+
 # en-hash: 981f1fd40dea380931dd17cee90acc30
 msgid "Commit diff: %s → %s"
 msgstr "Commit eltérés: %s → %s"
@@ -684,6 +704,14 @@ msgstr "'%s' létrehozva"
 # en-hash: 025b44a447cfbb3039efbf871c238fbc
 msgid "Created by %s · %s items"
 msgstr "Készítette: %s · %s elem"
+
+# en-hash: 55377cedac1e666c373adf14c96f6985
+msgid "Curated Collections"
+msgstr "Válogatott gyűjtemények"
+
+# en-hash: 6c7b76d6165ee0165da622446723c53b
+msgid "Curated by %s · %d wallpapers"
+msgstr "Összeállította: %s · %d háttérkép"
 
 # en-hash: 691494205febafc531e883e2eea58253
 msgid "Custom folder"
@@ -805,9 +833,21 @@ msgstr "Letöltés"
 msgid "Download & Set Active"
 msgstr "Letöltés és aktiválás"
 
+# en-hash: 61b0ada67b7f40bf3d40dcc88ae4f3e6
+msgid "Download All"
+msgstr "Összes letöltése"
+
+# en-hash: c08eb873da7b6609815de0d4965a88ed
+msgid "Download All (%d)"
+msgstr "Összes letöltése (%d)"
+
 # en-hash: dce92c8cef805e9f91cd8d2c005f0f46
 msgid "Download Only"
 msgstr "Csak letöltés"
+
+# en-hash: 5efa43870ad4057f2c0b951893f5e9f6
+msgid "Download cancelled (%d downloaded)."
+msgstr "Letöltés megszakítva (%d letöltve)."
 
 # en-hash: 255cab4412ab57cd80daf9583400c221
 msgid "Download cancelled."
@@ -829,6 +869,18 @@ msgstr "Letöltési lehetőségek — %s"
 msgid "Download options — %s (%s)"
 msgstr "Letöltési lehetőségek — %s (%s)"
 
+# en-hash: e85285aa51f48a24767f5aad52bb0211
+msgid "Downloaded %d wallpapers (%d failed)."
+msgstr "%d háttérkép letöltve (%d sikertelen)."
+
+# en-hash: c5927c6229afed3e355f80f304824aae
+msgid "Downloaded %d wallpapers from '%s'!"
+msgstr "%d háttérkép letöltve innen: '%s'!"
+
+# en-hash: c21da9acf465699ca31144088f03ef7e
+msgid "Downloading %d of %d…"
+msgstr "%d / %d letöltése…"
+
 # en-hash: 50e6982dae572d95c62dcf2796614e5f
 msgid "Downloading %s (%s)…\nTap screen to cancel."
 msgstr "%s (%s) letöltése…\nÉrintse meg a képernyőt a megszakításhoz."
@@ -848,6 +900,10 @@ msgstr "%s letöltése…\nÉrintse meg a képernyőt a megszakításhoz."
 # en-hash: 40b54ae3bc8f5d993db643fedae24bd9
 msgid "Downloading '%s'..."
 msgstr "'%s' letöltése..."
+
+# en-hash: cde698a3a08b638ed1927bd51ef56c3c
+msgid "Downloading Collection"
+msgstr "Gyűjtemény letöltése"
 
 # en-hash: f490482ce2ff5bead6981f706fbde169
 msgid "Downloading patch %s%s…\nTap screen to cancel."
@@ -1341,6 +1397,10 @@ msgstr "%d / %d telepítése: %s…"
 msgid "Installing %s…"
 msgstr "%s telepítése…"
 
+# en-hash: 94757a6c049888dbe16cda0aca8cda0b
+msgid "Insufficient storage space to download %d wallpapers.\n\nRequired: %s\nAvailable: %s"
+msgstr "Nincs elegendő tárhely %d háttérkép letöltéséhez.\n\nSzükséges: %s\nElérhető: %s"
+
 # en-hash: ce90675d97fd997c33b628127c70ee68
 msgid "Invalid archive reader"
 msgstr "Érvénytelen archívum-olvasó"
@@ -1440,6 +1500,10 @@ msgstr "Helyi: %s"
 # en-hash: 5be5fd39fe33c67b819d6e2fd805a8d3
 msgid "Local: %s → Remote: %s"
 msgstr "Helyi: %s → Távoli: %s"
+
+# en-hash: 525a82075ee743a7ad767ce1c9c0471b
+msgid "Maintainer"
+msgstr "Karbantartó"
 
 # en-hash: 62f0842d75a169f04944c6c8514bf1d4
 msgid "Manage plugin paths"
@@ -1653,6 +1717,10 @@ msgstr "Következő"
 msgid "Next >"
 msgstr "Következő >"
 
+# en-hash: 2d688f4d101a8d1fcb5672e879ffed68
+msgid "Next ›"
+msgstr "Következő ›"
+
 # en-hash: 4e30ba17cc4c52ad756bf117a1a32cff
 msgid "No Fill (Transparent)"
 msgstr "Nincs kitöltés (átlátszó)"
@@ -1688,6 +1756,10 @@ msgstr "Még nincsenek gyorsítótárazott elemek. Frissítsen a GitHubról val�
 # en-hash: e592e146ba0ca4bc92d3894dabaf3e0e
 msgid "No changelog entries found for this range."
 msgstr "Nem találhatók változásnapló-bejegyzések ebben a tartományban."
+
+# en-hash: f1646786a138f7217c7837b44ff6606f
+msgid "No collections available"
+msgstr "Nincsenek elérhető gyűjtemények"
 
 # en-hash: d404302efb40cb4c8a7d3f48041ab5ea
 msgid "No commits found in this range."
@@ -2537,6 +2609,10 @@ msgstr "Források"
 msgid "Stable"
 msgstr "Stabil"
 
+# en-hash: 1787ad08c14a0089c65ed2345b62d7c7
+msgid "Starting download (0/%d)..."
+msgstr "Letöltés indítása (0/%d)..."
+
 # en-hash: ec53a8c4f07baed5d8825072c89799be
 msgid "Status"
 msgstr "Állapot"
@@ -2636,6 +2712,10 @@ msgstr "Jókedvű víg tengerész ivott édes bort."
 # en-hash: a26abb5b7dd05b79763d7799a9f6ecbb
 msgid "This action cannot be undone.\n\nChanges will take effect after restart."
 msgstr "Ez a művelet nem vonható vissza.\n\nA változtatások az újraindítás után lépnek életbe."
+
+# en-hash: 7d6080b9772d4a9435569c10ef63e930
+msgid "This collection has no wallpapers to download."
+msgstr "Ennek a gyűjteménynek nincsenek letölthető háttérképei."
 
 # en-hash: f7b72e6131c8e92924bc1b034165a691
 msgid "This wallpaper is currently active"
@@ -2764,6 +2844,10 @@ msgstr "Nem párosított: %d"
 # en-hash: 4b8bbf97f50333628448f95de672ce63
 msgid "Unnamed release"
 msgstr "Névtelen kiadás"
+
+# en-hash: 42607ca795c37896da88407b9beb94b8
+msgid "Untitled Collection"
+msgstr "Névtelen gyűjtemény"
 
 # en-hash: 06933067aafd48425d67bcb01bba5cb6
 msgid "Update"
@@ -3364,6 +3448,10 @@ msgstr "·"
 # en-hash: dc106d31a4c7c59d085f09ecd0572570
 msgid "‹ Back"
 msgstr "‹ Vissza"
+
+# en-hash: 995e9d3467ce6ccedcb64f748a57248d
+msgid "‹ Previous"
+msgstr "‹ Előző"
 
 # en-hash: a565c660107f7ea24918e8be382b38bd
 msgid "≥ %s ⭐"

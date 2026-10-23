@@ -11,6 +11,9 @@ msgstr "\"My dear Mr. Bennet,\" said his lady to him one day, \"have you heard t
 msgid "%d Categories"
 msgstr "%d Categories"
 
+msgid "%d Curated Collections"
+msgstr "%d Curated Collections"
+
 msgid "%d missing · %d updates · %d installed"
 msgstr "%d missing · %d updates · %d installed"
 
@@ -164,6 +167,9 @@ msgstr "All plugins are already matched."
 msgid "All selected items are already installed."
 msgstr "All selected items are already installed."
 
+msgid "All wallpapers in this collection are already downloaded!"
+msgstr "All wallpapers in this collection are already downloaded!"
+
 msgid "Allow pre-release updates"
 msgstr "Allow pre-release updates"
 
@@ -244,6 +250,9 @@ msgstr "Both owner and repository name are required."
 
 msgid "Branch: %s"
 msgstr "Branch: %s"
+
+msgid "Browse Collection ›"
+msgstr "Browse Collection ›"
 
 msgid "Browse Wallpapers in Storefront"
 msgstr "Browse Wallpapers in Storefront"
@@ -431,6 +440,12 @@ msgstr "Cloud upload failed: "
 msgid "Collection"
 msgstr "Collection"
 
+msgid "Collections"
+msgstr "Collections"
+
+msgid "Collections will appear here once published from the studio."
+msgstr "Collections will appear here once published from the studio."
+
 msgid "Commit diff: %s → %s"
 msgstr "Commit diff: %s → %s"
 
@@ -514,6 +529,12 @@ msgstr "Created '%s'"
 
 msgid "Created by %s · %s items"
 msgstr "Created by %s · %s items"
+
+msgid "Curated Collections"
+msgstr "Curated Collections"
+
+msgid "Curated by %s · %d wallpapers"
+msgstr "Curated by %s · %d wallpapers"
 
 msgid "Custom folder"
 msgstr "Custom folder"
@@ -605,8 +626,17 @@ msgstr "Download"
 msgid "Download & Set Active"
 msgstr "Download & Set Active"
 
+msgid "Download All"
+msgstr "Download All"
+
+msgid "Download All (%d)"
+msgstr "Download All (%d)"
+
 msgid "Download Only"
 msgstr "Download Only"
+
+msgid "Download cancelled (%d downloaded)."
+msgstr "Download cancelled (%d downloaded)."
 
 msgid "Download cancelled."
 msgstr "Download cancelled."
@@ -623,6 +653,15 @@ msgstr "Download options — %s"
 msgid "Download options — %s (%s)"
 msgstr "Download options — %s (%s)"
 
+msgid "Downloaded %d wallpapers (%d failed)."
+msgstr "Downloaded %d wallpapers (%d failed)."
+
+msgid "Downloaded %d wallpapers from '%s'!"
+msgstr "Downloaded %d wallpapers from '%s'!"
+
+msgid "Downloading %d of %d…"
+msgstr "Downloading %d of %d…"
+
 msgid "Downloading %s (%s)…\nTap screen to cancel."
 msgstr "Downloading %s (%s)…\nTap screen to cancel."
 
@@ -637,6 +676,9 @@ msgstr "Downloading %s…\nTap screen to cancel."
 
 msgid "Downloading '%s'..."
 msgstr "Downloading '%s'..."
+
+msgid "Downloading Collection"
+msgstr "Downloading Collection"
 
 msgid "Downloading patch %s%s…\nTap screen to cancel."
 msgstr "Downloading patch %s%s…\nTap screen to cancel."
@@ -1007,6 +1049,9 @@ msgstr "Installing %d of %d: %s…"
 msgid "Installing %s…"
 msgstr "Installing %s…"
 
+msgid "Insufficient storage space to download %d wallpapers.\n\nRequired: %s\nAvailable: %s"
+msgstr "Insufficient storage space to download %d wallpapers.\n\nRequired: %s\nAvailable: %s"
+
 msgid "Invalid archive reader"
 msgstr "Invalid archive reader"
 
@@ -1081,6 +1126,9 @@ msgstr "Local: %s"
 
 msgid "Local: %s → Remote: %s"
 msgstr "Local: %s → Remote: %s"
+
+msgid "Maintainer"
+msgstr "Maintainer"
 
 msgid "Manage plugin paths"
 msgstr "Manage plugin paths"
@@ -1241,6 +1289,9 @@ msgstr "Next"
 msgid "Next >"
 msgstr "Next >"
 
+msgid "Next ›"
+msgstr "Next ›"
+
 msgid "No Fill (Transparent)"
 msgstr "No Fill (Transparent)"
 
@@ -1267,6 +1318,9 @@ msgstr "No cached entries yet. Refresh to fetch from GitHub."
 
 msgid "No changelog entries found for this range."
 msgstr "No changelog entries found for this range."
+
+msgid "No collections available"
+msgstr "No collections available"
 
 msgid "No commits found in this range."
 msgstr "No commits found in this range."
@@ -1904,6 +1958,9 @@ msgstr "Sources"
 msgid "Stable"
 msgstr "Stable"
 
+msgid "Starting download (0/%d)..."
+msgstr "Starting download (0/%d)..."
+
 msgid "Status"
 msgstr "Status"
 
@@ -1978,6 +2035,9 @@ msgstr "The quick brown fox jumps over the lazy dog."
 
 msgid "This action cannot be undone.\n\nChanges will take effect after restart."
 msgstr "This action cannot be undone.\n\nChanges will take effect after restart."
+
+msgid "This collection has no wallpapers to download."
+msgstr "This collection has no wallpapers to download."
 
 msgid "This wallpaper is currently active"
 msgstr "This wallpaper is currently active"
@@ -2074,6 +2134,9 @@ msgstr "Unmatched: %d"
 
 msgid "Unnamed release"
 msgstr "Unnamed release"
+
+msgid "Untitled Collection"
+msgstr "Untitled Collection"
 
 msgid "Update"
 msgstr "Update"
@@ -2524,6 +2587,9 @@ msgstr "·"
 
 msgid "‹ Back"
 msgstr "‹ Back"
+
+msgid "‹ Previous"
+msgstr "‹ Previous"
 
 msgid "≥ %s ⭐"
 msgstr "≥ %s ⭐"

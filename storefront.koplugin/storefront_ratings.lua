@@ -350,8 +350,10 @@ function StorefrontRatings.fetchRatings(callback, force_refresh)
         local http_req = getHttpModule(StorefrontRatings.BASE_URL)
         local response_body = {}
 
+        local total_to = (socketutil and tonumber(socketutil.FILE_TOTAL_TIMEOUT)) or 30
+        local start_ts = os.time()
         if socketutil and socketutil.set_timeout then
-            socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT or 15, socketutil.FILE_TOTAL_TIMEOUT or 30)
+            socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT or 15, total_to)
         end
         local ok_req, res_code = pcall(function()
             local params = {
@@ -362,7 +364,12 @@ function StorefrontRatings.fetchRatings(callback, force_refresh)
                     ["Accept"] = "application/json",
                 },
                 sink = function(chunk)
-                    if chunk then table.insert(response_body, chunk) end
+                    if chunk then
+                        if total_to > 0 and (os.time() - start_ts > total_to) then
+                            return nil, (socketutil and socketutil.SINK_TIMEOUT_CODE) or "sink timeout"
+                        end
+                        table.insert(response_body, chunk)
+                    end
                     return 1
                 end,
             }
@@ -866,6 +873,7 @@ function StorefrontRatings.submitVote(item_or_id, direction, item_kind, callback
 
             local block_to = custom_timeout or (socketutil and socketutil.FILE_BLOCK_TIMEOUT) or 15
             local total_to = custom_timeout and (custom_timeout + 2) or (socketutil and socketutil.FILE_TOTAL_TIMEOUT) or 30
+            local start_ts = os.time()
             if socketutil and socketutil.set_timeout then
                 socketutil:set_timeout(block_to, total_to)
             end
@@ -880,7 +888,12 @@ function StorefrontRatings.submitVote(item_or_id, direction, item_kind, callback
                         return nil
                     end,
                     sink = function(chunk)
-                        if chunk then table.insert(response_body, chunk) end
+                        if chunk then
+                            if total_to > 0 and (os.time() - start_ts > total_to) then
+                                return nil, (socketutil and socketutil.SINK_TIMEOUT_CODE) or "sink timeout"
+                            end
+                            table.insert(response_body, chunk)
+                        end
                         return 1
                     end,
                 }
@@ -1082,6 +1095,7 @@ function StorefrontRatings.trackDownload(item_or_id, item_kind, callback)
 
             local block_to = custom_timeout or (socketutil and socketutil.FILE_BLOCK_TIMEOUT) or 15
             local total_to = custom_timeout and (custom_timeout + 2) or (socketutil and socketutil.FILE_TOTAL_TIMEOUT) or 30
+            local start_ts = os.time()
             if socketutil and socketutil.set_timeout then
                 socketutil:set_timeout(block_to, total_to)
             end
@@ -1096,7 +1110,12 @@ function StorefrontRatings.trackDownload(item_or_id, item_kind, callback)
                         return nil
                     end,
                     sink = function(chunk)
-                        if chunk then table.insert(response_body, chunk) end
+                        if chunk then
+                            if total_to > 0 and (os.time() - start_ts > total_to) then
+                                return nil, (socketutil and socketutil.SINK_TIMEOUT_CODE) or "sink timeout"
+                            end
+                            table.insert(response_body, chunk)
+                        end
                         return 1
                     end,
                 }

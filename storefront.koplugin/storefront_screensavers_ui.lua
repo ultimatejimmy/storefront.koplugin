@@ -114,20 +114,34 @@ local function requestWithRedirects(target_url, sink_fn, extra_headers)
             end
         end
 
+        if ok_su and socketutil and socketutil.set_timeout then
+            socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT or 15, socketutil.FILE_TOTAL_TIMEOUT or 30)
+        end
+
         local sink = sink_fn()
-        if not sink then return false, 0, nil end
+        if not sink then
+            if ok_su and socketutil and socketutil.reset_timeout then
+                socketutil:reset_timeout()
+            end
+            return false, 0, nil
+        end
+
+        local total_to = (ok_su and socketutil and tonumber(socketutil.total_timeout)) or 30
+        local start_ts = os.time()
+        local guarded_sink = function(chunk, src_err)
+            if total_to > 0 and (os.time() - start_ts > total_to) then
+                return nil, (ok_su and socketutil and socketutil.SINK_TIMEOUT_CODE) or "sink timeout"
+            end
+            return sink(chunk, src_err)
+        end
 
         local params = {
             url = current_url,
             method = "GET",
             headers = headers,
-            sink = sink,
+            sink = guarded_sink,
         }
         if not is_https then params.redirect = true end
-
-        if ok_su and socketutil and socketutil.set_timeout then
-            socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT or 15, socketutil.FILE_TOTAL_TIMEOUT or 180)
-        end
 
         local ok_req, res_code, response_headers = pcall(function()
             local _, c, h = http_req.request(params)
@@ -157,13 +171,20 @@ local function requestWithRedirects(target_url, sink_fn, extra_headers)
 end
 
 local cached_catalog_mem = nil
+local cached_collections_mem = nil
 
 function StorefrontScreensavers.invalidateMemCache()
     cached_catalog_mem = nil
+    cached_collections_mem = nil
+end
+
+function StorefrontScreensavers.invalidateCollectionsMemCache()
+    cached_collections_mem = nil
 end
 
 function StorefrontScreensavers.clearCachedCatalog()
     cached_catalog_mem = nil
+    cached_collections_mem = nil
     pcall(function()
         local ok_net, CatalogClient = pcall(require, "storefront_net_catalog")
         if ok_net and CatalogClient then
@@ -173,14 +194,19 @@ function StorefrontScreensavers.clearCachedCatalog()
             if CatalogClient.clearStoredReaderBackdropEtag then
                 CatalogClient.clearStoredReaderBackdropEtag()
             end
+            if CatalogClient.clearStoredCollectionsEtag then
+                CatalogClient.clearStoredCollectionsEtag()
+            end
         end
     end)
     local ok_ds, DataStorage = pcall(require, "datastorage")
     if ok_ds and DataStorage and DataStorage.getDataDir then
         local cat_file = DataStorage:getDataDir() .. "/cache/storefront_screensavers_catalog.json"
         local rb_file = DataStorage:getDataDir() .. "/cache/storefront_readerbackdrop_catalog.json"
+        local col_file = DataStorage:getDataDir() .. "/cache/storefront_collections_catalog.json"
         pcall(os.remove, cat_file)
         pcall(os.remove, rb_file)
+        pcall(os.remove, col_file)
     end
 end
 
@@ -353,6 +379,203 @@ function StorefrontScreensavers.getCachedCatalog()
             return merged
         end
     end
+    return nil
+end
+
+function StorefrontScreensavers.getCachedCollections()
+    if cached_collections_mem and type(cached_collections_mem) == "table" and #cached_collections_mem > 0 then
+        return cached_collections_mem
+    end
+    local ok_ds, DataStorage = pcall(require, "datastorage")
+    if ok_ds and DataStorage and DataStorage.getDataDir then
+        local col_file = DataStorage:getDataDir() .. "/cache/storefront_collections_catalog.json"
+        local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
+        if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
+        if ok_lfs and lfs and lfs.attributes and lfs.attributes(col_file, "mode") == "file" then
+            local f = io.open(col_file, "r")
+            if f then
+                local content = f:read("*all")
+                f:close()
+                local ok_dec, parsed = pcall(json.decode, content)
+                if ok_dec and type(parsed) == "table" then
+                    local list = parsed.collections or parsed
+                    if type(list) == "table" and #list > 0 then
+                        for _, c in ipairs(list) do
+                            c.items = c.items or c.ids or {}
+                            c.description = c.description or c.desc or ""
+                        end
+                        cached_collections_mem = list
+                        return list
+                    end
+                end
+            end
+        end
+    end
+
+    -- 2. Fallback to bundled collections.lite.json if cache file is missing
+    local ok_net, CatalogClient = pcall(require, "storefront_net_catalog")
+    if ok_net and CatalogClient and CatalogClient.getBundledCollectionsPath then
+        local bundled_path = CatalogClient.getBundledCollectionsPath()
+        local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
+        if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
+        if bundled_path and ok_lfs and lfs and lfs.attributes and lfs.attributes(bundled_path, "mode") == "file" then
+            local f = io.open(bundled_path, "r")
+            if f then
+                local content = f:read("*all")
+                f:close()
+                local ok_dec, parsed = pcall(json.decode, content)
+                if ok_dec and type(parsed) == "table" then
+                    local list = parsed.collections or parsed
+                    if type(list) == "table" and #list > 0 then
+                        for _, c in ipairs(list) do
+                            c.items = c.items or c.ids or {}
+                            c.description = c.description or c.desc or ""
+                        end
+                        cached_collections_mem = list
+                        -- Populate cache file for fast loading next time
+                        if col_file then
+                            pcall(function()
+                                local cf = io.open(col_file, "w")
+                                if cf then
+                                    cf:write(content)
+                                    cf:close()
+                                end
+                            end)
+                        end
+                        return list
+                    end
+                end
+            end
+        end
+    end
+
+    return nil
+end
+
+function StorefrontScreensavers.fetchCollections(callback)
+    local ok_net, CatalogClient = pcall(require, "storefront_net_catalog")
+    if ok_net and CatalogClient and CatalogClient.fetchCollectionsCatalog then
+        local data, err = CatalogClient.fetchCollectionsCatalog()
+        if data == "not_modified" then
+            local cached = StorefrontScreensavers.getCachedCollections()
+            if callback then callback(true, cached or {}) end
+            return
+        elseif data and type(data) == "table" and #data > 0 then
+            for _, c in ipairs(data) do
+                c.items = c.items or c.ids or {}
+                c.description = c.description or c.desc or ""
+            end
+            cached_collections_mem = data
+            pcall(function()
+                local DataStorage = require("datastorage")
+                local cat_file = DataStorage:getDataDir() .. "/cache/storefront_collections_catalog.json"
+                local f = io.open(cat_file, "w")
+                if f then
+                    f:write(json.encode(data))
+                    f:close()
+                end
+            end)
+            if callback then callback(true, data) end
+            return
+        end
+    end
+
+    local cached = StorefrontScreensavers.getCachedCollections()
+    if cached and #cached > 0 then
+        if callback then callback(true, cached) end
+        return
+    end
+
+    if callback then callback(false, {}) end
+end
+
+function StorefrontScreensavers.getCollectionCoverPath(col)
+    if not col or not col.id then return nil end
+    local ok_ds, DataStorage = pcall(require, "datastorage")
+    local cache_dir = (ok_ds and DataStorage and DataStorage.getDataDir) and (DataStorage:getDataDir() .. "/cache/storefront_thumbs") or "/tmp"
+    local hash = col.cover_hash or col.coverHash or "v1"
+    return cache_dir .. "/col_" .. tostring(col.id) .. "_" .. tostring(hash) .. ".jpg"
+end
+
+function StorefrontScreensavers.fetchCollectionCover(col, callback)
+    if not col or not col.id then return nil end
+    local cover_path = StorefrontScreensavers.getCollectionCoverPath(col)
+    local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
+    if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
+
+    local cache_dir = cover_path:match("^(.*)[/\\]")
+    if ok_lfs and lfs and lfs.attributes and not lfs.attributes(cache_dir) then
+        pcall(lfs.mkdir, cache_dir)
+    end
+
+    if ok_lfs and lfs and lfs.attributes and lfs.attributes(cover_path, "mode") == "file" then
+        if callback then callback(cover_path) end
+        return cover_path
+    end
+
+    -- Check bundled asset under assets/collections/
+    local info = debug.getinfo(1, "S")
+    local src = (info and info.source) and info.source:gsub("^@", "") or ""
+    local dir = src:match("^(.*[/\\])") or ""
+    local bundled_cover_candidates = {
+        dir .. "assets/collections/" .. tostring(col.id) .. ".jpg",
+        dir .. "../assets/collections/" .. tostring(col.id) .. ".jpg",
+    }
+    for _, b_path in ipairs(bundled_cover_candidates) do
+        if ok_lfs and lfs and lfs.attributes and lfs.attributes(b_path, "mode") == "file" then
+            pcall(function()
+                local inf = io.open(b_path, "rb")
+                if inf then
+                    local outf = io.open(cover_path, "wb")
+                    if outf then
+                        outf:write(inf:read("*all"))
+                        outf:close()
+                    end
+                    inf:close()
+                end
+            end)
+            if callback then callback(cover_path) end
+            return cover_path
+        end
+    end
+
+    local urls_to_try = {
+        "https://raw.githubusercontent.com/ultimatejimmy/storefront-screensavers/main/images/collections/" .. tostring(col.id) .. ".jpg",
+        "https://ultimatejimmy.github.io/storefront-screensavers/images/collections/" .. tostring(col.id) .. ".jpg",
+        "https://raw.githubusercontent.com/ultimatejimmy/storefront-screensavers/main/images/collections/thumbnails/" .. tostring(col.id) .. ".jpg",
+        "https://ultimatejimmy.github.io/storefront-screensavers/images/collections/thumbnails/" .. tostring(col.id) .. ".jpg",
+    }
+
+    local ltn12 = require("ltn12")
+    for _, target_url in ipairs(urls_to_try) do
+        local img_data = {}
+        local sink_fn = function()
+            img_data = {}
+            return ltn12.sink.table(img_data)
+        end
+
+        local ok, code = requestWithRedirects(target_url, sink_fn)
+        if ok and code == 200 then
+            local raw_bytes = table.concat(img_data)
+            if #raw_bytes > 0 and #raw_bytes <= 300 * 1024 then
+                local tmp_path = cover_path .. ".tmp"
+                local f = io.open(tmp_path, "wb")
+                if f then
+                    f:write(raw_bytes)
+                    f:close()
+                    pcall(os.remove, cover_path)
+                    local ok_ren = pcall(os.rename, tmp_path, cover_path)
+                    if ok_ren then
+                        if callback then callback(cover_path) end
+                        return cover_path
+                    else
+                        pcall(os.remove, tmp_path)
+                    end
+                end
+            end
+        end
+    end
+
     return nil
 end
 

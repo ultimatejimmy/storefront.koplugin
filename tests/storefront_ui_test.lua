@@ -2326,6 +2326,9 @@ do
     check("onSuspend called CatalogClient.cancelCatalogFetch", CatalogClient._async_pid == nil, true)
     check("onSuspend cleared CatalogClient._poll_fd", CatalogClient._poll_fd == nil, true)
     check("onSuspend cleared CatalogClient._poll_func", CatalogClient._poll_func == nil, true)
+    check("onSuspend marked _is_suspended as true", MainStorefront._is_suspended == true, true)
+    MainStorefront:onResume()
+    check("onResume reset _is_suspended to false", MainStorefront._is_suspended == false, true)
 
     local Cache = require("storefront_cache")
     check("Cache has purgeMem function", type(Cache.purgeMem) == "function", true)

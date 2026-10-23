@@ -95,6 +95,39 @@ local DEFAULT_RB_CATALOG_URL = "https://raw.githubusercontent.com/ultimatejimmy/
 local FALLBACK_RB_CATALOG_URL = "https://ultimatejimmy.github.io/storefront-screensavers/readerbackdrop.lite.json"
 local RB_CATALOG_ETAG_KEY = "readerbackdrop_catalog_etag"
 
+local DEFAULT_COLLECTIONS_CATALOG_URL = "https://ultimatejimmy.github.io/storefront-screensavers/collections.lite.json"
+local FALLBACK_COLLECTIONS_CATALOG_URL = "https://raw.githubusercontent.com/ultimatejimmy/storefront-screensavers/main/collections.lite.json"
+local COLLECTIONS_CATALOG_ETAG_KEY = "collections_catalog_etag"
+local COLLECTIONS_CATALOG_LAST_FETCHED_KEY = "collections_catalog_last_fetched"
+
+function CatalogClient.getStoredCollectionsEtag()
+    local saved = StorefrontSettings:readSetting(COLLECTIONS_CATALOG_ETAG_KEY)
+    if type(saved) == "string" and saved ~= "" then
+        return saved
+    end
+    return nil
+end
+
+function CatalogClient.setStoredCollectionsEtag(etag)
+    saveEtag(COLLECTIONS_CATALOG_ETAG_KEY, etag)
+end
+
+function CatalogClient.clearStoredCollectionsEtag()
+    StorefrontSettings:delSetting(COLLECTIONS_CATALOG_ETAG_KEY)
+    StorefrontSettings:delSetting(COLLECTIONS_CATALOG_LAST_FETCHED_KEY)
+    StorefrontSettings:flush()
+end
+
+function CatalogClient.getLastFetchedCollections()
+    local saved = StorefrontSettings:readSetting(COLLECTIONS_CATALOG_LAST_FETCHED_KEY)
+    return tonumber(saved) or 0
+end
+
+function CatalogClient.setLastFetchedCollections(timestamp)
+    StorefrontSettings:saveSetting(COLLECTIONS_CATALOG_LAST_FETCHED_KEY, tonumber(timestamp) or os.time())
+    StorefrontSettings:flush()
+end
+
 function CatalogClient.getStoredReaderBackdropEtag()
     local saved = StorefrontSettings:readSetting(RB_CATALOG_ETAG_KEY)
     if type(saved) == "string" and saved ~= "" then
@@ -128,6 +161,8 @@ function CatalogClient.clearStoredScreensaverEtag()
     StorefrontSettings:delSetting(SCREENSAVER_CATALOG_ETAG_KEY)
     StorefrontSettings:delSetting(SCREENSAVER_CATALOG_LAST_FETCHED_KEY)
     StorefrontSettings:delSetting(RB_CATALOG_ETAG_KEY)
+    StorefrontSettings:delSetting(COLLECTIONS_CATALOG_ETAG_KEY)
+    StorefrontSettings:delSetting(COLLECTIONS_CATALOG_LAST_FETCHED_KEY)
     StorefrontSettings:flush()
 end
 
@@ -164,8 +199,14 @@ function CatalogClient.setCatalogUrl(url)
 end
 
 local function newTableSink(target)
+    local ok_su, socketutil = pcall(require, "socketutil")
+    local total_timeout = (ok_su and socketutil and tonumber(socketutil.total_timeout)) or -1
+    local start_ts = os.time()
     return function(chunk, err)
         if chunk then
+            if total_timeout > 0 and (os.time() - start_ts > total_timeout) then
+                return nil, (ok_su and socketutil and socketutil.SINK_TIMEOUT_CODE) or "sink timeout"
+            end
             target[#target + 1] = chunk
         end
         return 1, err
@@ -199,18 +240,28 @@ local function requestWithRedirects(target_url, sink_fn, extra_headers)
                 end
             end
 
+            socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT or 15, socketutil.FILE_TOTAL_TIMEOUT or 30)
             local sink = sink_fn()
             if not sink then
+                socketutil:reset_timeout()
                 return false, "failed to create sink", nil
             end
 
-            socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+            local total_to = tonumber(socketutil.total_timeout) or 30
+            local start_ts = os.time()
+            local guarded_sink = function(chunk, src_err)
+                if total_to > 0 and (os.time() - start_ts > total_to) then
+                    return nil, socketutil.SINK_TIMEOUT_CODE or "sink timeout"
+                end
+                return sink(chunk, src_err)
+            end
+
             local ok_req, res_code, response_headers = pcall(function()
                 local params = {
                     url = current_url,
                     method = "GET",
                     headers = headers,
-                    sink = sink,
+                    sink = guarded_sink,
                 }
                 if not is_https then params.redirect = true end
                 local _, c, h = http_req.request(params)
@@ -226,6 +277,8 @@ local function requestWithRedirects(target_url, sink_fn, extra_headers)
             if ok_req and (code == 200 or code == 304) then
                 return true, code, response_headers
             elseif ok_req and (code == 301 or code == 302 or code == 303 or code == 307 or code == 308) then
+                break
+            elseif ok_req and (code == 404 or code == 403 or code == 410) then
                 break
             end
         end
@@ -552,6 +605,154 @@ function CatalogClient.fetchReaderBackdropCatalogToFile(dest_path)
     return false, last_err
 end
 
+function CatalogClient.fetchCollectionsCatalogToFile(dest_path)
+    local urls_to_try = {
+        DEFAULT_COLLECTIONS_CATALOG_URL,
+        FALLBACK_COLLECTIONS_CATALOG_URL,
+    }
+
+    local final_cat_path = DataStorage:getDataDir() .. "/cache/storefront_collections_catalog.json"
+    local etag = nil
+    local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
+    if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
+    if ok_lfs and lfs and lfs.attributes and lfs.attributes(final_cat_path, "mode") == "file" then
+        etag = CatalogClient.getStoredCollectionsEtag()
+    end
+
+    local last_err = "No collections catalog URLs attempted"
+    for _, target_url in ipairs(urls_to_try) do
+        local extra_headers = nil
+        if etag and etag ~= "" and target_url == DEFAULT_COLLECTIONS_CATALOG_URL then
+            extra_headers = { ["If-None-Match"] = etag }
+        end
+
+        logger.info("Storefront: fetching collections catalog to file from", target_url)
+        if StorefrontLogger then
+            StorefrontLogger.info("Storefront: fetching collections catalog from " .. tostring(target_url) .. (extra_headers and " (with ETag)" or ""))
+        end
+        local current_file = nil
+        local sink_fn = function()
+            if current_file then pcall(function() current_file:close() end) end
+            os.remove(dest_path)
+            local f, err = io.open(dest_path, "wb")
+            if not f then
+                logger.err("Storefront: failed to open dest_path for collections writing", err)
+                if StorefrontLogger then StorefrontLogger.err("Storefront: failed to open dest_path for collections writing: " .. tostring(err)) end
+                return nil
+            end
+            current_file = f
+            return require("socketutil").file_sink(f)
+        end
+
+        local ok, res_code, res_headers = requestWithRedirects(target_url, sink_fn, extra_headers)
+        if current_file then pcall(function() current_file:close() end); current_file = nil end
+
+        local code = tonumber(res_code) or 0
+        if ok and code == 304 then
+            os.remove(dest_path)
+            logger.info("Storefront: collections catalog unchanged (HTTP 304 Not Modified) from", target_url)
+            if StorefrontLogger then StorefrontLogger.info("Storefront: collections catalog unchanged (HTTP 304 Not Modified)") end
+            return true, "not_modified"
+        elseif ok and code == 200 then
+            local new_etag = res_headers and (res_headers.etag or res_headers.ETag or res_headers["etag"])
+            if type(new_etag) == "string" and new_etag ~= "" then
+                CatalogClient.setStoredCollectionsEtag(new_etag)
+            end
+            if StorefrontLogger then StorefrontLogger.info("Storefront: collections catalog downloaded successfully (HTTP 200)") end
+            return true, "updated"
+        else
+            os.remove(dest_path)
+            local err_str = tonumber(res_code) and ("HTTP " .. tostring(res_code)) or tostring(res_code)
+            logger.warn("Storefront: collections catalog fetch error from", target_url, err_str)
+            if StorefrontLogger then StorefrontLogger.warn("Storefront: collections catalog fetch error from " .. tostring(target_url) .. ": " .. tostring(err_str)) end
+            last_err = err_str
+        end
+    end
+
+    return false, last_err
+end
+
+function CatalogClient.fetchCollectionsCatalog(url_to_fetch)
+    local urls_to_try = {
+        url_to_fetch or DEFAULT_COLLECTIONS_CATALOG_URL,
+        FALLBACK_COLLECTIONS_CATALOG_URL,
+    }
+    local final_cat_path = DataStorage:getDataDir() .. "/cache/storefront_collections_catalog.json"
+    local etag = nil
+    local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
+    if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
+    if ok_lfs and lfs and lfs.attributes and lfs.attributes(final_cat_path, "mode") == "file" then
+        etag = CatalogClient.getStoredCollectionsEtag()
+    end
+
+    local last_err = "No collections catalog URLs attempted"
+    for _, target_url in ipairs(urls_to_try) do
+        local response_body = {}
+        local sink_fn = function()
+            response_body = {}
+            return newTableSink(response_body)
+        end
+
+        local extra_headers = nil
+        if etag and etag ~= "" and target_url == urls_to_try[1] then
+            extra_headers = { ["If-None-Match"] = etag }
+        end
+
+        logger.info("Storefront: fetching collections catalog from", target_url)
+        if StorefrontLogger then
+            StorefrontLogger.info("Storefront: fetching collections catalog from " .. tostring(target_url) .. (extra_headers and " (with ETag)" or ""))
+        end
+
+        local ok, res_code, res_headers = requestWithRedirects(target_url, sink_fn, extra_headers)
+        local code = tonumber(res_code) or 0
+        if ok and code == 304 then
+            logger.info("Storefront: collections catalog unchanged (HTTP 304) from", target_url)
+            if StorefrontLogger then StorefrontLogger.info("Storefront: collections catalog unchanged (HTTP 304 Not Modified)") end
+            return "not_modified", nil
+        elseif ok and code == 200 then
+            local new_etag = res_headers and (res_headers.etag or res_headers.ETag or res_headers["etag"])
+            if type(new_etag) == "string" and new_etag ~= "" then
+                CatalogClient.setStoredCollectionsEtag(new_etag)
+            end
+            local body = table.concat(response_body)
+            local ok_dec, parsed = pcall(json.decode, body)
+            if ok_dec and type(parsed) == "table" and parsed.collections then
+                if StorefrontLogger then StorefrontLogger.info(string.format("Storefront: collections catalog downloaded and parsed (%d collections)", #parsed.collections)) end
+                return parsed.collections, nil
+            elseif ok_dec and type(parsed) == "table" then
+                if StorefrontLogger then StorefrontLogger.info(string.format("Storefront: collections catalog downloaded and parsed (%d collections)", #parsed)) end
+                return parsed, nil
+            else
+                last_err = "Failed to parse collections catalog JSON"
+                if StorefrontLogger then StorefrontLogger.warn("Storefront: failed to parse collections catalog JSON") end
+            end
+        else
+            last_err = tonumber(res_code) and ("HTTP " .. tostring(res_code)) or tostring(res_code)
+            if StorefrontLogger then StorefrontLogger.warn("Storefront: collections catalog fetch error from " .. tostring(target_url) .. ": " .. tostring(last_err)) end
+        end
+    end
+
+    -- Fallback to bundled collections.lite.json if remote fetch failed
+    local bundled_path = CatalogClient.getBundledCollectionsPath and CatalogClient.getBundledCollectionsPath()
+    if bundled_path then
+        local f = io.open(bundled_path, "r")
+        if f then
+            local content = f:read("*all")
+            f:close()
+            local ok_dec, parsed = pcall(json.decode, content)
+            if ok_dec and type(parsed) == "table" then
+                local list = parsed.collections or parsed
+                if type(list) == "table" and #list > 0 then
+                    if StorefrontLogger then StorefrontLogger.info(string.format("Storefront: loaded fallback bundled collections (%d collections)", #list)) end
+                    return list, nil
+                end
+            end
+        end
+    end
+
+    return nil, last_err
+end
+
 
 
 function CatalogClient.fetchScreensaverCatalog(url_to_fetch)
@@ -619,17 +820,6 @@ function CatalogClient.cancelAsyncFetch()
         UIManager:unschedule(CatalogClient._poll_func)
         CatalogClient._poll_func = nil
     end
-    if CatalogClient._poll_fd then
-        pcall(function()
-            local ok_ffi, ffiutil = pcall(require, "ffi/util")
-            if not ok_ffi then ok_ffi, ffiutil = pcall(require, "ffiutil") end
-            if ok_ffi and ffiutil then
-                local read_fn = ffiutil.readAllFromFD or ffiutil.readFromFD
-                if read_fn then pcall(read_fn, CatalogClient._poll_fd) end
-            end
-        end)
-        CatalogClient._poll_fd = nil
-    end
     if CatalogClient._async_pid then
         local pid = CatalogClient._async_pid
         CatalogClient._async_pid = nil
@@ -644,6 +834,18 @@ function CatalogClient.cancelAsyncFetch()
             end
         end
     end
+    if CatalogClient._poll_fd then
+        local fd = CatalogClient._poll_fd
+        CatalogClient._poll_fd = nil
+        pcall(function()
+            local ok_ffi, ffiutil = pcall(require, "ffi/util")
+            if not ok_ffi then ok_ffi, ffiutil = pcall(require, "ffiutil") end
+            if ok_ffi and ffiutil then
+                local read_fn = ffiutil.readAllFromFD or ffiutil.readFromFD
+                if read_fn then pcall(read_fn, fd) end
+            end
+        end)
+    end
 
     pcall(function()
         local DataStorage = require("datastorage")
@@ -654,6 +856,7 @@ function CatalogClient.cancelAsyncFetch()
         os.remove(cache_dir .. "/storefront_fonts.json.tmp")
         os.remove(cache_dir .. "/storefront_screensavers_catalog.json.tmp")
         os.remove(cache_dir .. "/storefront_readerbackdrop_catalog.json.tmp")
+        os.remove(cache_dir .. "/storefront_collections_catalog.json.tmp")
     end)
 end
 CatalogClient.cancelCatalogFetch = CatalogClient.cancelAsyncFetch
@@ -926,12 +1129,14 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback, is_backg
     local staging_fonts_file = cache_dir .. "/storefront_fonts.json.tmp"
     local staging_screensavers_file = cache_dir .. "/storefront_screensavers_catalog.json.tmp"
     local staging_rb_file = cache_dir .. "/storefront_readerbackdrop_catalog.json.tmp"
+    local staging_collections_file = cache_dir .. "/storefront_collections_catalog.json.tmp"
 
     local final_plugins_file = cache_dir .. "/storefront_plugins.json"
     local final_patches_file = cache_dir .. "/storefront_patches.json"
     local final_fonts_file = cache_dir .. "/storefront_fonts.json"
     local final_screensavers_file = DataStorage:getDataDir() .. "/cache/storefront_screensavers_catalog.json"
     local final_rb_file = DataStorage:getDataDir() .. "/cache/storefront_readerbackdrop_catalog.json"
+    local final_collections_file = DataStorage:getDataDir() .. "/cache/storefront_collections_catalog.json"
 
     os.remove(staging_raw_catalog)
     os.remove(staging_plugins_file)
@@ -939,6 +1144,7 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback, is_backg
     os.remove(staging_fonts_file)
     os.remove(staging_screensavers_file)
     os.remove(staging_rb_file)
+    os.remove(staging_collections_file)
 
     if not (ok_ffi and ffiutil and ffiutil.runInSubProcess) then
         logger.warn("Storefront: ffiutil.runInSubProcess unavailable, falling back to sync catalog fetch")
@@ -1021,12 +1227,14 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback, is_backg
             local ok_dl, dl_status_or_err = CatalogClient.fetchCatalogToFile(target_url, staging_raw_catalog)
             local ok_ss, ss_status_or_err = CatalogClient.fetchScreensaverCatalogToFile(staging_screensavers_file)
             local ok_rb, rb_status_or_err = CatalogClient.fetchReaderBackdropCatalogToFile(staging_rb_file)
+            local ok_col, col_status_or_err = CatalogClient.fetchCollectionsCatalogToFile(staging_collections_file)
 
             local main_not_mod = (ok_dl and dl_status_or_err == "not_modified")
             local ss_not_mod = (ok_ss and ss_status_or_err == "not_modified")
             local rb_not_mod = (ok_rb and rb_status_or_err == "not_modified")
+            local col_not_mod = (ok_col and col_status_or_err == "not_modified")
 
-            if main_not_mod and ss_not_mod and rb_not_mod then
+            if main_not_mod and ss_not_mod and rb_not_mod and col_not_mod then
                 if child_write_fd then ffiutil.writeToFD(child_write_fd, "OK_NOT_MODIFIED", true) end
                 return
             end
@@ -1117,19 +1325,43 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback, is_backg
                 end
             end
 
+            -- Validate Collections staging file
+            local col_proc_ok = false
+            if ok_col and col_status_or_err == "updated" then
+                local f_col = io.open(staging_collections_file, "rb")
+                if f_col then
+                    local col_content = f_col:read("*all")
+                    f_col:close()
+                    local ok_dec_col, parsed_col = pcall(json.decode, col_content)
+                    col_content = nil
+                    if ok_dec_col and type(parsed_col) == "table" then
+                        col_proc_ok = true
+                        if StorefrontLogger then
+                            local c_count = parsed_col.collections and #parsed_col.collections or #parsed_col
+                            StorefrontLogger.info(string.format("Storefront: collections catalog validated (%d collections)", c_count))
+                        end
+                    else
+                        os.remove(staging_collections_file)
+                    end
+                    parsed_col = nil
+                    collectgarbage("collect")
+                end
+            end
+
             collectgarbage("collect")
 
             local res_main = main_proc_ok and (used_bundled and "bundled" or "updated") or (main_not_mod and "not_modified" or ("err:" .. tostring(dl_status_or_err)))
             local res_ss = ss_proc_ok and "updated" or (ss_not_mod and "not_modified" or ("err:" .. tostring(ss_status_or_err)))
             local res_rb = rb_proc_ok and "updated" or (rb_not_mod and "not_modified" or ("err:" .. tostring(rb_status_or_err)))
+            local res_col = col_proc_ok and "updated" or (col_not_mod and "not_modified" or ("err:" .. tostring(col_status_or_err)))
 
             local result_msg
-            if main_not_mod and ss_not_mod and rb_not_mod then
+            if main_not_mod and ss_not_mod and rb_not_mod and col_not_mod then
                 result_msg = "OK_NOT_MODIFIED"
-            elseif main_proc_ok or ss_proc_ok or rb_proc_ok or (main_not_mod and ss_proc_ok) or (main_proc_ok and ss_not_mod) then
-                result_msg = string.format("OK:main=%s,ss=%s,rb=%s", res_main, res_ss, res_rb)
-            elseif main_not_mod or ss_not_mod or rb_not_mod then
-                result_msg = string.format("OK_NOT_MODIFIED:main=%s,ss=%s,rb=%s", res_main, res_ss, res_rb)
+            elseif main_proc_ok or ss_proc_ok or rb_proc_ok or col_proc_ok or (main_not_mod and ss_proc_ok) or (main_proc_ok and ss_not_mod) then
+                result_msg = string.format("OK:main=%s,ss=%s,rb=%s,col=%s", res_main, res_ss, res_rb, res_col)
+            elseif main_not_mod or ss_not_mod or rb_not_mod or col_not_mod then
+                result_msg = string.format("OK_NOT_MODIFIED:main=%s,ss=%s,rb=%s,col=%s", res_main, res_ss, res_rb, res_col)
             else
                 result_msg = "ERR_DOWNLOAD: " .. tostring(dl_status_or_err)
             end
@@ -1174,12 +1406,22 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback, is_backg
 
         if CatalogClient._async_pid ~= pid then
             -- Fetch was cancelled or superseded
-            if parent_read_fd and (ffiutil.readAllFromFD or ffiutil.readFromFD) then
-                local close_func = ffiutil.readAllFromFD or ffiutil.readFromFD
-                close_func(parent_read_fd)
+            if parent_read_fd and CatalogClient._poll_fd == parent_read_fd then
+                CatalogClient._poll_fd = nil
+                CatalogClient._poll_func = nil
+                if ok_ffi and ffiutil then
+                    if ffiutil.terminateSubProcess then
+                        pcall(ffiutil.terminateSubProcess, pid)
+                    end
+                    if ffiutil.isSubProcessDone then
+                        pcall(ffiutil.isSubProcessDone, pid, true)
+                    end
+                    local close_func = ffiutil.readAllFromFD or ffiutil.readFromFD
+                    if close_func then
+                        pcall(close_func, parent_read_fd)
+                    end
+                end
             end
-            CatalogClient._poll_func = nil
-            CatalogClient._poll_fd = nil
             return
         end
 
@@ -1232,6 +1474,7 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback, is_backg
             local ok_swap_f = safeReplace(staging_fonts_file, final_fonts_file)
             local ok_swap_ss = safeReplace(staging_screensavers_file, final_screensavers_file)
             local ok_swap_rb = safeReplace(staging_rb_file, final_rb_file)
+            local ok_swap_col = safeReplace(staging_collections_file, final_collections_file)
 
             local is_ok_not_modified = (child_msg == "OK_NOT_MODIFIED" or child_msg:find("^OK_NOT_MODIFIED") ~= nil)
             local is_ok = (child_msg == "OK" or child_msg:find("^OK") ~= nil)
@@ -1242,8 +1485,9 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback, is_backg
                 CatalogClient.clearStoredEtag()
             end
 
-            if is_ok_not_modified and not (ok_swap_p or ok_swap_pt or ok_swap_f or ok_swap_ss or ok_swap_rb) then
+            if is_ok_not_modified and not (ok_swap_p or ok_swap_pt or ok_swap_f or ok_swap_ss or ok_swap_rb or ok_swap_col) then
                 CatalogClient.setLastFetchedScreensavers(os.time())
+                CatalogClient.setLastFetchedCollections(os.time())
                 local ok_c, Cache = pcall(require, "storefront_cache")
                 if ok_c and Cache and Cache.touchLastFetched then
                     Cache.touchLastFetched(os.time())
@@ -1261,7 +1505,7 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback, is_backg
                     StorefrontLogger.info(string.format("Storefront: screensavers catalog unchanged (HTTP 304 Not Modified, %d screensavers cached)", s_count))
                 end
                 if callback then callback(true, "not_modified") end
-            elseif is_ok and (ok_swap_p or ok_swap_pt or ok_swap_f or ok_swap_ss or ok_swap_rb or is_ok_not_modified) then
+            elseif is_ok and (ok_swap_p or ok_swap_pt or ok_swap_f or ok_swap_ss or ok_swap_rb or ok_swap_col or is_ok_not_modified) then
                 if ok_swap_p or ok_swap_pt or ok_swap_f then
                     Cache.invalidate()
                     if StorefrontLogger then StorefrontLogger.info("Storefront: main catalog cache updated and swapped into place") end
@@ -1301,6 +1545,20 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback, is_backg
                     if StorefrontLogger then StorefrontLogger.warn("Storefront: screensavers catalog update failed: " .. tostring(ss_err_part)) end
                 end
 
+                if ok_swap_col then
+                    CatalogClient.setLastFetchedCollections(os.time())
+                    pcall(function()
+                        local ok_ss, StorefrontScreensavers = pcall(require, "storefront_screensavers_ui")
+                        if ok_ss and StorefrontScreensavers and StorefrontScreensavers.invalidateCollectionsMemCache then
+                            StorefrontScreensavers.invalidateCollectionsMemCache()
+                        end
+                    end)
+                    if StorefrontLogger then StorefrontLogger.info("Storefront: collections catalog swapped into final location") end
+                elseif child_msg:find("col=not_modified") or (is_ok_not_modified and not child_msg:find("col=err")) then
+                    CatalogClient.setLastFetchedCollections(os.time())
+                    if StorefrontLogger then StorefrontLogger.info("Storefront: collections catalog unchanged (HTTP 304 Not Modified)") end
+                end
+
                 if ok_swap_rb then
                     if StorefrontLogger then StorefrontLogger.info("Storefront: ReaderBackdrop catalog swapped into final location") end
                 elseif child_msg:find("rb=not_modified") or (is_ok_not_modified and not child_msg:find("rb=err")) then
@@ -1321,6 +1579,7 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback, is_backg
                 os.remove(staging_raw_catalog)
                 os.remove(staging_screensavers_file)
                 os.remove(staging_rb_file)
+                os.remove(staging_collections_file)
 
                 local err_msg = "Catalog async fetch failed (msg: " .. tostring(child_msg) .. ")"
                 logger.warn("Storefront " .. err_msg .. ", preserving existing catalog cache")
@@ -1367,6 +1626,45 @@ function CatalogClient.getBundledCatalogPath()
 
     table.insert(candidates, DataStorage:getDataDir() .. "/plugins/storefront.koplugin/catalog.json")
     table.insert(candidates, DataStorage:getDataDir() .. "/plugins/storefront.koplugin/storefront.koplugin/catalog.json")
+
+    for _, path in ipairs(candidates) do
+        local f = io.open(path, "r")
+        if f then
+            f:close()
+            return path
+        end
+    end
+    return nil
+end
+
+function CatalogClient.getBundledCollectionsPath()
+    local info = debug.getinfo(1, "S")
+    local src = (info and info.source) and info.source:gsub("^@", "") or ""
+    local dir = src:match("^(.*[/\\])") or ""
+
+    local candidates = {
+        dir .. "collections.lite.json",
+        dir .. "../collections.lite.json",
+    }
+
+    local ok_sf, Storefront = pcall(require, "main")
+    local instance_path = (ok_sf and Storefront and Storefront.instance and Storefront.instance.path) or nil
+    if instance_path then
+        table.insert(candidates, instance_path .. "/collections.lite.json")
+        table.insert(candidates, instance_path .. "/storefront.koplugin/collections.lite.json")
+    end
+
+    local ok_pp, PluginPaths = pcall(require, "storefront_plugin_paths")
+    if ok_pp and PluginPaths and PluginPaths.getLookupPaths then
+        local lookup_paths = PluginPaths.getLookupPaths() or {}
+        for _, p in ipairs(lookup_paths) do
+            table.insert(candidates, p .. "/storefront.koplugin/collections.lite.json")
+            table.insert(candidates, p .. "/storefront.koplugin/storefront.koplugin/collections.lite.json")
+        end
+    end
+
+    table.insert(candidates, DataStorage:getDataDir() .. "/plugins/storefront.koplugin/collections.lite.json")
+    table.insert(candidates, DataStorage:getDataDir() .. "/plugins/storefront.koplugin/storefront.koplugin/collections.lite.json")
 
     for _, path in ipairs(candidates) do
         local f = io.open(path, "r")
@@ -1480,12 +1778,38 @@ function CatalogClient.fetchAndUpdateCache(url_to_fetch)
         end
     end
 
+    local col_data, col_err = CatalogClient.fetchCollectionsCatalog()
+    if col_data and col_data ~= "not_modified" and type(col_data) == "table" and #col_data > 0 then
+        local final_col_file = DataStorage:getDataDir() .. "/cache/storefront_collections_catalog.json"
+        local ser_col_ok, ser_col = pcall(json.encode, col_data)
+        if ser_col_ok and ser_col then
+            local cf = io.open(final_col_file, "w")
+            if cf then
+                cf:write(ser_col)
+                cf:close()
+                updated = true
+                CatalogClient.setLastFetchedCollections(os.time())
+                pcall(function()
+                    local ok_ss, StorefrontScreensavers = pcall(require, "storefront_screensavers_ui")
+                    if ok_ss and StorefrontScreensavers and StorefrontScreensavers.invalidateCollectionsMemCache then
+                        StorefrontScreensavers.invalidateCollectionsMemCache()
+                    end
+                end)
+                if StorefrontLogger then
+                    StorefrontLogger.info(string.format("Storefront: collections catalog updated (%d collections cached)", #col_data))
+                end
+            end
+        end
+    elseif col_data == "not_modified" then
+        CatalogClient.setLastFetchedCollections(os.time())
+    end
+
     if updated then
         return true, "updated"
-    elseif main_not_mod or ss_not_mod then
+    elseif main_not_mod or ss_not_mod or (col_data == "not_modified") then
         return true, "not_modified"
     else
-        return false, err or ss_err or "Catalog fetch failed"
+        return false, err or ss_err or col_err or "Catalog fetch failed"
     end
 end
 
