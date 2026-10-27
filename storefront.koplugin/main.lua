@@ -11039,18 +11039,27 @@ end
 
 function Storefront:onReaderReady(ui)
     self.ui = ui
-    if self.ui and self.ui.registerModule then
+    if self.ui and self.ui.registerModule and not self.ui._sf_module_registered then
+        self.ui._sf_module_registered = true
         pcall(self.ui.registerModule, self.ui, "storefront", self, true)
     end
 end
 
 function Storefront:init()
-    Localization:init(self.path)
-    StorefrontLogger.reset()
+    Localization:ensureInit(self.path)
+    if not _G.G_session_init_done then
+        StorefrontLogger.reset()
+    end
     local mode_str = GitHub.isDirectApiEnabled() and "Direct API" or "Storefront Catalog"
-    local plugin_count = Cache.countRepos and Cache.countRepos("plugin") or #Cache.listRepos("plugin")
-    local patch_count = Cache.countRepos and Cache.countRepos("patch") or 0
-    local font_count = Cache.countRepos and Cache.countRepos("font") or 0
+    local plugin_count = (Cache.getCachedCount and Cache.getCachedCount("plugin"))
+        or (Cache.countRepos and Cache.countRepos("plugin"))
+        or 0
+    local patch_count = (Cache.getCachedCount and Cache.getCachedCount("patch"))
+        or (Cache.countRepos and Cache.countRepos("patch"))
+        or 0
+    local font_count = (Cache.getCachedCount and Cache.getCachedCount("font"))
+        or (Cache.countRepos and Cache.countRepos("font"))
+        or 0
     local screensaver_count = 0
     pcall(function()
         local ok_ss, StorefrontScreensavers = pcall(require, "storefront_screensavers_ui")
@@ -11058,19 +11067,37 @@ function Storefront:init()
             screensaver_count = StorefrontScreensavers.getCachedCount()
         end
     end)
-    StorefrontLogger.info(string.format("Storefront initialized (Mode: %s, Cached: %d plugins, %d patches, %d fonts, %d screensavers)", mode_str, plugin_count or 0, patch_count or 0, font_count or 0, screensaver_count or 0))
+    if not _G.G_session_init_done then
+        StorefrontLogger.info(string.format("Storefront initialized (Mode: %s, Cached: %d plugins, %d patches, %d fonts, %d screensavers)", mode_str, plugin_count or 0, patch_count or 0, font_count or 0, screensaver_count or 0))
+    else
+        logger.dbg(string.format("Storefront initialized widget (Mode: %s, Cached: %d plugins, %d patches, %d fonts, %d screensavers)", mode_str, plugin_count or 0, patch_count or 0, font_count or 0, screensaver_count or 0))
+    end
     Storefront.instance = self
     self.cache_dir = ensureCacheDir()
     self:onDispatcherRegisterActions()
-    self.ui.menu:registerToMainMenu(self)
-    if self.ui and self.ui.registerModule then
+    if self.ui and self.ui.menu and self.ui.menu.registerToMainMenu then
+        self.ui.menu:registerToMainMenu(self)
+    end
+    if self.ui and self.ui.registerModule and not self.ui._sf_module_registered then
+        self.ui._sf_module_registered = true
         pcall(self.ui.registerModule, self.ui, "storefront", self, true)
     end
     pcall(function()
         local UIManager = require("ui/uimanager")
-        if UIManager and UIManager.event_hook and UIManager.event_hook.registerWidget then
-            UIManager.event_hook:registerWidget("Suspend", self)
-            UIManager.event_hook:registerWidget("Resume", self)
+        if UIManager and UIManager.event_hook and UIManager.event_hook.registerWidget and not UIManager._sf_event_hooked then
+            UIManager._sf_event_hooked = true
+            local hook_proxy = {
+                onSuspend = function()
+                    local target = Storefront.instance or Storefront
+                    if target and target.onSuspend then target:onSuspend() end
+                end,
+                onResume = function()
+                    local target = Storefront.instance or Storefront
+                    if target and target.onResume then target:onResume() end
+                end,
+            }
+            UIManager.event_hook:registerWidget("Suspend", hook_proxy)
+            UIManager.event_hook:registerWidget("Resume", hook_proxy)
         end
     end)
     -- Hook directly into Device power lifecycle so onSuspend/onResume always run regardless of active UI
@@ -11368,8 +11395,14 @@ function Storefront:init()
             end)
         end
     end
-    Storefront._bg_catalog_init_timer_fn = _bg_catalog_init_fn
-    UIManager:scheduleIn(60, _bg_catalog_init_fn)
+    if not _session_bg_checks_done then
+        _session_bg_checks_done = true
+        if Storefront._bg_catalog_init_timer_fn and UIManager and UIManager.unschedule then
+            UIManager:unschedule(Storefront._bg_catalog_init_timer_fn)
+        end
+        Storefront._bg_catalog_init_timer_fn = _bg_catalog_init_fn
+        UIManager:scheduleIn(60, _bg_catalog_init_fn)
+    end
 
     pcall(function() self:scheduleNotificationTimer() end)
 end
@@ -11461,32 +11494,12 @@ function Storefront:onNetworkConnected()
     end
 end
 
-function Storefront:onSuspend(is_widget_close)
-    local UIManager = require("ui/uimanager")
-    if not is_widget_close and self._is_suspended then
-        -- Fast-path deduplication: already suspended in this sleep cycle.
-        -- Ensure any tasks are cancelled idempotently, but skip duplicate logging and double-GC.
-        pcall(function()
-            local ok_cat, CatalogClient = pcall(require, "storefront_net_catalog")
-            if ok_cat and CatalogClient and CatalogClient.cancelCatalogFetch then
-                CatalogClient.cancelCatalogFetch()
-            end
-        end)
-        return
-    end
-
-    if not is_widget_close then
-        self._is_suspended = true
-    end
-
-    logger.info("Storefront: onSuspend received — aborting active tasks and purging memory")
-    if StorefrontLogger then StorefrontLogger.info("Storefront: onSuspend received — aborting active tasks and purging memory") end
-
-    -- 1. Cancel in-flight screensaver thumbnail queue & terminate active worker
-    self._ss_thumb_task_id = (self._ss_thumb_task_id or 0) + 1
-    if self._active_thumb_worker then
-        local w = self._active_thumb_worker
-        self._active_thumb_worker = nil
+local function cleanupInstanceSuspendState(inst)
+    if type(inst) ~= "table" then return end
+    inst._ss_thumb_task_id = (inst._ss_thumb_task_id or 0) + 1
+    if inst._active_thumb_worker then
+        local w = inst._active_thumb_worker
+        inst._active_thumb_worker = nil
         pcall(function()
             local ok_ffi, ffiutil = pcall(require, "ffi/util")
             if not ok_ffi then ok_ffi, ffiutil = pcall(require, "ffiutil") end
@@ -11503,6 +11516,73 @@ function Storefront:onSuspend(is_widget_close)
                 end
             end
         end)
+    end
+    inst.screensavers_cache = nil
+    inst._filtered_screensavers_cache = nil
+    inst._screensavers_all_cache = nil
+end
+
+local function setModuleSuspendedState(self_inst, state)
+    Storefront._is_suspended = state
+    if type(self_inst) == "table" and self_inst ~= Storefront then
+        rawset(self_inst, "_is_suspended", state)
+    end
+    if type(Storefront.instance) == "table" and Storefront.instance ~= Storefront then
+        rawset(Storefront.instance, "_is_suspended", state)
+    end
+end
+
+function Storefront:onSuspend(is_widget_close)
+    local UIManager = require("ui/uimanager")
+    if is_widget_close then
+        -- Widget close transition (e.g., closing FileManager to open a book, or closing ReaderUI).
+        -- Clean up instance-specific UI state and workers, but preserve module-level caches
+        -- (Cache and StorefrontScreensavers) and skip GC sweeps so book opens are instantaneous.
+        cleanupInstanceSuspendState(self)
+        if UIManager and UIManager.unschedule then
+            if _catalog_show_timer_fn then
+                UIManager:unschedule(_catalog_show_timer_fn)
+                _catalog_show_timer_fn = nil
+            end
+            if _screensaver_warmup_timer_fn then
+                UIManager:unschedule(_screensaver_warmup_timer_fn)
+                _screensaver_warmup_timer_fn = nil
+            end
+        else
+            _catalog_show_timer_fn = nil
+            _screensaver_warmup_timer_fn = nil
+        end
+        return
+    end
+
+    if Storefront._is_suspended or rawget(self, "_is_suspended") then
+        -- Fast-path deduplication: already suspended in this sleep cycle.
+        -- Ensure any tasks are cancelled idempotently, but skip duplicate logging and double-GC.
+        cleanupInstanceSuspendState(self)
+        if Storefront.instance and Storefront.instance ~= self then
+            cleanupInstanceSuspendState(Storefront.instance)
+        end
+        pcall(function()
+            local ok_cat, CatalogClient = pcall(require, "storefront_net_catalog")
+            if ok_cat and CatalogClient and CatalogClient.cancelCatalogFetch then
+                CatalogClient.cancelCatalogFetch()
+            end
+        end)
+        return
+    end
+
+    setModuleSuspendedState(self, true)
+
+    logger.info("Storefront: onSuspend received — aborting active tasks and purging memory")
+    if StorefrontLogger then StorefrontLogger.info("Storefront: onSuspend received — aborting active tasks and purging memory") end
+
+    -- 1. Cancel in-flight screensaver thumbnail queue & terminate active worker
+    cleanupInstanceSuspendState(self)
+    if Storefront.instance and Storefront.instance ~= self then
+        cleanupInstanceSuspendState(Storefront.instance)
+    end
+    if Storefront ~= self and Storefront ~= Storefront.instance then
+        cleanupInstanceSuspendState(Storefront)
     end
     pcall(function()
         local ok_ss, StorefrontScreensavers = pcall(require, "storefront_screensavers_ui")
@@ -11562,8 +11642,6 @@ function Storefront:onSuspend(is_widget_close)
     end
 
     -- 5. Free large in-memory caches to prevent Kindle OOM killer
-    self.screensavers_cache = nil
-    self._screensavers_all_cache = nil
     pcall(function()
         local ok_ss, StorefrontScreensavers = pcall(require, "storefront_screensavers_ui")
         if ok_ss and StorefrontScreensavers and StorefrontScreensavers.invalidateMemCache then
@@ -11577,16 +11655,15 @@ function Storefront:onSuspend(is_widget_close)
         end
     end)
 
-    -- 6. Trigger Lua garbage collector immediately before device goes to sleep
-    collectgarbage("collect")
-    collectgarbage("collect")
+    -- 6. Perform a single incremental GC step instead of blocking sleep with a full heap sweep
+    collectgarbage("step", 200)
 end
 
 function Storefront:onResume()
-    if self._is_suspended == false then
+    if Storefront._is_suspended == false or rawget(self, "_is_suspended") == false then
         return
     end
-    self._is_suspended = false
+    setModuleSuspendedState(self, false)
     logger.info("Storefront: onResume received")
     if StorefrontLogger then StorefrontLogger.info("Storefront: onResume received") end
     pcall(function()
@@ -11597,6 +11674,13 @@ function Storefront:onResume()
 end
 
 function Storefront:onCloseWidget()
+    if self._is_widget_closed then
+        return
+    end
+    self._is_widget_closed = true
+    if self.browser_menu then
+        self:closeBrowserMenu()
+    end
     self:onSuspend(true)
 end
 

@@ -36,6 +36,7 @@ local CATALOG_ETAG_KEY = "catalog_etag"
 -- settings are a forked copy, so the parent would never see them and its next flush
 -- would overwrite them on disk. The child sends them back with its result message.
 CatalogClient._etag_sink = nil
+CatalogClient._count_sink = nil
 
 local function saveEtag(key, etag)
     if type(etag) ~= "string" or etag == "" then return end
@@ -52,6 +53,9 @@ function CatalogClient.etagsToChildMsg()
     for key, etag in pairs(CatalogClient._etag_sink or {}) do
         table.insert(out, "\nETAG " .. key .. " " .. etag)
     end
+    for key, count in pairs(CatalogClient._count_sink or {}) do
+        table.insert(out, "\nCOUNT " .. key .. " " .. tostring(count))
+    end
     return table.concat(out)
 end
 
@@ -60,6 +64,13 @@ function CatalogClient.applyEtagsFromChildMsg(msg)
     for key, etag in tostring(msg):gmatch("\nETAG (%S+) ([^\n]+)") do
         if type(etag) == "string" and etag ~= "" then
             StorefrontSettings:saveSetting(key, etag)
+            any_saved = true
+        end
+    end
+    for key, count in tostring(msg):gmatch("\nCOUNT (%S+) (%d+)") do
+        local n = tonumber(count)
+        if n then
+            StorefrontSettings:saveSetting(key, n)
             any_saved = true
         end
     end
@@ -911,6 +922,9 @@ function CatalogClient.processCatalogDataToStaging(catalog_data, staging_plugins
     catalog_data.plugins = nil
     plugins = nil
 
+    if CatalogClient._count_sink then
+        CatalogClient._count_sink["cached_plugin_count"] = #plugin_list
+    end
     local plugin_data = { fetched_at = fetched_at, repos = plugin_list }
     local ok_p, ser_p = pcall(json.encode, plugin_data)
     plugin_list = nil
@@ -1002,6 +1016,9 @@ function CatalogClient.processCatalogDataToStaging(catalog_data, staging_plugins
     catalog_data.patches = nil
     patches = nil
 
+    if CatalogClient._count_sink then
+        CatalogClient._count_sink["cached_patch_count"] = #patch_list
+    end
     local patch_data = { fetched_at = fetched_at, repos = patch_list }
     local ok_pt, ser_pt = pcall(json.encode, patch_data)
     patch_list = nil
@@ -1059,6 +1076,9 @@ function CatalogClient.processCatalogDataToStaging(catalog_data, staging_plugins
         end
         fonts = nil
 
+        if CatalogClient._count_sink then
+            CatalogClient._count_sink["cached_font_count"] = #font_list
+        end
         local font_data = { fetched_at = fetched_at, repos = font_list }
         local ok_f, ser_f = pcall(json.encode, font_data)
         font_list = nil
@@ -1222,6 +1242,7 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback, is_backg
     -- Run download AND JSON decoding AND disk writing inside child subprocess
     local pid, parent_read_fd = ffiutil.runInSubProcess(function(pid, child_write_fd)
         CatalogClient._etag_sink = {}
+        CatalogClient._count_sink = {}
         local ok, err = xpcall(function()
             collectgarbage("collect")
             local ok_dl, dl_status_or_err = CatalogClient.fetchCatalogToFile(target_url, staging_raw_catalog)
@@ -1295,6 +1316,9 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback, is_backg
                     ss_content = nil
                     if ok_dec_ss and type(parsed_ss) == "table" and #parsed_ss > 0 then
                         ss_proc_ok = true
+                        if CatalogClient._count_sink then
+                            CatalogClient._count_sink["cached_screensaver_count"] = #parsed_ss
+                        end
                     else
                         os.remove(staging_screensavers_file)
                     end
@@ -1442,7 +1466,7 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback, is_backg
             logger.info("Storefront: catalog subprocess finished with msg:", tostring(child_msg))
             if StorefrontLogger then StorefrontLogger.info("Storefront: catalog subprocess finished with msg: " .. tostring(child_msg)) end
             CatalogClient.applyEtagsFromChildMsg(child_msg)
-            child_msg = child_msg:gsub("\nETAG [^\n]*", "")
+            child_msg = child_msg:gsub("\nETAG [^\n]*", ""):gsub("\nCOUNT [^\n]*", "")
 
             local function safeReplace(src, dest)
                 local f_test = io.open(src, "rb")

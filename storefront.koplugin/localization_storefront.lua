@@ -218,9 +218,14 @@ function Localization:init(path)
     logger.info("Localization: Initialized with system language:", self.current_language)
 end
 
-function Localization:ensureInit()
+function Localization:ensureInit(path)
     if not self.initialized then
-        self:init()
+        self:init(path)
+    elseif path then
+        local norm_path = path:gsub("\\", "/")
+        if norm_path ~= self.path and next(self.translations) == nil then
+            self:init(path)
+        end
     end
 end
 

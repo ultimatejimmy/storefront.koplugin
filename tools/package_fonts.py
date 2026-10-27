@@ -89,12 +89,12 @@ def main():
             print(f"  Updated URLs for {updated} fonts.")
             
         with open(catalog_path, "w", encoding="utf-8") as f:
-            json.dump(catalog, f, indent=2, ensure_ascii=False)
+            json.dump(catalog, f, separators=(',', ':'), ensure_ascii=False)
 
         inner_catalog_path = os.path.abspath(os.path.join(script_dir, "..", "storefront.koplugin", "catalog.json"))
         if os.path.exists(os.path.dirname(inner_catalog_path)):
             with open(inner_catalog_path, "w", encoding="utf-8") as f:
-                json.dump(catalog, f, indent=2, ensure_ascii=False)
+                json.dump(catalog, f, separators=(',', ':'), ensure_ascii=False)
             print(f"  Synced updated catalog.json to {inner_catalog_path}")
             
     except Exception as e:

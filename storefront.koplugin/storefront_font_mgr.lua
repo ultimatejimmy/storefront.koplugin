@@ -193,6 +193,11 @@ local FONT_FAMILY_ALIASES = {
 
     ["lora"] = { "lora", "nv lora", "nv_lora", "nvlora" },
     ["nv lora"] = { "lora", "nv lora", "nv_lora", "nvlora" },
+
+    ["libron"] = { "libron", "libron r", "libron_r", "libronr" },
+    ["libron r"] = { "libron", "libron r", "libron_r", "libronr" },
+    ["libron_r"] = { "libron", "libron r", "libron_r", "libronr" },
+    ["libronr"] = { "libron", "libron r", "libron_r", "libronr" },
 }
 
 local function stripFontStyleSuffix(name)

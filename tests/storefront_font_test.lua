@@ -291,6 +291,22 @@ if ok_fm and FontMgr and FontMgr.isDefaultFont then
     check("FontMgr.isDefaultFont rejects 'Bangers'", FontMgr.isDefaultFont("Bangers") == false)
 end
 
+-- Test 13: Libron <-> Libron R Family Alias & Stem Resolution
+if ok_fm and FontMgr then
+    local mock_libron_map = {
+        ["libron"] = true,
+    }
+    check("isFontInstalled matches 'Libron' when 'libron' is in installed map", FontMgr.isFontInstalled("Libron", mock_libron_map) == true)
+    check("isFontInstalled matches 'Libron R' when 'libron' is in installed map", FontMgr.isFontInstalled("Libron R", mock_libron_map) == true)
+    check("isFontInstalled matches repo table for Libron", FontMgr.isFontInstalled({ name = "Libron", font_family = "Libron", font_file = "Libron-Regular.ttf" }, mock_libron_map) == true)
+
+    local mock_libron_r_map = {
+        ["libronr"] = true,
+    }
+    check("isFontInstalled matches 'Libron' when 'libronr' is in installed map", FontMgr.isFontInstalled("Libron", mock_libron_r_map) == true)
+    check("isFontInstalled matches 'Libron R' when 'libronr' is in installed map", FontMgr.isFontInstalled("Libron R", mock_libron_r_map) == true)
+end
+
 print("=== Font System Unit Tests Summary ===")
 print(string.format("Total Failures: %d", failures))
 if failures > 0 then

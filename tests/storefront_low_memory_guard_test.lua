@@ -344,6 +344,90 @@ do
     end
 end
 
+-- ----------------------------------------------------
+-- Test 9: Cache.getCachedCount resolves counts without calling Cache.init() (Issue #5081)
+-- ----------------------------------------------------
+do
+    local Cache = require("storefront_cache")
+    Cache.purgeMem()
+    check("Cache is unloaded after purgeMem", Cache.isLoaded() == false)
+
+    package.loaded["storefront_settings"] = {
+        readSetting = function(self, key)
+            if key == "cached_plugin_count" then return 142 end
+            if key == "cached_patch_count" then return 57 end
+            if key == "cached_font_count" then return 28 end
+            return nil
+        end,
+        saveSetting = function(self, key, val) end,
+        flush = function() end,
+    }
+
+    local p_count = Cache.getCachedCount("plugin")
+    local pt_count = Cache.getCachedCount("patch")
+    local f_count = Cache.getCachedCount("font")
+
+    check("getCachedCount('plugin') resolves from settings", p_count == 142)
+    check("getCachedCount('patch') resolves from settings", pt_count == 57)
+    check("getCachedCount('font') resolves from settings", f_count == 28)
+    check("Cache remains unloaded after getCachedCount calls", Cache.isLoaded() == false)
+end
+
+-- ----------------------------------------------------
+-- Test 10: Localization:ensureInit idempotency (Issue #5081)
+-- ----------------------------------------------------
+do
+    local Localization = require("localization_storefront")
+    Localization.initialized = true
+    Localization.path = "/test/path"
+    Localization.translations = { btn_install = "Install" }
+
+    local parse_called = false
+    local orig_parse = Localization.parsePO
+    Localization.parsePO = function(...)
+        parse_called = true
+        return {}
+    end
+
+    Localization:ensureInit("/test/path")
+    check("ensureInit does not re-parse translations when already initialized", parse_called == false)
+    Localization.parsePO = orig_parse
+end
+
+-- ----------------------------------------------------
+-- Test 11: Storefront:onCloseWidget preserves Cache and deduplicates (Issue #5081)
+-- ----------------------------------------------------
+do
+    local ok_main, MainStorefront = pcall(require, "main")
+    local Cache = require("storefront_cache")
+    if ok_main and MainStorefront and type(MainStorefront.new) == "function" then
+        -- Initialize Cache so it is loaded in memory
+        Cache.init()
+        check("Cache is loaded initially", Cache.isLoaded() == true)
+
+        local test_inst = MainStorefront:new{ ui = { name = "FileManager" } }
+        local suspend_count = 0
+        local orig_suspend = test_inst.onSuspend
+        test_inst.onSuspend = function(self, is_widget_close)
+            suspend_count = suspend_count + 1
+            orig_suspend(self, is_widget_close)
+        end
+
+        test_inst:onCloseWidget()
+        check("onCloseWidget marks _is_widget_closed", test_inst._is_widget_closed == true)
+        check("onCloseWidget passes is_widget_close=true to onSuspend", suspend_count == 1)
+        check("onCloseWidget preserves module-level Cache", Cache.isLoaded() == true)
+
+        -- Duplicate onCloseWidget on same instance is ignored
+        test_inst:onCloseWidget()
+        check("Duplicate onCloseWidget returns early without calling onSuspend again", suspend_count == 1)
+
+        -- Real device suspend DOES purge Cache
+        test_inst:onSuspend()
+        check("Real device suspend purges module-level Cache", Cache.isLoaded() == false)
+    end
+end
+
 print("=== Low-Memory Guard & Catalog Staging Tests Summary ===")
 print(string.format("Total Failures: %d", failures))
 if failures > 0 then

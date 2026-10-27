@@ -75,6 +75,14 @@ end
 
 local _seeding_in_progress = false
 
+local function saveCachedCount(kind, count)
+    local ok_set, StorefrontSettings = pcall(require, "storefront_settings")
+    if ok_set and StorefrontSettings and StorefrontSettings.saveSetting then
+        StorefrontSettings:saveSetting("cached_" .. tostring(kind) .. "_count", count)
+        StorefrontSettings:flush()
+    end
+end
+
 local function buildIndices()
     _by_id = {}
     _by_name = {}
@@ -156,6 +164,11 @@ function Cache.init()
 
     buildIndices()
     _loaded = true
+    for _, k in ipairs({"plugin", "patch", "font"}) do
+        if _data[k] and _data[k].repos then
+            saveCachedCount(k, #_data[k].repos)
+        end
+    end
 end
 
 function Cache.purgeMem()
@@ -260,6 +273,7 @@ function Cache.storeRepos(kind, repos, custom_fetched_at)
         fetched_at = fetched_at,
         repos = list,
     }
+    saveCachedCount(kind, #list)
     
     local file_path = (kind == "plugin" and PLUGINS_FILE) or (kind == "patch" and PATCHES_FILE) or FONTS_FILE
     writeJsonFile(file_path, _data[kind])
@@ -377,6 +391,25 @@ function Cache.touchLastFetched(timestamp)
     for _, k in ipairs({"plugin", "patch", "font"}) do
         Cache.setLastFetched(k, timestamp)
     end
+end
+
+function Cache.isLoaded()
+    return _loaded == true
+end
+
+function Cache.getCachedCount(kind)
+    kind = kind or "plugin"
+    if _loaded and _data[kind] and _data[kind].repos then
+        return #_data[kind].repos
+    end
+    local ok_set, StorefrontSettings = pcall(require, "storefront_settings")
+    if ok_set and StorefrontSettings and StorefrontSettings.readSetting then
+        local count = StorefrontSettings:readSetting("cached_" .. tostring(kind) .. "_count")
+        if count and tonumber(count) and tonumber(count) >= 0 then
+            return tonumber(count)
+        end
+    end
+    return 0
 end
 
 function Cache.countRepos(kind)
@@ -562,6 +595,13 @@ function Cache.clear()
     os.remove(PLUGINS_FILE)
     os.remove(PATCHES_FILE)
     os.remove(FONTS_FILE)
+    local ok_set, StorefrontSettings = pcall(require, "storefront_settings")
+    if ok_set and StorefrontSettings and StorefrontSettings.delSetting then
+        StorefrontSettings:delSetting("cached_plugin_count")
+        StorefrontSettings:delSetting("cached_patch_count")
+        StorefrontSettings:delSetting("cached_font_count")
+        StorefrontSettings:flush()
+    end
 end
 
 return Cache

@@ -209,6 +209,93 @@ do
     check("onCloseWidget does not mark _is_suspended as true", MainStorefront._is_suspended ~= true)
 end
 
+-- Test 8: Multi-instance suspend/resume deduplication and GC verification (Issue #5080)
+do
+    local ok_main, MainStorefront = pcall(require, "main")
+    if ok_main and MainStorefront and type(MainStorefront.new) == "function" then
+        local logger = require("logger")
+        local orig_logger_info = logger.info
+        local suspend_log_count = 0
+        local resume_log_count = 0
+        logger.info = function(msg, ...)
+            if type(msg) == "string" then
+                if msg:find("onSuspend received", 1, true) then
+                    suspend_log_count = suspend_log_count + 1
+                elseif msg:find("onResume received", 1, true) then
+                    resume_log_count = resume_log_count + 1
+                end
+            end
+            if orig_logger_info then orig_logger_info(msg, ...) end
+        end
+
+        local gc_calls = {}
+        local orig_collectgarbage = _G.collectgarbage
+        _G.collectgarbage = function(opt, ...)
+            table.insert(gc_calls, { opt = opt, args = { ... } })
+            if orig_collectgarbage then
+                return orig_collectgarbage(opt, ...)
+            end
+            return 0
+        end
+
+        -- Create two instances representing File Browser and Reader
+        local fm_instance = MainStorefront:new{ ui = { name = "FileManager" } }
+        local reader_instance = MainStorefront:new{ ui = { name = "ReaderUI" } }
+
+        -- Populate caches and active workers on both instances
+        fm_instance.screensavers_cache = { { id = 101 } }
+        fm_instance._filtered_screensavers_cache = { { id = 101 } }
+        fm_instance._screensavers_all_cache = { { id = 101 } }
+        fm_instance._active_thumb_worker = { pid = 1111, fd = 2222 }
+
+        reader_instance.screensavers_cache = { { id = 202 } }
+        reader_instance._filtered_screensavers_cache = { { id = 202 } }
+        reader_instance._screensavers_all_cache = { { id = 202 } }
+        reader_instance._active_thumb_worker = { pid = 3333, fd = 4444 }
+
+        MainStorefront.instance = reader_instance
+        MainStorefront._is_suspended = nil
+
+        -- Suspend cycle: first instance triggers onSuspend
+        fm_instance:onSuspend()
+        check("fm_instance:onSuspend sets _is_suspended true", MainStorefront._is_suspended == true)
+        check("fm_instance screensavers_cache cleared", fm_instance.screensavers_cache == nil)
+        check("reader_instance (Storefront.instance) screensavers_cache cleared", reader_instance.screensavers_cache == nil)
+
+        -- Second instance triggers onSuspend in same sleep cycle
+        reader_instance.screensavers_cache = { { id = 203 } }
+        reader_instance:onSuspend()
+        check("duplicate onSuspend does not run twice (suspend_log_count == 1)", suspend_log_count == 1)
+        check("duplicate onSuspend cleared screensavers_cache on second instance", reader_instance.screensavers_cache == nil)
+
+        -- Verify GC behavior during onSuspend
+        local full_gc_found = false
+        local step_gc_found = false
+        for _, call in ipairs(gc_calls) do
+            if call.opt == "collect" then
+                full_gc_found = true
+            elseif call.opt == "step" then
+                step_gc_found = true
+            end
+        end
+        check("onSuspend does NOT invoke collectgarbage('collect')", full_gc_found == false)
+        check("onSuspend invokes collectgarbage('step', 200)", step_gc_found == true)
+
+        -- Resume cycle: both instances receive onResume
+        fm_instance:onResume()
+        check("fm_instance:onResume sets _is_suspended false", MainStorefront._is_suspended == false)
+        check("onResume logged once on first instance", resume_log_count == 1)
+
+        reader_instance:onResume()
+        check("reader_instance:onResume is deduplicated (resume_log_count remains 1)", resume_log_count == 1)
+        check("reader_instance reflects _is_suspended == false", reader_instance._is_suspended == false)
+
+        -- Clean up mocks
+        logger.info = orig_logger_info
+        _G.collectgarbage = orig_collectgarbage
+    end
+end
+
 print("=== Refresh Guard Unit Tests Summary ===")
 print(string.format("Total Failures: %d", failures))
 if failures > 0 then
