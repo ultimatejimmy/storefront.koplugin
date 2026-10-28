@@ -144,7 +144,52 @@ local function getAuthHeaders()
     }
 end
 
-local function request(path, query)
+local custom_block_timeout = nil
+local custom_total_timeout = nil
+
+function GitHubClient.setRequestTimeouts(block_timeout, total_timeout)
+    custom_block_timeout = block_timeout
+    custom_total_timeout = total_timeout
+end
+
+function GitHubClient.resetRequestTimeouts()
+    custom_block_timeout = nil
+    custom_total_timeout = nil
+end
+
+function GitHubClient.isRateLimitError(err)
+    if not err then return false end
+    if type(err) == "table" then
+        if err.is_rate_limit ~= nil then
+            return err.is_rate_limit == true
+        end
+        local code = tonumber(err.code)
+        local body = tostring(err.body or ""):lower()
+        if code == 429 then return true end
+        if code == 403 and (body:find("rate limit", 1, true) or body:find("secondary rate", 1, true)) then
+            return true
+        end
+    end
+    return false
+end
+
+local function makeHttpError(code, body, headers)
+    local num_code = tonumber(code) or 0
+    local is_fine_grained_unsupported = num_code == 403
+        and body
+        and body:lower():find("fine%-grained", 1, true) ~= nil
+    local rem = headers and (headers["x-ratelimit-remaining"] or headers["X-RateLimit-Remaining"])
+    local is_rate_limit = (num_code == 429) or (num_code == 403 and not is_fine_grained_unsupported and (rem == "0" or (body and (body:lower():find("rate limit", 1, true) or body:lower():find("secondary rate", 1, true)))))
+    return {
+        code = num_code,
+        body = body,
+        headers = headers,
+        is_rate_limit = is_rate_limit and true or false,
+        is_fine_grained_unsupported = is_fine_grained_unsupported,
+    }
+end
+
+local function request(path, query, opts)
     local response_body = {}
     local target = BASE_URL .. path
     if query and query ~= "" then
@@ -163,17 +208,22 @@ local function request(path, query)
     end
     local http_mod = getHttpModule(target)
     local code
-    socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+    local resp_headers
+    local block_to = (opts and opts.block_timeout) or custom_block_timeout or socketutil.FILE_BLOCK_TIMEOUT
+    local total_to = (opts and opts.total_timeout) or custom_total_timeout or socketutil.FILE_TOTAL_TIMEOUT
+    socketutil:set_timeout(block_to, total_to)
     pcall(function()
-        _, code = http_mod.request{
+        local _, req_code, req_headers = http_mod.request{
             url = target,
             headers = headers,
             sink = newTableSink(response_body),
         }
+        code = req_code
+        resp_headers = req_headers
     end)
     socketutil:reset_timeout()
     local body = table.concat(response_body)
-    return tonumber(code) or 0, body
+    return tonumber(code) or 0, body, resp_headers
 end
 
 local function buildQuery(opts)
@@ -210,22 +260,10 @@ end
 function GitHubClient.searchRepositories(opts)
     opts = opts or {}
     local query = buildQuery(opts)
-    local code, body = request("/search/repositories", query)
+    local code, body, headers = request("/search/repositories", query)
     if code ~= 200 then
         logger.warn("GitHub search error", code, body)
-        -- GitHub's search endpoint rejects fine-grained PATs outright (they're
-        -- not in its list of supported token types), returning a 403 with this
-        -- wording rather than an actual rate-limit response. Classic tokens work.
-        local is_fine_grained_unsupported = code == 403
-            and body
-            and body:lower():find("fine%-grained", 1, true) ~= nil
-        local err_info = {
-            code = code,
-            body = body,
-            is_rate_limit = (code == 403 or code == 429) and not is_fine_grained_unsupported,
-            is_fine_grained_unsupported = is_fine_grained_unsupported,
-        }
-        return nil, err_info
+        return nil, makeHttpError(code, body, headers)
     end
     local ok, parsed = safeJsonDecode(body)
     if not ok then
@@ -255,10 +293,10 @@ function GitHubClient.fetchRepoTree(owner, repo, ref)
     end
     ref = ref or "HEAD"
     local path = string.format("/repos/%s/%s/git/trees/%s", owner, repo, ref)
-    local code, body = request(path, "recursive=1")
+    local code, body, headers = request(path, "recursive=1")
     if code ~= 200 then
         logger.warn("GitHub fetch tree error", owner .. "/" .. repo, ref, code, body)
-        return nil, { code = code, body = body }
+        return nil, makeHttpError(code, body, headers)
     end
     local ok, parsed = safeJsonDecode(body)
     if not ok then
@@ -273,10 +311,10 @@ function GitHubClient.fetchRepoMetadata(owner, repo)
         return nil, "missing owner/repo"
     end
     local path = string.format("/repos/%s/%s", owner, repo)
-    local code, body = request(path)
+    local code, body, headers = request(path)
     if code ~= 200 then
         logger.warn("GitHub fetch repo metadata error", owner .. "/" .. repo, code, body)
-        return nil, { code = code, body = body }
+        return nil, makeHttpError(code, body, headers)
     end
     local ok, parsed = safeJsonDecode(body)
     if not ok then
@@ -291,10 +329,10 @@ function GitHubClient.fetchLatestRelease(owner, repo)
         return nil, "missing owner/repo"
     end
     local path = string.format("/repos/%s/%s/releases/latest", owner, repo)
-    local code, body = request(path)
+    local code, body, headers = request(path)
     if code ~= 200 then
         logger.warn("GitHub fetch latest release error", owner .. "/" .. repo, code, body)
-        return nil, { code = code, body = body }
+        return nil, makeHttpError(code, body, headers)
     end
     local ok, parsed = safeJsonDecode(body)
     if not ok then
@@ -309,10 +347,10 @@ function GitHubClient.fetchReleaseByTag(owner, repo, tag)
         return nil, "missing parameters"
     end
     local path = string.format("/repos/%s/%s/releases/tags/%s", owner, repo, tag)
-    local code, body = request(path)
+    local code, body, headers = request(path)
     if code ~= 200 then
         logger.warn("GitHub fetch release by tag error", owner .. "/" .. repo, tag, code, body)
-        return nil, { code = code, body = body }
+        return nil, makeHttpError(code, body, headers)
     end
     local ok, parsed = safeJsonDecode(body)
     if not ok then
@@ -336,13 +374,13 @@ function GitHubClient.fetchReleases(owner, repo, opts)
     for page = 1, max_pages do
         local path = string.format("/repos/%s/%s/releases", owner, repo)
         local query = string.format("per_page=%d&page=%d", per_page, page)
-        local code, body = request(path, query)
+        local code, body, headers = request(path, query)
         if code ~= 200 then
             logger.warn("GitHub fetch releases error", owner .. "/" .. repo, code, body)
             if #results > 0 then
                 return results, nil
             end
-            return nil, { code = code, body = body }
+            return nil, makeHttpError(code, body, headers)
         end
         local ok, parsed = safeJsonDecode(body)
         if not ok or type(parsed) ~= "table" then
@@ -373,10 +411,10 @@ function GitHubClient.fetchCompareCommits(owner, repo, base, head)
         return nil, "missing parameters"
     end
     local path = string.format("/repos/%s/%s/compare/%s...%s", owner, repo, base, head)
-    local code, body = request(path)
+    local code, body, headers = request(path)
     if code ~= 200 then
         logger.warn("GitHub compare error", owner .. "/" .. repo, base .. "..." .. head, code, body)
-        return nil, { code = code, body = body }
+        return nil, makeHttpError(code, body, headers)
     end
     local ok, parsed = safeJsonDecode(body)
     if not ok then
@@ -399,13 +437,13 @@ function GitHubClient.fetchBranches(owner, repo, opts)
     for page = 1, max_pages do
         local path = string.format("/repos/%s/%s/branches", owner, repo)
         local query = string.format("per_page=%d&page=%d", per_page, page)
-        local code, body = request(path, query)
+        local code, body, headers = request(path, query)
         if code ~= 200 then
             logger.warn("GitHub fetch branches error", owner .. "/" .. repo, code, body)
             if #results > 0 then
                 return results, nil
             end
-            return nil, { code = code, body = body }
+            return nil, makeHttpError(code, body, headers)
         end
         local ok, parsed = safeJsonDecode(body)
         if not ok or type(parsed) ~= "table" then
@@ -435,10 +473,10 @@ function GitHubClient.fetchBranchSHA(owner, repo, branch)
         return nil, "missing parameters"
     end
     local path = string.format("/repos/%s/%s/commits/%s", owner, repo, branch)
-    local code, body = request(path)
+    local code, body, headers = request(path)
     if code ~= 200 then
         logger.warn("GitHub fetch branch SHA error", owner .. "/" .. repo, branch, code, body)
-        return nil, { code = code, body = body }
+        return nil, makeHttpError(code, body, headers)
     end
     local ok, parsed = safeJsonDecode(body)
     if not ok or type(parsed) ~= "table" then

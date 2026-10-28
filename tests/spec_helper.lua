@@ -446,7 +446,22 @@ package.loaded["ui/size"] = {
     span = { vertical_default = 8, horizontal_default = 8 },
 }
 package.loaded["ui/geometry"] = {
-    new = function(a, b) return b or a end
+    new = function(a, b)
+        local obj = b or a or {}
+        function obj:intersectWith(other)
+            if not other then return false end
+            local x1 = self.x or 0
+            local y1 = self.y or 0
+            local w1 = self.w or 0
+            local h1 = self.h or 0
+            local x2 = other.x or 0
+            local y2 = other.y or 0
+            local w2 = other.w or 0
+            local h2 = other.h or 0
+            return not (x1 + w1 < x2 or x2 + w2 < x1 or y1 + h1 < y2 or y2 + h2 < y1)
+        end
+        return obj
+    end
 }
 package.loaded["ui/widget/table"] = {
     new = function(a, b) return { type = "Table", args = b or a } end
@@ -650,6 +665,19 @@ package.loaded["util"] = {
     joinPath = function(...)
         local parts = {...}
         return table.concat(parts, "/")
+    end,
+    tableDeepCopy = function(orig)
+        local orig_type = type(orig)
+        local copy
+        if orig_type == 'table' then
+            copy = {}
+            for orig_key, orig_value in next, orig, nil do
+                copy[orig_key] = (type(orig_value) == 'table') and package.loaded["util"].tableDeepCopy(orig_value) or orig_value
+            end
+        else
+            copy = orig
+        end
+        return copy
     end,
 }
 package.loaded["ffi/util"] = package.loaded["util"]

@@ -130,7 +130,9 @@ function StorefrontAboutDialog.checkForUpdates(Storefront)
             end
 
             if not completed then
-                StorefrontToast.show(_("Update check was cancelled."), 3)
+                UIManager:nextTick(function()
+                    StorefrontToast.show(_("Update check was cancelled."), 3)
+                end)
                 return
             end
 

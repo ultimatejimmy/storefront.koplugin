@@ -1660,7 +1660,9 @@ function M:init(Storefront)
             end
         end
 
+        local is_default_branch_fallback = false
         if not url or url == "" then
+            is_default_branch_fallback = true
             if GitHub.isDirectApiEnabled() then
                 url = string.format("https://api.github.com/repos/%s/%s/zipball", owner, repo.name)
             else
@@ -1676,7 +1678,7 @@ function M:init(Storefront)
         local zip_path = string.format("%s/%s-%d.zip", downloads_dir, repo.name, os.time())
         local plugin_display_name = repo and (repo.name or repo.full_name) or "plugin"
 
-        local function doInstall(ok, err)
+        local function doInstall(ok, err, head_sha)
             if not ok then
                 util.removeFile(zip_path)
                 util.removeFile(zip_path .. ".tmp")
@@ -1793,6 +1795,14 @@ function M:init(Storefront)
                     self:showRestartConfirmation(msg)
                 end
 
+                if is_default_branch_fallback then
+                    info.source = "branch"
+                    info.branch = branch
+                    if head_sha then
+                        info.sha = head_sha
+                    end
+                end
+
                 self:handlePostInstall(info, repo)
                 if self.updates_menu then
                     self:updateUpdatesDialog()
@@ -1825,7 +1835,7 @@ function M:init(Storefront)
             trap_widget = batch_toast
         else
             local Toast = require("storefront_toast")
-            trap_widget = Toast.show(dl_msg, 0)
+            trap_widget = Toast.show(dl_msg, 0, { show_cancel = true })
         end
 
         local Trapper = require("ui/trapper")
@@ -1833,7 +1843,11 @@ function M:init(Storefront)
             local stop_progress = startDownloadProgress(trap_widget, dl_msg, zip_path, nil)
             local completed, res = Trapper:dismissableRunInSubprocess(function()
                 local dl_ok, dl_err = downloadToFile(url, zip_path)
-                return { ok = dl_ok, err = dl_err }
+                local head_sha
+                if dl_ok and is_default_branch_fallback then
+                    head_sha = GitHub.fetchBranchSHA(owner, repo.name, branch)
+                end
+                return { ok = dl_ok, err = dl_err, head_sha = head_sha }
             end, trap_widget)
             stop_progress()
 
@@ -1853,7 +1867,7 @@ function M:init(Storefront)
                 end
                 return
             end
-            doInstall(res and res.ok, res and res.err)
+            doInstall(res and res.ok, res and res.err, res and res.head_sha)
         end)
     end
 
@@ -1887,7 +1901,7 @@ function M:init(Storefront)
             and string.format(" (%d KB)", math.floor(asset.size / 1024))
             or ""
 
-        local function doInstall(ok, err)
+        local function doInstall(ok, err, head_sha)
             if not ok then
                 util.removeFile(zip_path)
                 if not is_batch then
@@ -2109,7 +2123,7 @@ function M:init(Storefront)
             local zip_path = string.format("%s/%s-%s-%d.zip", downloads_dir, repo_name, branch_name, os.time())
             local plugin_display_name = repo.name or repo.full_name or "plugin"
 
-            local function doInstall(ok, err)
+            local function doInstall(ok, err, head_sha)
                 if not ok then
                     util.removeFile(zip_path)
                     if not is_batch then

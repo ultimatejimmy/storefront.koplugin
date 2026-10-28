@@ -1364,17 +1364,19 @@ local function buildMetaPathCandidates(record)
     end
 
     if record.dirname and record.dirname ~= "" then
-        add("plugins/" .. record.dirname .. "/_meta.lua")
         add(record.dirname .. "/_meta.lua")
+        add("_meta.lua")
         if record.dirname:match("%.koplugin$") then
             local without_suffix = record.dirname:gsub("%.koplugin$", "")
-            add("plugins/" .. without_suffix .. "/_meta.lua")
             add(without_suffix .. "/_meta.lua")
+            add("plugins/" .. without_suffix .. "/_meta.lua")
         end
+        add("plugins/" .. record.dirname .. "/_meta.lua")
+    else
+        add("_meta.lua")
     end
 
     add("plugins/_meta.lua")
-    add("_meta.lua")
 
     return candidates
 end
@@ -1942,8 +1944,9 @@ end
 
 function Storefront:collectPatchUpdateSummary()
     self:ensurePatchUpdatesState()
+    local cat_patch_fetched = (Cache and Cache.getLastFetched and Cache.getLastFetched("patch")) or 0
     local current_generation = InstallStore.getGeneration and InstallStore.getGeneration() or 0
-    local remote_info_key = self.patch_updates_state and self.patch_updates_state.last_checked
+    local remote_info_key = tostring(self.patch_updates_state and self.patch_updates_state.last_checked or 0) .. ":" .. tostring(cat_patch_fetched)
     
     if self._cached_patch_summary
        and self._cached_patch_summary_gen == current_generation
@@ -1982,8 +1985,14 @@ end
 
 function Storefront:collectUpdateSummary()
     self:ensureUpdatesState()
+    local cat_plugin_fetched = (Cache and Cache.getLastFetched and Cache.getLastFetched("plugin")) or 0
+    if cat_plugin_fetched > 0 and self._last_catalog_populated_ts ~= cat_plugin_fetched then
+        self._last_catalog_populated_ts = cat_plugin_fetched
+        pcall(function() self:populateRemoteInfoFromCatalog() end)
+    end
+
     local current_generation = InstallStore.getGeneration and InstallStore.getGeneration() or 0
-    local remote_info_key = self.updates_state and self.updates_state.last_checked
+    local remote_info_key = tostring(self.updates_state and self.updates_state.last_checked or 0) .. ":" .. tostring(cat_plugin_fetched)
 
     if self._cached_plugin_summary
        and self._cached_plugin_summary_gen == current_generation
@@ -3185,7 +3194,35 @@ end
 
 
 
-function Storefront:_scanUpdatesForDirectApi(tracked)
+function Storefront:_scanUpdatesForDirectApi(tracked, tracked_patches)
+    tracked = tracked or {}
+    tracked_patches = tracked_patches or {}
+
+    -- Pre-attach catalog metadata to avoid disk I/O in subprocess
+    for _, rec in ipairs(tracked) do
+        local cached_repo = (rec.repo_id and Cache.getRepo(rec.repo_id))
+            or (rec.owner and rec.repo and Cache.getRepoByName(rec.owner, rec.repo))
+        if cached_repo then
+            rec.in_catalog = true
+            local rel = cached_repo.latest_release or (cached_repo.data and cached_repo.data.latest_release)
+            local pre = cached_repo.latest_prerelease or (cached_repo.data and cached_repo.data.latest_prerelease)
+            rec.cached_latest_release = rel and rel.tag_name
+            rec.cached_latest_prerelease = pre and pre.tag_name
+            rec.cached_version = cached_repo.version or (cached_repo.data and cached_repo.data.version)
+            rec.cached_default_branch = cached_repo.default_branch or (cached_repo.data and cached_repo.data.default_branch)
+            rec.cached_pushed_at = cached_repo.pushed_at or (cached_repo.data and cached_repo.data.pushed_at)
+        end
+    end
+
+    for _, prec in ipairs(tracked_patches) do
+        if prec.filename then
+            local cached_file = findCachedPatchFile and findCachedPatchFile(prec.filename)
+            if cached_file then
+                prec.cached_sha = cached_file.sha
+            end
+        end
+    end
+
     NetworkMgr:runWhenOnline(function()
         local Trapper = require("ui/trapper")
         local ltn12 = require("ltn12")
@@ -3234,16 +3271,22 @@ function Storefront:_scanUpdatesForDirectApi(tracked)
             local url = string.format("https://raw.githubusercontent.com/%s/%s/%s/%s", owner, repo_name, branch, path)
             local response = {}
             local http_mod = getHttpModule(url)
+            local headers = {
+                ["User-Agent"] = "KOReader-Storefront",
+                ["Accept"] = "text/plain",
+            }
+            local token = GitHub.getToken and GitHub.getToken()
+            if token and token ~= "" then
+                local scheme = (StorefrontConfig and StorefrontConfig.auth and StorefrontConfig.auth.github and StorefrontConfig.auth.github.scheme) or "token"
+                headers["Authorization"] = string.format("%s %s", scheme, token)
+            end
             local code
-            socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+            socketutil:set_timeout(5, 10)
             pcall(function()
                 _, code = http_mod.request{
                     url = url,
                     sink = ltn12.sink.table(response),
-                    headers = {
-                        ["User-Agent"] = "KOReader-Storefront",
-                        ["Accept"] = "text/plain",
-                    },
+                    headers = headers,
                 }
             end)
             socketutil:reset_timeout()
@@ -3335,23 +3378,28 @@ function Storefront:_scanUpdatesForDirectApi(tracked)
             end
 
             if record.dirname and record.dirname ~= "" then
-                add("plugins/" .. record.dirname .. "/_meta.lua")
                 add(record.dirname .. "/_meta.lua")
+                add("_meta.lua")
                 if record.dirname:match("%.koplugin$") then
                     local without_suffix = record.dirname:gsub("%.koplugin$", "")
-                    add("plugins/" .. without_suffix .. "/_meta.lua")
                     add(without_suffix .. "/_meta.lua")
+                    add("plugins/" .. without_suffix .. "/_meta.lua")
                 end
+                add("plugins/" .. record.dirname .. "/_meta.lua")
+            else
+                add("_meta.lua")
             end
 
             add("plugins/_meta.lua")
-            add("_meta.lua")
 
             return candidates
         end
 
         local function runCheckAllUpdatesWorker(records_worker)
             local result = {}
+            local rate_limited = false
+            GitHub.setRequestTimeouts(5, 10)
+
             for _, record in ipairs(records_worker or {}) do
                 local dirname = record.dirname
                 local owner = record.owner
@@ -3361,18 +3409,33 @@ function Storefront:_scanUpdatesForDirectApi(tracked)
                 local release_tag_name
                 local release_published_at
                 local last_err
+                local migrated_source, migrated_branch, migrated_sha
+                local updated_meta_path
 
                 if not owner or not repo_name then
                     last_err = "Missing repository info."
                 elseif record.source == "branch" and record.branch then
                     local branch_name = record.branch
-                    local head_sha = GitHub.fetchBranchSHA(owner, repo_name, branch_name)
-                    if head_sha and head_sha ~= "" then
-                        remote_version = head_sha
-                        release_tag_name = branch_name .. "@" .. head_sha:sub(1, 7)
-                        last_err = nil
+                    if rate_limited then
+                        remote_version = record.sha or record.cached_sha
+                        release_tag_name = branch_name .. "@" .. (remote_version and remote_version:sub(1, 7) or "")
+                        last_err = "API rate limit reached; using catalog data."
                     else
-                        last_err = "Could not fetch branch SHA."
+                        local head_sha, sha_err = GitHub.fetchBranchSHA(owner, repo_name, branch_name)
+                        if head_sha and head_sha ~= "" then
+                            remote_version = head_sha
+                            release_tag_name = branch_name .. "@" .. head_sha:sub(1, 7)
+                            last_err = nil
+                        else
+                            if GitHub.isRateLimitError(sha_err) then
+                                rate_limited = true
+                                remote_version = record.sha or record.cached_sha
+                                release_tag_name = branch_name .. "@" .. (remote_version and remote_version:sub(1, 7) or "")
+                                last_err = "API rate limit reached; using catalog data."
+                            else
+                                last_err = "Could not fetch branch SHA."
+                            end
+                        end
                     end
                 else
                     local is_storefront_worker = dirname == "storefront.koplugin"
@@ -3385,7 +3448,12 @@ function Storefront:_scanUpdatesForDirectApi(tracked)
                         end
                     end
                     local allow_prerelease = allow_beta_worker or isPreReleaseAllowedForPlugin(nil, record, dirname)
-                    if allow_prerelease then
+
+                    if rate_limited then
+                        release_tag_name = (allow_prerelease and record.cached_latest_prerelease) or record.cached_latest_release or record.cached_version
+                        release_published_at = parseGitHubTimestampWorker(record.cached_pushed_at)
+                        last_err = "API rate limit reached; using catalog data."
+                    elseif allow_prerelease then
                         local releases, fetch_err = GitHub.fetchReleases(owner, repo_name, {
                             per_page = 10,
                             max_pages = 1,
@@ -3398,123 +3466,130 @@ function Storefront:_scanUpdatesForDirectApi(tracked)
                                     break
                                 end
                             end
+                        elseif GitHub.isRateLimitError(fetch_err) then
+                            rate_limited = true
+                            release_tag_name = record.cached_latest_prerelease or record.cached_latest_release or record.cached_version
+                            release_published_at = parseGitHubTimestampWorker(record.cached_pushed_at)
+                            last_err = "API rate limit reached; using catalog data."
                         end
-                    end
-
-                    -- Check live GitHub release if not found via prerelease check
-                    if not release_tag_name then
-                        local latest_release, release_err = GitHub.fetchLatestRelease(owner, repo_name)
-                        if latest_release and latest_release.tag_name then
-                            if not latest_release.prerelease and not latest_release.draft then
-                                local tag_lower = latest_release.tag_name:lower()
-                                local is_prerelease_tag = tag_lower:find("alpha", 1, true) or 
-                                                          tag_lower:find("beta", 1, true) or 
-                                                          tag_lower:find("rc", 1, true) or 
-                                                          tag_lower:find("dev", 1, true) or 
-                                                          tag_lower:find("preview", 1, true) or 
-                                                          tag_lower:find("test", 1, true)
-                                if not is_prerelease_tag then
+                    else
+                        local is_releaseless = record.in_catalog and not record.cached_latest_release and not record.installed_tag and not record.tag_name
+                        if not is_releaseless then
+                            local latest_release, release_err = GitHub.fetchLatestRelease(owner, repo_name)
+                            if latest_release and latest_release.tag_name then
+                                if not latest_release.prerelease and not latest_release.draft and not isPreReleaseTag(latest_release.tag_name) then
                                     release_tag_name = latest_release.tag_name
                                     release_published_at = parseGitHubTimestampWorker(latest_release.published_at)
-                                end
-                            end
-                        end
-                    end
-
-                    if not release_tag_name then
-                        local releases, fetch_err = GitHub.fetchReleases(owner, repo_name, {
-                            per_page = 30,
-                            max_pages = 1,
-                        })
-                        if releases and #releases > 0 then
-                            for _, release in ipairs(releases) do
-                                if not release.draft and not release.prerelease then
-                                    local tag_lower = release.tag_name:lower()
-                                    local is_prerelease_tag = tag_lower:find("alpha", 1, true) or 
-                                                              tag_lower:find("beta", 1, true) or 
-                                                              tag_lower:find("rc", 1, true) or 
-                                                              tag_lower:find("dev", 1, true) or 
-                                                              tag_lower:find("preview", 1, true) or 
-                                                              tag_lower:find("test", 1, true)
-                                    if not is_prerelease_tag then
-                                        release_tag_name = release.tag_name
-                                        release_published_at = parseGitHubTimestampWorker(release.published_at)
-                                        break
+                                else
+                                    local releases, rel_err = GitHub.fetchReleases(owner, repo_name, {
+                                        per_page = 10,
+                                        max_pages = 1,
+                                    })
+                                    if releases and #releases > 0 then
+                                        for _, rel in ipairs(releases) do
+                                            if not rel.draft and not rel.prerelease and not isPreReleaseTag(rel.tag_name) then
+                                                release_tag_name = rel.tag_name
+                                                release_published_at = parseGitHubTimestampWorker(rel.published_at)
+                                                break
+                                            end
+                                        end
+                                    elseif GitHub.isRateLimitError(rel_err) then
+                                        rate_limited = true
                                     end
                                 end
+                            elseif GitHub.isRateLimitError(release_err) then
+                                rate_limited = true
+                                release_tag_name = record.cached_latest_release or record.cached_version
+                                release_published_at = parseGitHubTimestampWorker(record.cached_pushed_at)
+                                last_err = "API rate limit reached; using catalog data."
                             end
                         end
                     end
 
-                    -- Fallback to static catalog cache if live GitHub releases fetch returned nothing
-                    if not release_tag_name then
-                        local cached_repo = Cache.getRepoByName(owner, repo_name) or (record.repo_id and Cache.getRepo(record.repo_id))
-                        if cached_repo then
-                            local rel = cached_repo.latest_release or (cached_repo.data and cached_repo.data.latest_release)
-                            if rel and rel.tag_name then
-                                release_tag_name = rel.tag_name
-                                release_published_at = parseGitHubTimestampWorker(rel.published_at)
-                            end
-                            if not release_tag_name and cached_repo.version then
-                                release_tag_name = cached_repo.version
-                            end
-                            local ts = cached_repo.data and (cached_repo.data.pushed_at or cached_repo.data.created_at)
-                            remote_repo_ts = parseGitHubTimestampWorker(ts)
+                    -- Fallback to pre-attached catalog release if live check returned nothing
+                    if not release_tag_name and not rate_limited then
+                        if record.cached_latest_release or record.cached_version then
+                            release_tag_name = (allow_prerelease and record.cached_latest_prerelease) or record.cached_latest_release or record.cached_version
+                            release_published_at = parseGitHubTimestampWorker(record.cached_pushed_at)
                         end
                     end
 
-                    local metadata, metadata_err = GitHub.fetchRepoMetadata(owner, repo_name)
-                    if metadata and type(metadata) == "table" then
-                        local ts = metadata.pushed_at or metadata.created_at
-                        remote_repo_ts = parseGitHubTimestampWorker(ts)
+                    -- Fetch repo metadata ONLY when release_tag_name was not found
+                    local branch = record.branch or record.cached_default_branch
+                    if not release_tag_name and not rate_limited then
+                        if not branch or branch == "" then
+                            local metadata, metadata_err = GitHub.fetchRepoMetadata(owner, repo_name)
+                            if metadata and type(metadata) == "table" then
+                                local ts = metadata.pushed_at or metadata.created_at
+                                remote_repo_ts = parseGitHubTimestampWorker(ts)
+                                branch = metadata.default_branch or metadata.master_branch or "HEAD"
+                            elseif GitHub.isRateLimitError(metadata_err) then
+                                rate_limited = true
+                                last_err = "API rate limit reached; using catalog data."
+                            end
+                        end
                     end
 
                     if release_tag_name then
-                        last_err = nil
+                        last_err = rate_limited and "API rate limit reached; using catalog data." or nil
                     else
-                        local meta_path = record.meta_path
-                        if (not meta_path or meta_path == "") and dirname and dirname ~= "" then
-                            meta_path = dirname .. "/_meta.lua"
-                        end
-
-                        local branch = record.branch
-                        if (not branch or branch == "") and metadata and type(metadata) == "table" then
-                            branch = metadata.default_branch or metadata.master_branch or "HEAD"
-                        end
-
-                        local candidates = buildMetaPathCandidatesWorker and buildMetaPathCandidatesWorker(record) or {}
-                        if #candidates == 0 and meta_path then
-                            table.insert(candidates, meta_path)
-                        end
-
-                        local found_body = nil
-                        local working_meta_path = nil
-                        for _, candidate in ipairs(candidates) do
-                            local body, err = fetchGitHubRawWorker(owner, repo_name, branch, candidate)
-                            if body then
-                                found_body = body
-                                working_meta_path = candidate
+                        branch = branch or "HEAD"
+                        local has_installed_tag = record.installed_tag or record.tag_name
+                        if not has_installed_tag and not rate_limited and branch ~= "HEAD" then
+                            local head_sha, sha_err = GitHub.fetchBranchSHA(owner, repo_name, branch)
+                            if head_sha and head_sha ~= "" then
+                                remote_version = head_sha
+                                release_tag_name = branch .. "@" .. head_sha:sub(1, 7)
+                                migrated_source = "branch"
+                                migrated_branch = branch
+                                migrated_sha = head_sha
                                 last_err = nil
-                                break
-                            else
-                                last_err = err or last_err
+                            elseif GitHub.isRateLimitError(sha_err) then
+                                rate_limited = true
                             end
                         end
 
-                        if found_body then
-                            local version = extractMetaFieldWorker(found_body, "version")
-                            if version then
-                                remote_version = version
-                                last_err = nil
-                                if working_meta_path and working_meta_path ~= record.meta_path then
-                                    record.meta_path = working_meta_path
-                                    pcall(function() InstallStore.upsert(dirname, record) end)
+                        if not release_tag_name and not remote_version then
+                            local meta_path = record.meta_path
+                            if (not meta_path or meta_path == "") and dirname and dirname ~= "" then
+                                meta_path = dirname .. "/_meta.lua"
+                            end
+
+                            local candidates = buildMetaPathCandidatesWorker and buildMetaPathCandidatesWorker(record) or {}
+                            if #candidates == 0 and meta_path then
+                                table.insert(candidates, meta_path)
+                            end
+
+                            local found_body = nil
+                            local working_meta_path = nil
+                            if not rate_limited then
+                                for _, candidate in ipairs(candidates) do
+                                    local body, err = fetchGitHubRawWorker(owner, repo_name, branch, candidate)
+                                    if body then
+                                        found_body = body
+                                        working_meta_path = candidate
+                                        last_err = nil
+                                        break
+                                    else
+                                        last_err = err or last_err
+                                    end
+                                end
+                            end
+
+                            if found_body then
+                                local version = extractMetaFieldWorker(found_body, "version")
+                                if version then
+                                    remote_version = version
+                                    last_err = nil
+                                    if working_meta_path then
+                                        updated_meta_path = working_meta_path
+                                    end
+                                else
+                                    last_err = "Remote version not found."
                                 end
                             else
-                                last_err = "Remote version not found."
+                                last_err = last_err or "Missing meta path in record."
                             end
-                        else
-                            last_err = last_err or "Missing meta path in record."
                         end
                     end
                 end
@@ -3527,22 +3602,119 @@ function Storefront:_scanUpdatesForDirectApi(tracked)
                         release_published_at = (type(release_published_at) == "string") and release_published_at or nil,
                         error = (type(last_err) == "string") and last_err or (last_err and tostring(last_err) or nil),
                         last_checked = os.time(),
+                        migrated_source = migrated_source,
+                        migrated_branch = migrated_branch,
+                        migrated_sha = migrated_sha,
+                        updated_meta_path = updated_meta_path,
                     }
+                end
+            end
+            GitHub.resetRequestTimeouts()
+            return result, rate_limited
+        end
+
+        local function runCheckPatchUpdatesWorker(patch_records, rate_limited)
+            local result = {}
+            local repo_cache = {}
+
+            for _, record in ipairs(patch_records or {}) do
+                local filename = record.filename
+                local owner = record.owner
+                local repo_name = record.repo
+                local branch = record.branch or "HEAD"
+                local path = record.path
+                local cached_sha = record.cached_sha
+
+                if not filename then
+                    -- skip
+                elseif not owner or not repo_name or not path then
+                    result[filename] = {
+                        remote_sha = cached_sha,
+                        error = "Missing repository metadata for patch.",
+                        last_checked = os.time(),
+                    }
+                elseif rate_limited then
+                    result[filename] = {
+                        remote_sha = cached_sha,
+                        error = "API rate limit reached; using catalog data.",
+                        last_checked = os.time(),
+                    }
+                else
+                    local cache_key = string.format("%s/%s@%s", owner:lower(), repo_name:lower(), branch)
+                    local tree_map = repo_cache[cache_key]
+                    local fetch_err = nil
+
+                    if not tree_map and repo_cache[cache_key] ~= false then
+                        local tree, err = GitHub.fetchRepoTree(owner, repo_name, branch)
+                        if tree and type(tree.tree) == "table" then
+                            tree_map = {}
+                            for _, node in ipairs(tree.tree) do
+                                if node.type == "blob" and node.path then
+                                    tree_map[node.path] = node
+                                end
+                            end
+                            repo_cache[cache_key] = tree_map
+                        else
+                            fetch_err = err
+                            if GitHub.isRateLimitError(err) then
+                                rate_limited = true
+                            end
+                            repo_cache[cache_key] = false
+                        end
+                    end
+
+                    if tree_map then
+                        local node = tree_map[path]
+                        if node then
+                            result[filename] = {
+                                remote_sha = node.sha,
+                                download_url = string.format("https://raw.githubusercontent.com/%s/%s/%s/%s", owner, repo_name, branch, path),
+                                last_checked = os.time(),
+                                error = nil,
+                            }
+                        else
+                            result[filename] = {
+                                remote_sha = cached_sha,
+                                error = "Patch file not found in repository.",
+                                last_checked = os.time(),
+                            }
+                        end
+                    else
+                        result[filename] = {
+                            remote_sha = cached_sha,
+                            error = rate_limited and "API rate limit reached; using catalog data." or (fetch_err and tostring(fetch_err) or "Failed to fetch patch tree."),
+                            last_checked = os.time(),
+                        }
+                    end
                 end
             end
             return result
         end
 
+        local progress_msg = (#tracked == 0 and #tracked_patches > 0)
+            and _("Checking patch updates…")
+            or _("Checking plugin updates…")
+
         local Toast = require("storefront_toast")
-        local progress_toast = Toast.show(_("Checking plugin updates…"), 0)
+        local progress_toast = Toast.show(progress_msg, 0, { show_cancel = true })
 
         Trapper:wrap(function()
             local completed, remote_info_result = Trapper:dismissableRunInSubprocess(function()
-                local ok, res = pcall(runCheckAllUpdatesWorker, tracked)
+                local ok, res = pcall(function()
+                    local plugins_res, rate_limited = runCheckAllUpdatesWorker(tracked)
+                    local patches_res = nil
+                    if #tracked_patches > 0 then
+                        patches_res = runCheckPatchUpdatesWorker(tracked_patches, rate_limited)
+                    end
+                    return {
+                        plugins = plugins_res or {},
+                        patches = patches_res or {},
+                    }
+                end)
                 if ok and type(res) == "table" then
                     return res
                 end
-                return {}
+                return { plugins = {}, patches = {} }
             end, progress_toast)
 
             if progress_toast and progress_toast.close then
@@ -3550,20 +3722,62 @@ function Storefront:_scanUpdatesForDirectApi(tracked)
             end
 
             if not completed then
-                Toast.show(_("Update check was cancelled."), 3)
+                UIManager:nextTick(function()
+                    Toast.show(_("Update check was cancelled."), 3)
+                end)
                 return
             end
 
             self:ensureUpdatesState()
             local remote_info = self.updates_state.remote_info or {}
-            for dirname, data in pairs(remote_info_result or {}) do
+            local plugins_res = remote_info_result and remote_info_result.plugins or {}
+            for dirname, data in pairs(plugins_res) do
                 remote_info[dirname] = data
+                if data.migrated_source == "branch" and data.migrated_branch then
+                    local record = getRecordedInstall(dirname)
+                    if record then
+                        record.source = "branch"
+                        record.branch = data.migrated_branch
+                        if data.migrated_sha then
+                            record.sha = data.migrated_sha
+                        end
+                        InstallStore.upsert(dirname, record)
+                    end
+                end
+                if data.updated_meta_path then
+                    local record = getRecordedInstall(dirname)
+                    if record and record.meta_path ~= data.updated_meta_path then
+                        record.meta_path = data.updated_meta_path
+                        record.meta_path_verified = true
+                        InstallStore.upsert(dirname, record)
+                    end
+                end
             end
             self.updates_state.remote_info = remote_info
-            self.updates_state.last_checked = os.time()
-            
-            StorefrontLogger.action(string.format("REMOTE UPDATE CHECK FINISHED: %d records processed", #tracked))
-            for dirname, data in pairs(remote_info_result or {}) do
+            if #tracked > 0 then
+                self.updates_state.last_checked = os.time()
+            end
+
+            local patches_res = remote_info_result and remote_info_result.patches or {}
+            local patch_count = 0
+            for _ in pairs(patches_res) do patch_count = patch_count + 1 end
+            if patch_count > 0 then
+                self:ensurePatchUpdatesState()
+                local patch_remote = self.patch_updates_state.remote_info or {}
+                for filename, pdata in pairs(patches_res) do
+                    patch_remote[filename] = pdata
+                end
+                self.patch_updates_state.remote_info = patch_remote
+                self.patch_updates_state.last_checked = os.time()
+                self:savePatchUpdatesState()
+                self._cached_patch_summary = nil
+                if self.patch_updates_menu then
+                    self:updatePatchUpdatesDialog()
+                end
+            end
+
+            StorefrontLogger.action(string.format("REMOTE UPDATE CHECK FINISHED: %d plugins, %d patches processed", #tracked, patch_count))
+            for dirname, data in pairs(plugins_res) do
                 local msg = string.format(
                     "REMOTE UPDATE CHECK RECORD: %s -> tag=%s, remote_version=%s, err=%s",
                     tostring(dirname),
@@ -3582,11 +3796,17 @@ function Storefront:_scanUpdatesForDirectApi(tracked)
             self._cached_plugin_summary = nil
             self._merged_updates_cache = nil
             self:updateUpdatesDialog()
-            self:refreshCurrentBrowserTab()
             self:saveUpdatesState()
-            
-            local checked_count = #tracked
-            Toast.show(string.format(_("Checked %d plugin(s) for updates."), checked_count), 3)
+
+            local toast_msg
+            if #tracked == 0 and patch_count > 0 then
+                toast_msg = string.format(_("Checked %d patches: %d need updates, %d up to date."), patch_count, 0, patch_count)
+            else
+                toast_msg = string.format(_("Checked %d plugin(s) for updates."), #tracked)
+            end
+            self:refreshCurrentBrowserTab(function()
+                Toast.show(toast_msg, 3)
+            end)
         end)
     end)
 end
@@ -3613,6 +3833,7 @@ local function findLatestRelease(owner, repo, allow_prerelease)
                 end
             end
         end
+        return nil, fetch_err or "No releases found"
     end
 
     local latest, err = GitHub.fetchLatestRelease(owner, repo)
@@ -3623,26 +3844,24 @@ local function findLatestRelease(owner, repo, allow_prerelease)
                 return latest, nil
             end
         end
-    end
 
-    local releases, fetch_err = GitHub.fetchReleases(owner, repo, {
-        per_page = 30,
-        max_pages = 1,
-    })
-
-    if not releases or #releases == 0 then
-        return nil, fetch_err or err or "No releases found"
-    end
-
-    for _, release in ipairs(releases) do
-        if not release.draft and not release.prerelease then
-            if not isPreReleaseTag(release.tag_name) then
-                return release, nil
+        local releases, fetch_err = GitHub.fetchReleases(owner, repo, {
+            per_page = 10,
+            max_pages = 1,
+        })
+        if releases and #releases > 0 then
+            for _, release in ipairs(releases) do
+                if not release.draft and not release.prerelease then
+                    if not isPreReleaseTag(release.tag_name) then
+                        return release, nil
+                    end
+                end
             end
         end
+        return nil, fetch_err or "No stable release found"
     end
 
-    return nil, "No stable release found"
+    return nil, err or "No releases found"
 end
 
 -- Pure network-fetching core of fetchRemoteVersionForRecord below -- touches
@@ -4665,7 +4884,9 @@ function Storefront:_checkSinglePluginInternal(record)
         end
 
         if not completed then
-            Toast.show(_("Update check was cancelled."), 3)
+            UIManager:nextTick(function()
+                Toast.show(_("Update check was cancelled."), 3)
+            end)
             return
         end
         if type(result) ~= "table" then
@@ -4905,14 +5126,36 @@ fetchGitHubRaw = function(owner, repo_name, branch, path)
     branch = branch or "HEAD"
     local url = string.format("https://raw.githubusercontent.com/%s/%s/%s/%s", owner, repo_name, branch, path)
     local response = {}
-    local _, code = http.request{
-        url = url,
-        sink = ltn12.sink.table(response),
-        headers = {
-            ["User-Agent"] = "KOReader-Storefront",
-            ["Accept"] = "text/plain",
-        },
+    local http_mod = http
+    if url:match("^https://") then
+        local ok_https, https = pcall(require, "ssl.https")
+        if ok_https and https then http_mod = https end
+    end
+    local headers = {
+        ["User-Agent"] = "KOReader-Storefront",
+        ["Accept"] = "text/plain",
     }
+    local token = GitHub and GitHub.getToken and GitHub.getToken()
+    if token and token ~= "" then
+        local scheme = (StorefrontConfig and StorefrontConfig.auth and StorefrontConfig.auth.github and StorefrontConfig.auth.github.scheme) or "token"
+        headers["Authorization"] = string.format("%s %s", scheme, token)
+    end
+    local ok_su, socketutil = pcall(require, "socketutil")
+    if ok_su and socketutil and socketutil.set_timeout then
+        socketutil:set_timeout(5, 10)
+    end
+    local code
+    pcall(function()
+        local _
+        _, code = http_mod.request{
+            url = url,
+            sink = ltn12.sink.table(response),
+            headers = headers,
+        }
+    end)
+    if ok_su and socketutil and socketutil.reset_timeout then
+        socketutil:reset_timeout()
+    end
     code = tonumber(code)
     if code ~= 200 then
         return nil, string.format("HTTP %s", tostring(code))
@@ -9048,21 +9291,7 @@ function Storefront:buildBrowserToolbar(current_tab)
             text = _("Check Updates"),
             text_font_bold = true,
             callback = function()
-                local installed_plugins = listInstalledPlugins()
-                local records = getInstallRecordsMap()
-                local plugin_repos = {}
-                for _, plugin in ipairs(installed_plugins) do
-                    local record = records[plugin.dirname]
-                    if record and record.owner and record.repo then
-                        record.dirname = plugin.dirname
-                        table.insert(plugin_repos, record)
-                    end
-                end
-                if #plugin_repos > 0 then
-                    self:_checkAllUpdatesInternal(plugin_repos)
-                else
-                    UIManager:show(InfoMessage:new{ text = _("No tracked plugins to check."), timeout = 4 })
-                end
+                self:checkAllUpdates()
             end,
         })
         table.insert(toolbar_buttons, {
@@ -9665,6 +9894,13 @@ function Storefront:showBrowser(kind)
     end
     local current_tab = self.browser_state.tab or "Plugins"
     
+    -- Populate remote_info from catalog cache if available and not yet synced for current catalog timestamp
+    local cat_plugin_fetched = (Cache and Cache.getLastFetched and Cache.getLastFetched("plugin")) or 0
+    if cat_plugin_fetched > 0 and self._last_catalog_populated_ts ~= cat_plugin_fetched then
+        self._last_catalog_populated_ts = cat_plugin_fetched
+        pcall(function() self:populateRemoteInfoFromCatalog() end)
+    end
+
     -- Schedule deferred update checks ONCE per session on launch (zero launch delay)
     if not _session_bg_checks_done then
         _session_bg_checks_done = true
@@ -11350,8 +11586,11 @@ function Storefront:init()
                 if ok then
                     logger.info("Storefront init: background catalog update finished (" .. tostring(status_or_err) .. ")")
                     StorefrontLogger.info("Storefront init: background catalog update finished (" .. tostring(status_or_err) .. ")")
-                    if status_or_err == "updated" and Storefront.instance and Storefront.instance.browser_menu then
-                        Storefront.instance:refreshCurrentBrowserTab()
+                    if status_or_err == "updated" and Storefront.instance then
+                        pcall(function() Storefront.instance:populateRemoteInfoFromCatalog() end)
+                        if Storefront.instance.browser_menu then
+                            Storefront.instance:refreshCurrentBrowserTab()
+                        end
                     end
                     pcall(function()
                         if Storefront.checkStartupNotifications then
@@ -11382,8 +11621,11 @@ function Storefront:init()
                                 if retry_ok then
                                     logger.info("Storefront init: background catalog update retry succeeded (" .. tostring(retry_status_or_err) .. ")")
                                     if StorefrontLogger then StorefrontLogger.info("Storefront init: background catalog update retry succeeded (" .. tostring(retry_status_or_err) .. ")") end
-                                    if retry_status_or_err == "updated" and Storefront.instance and Storefront.instance.browser_menu then
-                                        Storefront.instance:refreshCurrentBrowserTab()
+                                    if retry_status_or_err == "updated" and Storefront.instance then
+                                        pcall(function() Storefront.instance:populateRemoteInfoFromCatalog() end)
+                                        if Storefront.instance.browser_menu then
+                                            Storefront.instance:refreshCurrentBrowserTab()
+                                        end
                                     end
                                     pcall(function()
                                         if Storefront.checkStartupNotifications then
@@ -11414,8 +11656,8 @@ function Storefront:init()
             end)
         end
     end
-    if not _session_bg_checks_done then
-        _session_bg_checks_done = true
+    if not _session_bg_catalog_timer_done then
+        _session_bg_catalog_timer_done = true
         if Storefront._bg_catalog_init_timer_fn and UIManager and UIManager.unschedule then
             UIManager:unschedule(Storefront._bg_catalog_init_timer_fn)
         end

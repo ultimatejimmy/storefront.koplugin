@@ -28,6 +28,9 @@ local StorefrontToastWidget = InputContainer:extend{
     text = "",
     timeout = 3,
     dismissable = true,
+    show_cancel = false,
+    cancel_text = "Cancel",
+    cancel_callback = nil,
 }
 
 function StorefrontToastWidget:buildCard()
@@ -44,6 +47,31 @@ function StorefrontToastWidget:buildCard()
         alpha = true,
     }
 
+    local cancel_btn
+    local cancel_w = 0
+    if self.show_cancel then
+        local Button = require("ui/widget/button")
+        local cancel_text = self.cancel_text or "Cancel"
+        cancel_btn = Button:new{
+            text = cancel_text,
+            bordersize = sc(1),
+            radius = sc(3),
+            padding = sc(4),
+            padding_h = sc(10),
+            padding_v = sc(4),
+            background = Blitbuffer.COLOR_WHITE,
+            text_font_color = Blitbuffer.COLOR_BLACK,
+            text_font_size = storefront_theme.face_label_size or 16,
+            bold = true,
+            callback = function()
+                self:onCancelTap()
+            end,
+        }
+        self.cancel_btn = cancel_btn
+        local cb_sz = cancel_btn:getSize()
+        cancel_w = (cb_sz and cb_sz.w or sc(70)) + sc(12)
+    end
+
     local face = Font:getFace("cfont", storefront_theme.face_label_size or 18)
     local max_line_w = 0
     local ok_rt, RenderText = pcall(require, "ui/rendertext")
@@ -56,9 +84,9 @@ function StorefrontToastWidget:buildCard()
         end
     end
 
-    local label_w = max_toast_w - sc(70)
+    local label_w = max_toast_w - sc(70) - cancel_w
     if max_line_w > 0 then
-        label_w = math.min(label_w, math.max(sc(180), max_line_w + sc(16)))
+        label_w = math.min(label_w, math.max(sc(140), max_line_w + sc(16)))
     end
 
     local label = TextBoxWidget:new{
@@ -70,12 +98,18 @@ function StorefrontToastWidget:buildCard()
     }
     self.label_widget = label
 
-    local row = HorizontalGroup:new{
+    local row_items = {
         align = "center",
         icon,
         HorizontalSpan:new{ width = sc(10) },
         label,
     }
+    if cancel_btn then
+        table.insert(row_items, HorizontalSpan:new{ width = sc(12) })
+        table.insert(row_items, cancel_btn)
+    end
+
+    local row = HorizontalGroup:new(row_items)
     self.row = row
 
     local border_val = (storefront_theme.border_window and storefront_theme.border_window > 0)
@@ -101,6 +135,20 @@ function StorefrontToastWidget:buildCard()
         h = size.h,
     }
 
+    if cancel_btn then
+        local cb_sz = cancel_btn:getSize()
+        local cb_w = cb_sz and cb_sz.w or sc(70)
+        local cb_h = cb_sz and cb_sz.h or sc(30)
+        local cb_x = card.dimen.x + card.dimen.w - sc(16) - cb_w
+        local cb_y = card.dimen.y + math.floor((card.dimen.h - cb_h) / 2)
+        cancel_btn.dimen = Geom:new{
+            x = cb_x,
+            y = cb_y,
+            w = cb_w,
+            h = cb_h,
+        }
+    end
+
     self[1] = CenterContainer:new{
         dimen = Geom:new{ w = sw, h = sh },
         card,
@@ -114,9 +162,24 @@ function StorefrontToastWidget:init()
     local sh = Device.screen:getHeight()
     self.dimen = Geom:new{ w = sw, h = sh }
 
+    self.key_events = {}
+    self.ges_events = {}
+
     self:buildCard()
 
-    if self.dismissable ~= false then
+    if self.show_cancel then
+        if Device.hasKeys and Device:hasKeys() then
+            self.key_events.CancelKey = { { "Back" }, { "Escape" } }
+        end
+        if Device.isTouchDevice and Device:isTouchDevice() then
+            local GestureRange = require("ui/gesturerange")
+            self.ges_events = {
+                ToastTap = {
+                    GestureRange:new{ ges = "tap", range = Geom:new{ x = 0, y = 0, w = sw, h = sh } }
+                },
+            }
+        end
+    elseif self.dismissable ~= false then
         if Device.hasKeys and Device:hasKeys() then
             self.key_events.AnyKeyPressed = { { Device.input.group.Any } }
         end
@@ -135,6 +198,7 @@ function StorefrontToastWidget:init()
             self:close()
         end)
     end
+    self._created_at = os.clock()
 end
 
 function StorefrontToastWidget:onShow()
@@ -154,22 +218,71 @@ function StorefrontToastWidget:onCloseWidget()
     end)
 end
 
+function StorefrontToastWidget:onCancelKey()
+    return self:onCancelTap()
+end
+
+function StorefrontToastWidget:onCancelTap()
+    if self._closing then return true end
+    self._closing = true
+    self:close()
+    if self.dismiss_callback then
+        self.dismiss_callback()
+    end
+    if self.cancel_callback then
+        self.cancel_callback()
+    end
+    return true
+end
+
+local function posIntersects(pos, dimen)
+    if not pos or not dimen then return false end
+    if type(pos.intersectWith) == "function" then
+        return pos:intersectWith(dimen)
+    end
+    local px = pos.x or 0
+    local py = pos.y or 0
+    local dx = dimen.x or 0
+    local dy = dimen.y or 0
+    local dw = dimen.w or 0
+    local dh = dimen.h or 0
+    return px >= dx and px <= (dx + dw) and py >= dy and py <= (dy + dh)
+end
+
+function StorefrontToastWidget:onToastTap(arg, ges)
+    if self.show_cancel then
+        local pos = ges and ges.pos
+        if pos and self.cancel_btn and self.cancel_btn.dimen and posIntersects(pos, self.cancel_btn.dimen) then
+            return self:onCancelTap()
+        end
+        return true
+    end
+    return self:onTapDismiss()
+end
+
 function StorefrontToastWidget:onTapDismiss()
     if self.dismissable ~= false then
+        if self._created_at and (os.clock() - self._created_at) < 0.5 then
+            return true
+        end
+        if self._closing then return true end
+        self._closing = true
+        self:close()
         if self.dismiss_callback then
             self.dismiss_callback()
         end
-        self:close()
         return true
     end
 end
 
 function StorefrontToastWidget:onAnyKeyPressed()
     if self.dismissable ~= false then
+        if self._closing then return true end
+        self._closing = true
+        self:close()
         if self.dismiss_callback then
             self.dismiss_callback()
         end
-        self:close()
         return true
     end
 end
@@ -260,6 +373,9 @@ function StorefrontToast.show(text, timeout, opts)
         timeout = timeout or 3,
         dismissable = dismissable,
         dismiss_callback = opts.dismiss_callback,
+        show_cancel = opts.show_cancel == true,
+        cancel_text = opts.cancel_text or "Cancel",
+        cancel_callback = opts.cancel_callback,
     }
     UIManager:show(toast)
     if type(UIManager.forceRePaint) == "function" then

@@ -177,6 +177,13 @@ function Run-Workflow {
         Write-Host "Blueprint System Tests FAILED." -ForegroundColor Red
         return $false
     }
+    Write-Host "Running Update Speedup & Cancel Toast unit tests (#5084)..."
+    $UpdateSpeedTestCmd = "cd $AppDir && LUA_PATH='{0}/?.lua;./?.lua;./?/init.lua;frontend/?.lua;frontend/?/init.lua;libs/?.lua;common/?.lua;common/?/init.lua;;' ./luajit {0}/tests/storefront_update_speed_test.lua" -f $WSLDest
+    wsl bash -c `"$UpdateSpeedTestCmd`"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Update Speedup Tests FAILED." -ForegroundColor Red
+        return $false
+    }
     Write-Host "Running Translation Audit..."
     $AuditScript = if (Test-Path "./tools/audit_translations.py") { "./tools/audit_translations.py" } else { "./audit_translations.py" }
     wsl python3 $AuditScript
