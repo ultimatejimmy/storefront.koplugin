@@ -361,6 +361,14 @@ msgstr "Кеш је празан. Освежите да бисте преузе�
 msgid "Cache is older than a week, consider refreshing."
 msgstr "Кеш је старији од недељу дана, размислите о освежавању."
 
+# en-hash: 70a58cd9b07c2dfc62ca0bfa90abf694
+msgid "Cache limit"
+msgstr "Ограничење кеша"
+
+# en-hash: 08e665f9e7f4f89afe03dd744b7d43eb
+msgid "Cache limit: %s · In use: %s"
+msgstr "Ограничење кеша: %s · У употреби: %s"
+
 # en-hash: 220aae231e667a518bacbf342edd05f2
 msgid "Cached %s patch repositories."
 msgstr "Keširano %s spremišta zakrpa."
@@ -2828,6 +2836,10 @@ msgstr "Непозната грешка"
 # en-hash: 20ac757837006b5e62196fb350fe652d
 msgid "Unknown item"
 msgstr "Nepoznata stavka"
+
+# en-hash: 545f6c2f382c04810103b3e5e6f7d841
+msgid "Unlimited"
+msgstr "Неограничено"
 
 # en-hash: a08ab7628919ab9cdf4f5f0bc062f885
 msgid "Unlink the repo"

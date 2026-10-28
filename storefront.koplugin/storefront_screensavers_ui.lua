@@ -788,6 +788,12 @@ function StorefrontScreensavers.fetchThumbnail(item, callback)
                 os.remove(thumb_path)
                 local ok_ren = os.rename(tmp_path, thumb_path)
                 if ok_ren then
+                    pcall(function()
+                        local ok_cl, StorefrontCacheLimit = pcall(require, "storefront_cache_limit")
+                        if ok_cl and StorefrontCacheLimit and StorefrontCacheLimit.enforce then
+                            StorefrontCacheLimit.enforce()
+                        end
+                    end)
                     if callback then callback(thumb_path) end
                     return thumb_path
                 end

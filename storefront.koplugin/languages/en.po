@@ -272,6 +272,12 @@ msgstr "Cache empty. Refresh to retrieve repositories."
 msgid "Cache is older than a week, consider refreshing."
 msgstr "Cache is older than a week, consider refreshing."
 
+msgid "Cache limit"
+msgstr "Cache limit"
+
+msgid "Cache limit: %s · In use: %s"
+msgstr "Cache limit: %s · In use: %s"
+
 msgid "Cached %s patch repositories."
 msgstr "Cached %s patch repositories."
 
@@ -2122,6 +2128,9 @@ msgstr "Unknown error"
 
 msgid "Unknown item"
 msgstr "Unknown item"
+
+msgid "Unlimited"
+msgstr "Unlimited"
 
 msgid "Unlink the repo"
 msgstr "Unlink the repo"

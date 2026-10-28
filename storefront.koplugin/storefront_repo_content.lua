@@ -489,6 +489,7 @@ function RepoContent.fetchReadme(owner, repo)
     if not ok then
         return false, err or "write error"
     end
+    pcall(RepoContent.autoCleanCache)
     return true, path
 end
 
@@ -613,6 +614,7 @@ function RepoContent.fetchReadmeHtml(owner, repo, force_refresh)
     if not ok then
         return false, write_err or "write error"
     end
+    pcall(RepoContent.autoCleanCache)
     return true, path
 end
 
@@ -1084,59 +1086,15 @@ function RepoContent.fetchWikiPageHtml(owner, repo, page_name, force_refresh)
     if not ok then
         return false, write_err or "write error"
     end
+    pcall(RepoContent.autoCleanCache)
     return true, path
 end
 
 function RepoContent.autoCleanCache(max_size_mb, max_age_days)
-    max_size_mb = max_size_mb or 50
-    max_age_days = max_age_days or 30
-    local max_bytes = max_size_mb * 1024 * 1024
-    local max_age_secs = max_age_days * 86400
-
-    local cache_dirs = {
-        DataStorage:getDataDir() .. "/cache/Storefront/readme",
-        DataStorage:getDataDir() .. "/cache/Storefront/wiki",
-    }
-
-    local files = {}
-    local total_size = 0
-    local now = os.time()
-
-    for _, base_dir in ipairs(cache_dirs) do
-        if lfs.attributes(base_dir, "mode") == "directory" then
-            local function scanDir(d)
-                for entry in lfs.dir(d) do
-                    if entry ~= "." and entry ~= ".." then
-                        local full = d .. "/" .. entry
-                        local attr = lfs.attributes(full)
-                        if attr then
-                            if attr.mode == "file" then
-                                local age = now - (attr.modification or 0)
-                                if age > max_age_secs then
-                                    os.remove(full)
-                                else
-                                    total_size = total_size + (attr.size or 0)
-                                    table.insert(files, { path = full, mtime = attr.modification or 0, size = attr.size or 0 })
-                                end
-                            elseif attr.mode == "directory" then
-                                scanDir(full)
-                            end
-                        end
-                    end
-                end
-            end
-            scanDir(base_dir)
-        end
-    end
-
-    if total_size > max_bytes then
-        table.sort(files, function(a, b) return a.mtime < b.mtime end)
-        for _, file in ipairs(files) do
-            if total_size <= max_bytes then break end
-            if os.remove(file.path) then
-                total_size = total_size - file.size
-            end
-        end
+    local ok_cl, StorefrontCacheLimit = pcall(require, "storefront_cache_limit")
+    if ok_cl and StorefrontCacheLimit and StorefrontCacheLimit.enforce then
+        local force = (max_size_mb ~= nil or max_age_days ~= nil)
+        return StorefrontCacheLimit.enforce(force, max_size_mb, max_age_days)
     end
 end
 

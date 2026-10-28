@@ -361,6 +361,14 @@ msgstr "Кеш порожній. Оновіть, щоб отримати реп�
 msgid "Cache is older than a week, consider refreshing."
 msgstr "Кеш старіший за тиждень, рекомендується оновити."
 
+# en-hash: 70a58cd9b07c2dfc62ca0bfa90abf694
+msgid "Cache limit"
+msgstr "Ліміт кешу"
+
+# en-hash: 08e665f9e7f4f89afe03dd744b7d43eb
+msgid "Cache limit: %s · In use: %s"
+msgstr "Ліміт кешу: %s · Використано: %s"
+
 # en-hash: 220aae231e667a518bacbf342edd05f2
 msgid "Cached %s patch repositories."
 msgstr "Збережено у кеші репозиторіїв патчів: %s."
@@ -2828,6 +2836,10 @@ msgstr "Невідома помилка"
 # en-hash: 20ac757837006b5e62196fb350fe652d
 msgid "Unknown item"
 msgstr "Невідомий елемент"
+
+# en-hash: 545f6c2f382c04810103b3e5e6f7d841
+msgid "Unlimited"
+msgstr "Без обмежень"
 
 # en-hash: a08ab7628919ab9cdf4f5f0bc062f885
 msgid "Unlink the repo"

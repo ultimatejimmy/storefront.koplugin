@@ -128,6 +128,13 @@ function Run-Workflow {
         Write-Host "Settings Tests FAILED." -ForegroundColor Red
         return $false
     }
+    Write-Host "Running Cache Limit & Eviction unit tests..."
+    $CacheLimitTestCmd = "cd $AppDir && LUA_PATH='{0}/?.lua;./?.lua;./?/init.lua;frontend/?.lua;frontend/?/init.lua;libs/?.lua;common/?.lua;common/?/init.lua;;' ./luajit {0}/tests/storefront_cache_limit_test.lua" -f $WSLDest
+    wsl bash -c `"$CacheLimitTestCmd`"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Cache Limit Tests FAILED." -ForegroundColor Red
+        return $false
+    }
     Write-Host "Running Ratings System & Downward Override unit tests..."
     $RatingsTestCmd = "cd $AppDir && LUA_PATH='{0}/?.lua;./?.lua;./?/init.lua;frontend/?.lua;frontend/?/init.lua;libs/?.lua;common/?.lua;common/?/init.lua;;' ./luajit {0}/tests/storefront_ratings_test.lua" -f $WSLDest
     wsl bash -c `"$RatingsTestCmd`"

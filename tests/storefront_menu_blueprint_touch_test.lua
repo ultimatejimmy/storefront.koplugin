@@ -66,8 +66,8 @@ do
     check("Clean overlay shown for subview", overlay ~= nil)
     check("Close callback was not called during subview navigation", close_count == 0)
 
-    -- In catalog subview: layout should have 4 setting rows + 1 action buttons row (Back & Close)
-    check("Catalog subview layout has rows + action buttons row", #overlay.layout == 5)
+    -- In catalog subview: layout should have 5 setting rows + 1 action buttons row (Back & Close)
+    check("Catalog subview layout has rows + action buttons row", #overlay.layout == 6)
     local back_btn = overlay.layout[#overlay.layout][1]
     local close_sub_btn = overlay.layout[#overlay.layout][2]
     check("Catalog has Back button", back_btn.text and back_btn.text:find("Back") ~= nil)

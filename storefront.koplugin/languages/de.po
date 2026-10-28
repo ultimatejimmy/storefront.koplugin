@@ -361,6 +361,14 @@ msgstr "Cache leer. Aktualisieren, um Repositories abzurufen."
 msgid "Cache is older than a week, consider refreshing."
 msgstr "Cache ist älter als eine Woche, Aktualisierung wird empfohlen."
 
+# en-hash: 70a58cd9b07c2dfc62ca0bfa90abf694
+msgid "Cache limit"
+msgstr "Cache-Limit"
+
+# en-hash: 08e665f9e7f4f89afe03dd744b7d43eb
+msgid "Cache limit: %s · In use: %s"
+msgstr "Cache-Limit: %s · In Verwendung: %s"
+
 # en-hash: 220aae231e667a518bacbf342edd05f2
 msgid "Cached %s patch repositories."
 msgstr "%s Patch-Repositories zwischengespeichert."
@@ -2828,6 +2836,10 @@ msgstr "Unbekannter Fehler"
 # en-hash: 20ac757837006b5e62196fb350fe652d
 msgid "Unknown item"
 msgstr "Unbekanntes Element"
+
+# en-hash: 545f6c2f382c04810103b3e5e6f7d841
+msgid "Unlimited"
+msgstr "Unbegrenzt"
 
 # en-hash: a08ab7628919ab9cdf4f5f0bc062f885
 msgid "Unlink the repo"

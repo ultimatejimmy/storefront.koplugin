@@ -8606,6 +8606,12 @@ function Storefront:buildScreensaverEntries(available_list_height, available_lis
                     local thumb_path = current_worker.thumb_path
                     if (msg and msg:find("^OK")) or (thumb_path and ok_lfs and lfs and lfs.attributes and lfs.attributes(thumb_path, "mode") == "file") then
                         applyThumbnail(current_worker.card, thumb_path, current_worker.inner_w, current_worker.img_h)
+                        pcall(function()
+                            local ok_cl, StorefrontCacheLimit = pcall(require, "storefront_cache_limit")
+                            if ok_cl and StorefrontCacheLimit and StorefrontCacheLimit.enforce then
+                                StorefrontCacheLimit.enforce()
+                            end
+                        end)
                     else
                         if current_worker.entry then
                             current_worker.entry._thumb_failed = true
@@ -11252,6 +11258,19 @@ function Storefront:init()
             end
         end
     end
+
+    -- Non-blocking deferred cache limit enforcement on startup (deferred by 5s)
+    pcall(function()
+        local UIManager = require("ui/uimanager")
+        if UIManager and UIManager.scheduleIn then
+            UIManager:scheduleIn(5, function()
+                local ok_cl, StorefrontCacheLimit = pcall(require, "storefront_cache_limit")
+                if ok_cl and StorefrontCacheLimit and StorefrontCacheLimit.enforce then
+                    StorefrontCacheLimit.enforce()
+                end
+            end)
+        end
+    end)
 
     -- Trigger non-blocking silent catalog update on startup (deferred by 60s so it doesn't collide with KOReader startup)
     -- NOTE: We intentionally do NOT use NetworkMgr:runWhenOnline here because that prompts the user

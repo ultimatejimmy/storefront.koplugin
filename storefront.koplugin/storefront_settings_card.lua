@@ -544,6 +544,21 @@ function StorefrontSettingsCard.show(Storefront, initial_view, on_close)
                 end, "catalog")
             end)
 
+            -- Row 3: Cache Limit
+            local StorefrontCacheLimit = require("storefront_cache_limit")
+            local current_limit = StorefrontCacheLimit.getLimitMB()
+            local limit_text = (current_limit == 0) and _("Unlimited") or string.format("%d MB", current_limit)
+            local limit_widget = TextWidget:new{
+                text = limit_text,
+                face = Font:getFace("cfont", subtext_font_size),
+                fgcolor = storefront_theme.color_label_dim,
+            }
+            add_row(content_vg, nil, _("Cache limit"), limit_widget, function()
+                local next_mb = StorefrontCacheLimit.nextPreset(current_limit)
+                StorefrontCacheLimit.setLimitMB(next_mb)
+                renderView("catalog")
+            end)
+
             -- Row 4: Include 0-star forks
             local StorefrontSettings = getStorefrontSettings()
             local include_zero = StorefrontSettings:readSetting("include_zero_star_forks") == true

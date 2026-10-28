@@ -151,10 +151,26 @@ function StorefrontClearCacheDialog.show(Storefront, on_close_callback)
             width = dialog_w - sc(24),
             alignment = "left",
         }
+        local ok_cl, StorefrontCacheLimit = pcall(require, "storefront_cache_limit")
+        local limit_mb = (ok_cl and StorefrontCacheLimit and StorefrontCacheLimit.getLimitMB) and StorefrontCacheLimit.getLimitMB() or 100
+        local limit_str = (limit_mb == 0) and _("Unlimited") or string.format("%d MB", limit_mb)
+        local limit_info_txt = TextWidget:new{
+            text = string.format(_("Cache limit: %s · In use: %s"), limit_str, formatSize(total_bytes)),
+            face = Font:getFace("cfont", subtext_font_size),
+            bold = true,
+            fgcolor = Blitbuffer.COLOR_BLACK,
+        }
         table.insert(content_vg, FrameContainer:new{
             padding = sc(10),
+            padding_bottom = sc(4),
             bordersize = 0,
             desc_txt,
+        })
+        table.insert(content_vg, FrameContainer:new{
+            padding = sc(10),
+            padding_top = 0,
+            bordersize = 0,
+            limit_info_txt,
         })
         table.insert(content_vg, LineWidget:new{
             dimen = Geom:new{ w = dialog_w - sc(4), h = sc(1) },
