@@ -55,6 +55,45 @@ local function ensureCacheDir()
     return base
 end
 
+-- Extracts a 40-character commit SHA from the zip End-of-Central-Directory (EOCD)
+-- comment embedded by GitHub's codeload archive service.
+-- Returns 40-char SHA string or nil.
+local function extractGitHubZipCommitSha(zip_path)
+    if not zip_path then return nil end
+    local f = io.open(zip_path, "rb")
+    if not f then return nil end
+    local size = f:seek("end")
+    if not size or size < 22 then
+        f:close()
+        return nil
+    end
+    -- Standard EOCD is at least 22 bytes; with 40-byte comment it is 62 bytes. Read up to 256 bytes from end.
+    local read_len = math.min(size, 256)
+    f:seek("set", size - read_len)
+    local tail = f:read(read_len)
+    f:close()
+    if not tail then return nil end
+
+    -- Locate EOCD signature: "PK\x05\x06"
+    local eocd_pos = tail:find("PK\005\006", 1, true)
+    while eocd_pos do
+        if #tail >= eocd_pos + 21 then
+            local comment_len = tail:byte(eocd_pos + 20) + (tail:byte(eocd_pos + 21) * 256)
+            local comment_start = eocd_pos + 22
+            local comment_end = comment_start + comment_len - 1
+            if comment_len >= 40 and #tail >= comment_end then
+                local comment = tail:sub(comment_start, comment_end)
+                local sha = comment:match("(%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x)")
+                if sha then
+                    return sha:lower()
+                end
+            end
+        end
+        eocd_pos = tail:find("PK\005\006", eocd_pos + 1, true)
+    end
+    return nil
+end
+
 local _staged_native_libs = {}
 local _native_libs_unlinked = false
 local _exit_hook_installed = false
@@ -1678,7 +1717,7 @@ function M:init(Storefront)
         local zip_path = string.format("%s/%s-%d.zip", downloads_dir, repo.name, os.time())
         local plugin_display_name = repo and (repo.name or repo.full_name) or "plugin"
 
-        local function doInstall(ok, err, head_sha)
+        local function doInstall(ok, err)
             if not ok then
                 util.removeFile(zip_path)
                 util.removeFile(zip_path .. ".tmp")
@@ -1845,7 +1884,7 @@ function M:init(Storefront)
                 local dl_ok, dl_err = downloadToFile(url, zip_path)
                 local head_sha
                 if dl_ok and is_default_branch_fallback then
-                    head_sha = GitHub.fetchBranchSHA(owner, repo.name, branch)
+                    head_sha = extractGitHubZipCommitSha(zip_path) or GitHub.fetchBranchSHA(owner, repo.name, branch)
                 end
                 return { ok = dl_ok, err = dl_err, head_sha = head_sha }
             end, trap_widget)
@@ -1901,7 +1940,7 @@ function M:init(Storefront)
             and string.format(" (%d KB)", math.floor(asset.size / 1024))
             or ""
 
-        local function doInstall(ok, err, head_sha)
+        local function doInstall(ok, err)
             if not ok then
                 util.removeFile(zip_path)
                 if not is_batch then
@@ -2098,16 +2137,6 @@ function M:init(Storefront)
         StorefrontLogger.action(string.format("INSTALL from branch starting: %s/%s@%s", owner, repo_name, branch_name))
 
         NetworkMgr:runWhenOnline(function()
-            local fetch_toast
-            if not is_batch then
-                local Toast = require("storefront_toast")
-                fetch_toast = Toast.show(_("Fetching branch information…"), 0)
-                if UIManager.forceRePaint then UIManager:forceRePaint() end
-            end
-
-            local head_sha = GitHub.fetchBranchSHA(owner, repo_name, branch_name)
-            if fetch_toast and fetch_toast.close then fetch_toast:close() end
-
             local url
             if GitHub.isDirectApiEnabled() then
                 url = string.format("https://api.github.com/repos/%s/%s/zipball/%s", owner, repo_name, branch_name)
@@ -2173,6 +2202,10 @@ function M:init(Storefront)
                         cb(false, detect_err or "Could not detect plugin inside archive")
                     end
                     return
+                end
+
+                if not head_sha or head_sha == "" then
+                    StorefrontLogger.warn(string.format("Could not resolve commit SHA for %s/%s@%s", owner, repo_name, branch_name))
                 end
 
                 info.source = "branch"
@@ -2255,7 +2288,7 @@ function M:init(Storefront)
                     end
                 end
 
-                if self.pending_install_context and self.pending_install_context.mode == "update" then
+                if self.pending_install_context and self.pending_install_context.mode == "update" and self.pending_install_context.plugin and self.pending_install_context.plugin.root then
                     proceedWithInstall(self.pending_install_context.plugin.root)
                 else
                     self:resolveNewInstallDestination(proceedWithInstall, function()
@@ -2289,7 +2322,11 @@ function M:init(Storefront)
                 local stop_progress = startDownloadProgress(trap_widget, dl_msg, zip_path, nil)
                 local completed, res = Trapper:dismissableRunInSubprocess(function()
                     local dl_ok, dl_err = downloadToFile(url, zip_path)
-                    return { ok = dl_ok, err = dl_err }
+                    local head_sha
+                    if dl_ok then
+                        head_sha = extractGitHubZipCommitSha(zip_path) or GitHub.fetchBranchSHA(owner, repo_name, branch_name)
+                    end
+                    return { ok = dl_ok, err = dl_err, head_sha = head_sha }
                 end, trap_widget)
                 stop_progress()
 
@@ -2309,12 +2346,13 @@ function M:init(Storefront)
                     end
                     return
                 end
-                doInstall(res and res.ok, res and res.err)
+                doInstall(res and res.ok, res and res.err, res and res.head_sha)
             end)
         end)
     end
 end
 
+M.extractGitHubZipCommitSha = extractGitHubZipCommitSha
 M.downloadToFile = downloadToFile
 M.detectPluginFromArchive = detectPluginFromArchive
 M.extractPluginToUserDir = extractPluginToUserDir

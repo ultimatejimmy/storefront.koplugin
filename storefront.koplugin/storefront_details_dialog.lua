@@ -1264,7 +1264,9 @@ function StorefrontDetailsDialog:init()
             }
         else
             local is_updates_ignored = isItemIgnored()
-            local primary_text = _("Reinstall")
+            local record_item = (self.update_item and self.update_item.record) or getInstallRecord()
+            local is_branch_tracked = record_item and record_item.source == "branch" and record_item.branch
+            local primary_text = is_branch_tracked and _("repull_from_branch") or _("Reinstall")
             local toggle_text = is_item_disabled and _("Enable") or _("Disable")
             local ignore_text = is_updates_ignored and _("Updates Ignored") or _("Ignore Updates")
             local remove_text = _("Remove")
@@ -1292,6 +1294,14 @@ function StorefrontDetailsDialog:init()
                     self:onClose()
                     if self.patch then
                         self.Storefront:installPatchFromRepo(self.repo, self.patch)
+                    elseif is_branch_tracked and self.Storefront and type(self.Storefront.installPluginFromBranch) == "function" then
+                        self.Storefront.pending_install_context = {
+                            mode = "update",
+                            plugin = (self.update_item and self.update_item.plugin) or {
+                                dirname = record_item.dirname or (self.repo and self.repo.name),
+                            },
+                        }
+                        self.Storefront:installPluginFromBranch(self.repo, record_item.branch)
                     else
                         self.Storefront:installPluginFromRepo(self.repo)
                     end

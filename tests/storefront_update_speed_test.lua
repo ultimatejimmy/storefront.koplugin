@@ -115,6 +115,11 @@ do
     }
     tap_toast:onToastTap(nil, { pos = inside_pos2 })
     check("onToastTap on cancel_btn triggers dismiss_callback", tap_dismissed == true)
+
+    -- Test default cancel_btn text is localized
+    local default_cancel_toast = Toast.show("Default text toast", 0, { show_cancel = true })
+    check("Default cancel_text is not nil", default_cancel_toast.cancel_text ~= nil)
+    check("Default cancel_btn text is 'Cancel'", default_cancel_toast.cancel_btn.text == "Cancel")
 end
 
 -- 4. Unified checkAllUpdates (checking both plugins & patches in single subprocess)

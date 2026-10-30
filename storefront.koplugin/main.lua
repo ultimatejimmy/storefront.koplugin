@@ -819,12 +819,13 @@ local function isReleaseIgnored(owner, repo_name, version)
 end
 
 
-local extractRepoOwner, ensureCacheDir, ensurePatchesDir, downloadToFile, buildPatchDownloadUrl, derivePluginRepoPath, fetchGitHubRaw, formatTimestamp, buildRepoDescriptorFromRecord, buildBranchCandidates, getRepoDefaultBranch, extractMetaField, getInstallRecordsMap, getPatchRecordsMap, listInstalledPatches, buildPatchRecordFields, buildPatchSummary, extractPluginToUserDir, extractReleaseNameFallback, detectPluginFromArchiveWithFallback, renderReleaseNotesText
+local extractRepoOwner, ensureCacheDir, ensurePatchesDir, downloadToFile, buildPatchDownloadUrl, derivePluginRepoPath, fetchGitHubRaw, formatTimestamp, buildRepoDescriptorFromRecord, buildBranchCandidates, getRepoDefaultBranch, extractMetaField, getInstallRecordsMap, getPatchRecordsMap, listInstalledPatches, buildPatchRecordFields, buildPatchSummary, extractPluginToUserDir, extractReleaseNameFallback, detectPluginFromArchiveWithFallback, renderReleaseNotesText, getRecordedInstall, findCachedPatchFile
 
 getPatchRecordsMap = storefront_patch_mgr.getPatchRecordsMap
 listInstalledPatches = storefront_patch_mgr.listInstalledPatches
 buildPatchRecordFields = storefront_patch_mgr.buildPatchRecordFields
 buildPatchSummary = storefront_patch_mgr.buildPatchSummary
+findCachedPatchFile = storefront_patch_mgr.findCachedPatchFile
 
 
 local function buildPatchRepoDescriptor(record)
@@ -1477,7 +1478,7 @@ local function getRepoOwner(repo)
     end
 end
 
-local function getRepoDefaultBranch(repo)
+getRepoDefaultBranch = function(repo)
     return (repo and repo.data and repo.data.default_branch)
         or (repo and repo.default_branch)
         or "HEAD"
@@ -1670,7 +1671,7 @@ local function findInstalledPatch(filename)
     end
 end
 
-local function getInstallRecordsMap(sf)
+getInstallRecordsMap = function(sf)
     if sf and type(sf) == "table" and type(sf.getInstallRecordsMap) == "function" and sf.getInstallRecordsMap ~= Storefront.getInstallRecordsMap then
         return sf:getInstallRecordsMap()
     end
@@ -1819,15 +1820,28 @@ function Storefront:populateRemoteInfoFromCatalog()
                     or (cached_repo.data and (cached_repo.data.version or cached_repo.data.tag_name or cached_repo.data.latest_version))
                 local cat_published = cat_rel and cat_rel.published_at
 
+                if cat_tag and isPreReleaseTag(cat_tag) and not allow_prerelease then
+                    cat_tag = nil
+                end
+
                 if cat_tag then
-                    remote_info[plugin.dirname] = {
-                        remote_version = cat_tag:gsub("^[vV]", ""),
-                        release_tag_name = cat_tag,
-                        release_published_at = cat_published and parseGitHubTimestamp(cat_published) or 0,
-                        last_checked = os.time(),
-                        is_cached_fallback = true,
-                    }
-                    updated_count = updated_count + 1
+                    local existing = remote_info[plugin.dirname]
+                    local should_set = not existing
+                        or existing.is_cached_fallback
+                        or existing.error ~= nil
+                        or not existing.release_tag_name
+                        or isVersionNewer(cat_tag, existing.release_tag_name)
+
+                    if should_set then
+                        remote_info[plugin.dirname] = {
+                            remote_version = cat_tag:gsub("^[vV]", ""),
+                            release_tag_name = cat_tag,
+                            release_published_at = cat_published and parseGitHubTimestamp(cat_published) or 0,
+                            last_checked = os.time(),
+                            is_cached_fallback = true,
+                        }
+                        updated_count = updated_count + 1
+                    end
                 else
                     if remote_info[plugin.dirname] and remote_info[plugin.dirname].is_cached_fallback then
                         remote_info[plugin.dirname] = nil
@@ -1839,7 +1853,9 @@ function Storefront:populateRemoteInfoFromCatalog()
     end
 
     self.updates_state.remote_info = remote_info
-    self.updates_state.last_checked = os.time()
+    if updated_count > 0 or not self.updates_state.last_checked or self.updates_state.last_checked == 0 then
+        self.updates_state.last_checked = os.time()
+    end
     self:saveUpdatesState()
     self._cached_plugin_summary = nil
     self._merged_updates_cache = nil
@@ -2194,14 +2210,22 @@ function Storefront:collectUpdateSummary()
         
         local has_update = false
 
-        if tracked and record and record.source == "branch" and remote then
-            local remote_sha = remote.remote_version
+        if tracked and record and record.source == "branch" then
+            local remote_sha = remote and remote.remote_version
             local installed_sha = record.sha
             local is_valid_sha = remote_sha and type(remote_sha) == "string" and remote_sha:match("^%x%x%x%x%x%x%x+$")
-            if not remote.is_cached_fallback and is_valid_sha and installed_sha and installed_sha ~= "" then
+            if not installed_sha or installed_sha == "" then
+                has_update = true
+            elseif remote and not remote.is_cached_fallback and is_valid_sha then
                 has_update = isShaDifferent(remote_sha, installed_sha)
             else
                 has_update = false
+            end
+            if has_update then
+                local item_k = plugin.dirname or (record and (record.owner and record.repo and (record.owner .. "/" .. record.repo) or record.repo))
+                if item_k and InstallStore.isAllUpdatesIgnored(item_k) then
+                    has_update = false
+                end
             end
         elseif tracked and remote then
             local release_tag = remote.release_tag_name
@@ -3198,8 +3222,11 @@ function Storefront:_scanUpdatesForDirectApi(tracked, tracked_patches)
     tracked = tracked or {}
     tracked_patches = tracked_patches or {}
 
-    -- Pre-attach catalog metadata to avoid disk I/O in subprocess
-    for _, rec in ipairs(tracked) do
+    local worker_tracked = {}
+    -- Pre-attach catalog metadata to avoid disk I/O in subprocess without mutating original records
+    for _, orig_rec in ipairs(tracked) do
+        local rec = {}
+        for k, v in pairs(orig_rec) do rec[k] = v end
         local cached_repo = (rec.repo_id and Cache.getRepo(rec.repo_id))
             or (rec.owner and rec.repo and Cache.getRepoByName(rec.owner, rec.repo))
         if cached_repo then
@@ -3212,15 +3239,20 @@ function Storefront:_scanUpdatesForDirectApi(tracked, tracked_patches)
             rec.cached_default_branch = cached_repo.default_branch or (cached_repo.data and cached_repo.data.default_branch)
             rec.cached_pushed_at = cached_repo.pushed_at or (cached_repo.data and cached_repo.data.pushed_at)
         end
+        table.insert(worker_tracked, rec)
     end
 
-    for _, prec in ipairs(tracked_patches) do
+    local worker_patches = {}
+    for _, orig_prec in ipairs(tracked_patches) do
+        local prec = {}
+        for k, v in pairs(orig_prec) do prec[k] = v end
         if prec.filename then
-            local cached_file = findCachedPatchFile and findCachedPatchFile(prec.filename)
-            if cached_file then
+            local _, cached_file = findCachedPatchFile and findCachedPatchFile(prec, prec.filename)
+            if cached_file and cached_file.sha then
                 prec.cached_sha = cached_file.sha
             end
         end
+        table.insert(worker_patches, prec)
     end
 
     NetworkMgr:runWhenOnline(function()
@@ -3417,8 +3449,6 @@ function Storefront:_scanUpdatesForDirectApi(tracked, tracked_patches)
                 elseif record.source == "branch" and record.branch then
                     local branch_name = record.branch
                     if rate_limited then
-                        remote_version = record.sha or record.cached_sha
-                        release_tag_name = branch_name .. "@" .. (remote_version and remote_version:sub(1, 7) or "")
                         last_err = "API rate limit reached; using catalog data."
                     else
                         local head_sha, sha_err = GitHub.fetchBranchSHA(owner, repo_name, branch_name)
@@ -3429,8 +3459,6 @@ function Storefront:_scanUpdatesForDirectApi(tracked, tracked_patches)
                         else
                             if GitHub.isRateLimitError(sha_err) then
                                 rate_limited = true
-                                remote_version = record.sha or record.cached_sha
-                                release_tag_name = branch_name .. "@" .. (remote_version and remote_version:sub(1, 7) or "")
                                 last_err = "API rate limit reached; using catalog data."
                             else
                                 last_err = "Could not fetch branch SHA."
@@ -3542,7 +3570,7 @@ function Storefront:_scanUpdatesForDirectApi(tracked, tracked_patches)
                                 release_tag_name = branch .. "@" .. head_sha:sub(1, 7)
                                 migrated_source = "branch"
                                 migrated_branch = branch
-                                migrated_sha = head_sha
+                                migrated_sha = nil
                                 last_err = nil
                             elseif GitHub.isRateLimitError(sha_err) then
                                 rate_limited = true
@@ -3599,7 +3627,7 @@ function Storefront:_scanUpdatesForDirectApi(tracked, tracked_patches)
                         remote_version = (type(remote_version) == "string") and remote_version or nil,
                         remote_repo_ts = tonumber(remote_repo_ts) or 0,
                         release_tag_name = (type(release_tag_name) == "string") and release_tag_name or nil,
-                        release_published_at = (type(release_published_at) == "string") and release_published_at or nil,
+                        release_published_at = tonumber(release_published_at) or (type(release_published_at) == "string" and parseGitHubTimestampWorker(release_published_at)) or 0,
                         error = (type(last_err) == "string") and last_err or (last_err and tostring(last_err) or nil),
                         last_checked = os.time(),
                         migrated_source = migrated_source,
@@ -3701,10 +3729,10 @@ function Storefront:_scanUpdatesForDirectApi(tracked, tracked_patches)
         Trapper:wrap(function()
             local completed, remote_info_result = Trapper:dismissableRunInSubprocess(function()
                 local ok, res = pcall(function()
-                    local plugins_res, rate_limited = runCheckAllUpdatesWorker(tracked)
+                    local plugins_res, rate_limited = runCheckAllUpdatesWorker(worker_tracked)
                     local patches_res = nil
-                    if #tracked_patches > 0 then
-                        patches_res = runCheckPatchUpdatesWorker(tracked_patches, rate_limited)
+                    if #worker_patches > 0 then
+                        patches_res = runCheckPatchUpdatesWorker(worker_patches, rate_limited)
                     end
                     return {
                         plugins = plugins_res or {},
@@ -3732,7 +3760,13 @@ function Storefront:_scanUpdatesForDirectApi(tracked, tracked_patches)
             local remote_info = self.updates_state.remote_info or {}
             local plugins_res = remote_info_result and remote_info_result.plugins or {}
             for dirname, data in pairs(plugins_res) do
-                remote_info[dirname] = data
+                local prev = remote_info[dirname]
+                if data.error and (not data.remote_version and not data.release_tag_name) and prev and (prev.remote_version or prev.release_tag_name) then
+                    prev.error = data.error
+                    prev.last_checked = data.last_checked or os.time()
+                else
+                    remote_info[dirname] = data
+                end
                 if data.migrated_source == "branch" and data.migrated_branch then
                     local record = getRecordedInstall(dirname)
                     if record then
@@ -4919,9 +4953,9 @@ function Storefront:_checkSinglePluginInternal(record)
         if err then
             message = string.format(_("Failed to check %s: %s"), display_name, err)
         elseif record.source == "branch" and record.branch then
-            local short_remote = remote_version and remote_version:sub(1, 7) or ""
-            local short_installed = record.sha and record.sha:sub(1, 7) or ""
-            if remote_version and record.sha and isShaDifferent(remote_version, record.sha) then
+            local short_remote = (remote_version and remote_version ~= "") and remote_version:sub(1, 7) or _("unknown")
+            local short_installed = (record.sha and record.sha ~= "") and record.sha:sub(1, 7) or _("unknown")
+            if not record.sha or record.sha == "" or (remote_version and isShaDifferent(remote_version, record.sha)) then
                 message = string.format(_("Update available for %s (%s): %s → %s."), display_name, record.branch, short_installed, short_remote)
             else
                 message = string.format(_("%s is up to date on branch %s (%s)."), display_name, record.branch, short_installed)
@@ -4970,7 +5004,7 @@ function Storefront:updatePluginFromRecord(record)
 end
 
 
-local function getRecordedInstall(dirname)
+getRecordedInstall = function(dirname)
     if not dirname or dirname == "" then
         return nil
     end
@@ -5049,8 +5083,6 @@ function Storefront:updateSinglePatchStatus(filename, record, remote_sha_overrid
         end
     end
 end
-
-local derivePluginRepoPath
 
 function Storefront:rememberInstall(info, repo)
     if not info or not info.plugin_dirname then
@@ -5917,7 +5949,7 @@ local function isPatchFilename(filename)
     return filename:match("^%d+%-.+%.lua$") ~= nil
 end
 
-local function buildPatchDownloadUrl(owner, repo_name, branch, path)
+buildPatchDownloadUrl = function(owner, repo_name, branch, path)
     if not owner or not repo_name or not path then
         return nil
     end
@@ -7438,7 +7470,7 @@ function Storefront:buildInstalledEntries(available_list_height)
                     if short_sha and short_sha ~= "" then
                         table.insert(kind_parts, string.format(_("branch: %s (%s)"), record.branch, short_sha))
                     else
-                        table.insert(kind_parts, string.format(_("branch: %s"), record.branch))
+                        table.insert(kind_parts, string.format(_("branch: %s (%s)"), record.branch, _("unknown")))
                     end
                 end
                 local meta_kind = table.concat(kind_parts, " · ")
@@ -11163,12 +11195,16 @@ function Storefront:handlePostInstall(info, repo)
 
     if info and info.plugin_dirname and info.source == "branch" then
         self:ensureUpdatesState()
-        self.updates_state.remote_info[info.plugin_dirname] = {
-            remote_version = info.sha,
-            release_tag_name = (info.branch or "branch") .. "@" .. (info.sha and info.sha:sub(1, 7) or ""),
-            last_checked = os.time(),
-            error = nil,
-        }
+        if info.sha and info.sha ~= "" then
+            self.updates_state.remote_info[info.plugin_dirname] = {
+                remote_version = info.sha,
+                release_tag_name = (info.branch or "branch") .. "@" .. info.sha:sub(1, 7),
+                last_checked = os.time(),
+                error = nil,
+            }
+        else
+            self.updates_state.remote_info[info.plugin_dirname] = nil
+        end
         self:saveUpdatesState()
     end
 

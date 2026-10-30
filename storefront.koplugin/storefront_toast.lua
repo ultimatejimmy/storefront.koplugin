@@ -13,6 +13,8 @@ local TextWidget = require("ui/widget/textwidget")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
 local storefront_theme = require("storefront_theme")
+local Localization = require("localization_storefront")
+local _ = function(key, ...) return Localization:t(key, ...) end
 
 local function sc(val)
     return (Device.screen and Device.screen.scaleBySize and Device.screen:scaleBySize(val)) or val
@@ -29,7 +31,7 @@ local StorefrontToastWidget = InputContainer:extend{
     timeout = 3,
     dismissable = true,
     show_cancel = false,
-    cancel_text = "Cancel",
+    cancel_text = nil,
     cancel_callback = nil,
 }
 
@@ -51,7 +53,7 @@ function StorefrontToastWidget:buildCard()
     local cancel_w = 0
     if self.show_cancel then
         local Button = require("ui/widget/button")
-        local cancel_text = self.cancel_text or "Cancel"
+        local cancel_text = self.cancel_text or _("Cancel")
         cancel_btn = Button:new{
             text = cancel_text,
             bordersize = sc(1),
@@ -374,7 +376,7 @@ function StorefrontToast.show(text, timeout, opts)
         dismissable = dismissable,
         dismiss_callback = opts.dismiss_callback,
         show_cancel = opts.show_cancel == true,
-        cancel_text = opts.cancel_text or "Cancel",
+        cancel_text = opts.cancel_text or _("Cancel"),
         cancel_callback = opts.cancel_callback,
     }
     UIManager:show(toast)

@@ -15,6 +15,40 @@ local store_key = "installs"
 -- an installed-repo lookup) and only rebuild it when records actually change.
 local generation = 0
 
+local transient_record_keys = {
+    in_catalog = true,
+    cached_latest_release = true,
+    cached_latest_prerelease = true,
+    cached_version = true,
+    cached_default_branch = true,
+    cached_pushed_at = true,
+    cached_sha = true,
+}
+
+local function sanitizeRecord(record)
+    if type(record) ~= "table" then
+        return record
+    end
+    local clean = {}
+    for k, v in pairs(record) do
+        if not transient_record_keys[k] then
+            clean[k] = v
+        end
+    end
+    return clean
+end
+
+local function shallowCopyRecord(record)
+    if type(record) ~= "table" then
+        return record
+    end
+    local copy = {}
+    for k, v in pairs(record) do
+        copy[k] = v
+    end
+    return copy
+end
+
 local function normalizeData(data)
     if type(data) ~= "table" then
         data = {}
@@ -30,6 +64,21 @@ local function normalizeData(data)
         data.patches = data.patches or {}
         data.fonts = data.fonts or {}
         data.item_options = data.item_options or {}
+    end
+    if type(data.plugins) == "table" then
+        for k, rec in pairs(data.plugins) do
+            data.plugins[k] = sanitizeRecord(rec)
+        end
+    end
+    if type(data.patches) == "table" then
+        for k, rec in pairs(data.patches) do
+            data.patches[k] = sanitizeRecord(rec)
+        end
+    end
+    if type(data.fonts) == "table" then
+        for k, rec in pairs(data.fonts) do
+            data.fonts[k] = sanitizeRecord(rec)
+        end
     end
     return data
 end
@@ -144,7 +193,6 @@ function InstallStore.saveFonts(entries)
 end
 
 local function isRecordEqual(a, b)
-    if a == b then return true end
     if type(a) ~= "table" or type(b) ~= "table" then return false end
     return a.owner == b.owner
        and a.repo == b.repo
@@ -168,18 +216,24 @@ local function isRecordEqual(a, b)
        and a.asset_filename == b.asset_filename
        and a.download_error == b.download_error
        and a.source == b.source
+       and a.meta_path == b.meta_path
+       and a.meta_path_verified == b.meta_path_verified
+       and a.plugin_name == b.plugin_name
+       and a.ignore_prereleases == b.ignore_prereleases
+       and a.allow_prereleases == b.allow_prereleases
 end
 
 function InstallStore.upsert(plugin_id, record)
     if not plugin_id or plugin_id == "" then
         return false
     end
+    local clean_record = sanitizeRecord(record)
     local data = readStore()
     local existing = data.plugins[plugin_id]
-    if isRecordEqual(existing, record) then
+    if isRecordEqual(existing, clean_record) then
         return true
     end
-    data.plugins[plugin_id] = record
+    data.plugins[plugin_id] = clean_record
     return writeStore(data)
 end
 
@@ -187,17 +241,18 @@ function InstallStore.upsertPatch(filename, record)
     if not filename or filename == "" then
         return false
     end
+    local clean_record = sanitizeRecord(record)
     local data = readStore()
     local existing = data.patches[filename]
     -- Preserve existing SHA if new record doesn't have one (e.g., during match operation).
     -- This ensures install SHA is not lost when matching an already-installed patch.
-    if existing and existing.sha and not record.sha then
-        record.sha = existing.sha
+    if existing and existing.sha and not clean_record.sha then
+        clean_record.sha = existing.sha
     end
-    if isRecordEqual(existing, record) then
+    if isRecordEqual(existing, clean_record) then
         return true
     end
-    data.patches[filename] = record
+    data.patches[filename] = clean_record
     return writeStore(data)
 end
 
@@ -205,13 +260,14 @@ function InstallStore.upsertFont(font_name, record)
     if not font_name or font_name == "" then
         return false
     end
+    local clean_record = sanitizeRecord(record)
     local data = readStore()
     font_name = font_name:lower()
     local existing = data.fonts[font_name]
-    if isRecordEqual(existing, record) then
+    if isRecordEqual(existing, clean_record) then
         return true
     end
-    data.fonts[font_name] = record
+    data.fonts[font_name] = clean_record
     return writeStore(data)
 end
 
@@ -284,7 +340,7 @@ function InstallStore.get(plugin_id)
         return nil
     end
     local data = readStore()
-    return data.plugins[plugin_id]
+    return shallowCopyRecord(data.plugins[plugin_id])
 end
 
 function InstallStore.getPatch(filename)
@@ -292,7 +348,7 @@ function InstallStore.getPatch(filename)
         return nil
     end
     local data = readStore()
-    return data.patches[filename]
+    return shallowCopyRecord(data.patches[filename])
 end
 
 function InstallStore.getFont(font_name)
@@ -300,7 +356,7 @@ function InstallStore.getFont(font_name)
         return nil
     end
     local data = readStore()
-    return data.fonts[font_name:lower()]
+    return shallowCopyRecord(data.fonts[font_name:lower()])
 end
 
 function InstallStore.clear()

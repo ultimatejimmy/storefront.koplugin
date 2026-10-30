@@ -93,9 +93,10 @@ function StorefrontUpdatesUi:init(StorefrontClass)
 
             if is_branch_tracked and has_update then
                 local remote_sha = remote and remote.remote_version
-                local short_l = record.sha and record.sha:sub(1, 7):lower() or ""
+                local has_installed_sha = record.sha and record.sha ~= ""
+                local short_l = has_installed_sha and record.sha:sub(1, 7):lower() or ""
                 local short_r = remote_sha and tostring(remote_sha):sub(1, 7):lower() or ""
-                if (short_l ~= "" and short_l == short_r) or not StorefrontUtils.isShaDifferent(remote_sha, record.sha) then
+                if has_installed_sha and ((short_l ~= "" and short_l == short_r) or not StorefrontUtils.isShaDifferent(remote_sha, record.sha)) then
                     has_update = false
                 end
             end
@@ -104,7 +105,7 @@ function StorefrontUpdatesUi:init(StorefrontClass)
                 local remote_display = remote_ver or _("new")
                 local transition
                 if is_branch_tracked then
-                    local short_local_sha = record.sha and record.sha:sub(1, 7) or ""
+                    local short_local_sha = (record.sha and record.sha ~= "") and record.sha:sub(1, 7) or _("unknown")
                     local remote_sha = remote and remote.remote_version
                     local is_remote_sha = remote_sha and type(remote_sha) == "string" and remote_sha:match("^%x%x%x%x%x%x%x+$")
                     local short_remote_sha = is_remote_sha and remote_sha:sub(1, 7) or ""

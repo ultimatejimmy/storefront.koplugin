@@ -880,6 +880,7 @@ M.listInstalledPatches = listInstalledPatches
 M.getPatchRecordsMap = getPatchRecordsMap
 M.buildPatchRecordFields = buildPatchRecordFields
 M.buildPatchSummary = buildPatchSummary
+M.findCachedPatchFile = findCachedPatchFile
 M.computeFileSha1 = computeFileSha1
 M.invalidateInstalledPatchesCache = invalidateInstalledPatchesCache
 

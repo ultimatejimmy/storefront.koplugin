@@ -177,7 +177,7 @@ local function makeHttpError(code, body, headers)
     local num_code = tonumber(code) or 0
     local is_fine_grained_unsupported = num_code == 403
         and body
-        and body:lower():find("fine%-grained", 1, true) ~= nil
+        and body:lower():find("fine-grained", 1, true) ~= nil
     local rem = headers and (headers["x-ratelimit-remaining"] or headers["X-RateLimit-Remaining"])
     local is_rate_limit = (num_code == 429) or (num_code == 403 and not is_fine_grained_unsupported and (rem == "0" or (body and (body:lower():find("rate limit", 1, true) or body:lower():find("secondary rate", 1, true)))))
     return {
@@ -200,6 +200,11 @@ local function request(path, query, opts)
         ["Accept"] = "application/vnd.github+json",
         ["User-Agent"] = USER_AGENT,
     }
+    if opts and opts.headers then
+        for key, value in pairs(opts.headers) do
+            headers[key] = value
+        end
+    end
     local auth_headers = getAuthHeaders()
     if auth_headers then
         for key, value in pairs(auth_headers) do
@@ -473,10 +478,18 @@ function GitHubClient.fetchBranchSHA(owner, repo, branch)
         return nil, "missing parameters"
     end
     local path = string.format("/repos/%s/%s/commits/%s", owner, repo, branch)
-    local code, body, headers = request(path)
+    local code, body, headers = request(path, nil, {
+        headers = { ["Accept"] = "application/vnd.github.sha" },
+    })
     if code ~= 200 then
         logger.warn("GitHub fetch branch SHA error", owner .. "/" .. repo, branch, code, body)
         return nil, makeHttpError(code, body, headers)
+    end
+    if body and type(body) == "string" then
+        local raw_sha = body:match("^%s*(%x%x%x%x%x%x%x+)%s*$")
+        if raw_sha and #raw_sha >= 7 then
+            return raw_sha, nil
+        end
     end
     local ok, parsed = safeJsonDecode(body)
     if not ok or type(parsed) ~= "table" then
