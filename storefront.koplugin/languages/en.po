@@ -65,6 +65,12 @@ msgstr "%s · %d files"
 msgid "%s · 1 file"
 msgstr "%s · 1 file"
 
+msgid "'%s' is a built-in KOReader plugin and cannot be deleted."
+msgstr "'%s' is a built-in KOReader plugin and cannot be deleted."
+
+msgid "'%s' is a built-in KOReader plugin and cannot be deleted. Cleared stale install record."
+msgstr "'%s' is a built-in KOReader plugin and cannot be deleted. Cleared stale install record."
+
 msgid "(fork)"
 msgstr "(fork)"
 
@@ -821,9 +827,6 @@ msgstr "Featured"
 msgid "Fetching blueprint…"
 msgstr "Fetching blueprint…"
 
-msgid "Fetching branch information…"
-msgstr "Fetching branch information…"
-
 msgid "Fetching changelog…"
 msgstr "Fetching changelog…"
 
@@ -1355,9 +1358,6 @@ msgstr "No items found."
 msgid "No matched patches to check."
 msgstr "No matched patches to check."
 
-msgid "No matched plugins to check."
-msgstr "No matched plugins to check."
-
 msgid "No patch files found in %s/%s."
 msgstr "No patch files found in %s/%s."
 
@@ -1426,6 +1426,9 @@ msgstr "Not matched with a repository."
 
 msgid "Not set"
 msgstr "Not set"
+
+msgid "Note: Archive contained extra plugin folder(s) that were skipped: %s"
+msgstr "Note: Archive contained extra plugin folder(s) that were skipped: %s"
 
 msgid "Notification Settings"
 msgstr "Notification Settings"
@@ -1555,6 +1558,9 @@ msgstr "Plugin cache is older than a week, consider refreshing."
 
 msgid "Plugin directory not found."
 msgstr "Plugin directory not found."
+
+msgid "Plugin folder '%s' was not found on disk. Cleared stale install record."
+msgstr "Plugin folder '%s' was not found on disk. Cleared stale install record."
 
 msgid "Plugin folder not found."
 msgstr "Plugin folder not found."

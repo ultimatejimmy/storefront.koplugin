@@ -26,7 +26,7 @@ local lfs = require("libs/libkoreader-lfs")
 local PluginPaths = require("storefront_plugin_paths")
 local InstallStore = require("storefront_installs")
 local ok_log, StorefrontLogger = pcall(require, "storefront_logger")
-if not ok_log then StorefrontLogger = { action = function() end, err = function() end } end
+if not ok_log then StorefrontLogger = { action = function() end, warn = function() end, err = function() end } end
 
 local StorefrontSettings = require("storefront_settings")
 
@@ -439,6 +439,70 @@ function DeleteUI:init(Storefront)
         return true
     end
 
+    local function isCoreBundledPlugin(sf, dirname)
+        if not dirname or dirname == "" then return false end
+        local core_plugins = (sf and sf.CORE_KOREADER_PLUGINS)
+        if not core_plugins then
+            local ok_m, sm = pcall(require, "storefront_match")
+            if ok_m and sm then core_plugins = sm.CORE_KOREADER_PLUGINS end
+        end
+        if type(core_plugins) ~= "table" then return false end
+        local clean = dirname:gsub("%.koplugin$", ""):lower()
+        return (core_plugins[clean .. ".koplugin"] == true) or (core_plugins[clean] == true)
+    end
+
+    local function pluginDirExistsOnDisk(dir_name)
+        if not dir_name or dir_name == "" then return false end
+        local clean = dir_name:gsub("%.koplugin$", "")
+        local ext = clean .. ".koplugin"
+        local roots = PluginPaths.getLookupPaths() or {}
+        table.insert(roots, PluginPaths.getDefaultPluginsRoot())
+        local candidates = { ext, clean, dir_name }
+        for _, root in ipairs(roots) do
+            if root and root ~= "" then
+                for _, cand in ipairs(candidates) do
+                    local p = root .. "/" .. cand
+                    if lfs.attributes(p, "mode") == "directory" then
+                        return true
+                    end
+                end
+            end
+        end
+        return false
+    end
+
+    local function findExistingPluginDir(matched_plugin, dirname, record)
+        if matched_plugin and matched_plugin.path and lfs.attributes(matched_plugin.path, "mode") == "directory" then
+            return matched_plugin.path
+        end
+        local clean_dir = dirname:gsub("%.koplugin$", "")
+        local dir_with_ext = clean_dir .. ".koplugin"
+        local roots = PluginPaths.getLookupPaths() or {}
+        table.insert(roots, PluginPaths.getDefaultPluginsRoot())
+        local candidates = {
+            dir_with_ext,
+            clean_dir,
+            dirname,
+        }
+        if type(record) == "table" and type(record.dirname) == "string" and record.dirname ~= "" then
+            local rec_clean = record.dirname:gsub("%.koplugin$", "")
+            table.insert(candidates, rec_clean .. ".koplugin")
+            table.insert(candidates, rec_clean)
+            table.insert(candidates, record.dirname)
+        end
+        for _, root in ipairs(roots) do
+            if root and root ~= "" then
+                for _, cand in ipairs(candidates) do
+                    local p_cand = root .. "/" .. cand
+                    if lfs.attributes(p_cand, "mode") == "directory" then
+                        return p_cand
+                    end
+                end
+            end
+        end
+        return nil
+    end
+
     Storefront.performPluginDeletion = function(sf, dirname, record, plugin_instance_for_settings)
         StorefrontLogger.action(string.format("DELETE starting: plugin %s", tostring(dirname)))
         local plugin = sf.listInstalledPlugins and sf:listInstalledPlugins()
@@ -459,32 +523,107 @@ function DeleteUI:init(Storefront)
         end
 
         local display_name = matched_plugin and (matched_plugin.name or matched_plugin.dirname) or clean_dir
-        local plugin_path = matched_plugin and matched_plugin.path
-
-        if not plugin_path or lfs.attributes(plugin_path, "mode") ~= "directory" then
-            local roots = PluginPaths.getLookupPaths() or {}
-            table.insert(roots, PluginPaths.getDefaultPluginsRoot())
-            local candidates = {
-                dir_with_ext,
-                clean_dir,
-                dirname,
-            }
-            for _, root in ipairs(roots) do
-                if root and root ~= "" then
-                    for _, cand in ipairs(candidates) do
-                        local p_cand = root .. "/" .. cand
-                        if lfs.attributes(p_cand, "mode") == "directory" then
-                            plugin_path = p_cand
-                            break
-                        end
-                    end
-                end
-                if plugin_path then break end
-            end
+        local core_plugins = (sf and sf.CORE_KOREADER_PLUGINS)
+        if not core_plugins then
+            local ok_m, sm = pcall(require, "storefront_match")
+            if ok_m and sm then core_plugins = sm.CORE_KOREADER_PLUGINS end
         end
 
+        -- Guard 1: Core KOReader plugin protection
+        if isCoreBundledPlugin(sf, dirname) then
+            StorefrontLogger.warn(string.format("REFUSED deletion of core plugin %s from disk", tostring(dirname)))
+            local has_record = (type(record) == "table") or (InstallStore.get and (InstallStore.get(dirname) or InstallStore.get(dir_with_ext) or InstallStore.get(clean_dir)))
+            if has_record then
+                InstallStore.removePluginRecordsForDeletion(dirname, record, pluginDirExistsOnDisk, core_plugins)
+                if sf.invalidateInstalledPluginsCache then
+                    sf:invalidateInstalledPluginsCache()
+                end
+                sf._installed_tab_items_cache = nil
+                sf._installed_lookup_cache = nil
+                sf._tab_menu_items_cache = nil
+                if sf.updates_menu and sf.updateUpdatesDialog then
+                    sf:updateUpdatesDialog()
+                end
+                StorefrontLogger.action(string.format("CLEARED third-party install record for core plugin %s", tostring(dirname)))
+                local on_refreshed = function()
+                    UIManager:nextTick(function()
+                        UIManager:show(InfoMessage:new{
+                            text = string.format(_("'%s' is a built-in KOReader plugin and cannot be deleted. Cleared stale install record."), dir_with_ext),
+                            timeout = 5,
+                        })
+                    end)
+                end
+                if sf.refreshCurrentBrowserTab then
+                    sf:refreshCurrentBrowserTab(on_refreshed)
+                else
+                    if sf.softRefreshCurrentBrowserView then
+                        sf:softRefreshCurrentBrowserView()
+                    end
+                    on_refreshed()
+                end
+            else
+                UIManager:nextTick(function()
+                    UIManager:show(InfoMessage:new{
+                        text = string.format(_("'%s' is a built-in KOReader plugin and cannot be deleted."), dir_with_ext),
+                        timeout = 5,
+                    })
+                end)
+            end
+            return
+        end
+
+        local plugin_path = findExistingPluginDir(matched_plugin, dirname, record)
+
+        -- Guard 2: Missing folder on disk / stale install record cleanup
         if not plugin_path then
-            plugin_path = PluginPaths.getDefaultPluginsRoot() .. "/" .. dir_with_ext
+            StorefrontLogger.action(string.format("CLEARED stale install record for missing plugin %s", tostring(dirname)))
+            local G_reader_settings = _G.G_reader_settings
+            if plugin_instance_for_settings then
+                if type(plugin_instance_for_settings.deletePluginSettings) == "function" then
+                    pcall(plugin_instance_for_settings.deletePluginSettings, plugin_instance_for_settings)
+                end
+                if plugin_instance_for_settings.settings_file then
+                    os.remove(plugin_instance_for_settings.settings_file)
+                    os.remove(plugin_instance_for_settings.settings_file .. ".old")
+                end
+                if plugin_instance_for_settings.settings_key and G_reader_settings then
+                    G_reader_settings:delSetting(plugin_instance_for_settings.settings_key)
+                end
+                if G_reader_settings then
+                    G_reader_settings:flush()
+                end
+            end
+
+            InstallStore.removePluginRecordsForDeletion(dirname, record, pluginDirExistsOnDisk, core_plugins)
+
+            if sf.invalidateInstalledPluginsCache then
+                sf:invalidateInstalledPluginsCache()
+            end
+            sf._installed_tab_items_cache = nil
+            sf._installed_lookup_cache = nil
+            sf._tab_menu_items_cache = nil
+
+            if sf.updates_menu and sf.updateUpdatesDialog then
+                sf:updateUpdatesDialog()
+            end
+
+            local on_refreshed = function()
+                UIManager:nextTick(function()
+                    UIManager:show(InfoMessage:new{
+                        text = string.format(_("Plugin folder '%s' was not found on disk. Cleared stale install record."), dir_with_ext),
+                        timeout = 5,
+                    })
+                end)
+            end
+            if sf.refreshCurrentBrowserTab then
+                sf:refreshCurrentBrowserTab(on_refreshed)
+            else
+                if sf.softRefreshCurrentBrowserView then
+                    sf:softRefreshCurrentBrowserView()
+                end
+                on_refreshed()
+            end
+            return
         end
 
         local ok, err = deleteDirectoryRecursive(plugin_path)
@@ -509,12 +648,7 @@ function DeleteUI:init(Storefront)
                 end
             end
             
-            InstallStore.remove(dirname)
-            InstallStore.remove(clean_dir)
-            InstallStore.remove(dir_with_ext)
-            if record and type(record) == "table" and record.dirname then
-                InstallStore.remove(record.dirname)
-            end
+            InstallStore.removePluginRecordsForDeletion(dirname, record, pluginDirExistsOnDisk, core_plugins)
 
             if sf.invalidateInstalledPluginsCache then
                 sf:invalidateInstalledPluginsCache()
@@ -553,6 +687,10 @@ function DeleteUI:init(Storefront)
 
     Storefront.deletePlugin = function(sf, dirname, record)
         if not dirname or dirname == "" then
+            return
+        end
+        if isCoreBundledPlugin(sf, dirname) then
+            sf:performPluginDeletion(dirname, record, nil)
             return
         end
         local installed = sf.listInstalledPlugins and sf:listInstalledPlugins() or {}

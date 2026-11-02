@@ -23,6 +23,7 @@ local transient_record_keys = {
     cached_default_branch = true,
     cached_pushed_at = true,
     cached_sha = true,
+    _store_key = true,
 }
 
 local function sanitizeRecord(record)
@@ -194,7 +195,8 @@ end
 
 local function isRecordEqual(a, b)
     if type(a) ~= "table" or type(b) ~= "table" then return false end
-    return a.owner == b.owner
+    return a.dirname == b.dirname
+       and a.owner == b.owner
        and a.repo == b.repo
        and a.repo_full_name == b.repo_full_name
        and a.repo_description == b.repo_description
@@ -341,6 +343,273 @@ function InstallStore.get(plugin_id)
     end
     local data = readStore()
     return shallowCopyRecord(data.plugins[plugin_id])
+end
+
+---@param name string|nil
+---@return string|nil
+local function normalizeDirBase(name)
+    if type(name) ~= "string" or name == "" then
+        return nil
+    end
+    return name:gsub("%.koplugin$", ""):lower()
+end
+
+---@param dir_name string|nil
+---@param core_plugins table|nil
+---@return boolean
+local function isCorePluginDir(dir_name, core_plugins)
+    if type(dir_name) ~= "string" or type(core_plugins) ~= "table" then
+        return false
+    end
+    local clean = normalizeDirBase(dir_name)
+    if not clean then
+        return false
+    end
+    return core_plugins[clean .. ".koplugin"] == true or core_plugins[clean] == true
+end
+
+---@param rec table|nil
+---@return string|nil
+local function extractRecordFullNameLower(rec)
+    if type(rec) ~= "table" then
+        return nil
+    end
+    if type(rec.repo_full_name) == "string" and rec.repo_full_name ~= "" then
+        return rec.repo_full_name:lower()
+    end
+    if type(rec.owner) == "string" and rec.owner ~= "" and type(rec.repo) == "string" and rec.repo ~= "" then
+        return (rec.owner .. "/" .. rec.repo):lower()
+    end
+    return nil
+end
+
+---@param rec table|nil
+---@param rec_key string|nil
+---@return table|nil, string|nil
+local function buildReturnedRecord(rec, rec_key)
+    if type(rec) ~= "table" then
+        return nil, nil
+    end
+    local copy = shallowCopyRecord(rec)
+    if (type(copy.dirname) ~= "string" or copy.dirname == "") and type(rec_key) == "string" and rec_key ~= "" then
+        copy.dirname = rec_key
+    end
+    copy._store_key = rec_key
+    return copy, rec_key
+end
+
+---@param cand_k string
+---@param cand_r table
+---@param best_k string|nil
+---@param best_r table|nil
+---@param repo_base_lower string|nil
+---@param core_plugins table|nil
+---@return boolean
+local function isBetterRecordCandidate(cand_k, cand_r, best_k, best_r, repo_base_lower, core_plugins)
+    if not best_r then
+        return true
+    end
+    local cand_dir = (type(cand_r.dirname) == "string" and cand_r.dirname ~= "" and cand_r.dirname) or cand_k
+    local best_dir = (type(best_r.dirname) == "string" and best_r.dirname ~= "" and best_r.dirname) or best_k
+
+    local cand_is_core = isCorePluginDir(cand_dir, core_plugins)
+    local best_is_core = isCorePluginDir(best_dir, core_plugins)
+    if cand_is_core ~= best_is_core then
+        return not cand_is_core
+    end
+
+    if repo_base_lower then
+        local cand_matches_repo = (normalizeDirBase(cand_dir) == repo_base_lower)
+        local best_matches_repo = (normalizeDirBase(best_dir) == repo_base_lower)
+        if cand_matches_repo ~= best_matches_repo then
+            return cand_matches_repo
+        end
+    end
+
+    local cand_time = tonumber(cand_r.matched_at) or 0
+    local best_time = tonumber(best_r.matched_at) or 0
+    if cand_time ~= best_time then
+        return cand_time > best_time
+    end
+
+    local cand_has_ext = tostring(cand_k):find("%.koplugin$") ~= nil
+    local best_has_ext = tostring(best_k):find("%.koplugin$") ~= nil
+    if cand_has_ext ~= best_has_ext then
+        return cand_has_ext
+    end
+
+    return tostring(cand_k) < tostring(best_k)
+end
+
+---@param query table { dirname?: string, repo_name?: string, full_name?: string, owner?: string, repo_id?: string|number, core_plugins?: table }
+---@return table|nil record, string|nil rec_key
+function InstallStore.findPluginRecord(query)
+    if type(query) ~= "table" then
+        return nil, nil
+    end
+    local plugins = readStore().plugins or {}
+    local core_plugins = query.core_plugins
+
+    local query_repo_id = (query.repo_id ~= nil and tostring(query.repo_id) ~= "") and tostring(query.repo_id) or nil
+    local query_full_lower = nil
+    if type(query.full_name) == "string" and query.full_name ~= "" then
+        query_full_lower = query.full_name:lower()
+    elseif type(query.owner) == "string" and query.owner ~= "" and type(query.repo_name) == "string" and query.repo_name ~= "" then
+        query_full_lower = (query.owner .. "/" .. query.repo_name):lower()
+    end
+    local repo_base_lower = normalizeDirBase(query.repo_name)
+    if not repo_base_lower and query_full_lower then
+        repo_base_lower = normalizeDirBase(query_full_lower:match("/([^/]+)$"))
+    end
+
+    -- Pass 1: Explicit dirname lookup (exact key variants, then case-insensitive folder match)
+    if type(query.dirname) == "string" and query.dirname ~= "" then
+        local raw_dir = query.dirname
+        local clean_dir = raw_dir:gsub("%.koplugin$", "")
+        local ext_dir = clean_dir .. ".koplugin"
+        for _, candidate_key in ipairs({ raw_dir, ext_dir, clean_dir }) do
+            if type(plugins[candidate_key]) == "table" then
+                return buildReturnedRecord(plugins[candidate_key], candidate_key)
+            end
+        end
+
+        local clean_lower = clean_dir:lower()
+        local best_k, best_r = nil, nil
+        for k, r in pairs(plugins) do
+            if type(r) == "table" then
+                if normalizeDirBase(k) == clean_lower or normalizeDirBase(r.dirname) == clean_lower then
+                    if isBetterRecordCandidate(k, r, best_k, best_r, repo_base_lower, core_plugins) then
+                        best_k, best_r = k, r
+                    end
+                end
+            end
+        end
+        if best_r then
+            return buildReturnedRecord(best_r, best_k)
+        end
+    end
+
+    -- Pass 2: Strong repository identity (repo_id or owner/repo full_name)
+    if query_repo_id or query_full_lower then
+        local best_k, best_r = nil, nil
+        for k, r in pairs(plugins) do
+            if type(r) == "table" then
+                local id_match = (query_repo_id ~= nil and r.repo_id ~= nil and tostring(r.repo_id) == query_repo_id)
+                local full_match = (query_full_lower ~= nil and extractRecordFullNameLower(r) == query_full_lower)
+                if id_match or full_match then
+                    if isBetterRecordCandidate(k, r, best_k, best_r, repo_base_lower, core_plugins) then
+                        best_k, best_r = k, r
+                    end
+                end
+            end
+        end
+        if best_r then
+            return buildReturnedRecord(best_r, best_k)
+        end
+    end
+
+    -- Pass 3: Fallback repo_name / folder match when candidate does not belong to a different owner/repo
+    if type(query.repo_name) == "string" and query.repo_name ~= "" then
+        local repo_raw = query.repo_name
+        local repo_raw_lower = repo_raw:lower()
+        local repo_clean_lower = normalizeDirBase(repo_raw)
+
+        local function conflictsWithQueryRepo(r)
+            if query_repo_id and r.repo_id ~= nil and tostring(r.repo_id) ~= "" and tostring(r.repo_id) ~= query_repo_id then
+                return true
+            end
+            local rec_full = extractRecordFullNameLower(r)
+            if query_full_lower and rec_full and rec_full ~= query_full_lower then
+                return true
+            end
+            return false
+        end
+
+        local best_k, best_r = nil, nil
+        for k, r in pairs(plugins) do
+            if type(r) == "table" and not conflictsWithQueryRepo(r) then
+                local k_base = normalizeDirBase(k)
+                local d_base = normalizeDirBase(r.dirname)
+                local r_repo_base = normalizeDirBase(r.repo)
+                local name_match = (k_base == repo_clean_lower)
+                    or (d_base == repo_clean_lower)
+                    or (type(r.repo) == "string" and (r.repo:lower() == repo_raw_lower or r_repo_base == repo_clean_lower))
+                if name_match and isBetterRecordCandidate(k, r, best_k, best_r, repo_base_lower, core_plugins) then
+                    best_k, best_r = k, r
+                end
+            end
+        end
+        if best_r then
+            return buildReturnedRecord(best_r, best_k)
+        end
+    end
+
+    return nil, nil
+end
+
+---@param dirname string|nil
+---@param record table|nil
+---@param dir_exists_fn fun(dir_name: string): boolean|nil
+---@param core_plugins table|nil
+---@return boolean
+function InstallStore.removePluginRecordsForDeletion(dirname, record, dir_exists_fn, core_plugins)
+    local data = readStore()
+    local plugins = data.plugins
+    if type(plugins) ~= "table" then
+        InstallStore.bumpGeneration()
+        return true
+    end
+
+    local target_bases = {}
+    local function addTargetName(name)
+        if type(name) == "string" and name ~= "" then
+            local clean = name:gsub("%.koplugin$", "")
+            target_bases[clean:lower()] = true
+        end
+    end
+
+    addTargetName(dirname)
+    if type(record) == "table" then
+        addTargetName(record.dirname)
+        addTargetName(record._store_key)
+    end
+
+    local target_repo_id = (type(record) == "table" and record.repo_id ~= nil and tostring(record.repo_id) ~= "")
+        and tostring(record.repo_id) or nil
+    local target_full_lower = (type(record) == "table") and extractRecordFullNameLower(record) or nil
+
+    local keys_to_remove = {}
+    for k, r in pairs(plugins) do
+        local k_base = normalizeDirBase(k)
+        local d_base = (type(r) == "table") and normalizeDirBase(r.dirname) or nil
+        if (k_base and target_bases[k_base]) or (d_base and target_bases[d_base]) then
+            keys_to_remove[k] = true
+        elseif type(r) == "table" and (target_repo_id or target_full_lower) then
+            local id_match = (target_repo_id ~= nil and r.repo_id ~= nil and tostring(r.repo_id) == target_repo_id)
+            local full_match = (target_full_lower ~= nil and extractRecordFullNameLower(r) == target_full_lower)
+            if id_match or full_match then
+                local cand_dir = (type(r.dirname) == "string" and r.dirname ~= "" and r.dirname) or k
+                local missing_on_disk = (type(dir_exists_fn) == "function") and (not dir_exists_fn(cand_dir)) or false
+                local hijacked_core = isCorePluginDir(cand_dir, core_plugins)
+                    and (normalizeDirBase(r.repo) ~= normalizeDirBase(cand_dir))
+                if missing_on_disk or hijacked_core then
+                    keys_to_remove[k] = true
+                end
+            end
+        end
+    end
+
+    local removed_any = false
+    for k in pairs(keys_to_remove) do
+        plugins[k] = nil
+        removed_any = true
+    end
+
+    if not removed_any then
+        InstallStore.bumpGeneration()
+        return true
+    end
+    return writeStore(data)
 end
 
 function InstallStore.getPatch(filename)

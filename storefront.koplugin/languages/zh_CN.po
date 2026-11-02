@@ -85,6 +85,14 @@ msgstr "%s · %d 个文件"
 msgid "%s · 1 file"
 msgstr "%s · 1 个文件"
 
+# en-hash: d0385e56ccc7954c5be782e341b7b9ae
+msgid "'%s' is a built-in KOReader plugin and cannot be deleted."
+msgstr "'%s' 是内置的 KOReader 插件，无法删除。"
+
+# en-hash: b714560981d2f96582df87aaeef6f0a3
+msgid "'%s' is a built-in KOReader plugin and cannot be deleted. Cleared stale install record."
+msgstr "'%s' 是内置的 KOReader 插件，无法删除。已清除过期的安装记录。"
+
 # en-hash: 83fd20d49deb849e4b9df60c50c9e67e
 msgid "(fork)"
 msgstr "(分叉)"
@@ -1093,10 +1101,6 @@ msgstr "精选"
 msgid "Fetching blueprint…"
 msgstr "正在获取蓝图…"
 
-# en-hash: d4478c7c3ecd901d07cc947b819a69df
-msgid "Fetching branch information…"
-msgstr "正在获取分支信息…"
-
 # en-hash: eebc29b3e7e2c6769ebff642798b1404
 msgid "Fetching changelog…"
 msgstr "正在获取更新日志…"
@@ -1805,10 +1809,6 @@ msgstr "未找到项目。"
 msgid "No matched patches to check."
 msgstr "没有匹配的补丁可供检查。"
 
-# en-hash: f9852c172eb56b8f419ca9bd2604871b
-msgid "No matched plugins to check."
-msgstr "没有匹配的插件可检查。"
-
 # en-hash: c250ed3add5b171ba37f69df4bf40737
 msgid "No patch files found in %s/%s."
 msgstr "在 %s/%s 中未找到补丁文件。"
@@ -1900,6 +1900,10 @@ msgstr "未与仓库匹配。"
 # en-hash: 9ba66a9f92056682b7d86a38b4bc18c0
 msgid "Not set"
 msgstr "未设置"
+
+# en-hash: b824b95a16fec03d414f383007c2418c
+msgid "Note: Archive contained extra plugin folder(s) that were skipped: %s"
+msgstr "注意：压缩包包含已被跳过的额外插件文件夹：%s"
 
 # en-hash: 76d8f3c00672f61b39846b2112d356a8
 msgid "Notification Settings"
@@ -2072,6 +2076,10 @@ msgstr "插件缓存已有一周以上，建议刷新。"
 # en-hash: 7b4d0de12a96a094bcbce0f294fa7947
 msgid "Plugin directory not found."
 msgstr "未找到插件目录。"
+
+# en-hash: a9f44dee81c76de20cae27b7e469e0c5
+msgid "Plugin folder '%s' was not found on disk. Cleared stale install record."
+msgstr "在磁盘上未找到插件文件夹 '%s'。已清除过期的安装记录。"
 
 # en-hash: e59b53e1ff95beae26b23bff6d6c0bf8
 msgid "Plugin folder not found."

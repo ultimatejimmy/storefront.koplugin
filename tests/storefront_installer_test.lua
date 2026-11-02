@@ -380,5 +380,49 @@ describe("storefront_installer", function()
                 assert.equal("/plugins/" .. path, extracted[path])
             end
         end)
+
+        it("breaks ties for repo-matching plugin and reports extra skipped plugins (#5086)", function()
+            local paths = {
+                "autodim.koplugin/_meta.lua",
+                "autodim.koplugin/main.lua",
+                "zreader.koplugin/_meta.lua",
+                "zreader.koplugin/main.lua",
+            }
+            local reader = archive(paths)
+            local info = storefront_installer.detectPluginFromArchive(reader, { name = "zreader" })
+            assert.equal("zreader.koplugin", info.plugin_dirname)
+            assert.equal("zreader.koplugin/", info.prefix)
+            assert.is_table(info.extra_plugins)
+            assert.equal(1, #info.extra_plugins)
+            assert.equal("autodim.koplugin", info.extra_plugins[1])
+        end)
+
+        it("prefers non-core plugin over core plugin on equal depth (#5086)", function()
+            local paths = {
+                "comicreader.koplugin/_meta.lua",
+                "comicreader.koplugin/main.lua",
+                "statistics.koplugin/_meta.lua",
+                "statistics.koplugin/main.lua",
+            }
+            local reader = archive(paths)
+            local info = storefront_installer.detectPluginFromArchive(reader, { name = "comicreader" })
+            assert.equal("comicreader.koplugin", info.plugin_dirname)
+            assert.is_table(info.extra_plugins)
+            assert.equal(1, #info.extra_plugins)
+            assert.equal("statistics.koplugin", info.extra_plugins[1])
+        end)
+
+        it("does not report embedded components under prefix as extra_plugins (#5086)", function()
+            local paths = {
+                "orbitui.koplugin/_meta.lua",
+                "orbitui.koplugin/main.lua",
+                "orbitui.koplugin/components/simpleui/_meta.lua",
+                "orbitui.koplugin/components/simpleui/main.lua",
+            }
+            local reader = archive(paths)
+            local info = storefront_installer.detectPluginFromArchive(reader, { name = "orbitui" })
+            assert.equal("orbitui.koplugin", info.plugin_dirname)
+            assert.is_nil(info.extra_plugins)
+        end)
     end)
 end)

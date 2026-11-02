@@ -426,6 +426,12 @@ local FALLBACKS = {
     tracked_badge = "TRACKED",
     new_commit_on_branch = "New commit on '%s'",
     repull_from_branch = "Re-pull from branch",
+
+    -- Deletion & Stale Record Notifications (#5086)
+    ["Plugin folder '%s' was not found on disk. Cleared stale install record."] = "Plugin folder '%s' was not found on disk. Cleared stale install record.",
+    ["'%s' is a built-in KOReader plugin and cannot be deleted. Cleared stale install record."] = "'%s' is a built-in KOReader plugin and cannot be deleted. Cleared stale install record.",
+    ["'%s' is a built-in KOReader plugin and cannot be deleted."] = "'%s' is a built-in KOReader plugin and cannot be deleted.",
+    ["Note: Archive contained extra plugin folder(s) that were skipped: %s"] = "Note: Archive contained extra plugin folder(s) that were skipped: %s",
 }
 
 local KEY_ALIASES = {

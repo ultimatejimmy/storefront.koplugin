@@ -451,32 +451,83 @@ local function extractReleaseNameFallback(repo)
     return "plugin"
 end
 
+local function appendExtraPluginsWarning(msg, info)
+    if not info or type(info.extra_plugins) ~= "table" or #info.extra_plugins == 0 then
+        return msg
+    end
+    local skipped_str = table.concat(info.extra_plugins, ", ")
+    StorefrontLogger.warn(string.format("Archive contained extra plugin folder(s) that were skipped: %s", skipped_str))
+    local warning_text = string.format(_("Note: Archive contained extra plugin folder(s) that were skipped: %s"), skipped_str)
+    if type(msg) == "string" and msg ~= "" then
+        return msg .. "\n\n" .. warning_text
+    end
+    return warning_text
+end
+
 local function detectPluginFromArchive(reader, repo)
     if not reader then return nil, _("Invalid archive reader") end
     local meta_entry = nil
     local meta_depth = nil
     local meta_is_plugin = false
+    local meta_matches_repo = false
+    local meta_is_core = false
     local root_dirs = {}
+    local encountered_koplugins = {}
+
+    local core_plugins = nil
+    local ok_m, sm = pcall(require, "storefront_match")
+    if ok_m and sm and type(sm.CORE_KOREADER_PLUGINS) == "table" then
+        core_plugins = sm.CORE_KOREADER_PLUGINS
+    else
+        core_plugins = {}
+    end
+
+    local repo_base_lower = nil
+    if repo and repo.name and repo.name ~= "" then
+        repo_base_lower = repo.name:gsub("%.koplugin$", ""):lower()
+    end
 
     for entry in reader:iterate() do
         local path = entry.path
         if path then
             local root = path:match("^([^/]+)/")
             if root then root_dirs[root] = true end
+
+            local kop_prefix, kop_name = path:match("^(.-/?([^/]+%.koplugin))/")
+            if kop_prefix and kop_name then
+                encountered_koplugins[kop_prefix] = kop_name
+            end
+
             if entry.mode == "file" and (path == "_meta.lua" or path:match("/_meta%.lua$")) then
                 local _, depth = path:gsub("/", "")
                 local is_plugin = path:match("%.koplugin/_meta%.lua$") ~= nil
-                local preferred_tie = depth == meta_depth and (
-                    (is_plugin and not meta_is_plugin)
-                    or (is_plugin == meta_is_plugin and path < meta_entry.path)
-                )
+                local enclosing_dir = path:match("([^/]+)/_meta%.lua$") or ""
+                local enclosing_base = enclosing_dir:gsub("%.koplugin$", ""):lower()
+                local matches_repo = (repo_base_lower ~= nil and enclosing_base == repo_base_lower)
+                local is_core = (core_plugins[enclosing_base .. ".koplugin"] == true) or (core_plugins[enclosing_base] == true)
+
+                local preferred_tie = false
+                if depth == meta_depth then
+                    if is_plugin ~= meta_is_plugin then
+                        preferred_tie = is_plugin
+                    elseif matches_repo ~= meta_matches_repo then
+                        preferred_tie = matches_repo
+                    elseif is_core ~= meta_is_core then
+                        preferred_tie = not is_core
+                    else
+                        preferred_tie = (path < meta_entry.path)
+                    end
+                end
+
                 -- Embedded components can have metadata too. The outer plugin
                 -- owns the install directory and must include those components.
-                -- At equal depth prefer .koplugin, then a stable lexical order.
+                -- At equal depth prefer .koplugin, repo match, non-core, then lexical.
                 if not meta_depth or depth < meta_depth or preferred_tie then
                     meta_entry = entry
                     meta_depth = depth
                     meta_is_plugin = is_plugin
+                    meta_matches_repo = matches_repo
+                    meta_is_core = is_core
                 end
             end
         end
@@ -535,10 +586,35 @@ local function detectPluginFromArchive(reader, repo)
         end
     end
 
+    local extra_map = {}
+    local norm_chosen = plugin_dirname and plugin_dirname:lower()
+    for kop_path, kop_name in pairs(encountered_koplugins) do
+        local is_inside_prefix = false
+        if prefix and prefix ~= "" then
+            if kop_path:sub(1, #prefix) == prefix then
+                is_inside_prefix = true
+            end
+        end
+        if not is_inside_prefix and kop_name:lower() ~= norm_chosen then
+            extra_map[kop_name] = true
+        end
+    end
+
+    local extra_plugins = nil
+    local extra_list = {}
+    for name in pairs(extra_map) do
+        table.insert(extra_list, name)
+    end
+    if #extra_list > 0 then
+        table.sort(extra_list)
+        extra_plugins = extra_list
+    end
+
     return {
         plugin_dirname = plugin_dirname,
         prefix = prefix,
         meta_entry = meta_entry,
+        extra_plugins = extra_plugins,
     }
 end
 
@@ -1829,6 +1905,8 @@ function M:init(Storefront)
                 end
 
                 local is_batch = (_G.G_storefront_batch_updating == true) or (self.pending_install_context and self.pending_install_context.is_batch == true)
+                msg = appendExtraPluginsWarning(msg, info)
+                msg = appendExtraPluginsWarning(msg, info)
                 StorefrontLogger.action(msg)
                 if not is_batch and not _G.G_storefront_batch_updating then
                     self:showRestartConfirmation(msg)
@@ -2053,6 +2131,7 @@ function M:init(Storefront)
                     end
                 end
 
+                msg = appendExtraPluginsWarning(msg, info)
                 StorefrontLogger.action(msg)
                 if not is_batch and not _G.G_storefront_batch_updating then
                     self:showRestartConfirmation(msg)

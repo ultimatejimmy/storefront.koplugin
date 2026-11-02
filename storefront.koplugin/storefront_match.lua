@@ -440,6 +440,7 @@ function Matcher:init(Storefront)
                         local existing_rec = records[plugin.dirname]
                         local matched_at = (existing_rec and existing_rec.matched_at) or os.time()
                         local record = {
+                            dirname = plugin.dirname,
                             owner = repo.owner,
                             repo = repo.name,
                             repo_full_name = repo.full_name,

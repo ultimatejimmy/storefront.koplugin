@@ -85,6 +85,14 @@ msgstr "%s · %d dosya"
 msgid "%s · 1 file"
 msgstr "%s · 1 dosya"
 
+# en-hash: d0385e56ccc7954c5be782e341b7b9ae
+msgid "'%s' is a built-in KOReader plugin and cannot be deleted."
+msgstr "'%s' yerleşik bir KOReader eklentisidir ve silinemez."
+
+# en-hash: b714560981d2f96582df87aaeef6f0a3
+msgid "'%s' is a built-in KOReader plugin and cannot be deleted. Cleared stale install record."
+msgstr "'%s' yerleşik bir KOReader eklentisidir ve silinemez. Eski kurulum kaydı temizlendi."
+
 # en-hash: 83fd20d49deb849e4b9df60c50c9e67e
 msgid "(fork)"
 msgstr "(çatallama)"
@@ -1093,10 +1101,6 @@ msgstr "Öne Çıkanlar"
 msgid "Fetching blueprint…"
 msgstr "Taslak alınıyor…"
 
-# en-hash: d4478c7c3ecd901d07cc947b819a69df
-msgid "Fetching branch information…"
-msgstr "Dal bilgisi alınıyor…"
-
 # en-hash: eebc29b3e7e2c6769ebff642798b1404
 msgid "Fetching changelog…"
 msgstr "Sürüm notları alınıyor…"
@@ -1805,10 +1809,6 @@ msgstr "Öge bulunamadı."
 msgid "No matched patches to check."
 msgstr "Kontrol edilecek eşleşen yama yok."
 
-# en-hash: f9852c172eb56b8f419ca9bd2604871b
-msgid "No matched plugins to check."
-msgstr "Kontrol edilecek eşleşen eklenti yok."
-
 # en-hash: c250ed3add5b171ba37f69df4bf40737
 msgid "No patch files found in %s/%s."
 msgstr "%s/%s içinde yama dosyası bulunamadı."
@@ -1900,6 +1900,10 @@ msgstr "Bir depo ile eşleşmedi."
 # en-hash: 9ba66a9f92056682b7d86a38b4bc18c0
 msgid "Not set"
 msgstr "Ayarlanmadı"
+
+# en-hash: b824b95a16fec03d414f383007c2418c
+msgid "Note: Archive contained extra plugin folder(s) that were skipped: %s"
+msgstr "Not: Arşiv, atlanan fazladan eklenti klasörü/klasörleri içeriyordu: %s"
 
 # en-hash: 76d8f3c00672f61b39846b2112d356a8
 msgid "Notification Settings"
@@ -2072,6 +2076,10 @@ msgstr "Eklenti önbelleği bir haftadan eski, yenilemeyi düşünün."
 # en-hash: 7b4d0de12a96a094bcbce0f294fa7947
 msgid "Plugin directory not found."
 msgstr "Eklenti dizini bulunamadı."
+
+# en-hash: a9f44dee81c76de20cae27b7e469e0c5
+msgid "Plugin folder '%s' was not found on disk. Cleared stale install record."
+msgstr "'%s' eklenti klasörü diskte bulunamadı. Eski kurulum kaydı temizlendi."
 
 # en-hash: e59b53e1ff95beae26b23bff6d6c0bf8
 msgid "Plugin folder not found."

@@ -85,6 +85,14 @@ msgstr "%s · %d файлів"
 msgid "%s · 1 file"
 msgstr "%s · 1 файл"
 
+# en-hash: d0385e56ccc7954c5be782e341b7b9ae
+msgid "'%s' is a built-in KOReader plugin and cannot be deleted."
+msgstr "'%s' є вбудованим плагіном KOReader і не може бути видалений."
+
+# en-hash: b714560981d2f96582df87aaeef6f0a3
+msgid "'%s' is a built-in KOReader plugin and cannot be deleted. Cleared stale install record."
+msgstr "'%s' є вбудованим плагіном KOReader і не може бути видалений. Застарілий запис встановлення очищено."
+
 # en-hash: 83fd20d49deb849e4b9df60c50c9e67e
 msgid "(fork)"
 msgstr "(форк)"
@@ -1093,10 +1101,6 @@ msgstr "Рекомендовані"
 msgid "Fetching blueprint…"
 msgstr "Отримання конфігурації…"
 
-# en-hash: d4478c7c3ecd901d07cc947b819a69df
-msgid "Fetching branch information…"
-msgstr "Отримання інформації про гілку…"
-
 # en-hash: eebc29b3e7e2c6769ebff642798b1404
 msgid "Fetching changelog…"
 msgstr "Отримання журналу змін…"
@@ -1805,10 +1809,6 @@ msgstr "Елементів не знайдено."
 msgid "No matched patches to check."
 msgstr "Немає пов'язаних патчів для перевірки."
 
-# en-hash: f9852c172eb56b8f419ca9bd2604871b
-msgid "No matched plugins to check."
-msgstr "Немає пов'язаних плагінів для перевірки."
-
 # en-hash: c250ed3add5b171ba37f69df4bf40737
 msgid "No patch files found in %s/%s."
 msgstr "Файлів патчів у %s/%s не знайдено."
@@ -1900,6 +1900,10 @@ msgstr "Не зіставлено з репозиторієм."
 # en-hash: 9ba66a9f92056682b7d86a38b4bc18c0
 msgid "Not set"
 msgstr "Не вказано"
+
+# en-hash: b824b95a16fec03d414f383007c2418c
+msgid "Note: Archive contained extra plugin folder(s) that were skipped: %s"
+msgstr "Примітка: Архів містив зайві папки плагінів, які було пропущено: %s"
 
 # en-hash: 76d8f3c00672f61b39846b2112d356a8
 msgid "Notification Settings"
@@ -2072,6 +2076,10 @@ msgstr "Кеш плагінів старіший за тиждень, спроб
 # en-hash: 7b4d0de12a96a094bcbce0f294fa7947
 msgid "Plugin directory not found."
 msgstr "Каталог плагіна не знайдено."
+
+# en-hash: a9f44dee81c76de20cae27b7e469e0c5
+msgid "Plugin folder '%s' was not found on disk. Cleared stale install record."
+msgstr "Папку плагіна '%s' не знайдено на диску. Застарілий запис встановлення очищено."
 
 # en-hash: e59b53e1ff95beae26b23bff6d6c0bf8
 msgid "Plugin folder not found."

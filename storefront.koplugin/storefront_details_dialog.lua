@@ -226,36 +226,47 @@ function StorefrontDetailsDialog:init()
     -- -----------------------------------------------------------------------
     local function getInstallRecord()
         if self.update_item and self.update_item.record then
-            return self.update_item.record
+            local r = self.update_item.record
+            local k = (self.update_item.plugin and self.update_item.plugin.dirname) or r.dirname
+            return r, k
         end
         if self.patch then
             local patch_records = InstallStore.listPatches() or {}
             local fn = self.patch.filename or ""
             local clean_fn = fn:gsub("%.disabled$", "")
-            return patch_records[fn] or patch_records[clean_fn] or patch_records[clean_fn .. ".disabled"]
+            local rec = patch_records[fn] or patch_records[clean_fn] or patch_records[clean_fn .. ".disabled"]
+            return rec, fn
         else
-            local install_records = InstallStore.list() or {}
-            local repo_name_lower = (self.repo and self.repo.name or ""):lower()
-            local full_name_lower = (self.repo and (self.repo.full_name or "") or ""):lower()
-            local id_key = self.repo and self.repo.id and ("id:" .. tostring(self.repo.id))
-
-            if self.update_item and self.update_item.plugin and self.update_item.plugin.dirname then
-                local dn = self.update_item.plugin.dirname:lower()
-                if install_records[dn] then return install_records[dn] end
+            local core_plugins = (self.Storefront and self.Storefront.CORE_KOREADER_PLUGINS)
+            if not core_plugins then
+                local ok, sm = pcall(require, "storefront_match")
+                if ok and sm then core_plugins = sm.CORE_KOREADER_PLUGINS end
             end
-            if install_records[repo_name_lower] then return install_records[repo_name_lower] end
-            if install_records[repo_name_lower .. ".koplugin"] then return install_records[repo_name_lower .. ".koplugin"] end
-            for _, r in pairs(install_records) do
-                if (r.repo and r.repo:lower() == repo_name_lower)
-                   or (r.dirname and r.dirname:lower() == repo_name_lower)
-                   or (r.dirname and r.dirname:lower() == repo_name_lower .. ".koplugin")
-                   or (full_name_lower ~= "" and r.owner and r.repo and (r.owner:lower() .. "/" .. r.repo:lower() == full_name_lower))
-                   or (id_key and r.repo_id and ("id:" .. tostring(r.repo_id) == id_key)) then
-                    return r
-                end
-            end
-            return nil
+            local owner_candidate = (self.repo and self.repo.owner and self.repo.owner ~= "" and self.repo.owner)
+                or (type(self.repo and self.repo.full_name) == "string" and self.repo.full_name:match("^([^/]+)/"))
+                or (self.repo and self.repo.data and self.repo.data.owner and (type(self.repo.data.owner) == "string" and self.repo.data.owner ~= "" and self.repo.data.owner or (type(self.repo.data.owner) == "table" and self.repo.data.owner.login)))
+                or nil
+            return InstallStore.findPluginRecord({
+                dirname = self.update_item and self.update_item.plugin and self.update_item.plugin.dirname,
+                repo_name = self.repo and self.repo.name,
+                full_name = self.repo and self.repo.full_name,
+                owner = owner_candidate,
+                repo_id = self.repo and (self.repo.id or self.repo.repo_id),
+                core_plugins = core_plugins,
+            })
         end
+    end
+
+    local function getInstalledPluginDirname()
+        if self.update_item and self.update_item.plugin and self.update_item.plugin.dirname then
+            return self.update_item.plugin.dirname
+        end
+        local rec, rec_key = getInstallRecord()
+        local cand = (rec and rec.dirname) or rec_key or (self.repo and self.repo.name)
+        if cand and not cand:find("%.koplugin$") then
+            cand = cand .. ".koplugin"
+        end
+        return cand
     end
 
     local title_text = ""
@@ -496,9 +507,12 @@ function StorefrontDetailsDialog:init()
     end
 
     local folder_pill_widget = nil
-    if self.update_item and self.update_item.plugin and self.update_item.plugin.dirname then
-        if self.update_item.plugin.dirname ~= (self.repo and self.repo.name) then
-            local folder_name = self.update_item.plugin.dirname
+    local installed_plugin_dir = getInstalledPluginDirname()
+    if installed_plugin_dir and not is_font and not self.patch and self.kind ~= "patch" and not (self.repo and self.repo.kind == "patch") then
+        local repo_base = self.repo and self.repo.name and self.repo.name:gsub("%.koplugin$", ""):lower()
+        local dir_base = installed_plugin_dir:gsub("%.koplugin$", ""):lower()
+        if repo_base and dir_base ~= repo_base and (is_installed or has_update) then
+            local folder_name = installed_plugin_dir
             local folder_text = TextWidget:new{
                 text = string.format("folder: %s", folder_name),
                 face = Font:getFace("cfont", 14),
@@ -920,8 +934,9 @@ function StorefrontDetailsDialog:init()
         if owner ~= "" and repo_name ~= "" then table.insert(keys_to_set, string.format("%s/%s", owner, repo_name)) end
         if repo_name ~= "" then table.insert(keys_to_set, repo_name) end
         if self.patch and self.patch.filename then table.insert(keys_to_set, self.patch.filename) end
-        if self.update_item and self.update_item.plugin and self.update_item.plugin.dirname then
-            table.insert(keys_to_set, self.update_item.plugin.dirname)
+        local plugin_dirname = getInstalledPluginDirname()
+        if plugin_dirname then
+            table.insert(keys_to_set, plugin_dirname)
         end
         for _, k in ipairs(keys_to_set) do
             InstallStore.setAllUpdatesIgnored(k, new_state)
@@ -956,14 +971,11 @@ function StorefrontDetailsDialog:init()
                 self.Storefront:deletePatch(patch_filename, rec)
             end
         else
-            local dirname = (self.update_item and self.update_item.plugin and self.update_item.plugin.dirname)
-                or (self.repo and self.repo.name)
+            local rec = getInstallRecord()
+            local dirname = getInstalledPluginDirname()
             if dirname then
-                if not dirname:find("%.koplugin$") then
-                    dirname = dirname .. ".koplugin"
-                end
                 if type(self.Storefront.deletePlugin) == "function" then
-                    self.Storefront:deletePlugin(dirname, true)
+                    self.Storefront:deletePlugin(dirname, rec)
                 end
             end
         end
@@ -1016,7 +1028,7 @@ function StorefrontDetailsDialog:init()
             end
         elseif (self.repo and self.repo.name) or (self.update_item and self.update_item.plugin and self.update_item.plugin.dirname) then
             local plugins_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
-            local dirname = (self.update_item and self.update_item.plugin and self.update_item.plugin.dirname) or (self.repo and self.repo.name)
+            local dirname = getInstalledPluginDirname() or (self.repo and self.repo.name)
             local p_name = dirname and dirname:gsub("%.koplugin$", "")
             if p_name then
                 is_item_disabled = plugins_disabled[p_name] == true
@@ -1097,7 +1109,7 @@ function StorefrontDetailsDialog:init()
                         self.Storefront:togglePatchDisabled(filename)
                     end
                 else
-                    local dirname = (self.update_item and self.update_item.plugin and self.update_item.plugin.dirname) or (self.repo and self.repo.name)
+                    local dirname = getInstalledPluginDirname() or (self.repo and self.repo.name)
                     if dirname and self.Storefront then
                         self.Storefront:togglePluginDisabled(dirname)
                     end
@@ -1174,7 +1186,7 @@ function StorefrontDetailsDialog:init()
             end
         elseif self.repo and self.repo.name then
             local plugins_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
-            local dirname = (self.update_item and self.update_item.plugin and self.update_item.plugin.dirname) or self.repo.name
+            local dirname = getInstalledPluginDirname() or self.repo.name
             local p_name = dirname:gsub("%.koplugin$", "")
             is_item_disabled = plugins_disabled[p_name] == true
         end
@@ -1207,7 +1219,7 @@ function StorefrontDetailsDialog:init()
                 show_parent = self,
                 callback = function()
                     self:onClose()
-                    local dirname = (self.update_item and self.update_item.plugin and self.update_item.plugin.dirname) or (self.repo and self.repo.name)
+                    local dirname = getInstalledPluginDirname() or (self.repo and self.repo.name)
                     if dirname and self.Storefront then
                         self.Storefront:togglePluginDisabled(dirname)
                     end
@@ -1328,7 +1340,7 @@ function StorefrontDetailsDialog:init()
                             self.Storefront:togglePatchDisabled(filename)
                         end
                     else
-                        local dirname = (self.update_item and self.update_item.plugin and self.update_item.plugin.dirname) or (self.repo and self.repo.name)
+                        local dirname = getInstalledPluginDirname() or (self.repo and self.repo.name)
                         if dirname and self.Storefront then
                             self.Storefront:togglePluginDisabled(dirname)
                         end
@@ -2187,7 +2199,8 @@ tr:nth-child(even) td { background-color: #f5f5f5 !important; }
                         InstallStore.setPreReleaseAllowed(item_key, next_val)
                         if dialog_self.repo and dialog_self.repo.name then InstallStore.setPreReleaseAllowed(dialog_self.repo.name, next_val) end
                         if dialog_self.repo and dialog_self.repo.full_name then InstallStore.setPreReleaseAllowed(dialog_self.repo.full_name, next_val) end
-                        if dialog_self.update_item and dialog_self.update_item.plugin and dialog_self.update_item.plugin.dirname then InstallStore.setPreReleaseAllowed(dialog_self.update_item.plugin.dirname, next_val) end
+                        local p_dirname = getInstalledPluginDirname()
+                        if p_dirname then InstallStore.setPreReleaseAllowed(p_dirname, next_val) end
                         if dialog_self.loadContent then dialog_self.loadContent("versions") end
                     end
                     return true
@@ -2918,7 +2931,8 @@ function StorefrontDetailsDialog:onLinkTap(href)
                 InstallStore.setPreReleaseAllowed(item_key, next_val)
                 if self.repo and self.repo.name then InstallStore.setPreReleaseAllowed(self.repo.name, next_val) end
                 if self.repo and self.repo.full_name then InstallStore.setPreReleaseAllowed(self.repo.full_name, next_val) end
-                if self.update_item and self.update_item.plugin and self.update_item.plugin.dirname then InstallStore.setPreReleaseAllowed(self.update_item.plugin.dirname, next_val) end
+                local p_dirname = getInstalledPluginDirname()
+                if p_dirname then InstallStore.setPreReleaseAllowed(p_dirname, next_val) end
                 if self.loadContent then self.loadContent("versions") end
             end
             return true

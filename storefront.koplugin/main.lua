@@ -4337,14 +4337,16 @@ function Storefront:promptUpdateAction(plugin, record)
         end,
     })
 
-    table.insert(other_buttons_row2, {
-        text = _("Delete plugin"),
-        background = Blitbuffer.COLOR_WHITE,
-        callback = function()
-            UIManager:close(info_box)
-            self:deletePlugin(plugin.dirname, record)
-        end,
-    })
+    if not isDefaultPlugin(plugin) then
+        table.insert(other_buttons_row2, {
+            text = _("Delete plugin"),
+            background = Blitbuffer.COLOR_WHITE,
+            callback = function()
+                UIManager:close(info_box)
+                self:deletePlugin(plugin.dirname, record)
+            end,
+        })
+    end
 
     info_box = ConfirmBox:new{
         text = plugin.name or plugin.dirname,
