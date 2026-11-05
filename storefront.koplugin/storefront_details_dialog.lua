@@ -28,7 +28,6 @@ local RightContainer = require("ui/widget/container/rightcontainer")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local StorefrontImageModal = require("storefront_image_modal")
 local InstallStore = require("storefront_installs")
-local StorefrontUtils = require("storefront_utils")
 local InfoMessage = require("ui/widget/infomessage")
 local logger = require("logger")
 local GestureRange = require("ui/gesturerange")
@@ -571,7 +570,7 @@ function StorefrontDetailsDialog:init()
             title_face = StorefrontListItem.resolveFontItemFace(font_entry, 28)
         end
     end
-    title_face = title_face or StorefrontUtils.getTitleFace(28)
+    title_face = title_face or Font:getFace("NotoSerif-Regular.ttf", 28) or Font:getFace("cfont", 28)
     local title_label = TextWidget:new{
         text = title_text,
         face = title_face,
@@ -1429,7 +1428,7 @@ function StorefrontDetailsDialog:init()
     -- -----------------------------------------------------------------------
     -- 4. README / Release Notes Section Tabs & HTML Display
     -- -----------------------------------------------------------------------
-    self.active_tab = self.default_tab or (is_font and "sample_text" or (self.kind == "update" and "release_notes" or "readme"))
+    self.active_tab = self.default_tab or (is_font and "sample_text" or "release_notes")
 
     local readme_w = self.screen_w - sc(24)
 
@@ -2736,7 +2735,6 @@ tr:nth-child(even) td { background-color: #f5f5f5 !important; }
             UIManager:setDirty(self, "ui")
         end
 
-        logger.info("Storefront Details: loadContent called for tab =", tab_name)
         UIManager:scheduleIn(0.01, function()
             if NetworkMgr and type(NetworkMgr.runWhenOnline) == "function" then
                 NetworkMgr:runWhenOnline(executeLoad)

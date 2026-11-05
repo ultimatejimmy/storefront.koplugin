@@ -27,6 +27,24 @@ RepoContent.pending_images = {}
 RepoContent.cumulative_uncompressed_bytes = 0
 local MAX_PAGE_PAYLOAD_BYTES = 12582912 -- 12 MB cumulative limit per page
 local MAX_UNCOMPRESSED_PAYLOAD = 50331648 -- 48 MB max uncompressed RAM
+RepoContent.failed_image_urls = RepoContent.failed_image_urls or {}
+RepoContent._active_dl_pid = nil
+RepoContent._active_dl_fd = nil
+RepoContent._active_dl_task = nil
+RepoContent._consecutive_failures = 0
+RepoContent._current_html_path = nil
+
+local function enqueuePendingImage(task)
+    if not task or not task.url then return end
+    if RepoContent.failed_image_urls[task.url] then return end
+    if not RepoContent.pending_images then
+        RepoContent.pending_images = {}
+    end
+    for _, t in ipairs(RepoContent.pending_images) do
+        if t.url == task.url then return end
+    end
+    table.insert(RepoContent.pending_images, task)
+end
 
 local function countCJKCharacters(text)
     if not text or type(text) ~= "string" then return 0 end
@@ -113,7 +131,34 @@ end
 
 local downloadImage
 
+function RepoContent._cleanupActiveDownload()
+    if not RepoContent._active_dl_pid then return end
+
+    local ok_ffi, ffiutil = pcall(require, "ffi/util")
+    if not ok_ffi then ok_ffi, ffiutil = pcall(require, "ffiutil") end
+
+    if ok_ffi and ffiutil then
+        if ffiutil.terminateSubProcess then
+            pcall(ffiutil.terminateSubProcess, RepoContent._active_dl_pid)
+        end
+        if ffiutil.isSubProcessDone then
+            pcall(ffiutil.isSubProcessDone, RepoContent._active_dl_pid, true)
+        end
+        if RepoContent._active_dl_fd then
+            local read_func = ffiutil.readAllFromFD or ffiutil.readFromFD
+            if read_func then
+                pcall(read_func, RepoContent._active_dl_fd)
+            end
+        end
+    end
+
+    RepoContent._active_dl_pid = nil
+    RepoContent._active_dl_fd = nil
+    RepoContent._active_dl_task = nil
+end
+
 function RepoContent.cancelPendingImages()
+    RepoContent._cleanupActiveDownload()
     if RepoContent._pending_image_timer then
         local UIManager = require("ui/uimanager")
         UIManager:unschedule(RepoContent._pending_image_timer)
@@ -126,62 +171,218 @@ function RepoContent.resetPayloadTracker()
     RepoContent.cancelPendingImages()
     RepoContent.cumulative_page_bytes = 0
     RepoContent.cumulative_uncompressed_bytes = 0
+    RepoContent._consecutive_failures = 0
+    RepoContent._current_html_path = nil
+    -- 不清 failed_image_urls，跨会话保留
+end
+
+local function processNextAfterDelay(on_update_cb, delay)
+    local UIManager = require("ui/uimanager")
+    UIManager:scheduleIn(delay or 0.05, function()
+        RepoContent.processPendingImages(on_update_cb)
+    end)
+end
+
+function RepoContent._downloadOneSync(task, on_update_cb)
+    -- 无子进程能力时的降级路径：在主线程分片下载
+    local UIManager = require("ui/uimanager")
+    UIManager:scheduleIn(0.05, function()
+        local url = task.url
+        local dest = task.dest
+        local ok, dl_ok = pcall(downloadImage, url, dest)
+        local sz = lfs.attributes(dest, "size") or 0
+        if ok and dl_ok and sz > 0 then
+            RepoContent._consecutive_failures = 0
+            RepoContent.cumulative_page_bytes = RepoContent.cumulative_page_bytes + sz
+            local is_safe, uncompressed = isImageSafeForMemory(dest, sz)
+            if uncompressed then
+                RepoContent.cumulative_uncompressed_bytes =
+                    (RepoContent.cumulative_uncompressed_bytes or 0) + uncompressed
+            end
+            if not is_safe then
+                pcall(os.remove, dest)
+                RepoContent.failed_image_urls[url] = true
+            end
+        else
+            RepoContent.failed_image_urls[url] = true
+            RepoContent._consecutive_failures = (RepoContent._consecutive_failures or 0) + 1
+        end
+        RepoContent.processPendingImages(on_update_cb)
+    end)
 end
 
 function RepoContent.processPendingImages(on_update_cb)
+    -- 队列空 → 重建 HTML
     if not RepoContent.pending_images or #RepoContent.pending_images == 0 then
+        RepoContent._finalizePendingImages(on_update_cb)
         return
     end
 
-    if RepoContent.cumulative_page_bytes >= MAX_PAGE_PAYLOAD_BYTES then
-        logger.info("Storefront: 12MB cumulative image payload threshold reached.")
+    -- 熔断：连续 3 次失败
+    if (RepoContent._consecutive_failures or 0) >= 3 then
         RepoContent.pending_images = {}
+        RepoContent._consecutive_failures = 0
+        RepoContent._finalizePendingImages(on_update_cb)
         return
     end
 
-    -- Strategy: download ALL pending images one-per-tick first, then rebuild the HTML
-    -- ONCE with real img tags at the end. This avoids MuPDF squishing images:
-    -- when a tiny placeholder gets swapped for a large image after layout is already
-    -- fixed, MuPDF scales the image down to fit the remaining space on that page.
-    -- By rebuilding only after all downloads are done, MuPDF gets a single fresh
-    -- layout pass with real image dimensions and can flow them correctly across pages.
+    -- 已有子进程在跑，不重入
+    if RepoContent._active_dl_pid then
+        return
+    end
+
+    -- 设备挂起 → 中止
+    local ok_dev, Device = pcall(require, "device")
+    if ok_dev and Device and ((Device.isSuspended and Device:isSuspended()) or Device.screen_saver_mode) then
+        RepoContent.pending_images = {}
+        RepoContent._finalizePendingImages(on_update_cb)
+        return
+    end
+
+    -- 低内存 → 跳过剩余图片
+    local ok_u, StorefrontUtils = pcall(require, "storefront_utils")
+    if ok_u and StorefrontUtils.isLowMemory and StorefrontUtils.isLowMemory() then
+        local task = table.remove(RepoContent.pending_images, 1)
+        if task and task.url then
+            RepoContent.failed_image_urls[task.url] = true
+        end
+        processNextAfterDelay(on_update_cb, 0.05)
+        return
+    end
 
     local task = table.remove(RepoContent.pending_images, 1)
-
-    if task and task.url and task.dest then
-        if lfs.attributes(task.dest, "mode") ~= "file" and type(downloadImage) == "function" then
-            local pcall_ok, dl_ok, final_dest = pcall(downloadImage, task.url, task.dest)
-            local actual_dest = (dl_ok and type(final_dest) == "string") and final_dest or task.dest
-            local sz = lfs.attributes(actual_dest, "size") or 0
-            if pcall_ok and dl_ok and sz > 0 then
-                RepoContent.cumulative_page_bytes = RepoContent.cumulative_page_bytes + sz
-                local is_safe, uncompressed = isImageSafeForMemory(actual_dest, sz)
-                if uncompressed then
-                    RepoContent.cumulative_uncompressed_bytes = RepoContent.cumulative_uncompressed_bytes + uncompressed
-                end
-            end
-        end
-    end
-
-    -- More images to download? Schedule next tick.
-    if RepoContent.pending_images and #RepoContent.pending_images > 0 and RepoContent.cumulative_page_bytes < MAX_PAGE_PAYLOAD_BYTES then
-        local UIManager = require("ui/uimanager")
-        if RepoContent._pending_image_timer then
-            UIManager:unschedule(RepoContent._pending_image_timer)
-        end
-        local timer_fn
-        timer_fn = function()
-            RepoContent._pending_image_timer = nil
-            RepoContent.processPendingImages(on_update_cb)
-        end
-        RepoContent._pending_image_timer = timer_fn
-        UIManager:scheduleIn(0.4, timer_fn)
+    if not task or not task.url or not task.dest then
+        processNextAfterDelay(on_update_cb, 0.05)
         return
     end
 
-    -- All downloads done. Rebuild the HTML once with real img tags.
-    local html_path = task and task.html_path
-    if not html_path then return end
+    -- 已失败过 → 跳过
+    if RepoContent.failed_image_urls[task.url] then
+        processNextAfterDelay(on_update_cb, 0.05)
+        return
+    end
+
+    -- 文件已在 → 记账后下一张
+    if lfs.attributes(task.dest, "mode") == "file" then
+        local sz = lfs.attributes(task.dest, "size") or 0
+        if sz > 0 then
+            RepoContent._consecutive_failures = 0
+            RepoContent.cumulative_page_bytes = RepoContent.cumulative_page_bytes + sz
+        end
+        processNextAfterDelay(on_update_cb, 0.05)
+        return
+    end
+
+    -- 尝试子进程
+    local ok_ffi, ffiutil = pcall(require, "ffi/util")
+    if not ok_ffi then ok_ffi, ffiutil = pcall(require, "ffiutil") end
+
+    if not (ok_ffi and ffiutil and ffiutil.runInSubProcess and ffiutil.isSubProcessDone) then
+        RepoContent._downloadOneSync(task, on_update_cb)
+        return
+    end
+
+    local url = task.url
+    local dest = task.dest
+
+    local pid, parent_fd = ffiutil.runInSubProcess(function(pid, child_fd)
+        local ok, err = pcall(function()
+            local dl_ok = downloadImage(url, dest)
+            if child_fd then
+                ffiutil.writeToFD(child_fd, dl_ok and "OK" or "ERR", true)
+            end
+        end)
+        if not ok and child_fd then
+            pcall(ffiutil.writeToFD, child_fd, "ERR", true)
+        end
+    end, true)
+
+    if not pid then
+        -- fork 失败，降级
+        RepoContent.failed_image_urls[url] = true
+        RepoContent._consecutive_failures = (RepoContent._consecutive_failures or 0) + 1
+        processNextAfterDelay(on_update_cb, 0.1)
+        return
+    end
+
+    RepoContent._active_dl_pid = pid
+    RepoContent._active_dl_fd = parent_fd
+    RepoContent._active_dl_task = task
+
+    local UIManager = require("ui/uimanager")
+    local poll_attempts = 0
+    local MAX_POLL = 150  -- 0.3s × 150 = 45s 上限
+
+    local poll
+    poll = function()
+        -- 设备挂起
+        local ok_dev2, Device2 = pcall(require, "device")
+        if ok_dev2 and Device2 and ((Device2.isSuspended and Device2:isSuspended()) or Device2.screen_saver_mode) then
+            RepoContent._cleanupActiveDownload()
+            RepoContent.pending_images = {}
+            return
+        end
+
+        poll_attempts = poll_attempts + 1
+        if poll_attempts > MAX_POLL then
+            RepoContent._cleanupActiveDownload()
+            RepoContent.failed_image_urls[url] = true
+            RepoContent._consecutive_failures = (RepoContent._consecutive_failures or 0) + 1
+            processNextAfterDelay(on_update_cb, 0.2)
+            return
+        end
+
+        if ffiutil.isSubProcessDone(pid) then
+            local read_func = ffiutil.readAllFromFD or ffiutil.readFromFD
+            local ok_read, msg = false, nil
+            if read_func and parent_fd then
+                ok_read, msg = pcall(read_func, parent_fd)
+            end
+            pcall(function()
+                if ffiutil.isSubProcessDone then ffiutil.isSubProcessDone(pid, true) end
+            end)
+
+            RepoContent._active_dl_pid = nil
+            RepoContent._active_dl_fd = nil
+            RepoContent._active_dl_task = nil
+
+            local sz = lfs.attributes(dest, "size") or 0
+            local succeeded = ok_read and msg and msg:find("^OK") and sz > 0
+
+            if succeeded then
+                RepoContent._consecutive_failures = 0
+                RepoContent.cumulative_page_bytes = RepoContent.cumulative_page_bytes + sz
+
+                local is_safe, uncompressed = isImageSafeForMemory(dest, sz)
+                if uncompressed then
+                    RepoContent.cumulative_uncompressed_bytes =
+                        (RepoContent.cumulative_uncompressed_bytes or 0) + uncompressed
+                end
+                if not is_safe then
+                    pcall(os.remove, dest)
+                    RepoContent.failed_image_urls[url] = true
+                end
+            else
+                RepoContent.failed_image_urls[url] = true
+                RepoContent._consecutive_failures = (RepoContent._consecutive_failures or 0) + 1
+                pcall(os.remove, dest .. ".tmp")
+            end
+
+            processNextAfterDelay(on_update_cb, 0.05)
+        else
+            UIManager:scheduleIn(0.3, poll)
+        end
+    end
+
+    UIManager:scheduleIn(0.3, poll)
+end
+
+function RepoContent._finalizePendingImages(on_update_cb)
+    local html_path = RepoContent._current_html_path
+    if not html_path then
+        return
+    end
+    RepoContent._current_html_path = nil
 
     local html_content = util.readFromFile(html_path)
     if not html_content then return end
@@ -189,19 +390,22 @@ function RepoContent.processPendingImages(on_update_cb)
     html_content = html_content:gsub('(<span[^>]*id="imgbox%-[^"]+"[^>]*>)(.-)(</span>)', function(span_tag, inner, closetag)
         local img_path = span_tag:match('id="imgbox%-([^"]+)"')
         if not img_path then return span_tag .. inner .. closetag end
-        
+
         local sz = lfs.attributes(img_path, "size") or 0
         if sz == 0 then
-            return '<span style="display: block; text-align: center; margin: 0.6em auto; color: red; font-style: italic;">[ Image Failed ]</span>'
+            return '<span style="display: block; text-align: center; margin: 0.6em auto; color: gray; font-style: italic;">[ Image unavailable ]</span>'
         end
+
         local is_gif = img_path:lower():match("%.gif$") ~= nil
         if is_gif then
             return string.format('<a href="storefront-img:%s" style="display: block; text-align: center; margin: 0.6em auto; color: blue; text-decoration: underline;">[ View Animated GIF ]</a>', img_path)
         end
+
         local is_safe, uncompressed = isImageSafeForMemory(img_path, sz)
         if not is_safe or (uncompressed and (RepoContent.cumulative_uncompressed_bytes + uncompressed) > MAX_UNCOMPRESSED_PAYLOAD) then
             return string.format('<a href="storefront-img:%s" style="display: block; text-align: center; margin: 0.6em auto; color: blue; text-decoration: underline;">[ View Large Image ]</a>', img_path)
         end
+
         local filename = img_path:match("([^/]+)$") or ""
         return string.format('<br/><a href="storefront-img:%s" style="display: block; text-align: center; margin: 1.5em auto;"><img src="%s" style="max-width: 100%%; height: auto; display: block; margin: 0 auto;" /></a>', img_path, filename)
     end)
@@ -212,7 +416,6 @@ function RepoContent.processPendingImages(on_update_cb)
         pcall(on_update_cb, html_path)
     end
 end
-
 
 local function getCacheDir()
     local dir = DataStorage:getDataDir() .. "/cache/Storefront/readme"
@@ -267,6 +470,10 @@ local USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, l
 downloadImage = function(url, dest, max_redirects)
     max_redirects = max_redirects or 5
     if max_redirects <= 0 then return false end
+
+    -- 失败缓存：同一 URL 失败过就不再尝试
+    if RepoContent.failed_image_urls[url] then return false end
+
     dest = dest:gsub("\\", "/")
 
     -- Clean HTML tags from URL if any got through
@@ -311,13 +518,13 @@ downloadImage = function(url, dest, max_redirects)
     for _, current_url in ipairs(urls_to_try) do
         local f, err = io.open(dest, "wb")
         if f then
-            pcall(function() http.TIMEOUT = 4 end)
+            pcall(function() http.TIMEOUT = 12 end)
             local start_time = os.time()
             local downloaded_size = 0
             local file_sink = function(chunk, err_sink)
                 if chunk then
                     downloaded_size = downloaded_size + #chunk
-                    if downloaded_size > 4718592 or (os.time() - start_time) > 12 then
+                    if downloaded_size > 4718592 or (os.time() - start_time) > 30 then
                         return nil, "abort"
                     end
                     local ok, w_err = f:write(chunk)
@@ -337,7 +544,7 @@ downloadImage = function(url, dest, max_redirects)
                         ["Accept"] = "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
                     },
                     redirect = false,
-                    timeout = 4,
+                    timeout = 12,
                 }
             end)
             pcall(function() file_sink(nil) end)
@@ -345,11 +552,12 @@ downloadImage = function(url, dest, max_redirects)
 
             if not res and downloaded_size > 0 then
                 os.remove(dest)
+                RepoContent.failed_image_urls[url] = true
                 return false
             end
 
             code = tonumber(code)
-            logger.info("Storefront image download:", current_url, "code=", code)
+            logger.dbg("Storefront image download:", current_url, "code=", code)
 
             if code == 200 then
                 local sz = lfs.attributes(dest, "size") or 0
@@ -389,6 +597,7 @@ downloadImage = function(url, dest, max_redirects)
             end
         end
     end
+    RepoContent.failed_image_urls[url] = true
     return false
 end
 
@@ -512,26 +721,26 @@ function RepoContent.fetchReadmeHtml(owner, repo, force_refresh)
         end
         return false, err or "fetch error"
     end
-    
+
     if countCJKCharacters(body) > 20 then
         logger.info("Storefront: CJK text detected, displaying safe placeholder to protect device memory.")
         body = string.format('<div class="markdown-body"><p style="text-align:center; padding: 2.5em; color: gray;"><i>%s</i></p></div>', _("Can't load readme...."))
+        RepoContent._current_html_path = path
         local ok, write_err = util.writeToFile(body, path)
         return true, path
     end
 
-    -- Hard-cap length before doing expensive regex formatting 
+    -- Hard-cap length before doing expensive regex formatting
     if #body > 85000 then
         body = body:sub(1, 85000)
     end
-    
+
     -- Strip explicit width and height attributes so images expand to full width
     body = stripImgDimensions(body)
 
     -- Strip flexbox container styles because MuPDF doesn't support them and they
     -- cause the engine to squish contents (like images) to microscopic sizes to avoid page breaks.
     body = body:gsub('(<div[^>]+style=["\'][^"\']*display:%s*flex[^"\']*["\'][^>]*>)', function(match)
-        -- Just remove the style attribute entirely from flex containers
         return match:gsub('%s*style=["\'][^"\']*["\']', '')
     end)
 
@@ -541,7 +750,7 @@ function RepoContent.fetchReadmeHtml(owner, repo, force_refresh)
         prefix = stripImgDimensions(prefix)
         suffix = stripImgDimensions(suffix)
         local url = raw_url:gsub("&amp;", "&")
-        
+
         -- Filter out badges, shields, and SVG icons early before counting
         local lower_url = url:lower()
         if lower_url:find("%.svg") or lower_url:find("shields%.io") or lower_url:find("badge") or lower_url:find("liberapay") or lower_url:find("github%-actions") or lower_url:find("travis%-ci") or lower_url:find("codecov") then
@@ -565,16 +774,6 @@ function RepoContent.fetchReadmeHtml(owner, repo, force_refresh)
 
         local cached_sz = lfs.attributes(img_dest, "size") or 0
 
-        -- Synchronously fetch up to the first 4 valid content images at initial README load time
-        if cached_sz == 0 and valid_img_count <= 4 and RepoContent.cumulative_page_bytes < MAX_PAGE_PAYLOAD_BYTES then
-            if type(downloadImage) == "function" then
-                local pcall_ok, dl_ok, final_dest = pcall(downloadImage, url, img_dest)
-                if pcall_ok and dl_ok then
-                    cached_sz = lfs.attributes(img_dest, "size") or 0
-                end
-            end
-        end
-
         if cached_sz > 0 then
             local w_check, h_check = getImageDimensions(img_dest)
             if not w_check or not h_check or w_check == 0 or h_check == 0 then
@@ -586,12 +785,12 @@ function RepoContent.fetchReadmeHtml(owner, repo, force_refresh)
 
         if cached_sz > 0 then
             RepoContent.cumulative_page_bytes = RepoContent.cumulative_page_bytes + cached_sz
-            
+
             local is_safe, uncompressed = isImageSafeForMemory(img_dest, cached_sz)
             if uncompressed then
                 RepoContent.cumulative_uncompressed_bytes = RepoContent.cumulative_uncompressed_bytes + uncompressed
             end
-            
+
             local is_gif = img_dest:lower():match("%.gif$") ~= nil
             if is_gif or not is_safe or RepoContent.cumulative_uncompressed_bytes > MAX_UNCOMPRESSED_PAYLOAD then
                 local placeholder_text = is_gif and "[ View Animated GIF ]" or "[ View Large Image ]"
@@ -602,14 +801,14 @@ function RepoContent.fetchReadmeHtml(owner, repo, force_refresh)
         end
 
         if RepoContent.cumulative_page_bytes < MAX_PAGE_PAYLOAD_BYTES then
-            -- Pass the prefix, filename, and suffix so we can rebuild the image tag later
-            table.insert(RepoContent.pending_images, { url = url, dest = img_dest, html_path = path, prefix = prefix, filename = img_filename, suffix = suffix })
+            enqueuePendingImage({ url = url, dest = img_dest, html_path = path, prefix = prefix, filename = img_filename, suffix = suffix })
         end
-        
+
         -- Default to a text placeholder so MuPDF doesn't OOM on missing/partial image files
         return string.format('<span id="imgbox-%s" style="display: block; text-align: center; margin: 0.6em auto; color: gray; font-style: italic;">[ Loading Image... ]</span>', img_dest)
     end)
 
+    RepoContent._current_html_path = path
     local ok, write_err = util.writeToFile(body, path)
     if not ok then
         return false, write_err or "write error"
@@ -1012,9 +1211,10 @@ function RepoContent.fetchWikiPageHtml(owner, repo, page_name, force_refresh)
         if cached_sz > 0 then
             RepoContent.cumulative_page_bytes = RepoContent.cumulative_page_bytes + cached_sz
         elseif RepoContent.cumulative_page_bytes < MAX_PAGE_PAYLOAD_BYTES then
-            table.insert(RepoContent.pending_images, { url = img_url, dest = img_dest, html_path = path })
+            enqueuePendingImage({ url = img_url, dest = img_dest, html_path = path })
         end
         local html = string.format('<div class="markdown-body"><p><b>%s</b></p><hr/><a href="storefront-img:%s"><img src="%s"/></a></div>', page_name, img_dest, img_filename)
+        RepoContent._current_html_path = path
         util.writeToFile(html, path)
         return true, path
     end
@@ -1056,12 +1256,12 @@ function RepoContent.fetchWikiPageHtml(owner, repo, page_name, force_refresh)
         local cached_sz = lfs.attributes(img_dest, "size") or 0
         if cached_sz > 0 then
             RepoContent.cumulative_page_bytes = RepoContent.cumulative_page_bytes + cached_sz
-            
+
             local is_safe, uncompressed = isImageSafeForMemory(img_dest, cached_sz)
             if uncompressed then
                 RepoContent.cumulative_uncompressed_bytes = RepoContent.cumulative_uncompressed_bytes + uncompressed
             end
-            
+
             if not is_safe or RepoContent.cumulative_uncompressed_bytes > MAX_UNCOMPRESSED_PAYLOAD then
                 local placeholder = '<span style="color: blue; text-decoration: underline;">[ View Large Image ]</span>'
                 return string.format('<a href="storefront-img:%s">%s</a>', img_dest, placeholder)
@@ -1072,16 +1272,16 @@ function RepoContent.fetchWikiPageHtml(owner, repo, page_name, force_refresh)
         end
 
         if RepoContent.cumulative_page_bytes < MAX_PAGE_PAYLOAD_BYTES then
-            -- Pass the prefix, filename, and suffix so we can rebuild the image tag later
-            table.insert(RepoContent.pending_images, { url = url, dest = img_dest, html_path = path, prefix = prefix, filename = img_filename, suffix = suffix })
+            enqueuePendingImage({ url = url, dest = img_dest, html_path = path, prefix = prefix, filename = img_filename, suffix = suffix })
         end
-        
+
         -- Default to a text placeholder so MuPDF doesn't OOM on missing/partial image files
         local safe_dest = img_dest:gsub("([^%w])", "%%%1")
         local placeholder = string.format('<span id="placeholder-%s" style="color: gray; font-style: italic;">[ Loading Image... ]</span>', safe_dest)
         return string.format('<a href="storefront-img:%s">%s</a>', img_dest, placeholder)
     end)
 
+    RepoContent._current_html_path = path
     local ok, write_err = util.writeToFile(body, path)
     if not ok then
         return false, write_err or "write error"
@@ -1114,4 +1314,3 @@ function RepoContent.clearWikiCache()
 end
 
 return RepoContent
-
