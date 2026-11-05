@@ -10213,6 +10213,16 @@ function Storefront:showScreensaverFilter()
 end
 
 function Storefront:showCollectionsDialog(callback)
+    if self._stopScreensaverThumbPoll then
+        pcall(function() self:_stopScreensaverThumbPoll() end)
+    end
+    pcall(function()
+        local ok_ss, StorefrontScreensavers = pcall(require, "storefront_screensavers_ui")
+        if ok_ss and StorefrontScreensavers and StorefrontScreensavers.cancelAllThumbnailFetches then
+            StorefrontScreensavers.cancelAllThumbnailFetches()
+        end
+    end)
+    collectgarbage("step", 200)
     require("storefront_collections_dialog").show(self, callback)
 end
 

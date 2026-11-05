@@ -92,6 +92,16 @@ function StorefrontScreensaverGallery.show(Storefront, on_close_callback, on_set
     local current_page = 1
     local cached_items = nil
     local active_image_widgets = {}
+    local thumb_bb_cache = {}
+
+    local function freeThumbBbCache()
+        for path, bb in pairs(thumb_bb_cache) do
+            if bb and bb.free then
+                pcall(function() bb:free() end)
+            end
+        end
+        thumb_bb_cache = {}
+    end
 
     local function freeActiveWidgets()
         for _, w in ipairs(active_image_widgets) do
@@ -105,6 +115,7 @@ function StorefrontScreensaverGallery.show(Storefront, on_close_callback, on_set
 
     local function closeGallery()
         freeActiveWidgets()
+        freeThumbBbCache()
         if overlay then
             local ov = overlay
             overlay = nil
@@ -119,6 +130,7 @@ function StorefrontScreensaverGallery.show(Storefront, on_close_callback, on_set
     local function openConfig()
         local cur_selected = overlay and overlay.selected and { x = overlay.selected.x, y = overlay.selected.y }
         freeActiveWidgets()
+        freeThumbBbCache()
         if overlay then
             local ov = overlay
             overlay = nil
@@ -221,12 +233,6 @@ function StorefrontScreensaverGallery.show(Storefront, on_close_callback, on_set
     refresh = function(saved_selected)
         local cur_selected = saved_selected or (overlay and overlay.selected and { x = overlay.selected.x, y = overlay.selected.y })
         freeActiveWidgets()
-        if overlay then
-            local ov = overlay
-            overlay = nil
-            ov.onClose = nil
-            UIManager:close(ov, "ui")
-        end
 
         if not cached_items then
             cached_items = StorefrontScreensaverMgr.listLocalScreensavers()
@@ -283,6 +289,7 @@ function StorefrontScreensaverGallery.show(Storefront, on_close_callback, on_set
             padding = sc(6),
             padding_h = sc(12),
             background = Blitbuffer.COLOR_WHITE,
+            allow_flash = false,
             callback = closeGallery,
         }
 
@@ -410,32 +417,51 @@ function StorefrontScreensaverGallery.show(Storefront, on_close_callback, on_set
                     end
                 end
 
-                -- Strict guard: load verified small thumbnail files (< 300 KB)
+                -- Check cached blitbuffer first
+                local cached_bb = thumb_bb_cache[current_item.filepath]
+                if cached_bb and ImageWidget then
+                    local ok_iw, iw = pcall(function()
+                        return ImageWidget:new{
+                            image = cached_bb,
+                            image_disposable = false,
+                        }
+                    end)
+                    if ok_iw and iw then
+                        ok_img = true
+                        res_img = iw
+                    end
+                end
+
+                -- Strict guard: load verified small thumbnail files (<= 512 KB)
                 local source_file = nil
-                if thumb_file and lfs and lfs.attributes then
+                if not res_img and thumb_file and lfs and lfs.attributes then
                     local attr_s = lfs.attributes(thumb_file)
-                    if attr_s and attr_s.mode == "file" and (attr_s.size or 0) > 0 and (attr_s.size or 0) <= 300 * 1024 then
+                    if attr_s and attr_s.mode == "file" and (attr_s.size or 0) > 0 and (attr_s.size or 0) <= 512 * 1024 then
                         source_file = thumb_file
                     end
                 end
 
-                -- If no cached thumbnail was found, check if full local file is small enough to preview safely
-                if not source_file and current_item.filepath and lfs and lfs.attributes then
+                -- If no cached thumbnail was found, check if full local file can be decoded scaled
+                local is_low_mem = StorefrontUtils and StorefrontUtils.isLowMemory and StorefrontUtils.isLowMemory()
+                local local_max_bytes = is_low_mem and (200 * 1024) or (1536 * 1024)
+                if not res_img and not source_file and current_item.filepath and lfs and lfs.attributes then
                     local attr_f = lfs.attributes(current_item.filepath)
-                    if attr_f and attr_f.mode == "file" and (attr_f.size or 0) > 0 and (attr_f.size or 0) <= 150 * 1024 then
+                    if attr_f and attr_f.mode == "file" and (attr_f.size or 0) > 0 and (attr_f.size or 0) <= local_max_bytes then
                         source_file = current_item.filepath
                     end
                 end
 
                 -- If thumbnail is still missing, trigger background async download if item is in catalog
-                if not source_file and ok_screensavers and StorefrontScreensavers then
+                if not res_img and not source_file and ok_screensavers and StorefrontScreensavers then
                     local cat_item = current_item.catalog_item
                     if not cat_item and StorefrontScreensavers.getCachedCatalog then
                         local cat = StorefrontScreensavers.getCachedCatalog()
                         if type(cat) == "table" then
+                            local cat_lower = tostring(current_item.id):lower()
+                            local fname_lower = tostring(current_item.filename):lower()
                             for _, ci in ipairs(cat) do
-                                if (ci.id and tostring(ci.id):lower() == tostring(current_item.id):lower()) or
-                                   (ci.filename and tostring(ci.filename):lower() == tostring(current_item.filename):lower()) then
+                                if (ci.id and tostring(ci.id):lower() == cat_lower) or
+                                   (ci.filename and tostring(ci.filename):lower() == fname_lower) then
                                     cat_item = ci
                                     current_item.catalog_item = ci
                                     break
@@ -447,13 +473,23 @@ function StorefrontScreensaverGallery.show(Storefront, on_close_callback, on_set
                         local t_path = StorefrontScreensavers.getThumbnailPath(cat_item)
                         if t_path and lfs and lfs.attributes and lfs.attributes(t_path, "mode") == "file" then
                             source_file = t_path
+                        elseif cat_item and not is_low_mem and StorefrontScreensavers.fetchThumbnailAsync then
+                            -- Kick off background async download if missing
+                            pcall(function()
+                                StorefrontScreensavers.fetchThumbnailAsync(cat_item)
+                            end)
                         end
                     end
                 end
 
-                if source_file and ok_screensavers and StorefrontScreensavers and StorefrontScreensavers.createCoverImageWidget then
+                if not res_img and source_file and ok_screensavers and StorefrontScreensavers and StorefrontScreensavers.createCoverImageWidget then
                     ok_img, res_img = pcall(function()
-                        return StorefrontScreensavers.createCoverImageWidget(source_file, thumb_w, thumb_h)
+                        local opts = { max_file_bytes = (source_file == current_item.filepath) and local_max_bytes or (512 * 1024) }
+                        local widget = StorefrontScreensavers.createCoverImageWidget(source_file, thumb_w, thumb_h, opts)
+                        if widget and widget.image and current_item.filepath then
+                            thumb_bb_cache[current_item.filepath] = widget.image
+                        end
+                        return widget
                     end)
                 end
 
@@ -584,10 +620,14 @@ function StorefrontScreensaverGallery.show(Storefront, on_close_callback, on_set
                 else
                     local set_active_btn = make_action_btn(_("Set Single"), Blitbuffer.Color8(240), Blitbuffer.COLOR_BLACK, function()
                         StorefrontScreensaverMgr.setScreensaverMode("single", { file = current_item.filepath })
-                        cached_items = StorefrontScreensaverMgr.listLocalScreensavers()
+                        if cached_items then
+                            for _, ci in ipairs(cached_items) do
+                                ci.is_active_single = (ci.filepath == current_item.filepath)
+                            end
+                        end
                         refresh()
                         local StorefrontToast = require("storefront_toast")
-                        StorefrontToast.show(_("Set as active single wallpaper!"), 2)
+                        StorefrontToast.show(_("Set as active single wallpaper!"), 2, { passthrough = true, position = "bottom" })
                     end)
                     table.insert(right_actions_vg, set_active_btn)
                     action_item = set_active_btn
@@ -604,16 +644,32 @@ function StorefrontScreensaverGallery.show(Storefront, on_close_callback, on_set
                         cancel_text = _("Cancel"),
                         ok_callback = function()
                             local StorefrontToast = require("storefront_toast")
-                            local ok, was_active_single = StorefrontScreensaverMgr.deleteLocalScreensaver(current_item.filepath)
+                            local del_path = current_item.filepath
+                            local ok, was_active_single = StorefrontScreensaverMgr.deleteLocalScreensaver(del_path)
                             if ok then
-                                StorefrontToast.show(_("Wallpaper removed"), 2)
-                                UIManager:nextTick(function()
-                                    StorefrontScreensaverMgr.autoFallbackAfterDelete(was_active_single)
-                                    cached_items = StorefrontScreensaverMgr.listLocalScreensavers()
-                                    refresh()
-                                end)
+                                -- In-place mutation: remove from cached_items without full rescan
+                                if cached_items then
+                                    for idx_c = #cached_items, 1, -1 do
+                                        if cached_items[idx_c].filepath == del_path then
+                                            table.remove(cached_items, idx_c)
+                                            break
+                                        end
+                                    end
+                                end
+                                -- Free cached Blitbuffer for this deleted wallpaper
+                                if del_path and thumb_bb_cache[del_path] then
+                                    local bb = thumb_bb_cache[del_path]
+                                    thumb_bb_cache[del_path] = nil
+                                    if bb and bb.free then pcall(function() bb:free() end) end
+                                end
+                                StorefrontScreensaverMgr.autoFallbackAfterDelete(was_active_single, cached_items)
+                                if was_active_single and cached_items and #cached_items > 0 then
+                                    cached_items[1].is_active_single = true
+                                end
+                                refresh()
+                                StorefrontToast.show(_("Wallpaper removed"), 2, { passthrough = true, position = "bottom" })
                             else
-                                StorefrontToast.show(_("Could not remove wallpaper"), 2)
+                                StorefrontToast.show(_("Could not remove wallpaper"), 2, { passthrough = true, position = "bottom" })
                             end
                         end,
                     }
@@ -896,6 +952,29 @@ function StorefrontScreensaverGallery.show(Storefront, on_close_callback, on_set
             target_x = math.max(1, math.min(#layout[target_y], prev_selected.x or 1))
         end
 
+        if overlay then
+            overlay[1] = card
+            overlay.layout = layout
+            overlay.selected = { x = target_x, y = target_y }
+            for _, row in ipairs(layout) do
+                for _, item in ipairs(row) do
+                    item.show_parent = overlay
+                end
+            end
+            if prev_selected or Device:hasDPad() then
+                local target_item = layout[target_y] and layout[target_y][target_x]
+                if target_item then
+                    if target_item.onFocus then
+                        target_item:onFocus()
+                    elseif target_item.handleEvent then
+                        target_item:handleEvent(Event:new("Focus"))
+                    end
+                end
+            end
+            UIManager:setDirty(overlay, "ui")
+            return
+        end
+
         overlay = FocusManager:new{
             align = "center",
             vertical_align = "center",
@@ -1011,6 +1090,7 @@ function StorefrontScreensaverGallery.show(Storefront, on_close_callback, on_set
 
         overlay.onClose = function()
             freeActiveWidgets()
+            freeThumbBbCache()
             overlay = nil
             if on_close_callback then
                 on_close_callback()

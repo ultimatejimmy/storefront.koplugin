@@ -490,6 +490,7 @@ function storefront_utils.createButton(opts)
         width = btn_w,
         height = btn_h,
         preselect = (opts.preselect ~= nil) and opts.preselect or is_primary,
+        allow_flash = (opts.allow_flash == true),
         show_parent = opts.show_parent,
         callback = opts.callback,
     }

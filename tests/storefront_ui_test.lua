@@ -698,6 +698,76 @@ if ok_browser then
         end)
         check("Details dialog page_number reset test executed", page_reset_ok, true)
 
+        -- Test cancelActiveFetch cleanly terminates subprocess and resets active fetch
+        local orig_ffi = package.loaded["ffi/util"]
+        local cancel_fetch_ok = pcall(function()
+            local details = StorefrontDetailsDialog:new{
+                Storefront = full_dummy_storefront,
+                repo = dummy_repo,
+                kind = "plugin",
+            }
+            details:init()
+
+            local terminated_pid = nil
+            local drained_fd = nil
+            local mock_ffiutil = {
+                terminateSubProcess = function(pid) terminated_pid = pid end,
+                isSubProcessDone = function(pid, wait) return true end,
+                readAllFromFD = function(fd) drained_fd = fd return "" end,
+                realpath = orig_ffi and orig_ffi.realpath or function(p) return p end,
+                runInSubProcess = orig_ffi and orig_ffi.runInSubProcess or function() return 1, {} end,
+            }
+            package.loaded["ffi/util"] = mock_ffiutil
+            package.loaded["ffiutil"] = mock_ffiutil
+
+            details._active_async_fetch = {
+                pid = 9988,
+                fd = 42,
+                timer = function() end,
+            }
+            details:cancelActiveFetch()
+
+            check("cancelActiveFetch terminates in-flight subprocess", terminated_pid == 9988, true)
+            check("cancelActiveFetch drains and closes fd", drained_fd == 42, true)
+            check("cancelActiveFetch clears _active_async_fetch", details._active_async_fetch == nil, true)
+        end)
+        package.loaded["ffi/util"] = orig_ffi
+        package.loaded["ffiutil"] = orig_ffi
+        check("cancelActiveFetch executed without error", cancel_fetch_ok, true)
+
+        -- Test action button debounce guard prevents duplicate invocations
+        local debounce_ok = pcall(function()
+            local install_invocations = 0
+            local mock_sf = {
+                installPluginFromRepo = function()
+                    install_invocations = install_invocations + 1
+                end,
+                promptPluginInstallOptions = function()
+                    install_invocations = install_invocations + 1
+                end,
+            }
+            local details = StorefrontDetailsDialog:new{
+                Storefront = mock_sf,
+                repo = dummy_repo,
+                kind = "plugin",
+            }
+            details:init()
+
+            -- Simulate first click
+            if details.main_action_btn and details.main_action_btn.callback then
+                details.main_action_btn.callback()
+            end
+            check("First action tap marks dialog as closed", details.is_closed == true, true)
+
+            -- Simulate second click (e.g. buffered touch or double-tap)
+            if details.main_action_btn and details.main_action_btn.callback then
+                details.main_action_btn.callback()
+            end
+
+            check("Duplicate action tap is ignored by in-flight guard", install_invocations == 1, true)
+        end)
+        check("Action button debounce guard executed without error", debounce_ok, true)
+
         -- Test Font details dialog instantiation & paint
         local font_details_ok, font_details_err = pcall(function()
             local details = StorefrontDetailsDialog:new{

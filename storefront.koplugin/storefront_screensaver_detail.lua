@@ -70,6 +70,7 @@ function StorefrontScreensaverDetail:init()
         text_font_size = 20,
         bordersize = 0,
         background = nil,
+        allow_flash = false,
         show_parent = self,
         callback   = function() self:onClose() end,
     }
@@ -652,6 +653,8 @@ function StorefrontScreensaverDetail:init()
         }
     end
 
+    self._preview_widget = preview_widget
+
     local image_frame = FrameContainer:new{
         bordersize = 0,
         color      = Blitbuffer.COLOR_BLACK,
@@ -757,6 +760,10 @@ end
 
 function StorefrontScreensaverDetail:onClose(callback)
     self.is_closed = true
+    if self._preview_widget and self._preview_widget.free then
+        pcall(function() self._preview_widget:free() end)
+        self._preview_widget = nil
+    end
     UIManager:close(self)
     if self._vote_toggled and self.parent and type(self.parent.reopenBrowser) == "function" then
         self.parent:reopenBrowser(nil, callback)

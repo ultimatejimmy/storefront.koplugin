@@ -138,6 +138,15 @@ local ok_update, path_updated = RepoContent.fetchReadmeHtml("testowner", "testre
 check("fetchReadmeHtml fetches live update even when cached file already exists", ok_update == true)
 check("Cached file contains new content", mock_files[path_updated]:find("Newest V2 README Content") ~= nil)
 
+-- Test 11d: skip_sync_images option routes images to pending queue without sync download
+GitHubClient.fetchReadmeHtml = function(owner, repo)
+    return '<img src="https://example.com/screenshot.png" />'
+end
+
+local ok_skip, path_skip = RepoContent.fetchReadmeHtml("testowner", "testrepo", true, { skip_sync_images = true })
+check("fetchReadmeHtml with skip_sync_images succeeds", ok_skip == true)
+check("fetchReadmeHtml creates placeholder for inline images when skip_sync_images is active", mock_files[path_skip]:find("imgbox") ~= nil)
+
 if failures > 0 then
     print(string.format("README TESTS FAILED: %d errors", failures))
     os.exit(1)

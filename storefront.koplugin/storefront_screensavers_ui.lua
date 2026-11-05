@@ -38,7 +38,8 @@ function StorefrontScreensavers.normalizeItem(item)
     if not item.source or item.source == "" then
         item.source = id_str:find("^rb%-") and "ReaderBackdrop" or "Storefront"
     end
-    local is_remote = (item.source == "ReaderBackdrop") or (item.fullUrl and tostring(item.fullUrl):find("^https?://") ~= nil)
+    local is_external_rb = (item.source == "ReaderBackdrop" and item.fullUrl and tostring(item.fullUrl):find("^https?://") ~= nil and not tostring(item.fullUrl):find("storefront%-screensavers"))
+    local is_remote = is_external_rb or (item.fullUrl and tostring(item.fullUrl):find("^https?://") ~= nil)
     local ext = item.ext
     if not ext or ext == "" then
         if item.fullUrl and tostring(item.fullUrl):lower():find("%.png") then
@@ -57,7 +58,7 @@ function StorefrontScreensavers.normalizeItem(item)
         item.fullUrl = string.format("%s/%s.%s", BASE_IMAGE_URL, id_str, ext)
     end
     if not item.thumbnailUrl or item.thumbnailUrl == "" then
-        if id_str:match("^rb%-") then
+        if is_external_rb then
             item.thumbnailUrl = string.format("%s/thumbnails/rb/%s.jpg", BASE_IMAGE_URL, id_str)
         elseif is_remote and item.fullUrl and item.fullUrl ~= "" then
             -- On e-ink devices, never download full-size wallpapers as thumbnails
@@ -66,14 +67,14 @@ function StorefrontScreensavers.normalizeItem(item)
             item.thumbnailUrl = string.format("%s/thumbnails/%s.%s", BASE_IMAGE_URL, id_str, ext)
         end
     elseif item.thumbnailUrl == item.fullUrl then
-        if id_str:match("^rb%-") then
+        if is_external_rb then
             item.thumbnailUrl = string.format("%s/thumbnails/rb/%s.jpg", BASE_IMAGE_URL, id_str)
         else
             item.thumbnailUrl = nil
         end
     end
     if not item.pluginThumbnailUrl or item.pluginThumbnailUrl == "" then
-        if id_str:match("^rb%-") then
+        if is_external_rb then
             item.pluginThumbnailUrl = item.thumbnailUrl
         elseif is_remote and item.thumbnailUrl and item.thumbnailUrl ~= "" then
             item.pluginThumbnailUrl = item.thumbnailUrl
@@ -458,7 +459,7 @@ function StorefrontScreensavers.fetchCollections(callback)
         local data, err = CatalogClient.fetchCollectionsCatalog()
         if data == "not_modified" then
             local cached = StorefrontScreensavers.getCachedCollections()
-            if callback then callback(true, cached or {}) end
+            if callback then callback(true, cached or {}, false) end
             return
         elseif data and type(data) == "table" and #data > 0 then
             for _, c in ipairs(data) do
@@ -475,18 +476,18 @@ function StorefrontScreensavers.fetchCollections(callback)
                     f:close()
                 end
             end)
-            if callback then callback(true, data) end
+            if callback then callback(true, data, true) end
             return
         end
     end
 
     local cached = StorefrontScreensavers.getCachedCollections()
     if cached and #cached > 0 then
-        if callback then callback(true, cached) end
+        if callback then callback(true, cached, false) end
         return
     end
 
-    if callback then callback(false, {}) end
+    if callback then callback(false, {}, false) end
 end
 
 function StorefrontScreensavers.getCollectionCoverPath(col)
@@ -495,6 +496,31 @@ function StorefrontScreensavers.getCollectionCoverPath(col)
     local cache_dir = (ok_ds and DataStorage and DataStorage.getDataDir) and (DataStorage:getDataDir() .. "/cache/storefront_thumbs") or "/tmp"
     local hash = col.cover_hash or col.coverHash or "v1"
     return cache_dir .. "/col_" .. tostring(col.id) .. "_" .. tostring(hash) .. ".jpg"
+end
+
+function StorefrontScreensavers.getLocalCollectionCover(col)
+    if not col or not col.id then return nil end
+    local cover_path = StorefrontScreensavers.getCollectionCoverPath(col)
+    local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
+    if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
+
+    if ok_lfs and lfs and lfs.attributes and lfs.attributes(cover_path, "mode") == "file" then
+        return cover_path
+    end
+
+    local info = debug.getinfo(1, "S")
+    local src = (info and info.source) and info.source:gsub("^@", "") or ""
+    local dir = src:match("^(.*[/\\])") or ""
+    local bundled_cover_candidates = {
+        dir .. "assets/collections/" .. tostring(col.id) .. ".jpg",
+        dir .. "../assets/collections/" .. tostring(col.id) .. ".jpg",
+    }
+    for _, b_path in ipairs(bundled_cover_candidates) do
+        if ok_lfs and lfs and lfs.attributes and lfs.attributes(b_path, "mode") == "file" then
+            return b_path
+        end
+    end
+    return nil
 end
 
 function StorefrontScreensavers.fetchCollectionCover(col, callback)
@@ -540,10 +566,10 @@ function StorefrontScreensavers.fetchCollectionCover(col, callback)
     end
 
     local urls_to_try = {
-        "https://raw.githubusercontent.com/ultimatejimmy/storefront-screensavers/main/images/collections/" .. tostring(col.id) .. ".jpg",
-        "https://ultimatejimmy.github.io/storefront-screensavers/images/collections/" .. tostring(col.id) .. ".jpg",
         "https://raw.githubusercontent.com/ultimatejimmy/storefront-screensavers/main/images/collections/thumbnails/" .. tostring(col.id) .. ".jpg",
         "https://ultimatejimmy.github.io/storefront-screensavers/images/collections/thumbnails/" .. tostring(col.id) .. ".jpg",
+        "https://raw.githubusercontent.com/ultimatejimmy/storefront-screensavers/main/images/collections/" .. tostring(col.id) .. ".jpg",
+        "https://ultimatejimmy.github.io/storefront-screensavers/images/collections/" .. tostring(col.id) .. ".jpg",
     }
 
     local ltn12 = require("ltn12")
@@ -735,7 +761,8 @@ function StorefrontScreensavers.getThumbnailPath(item)
     end
     local cache_dir = DataStorage:getDataDir() .. "/cache/storefront_thumbs"
     local id_str = tostring(item.id or "")
-    if id_str:match("^rb%-") then
+    local is_external_rb = (item.source == "ReaderBackdrop" and item.fullUrl and tostring(item.fullUrl):find("^https?://") ~= nil and not tostring(item.fullUrl):find("storefront%-screensavers"))
+    if is_external_rb then
         return cache_dir .. "/" .. id_str .. ".jpg", false
     end
     local cat_str = type(item.category) == "table" and table.concat(item.category, " ") or tostring(item.category or "")
@@ -775,11 +802,18 @@ function StorefrontScreensavers.fetchThumbnail(item, callback)
     if (not ok or code ~= 200) and is_transparent and item.pluginThumbnailUrl and item.thumbnailUrl and item.thumbnailUrl ~= fetch_url then
         ok, code = requestWithRedirects(item.thumbnailUrl, sink_fn)
     end
+    -- Graceful fallback: If rb- thumbnail 404'd under thumbnails/rb/, try standard thumbnails/
+    if (not ok or code ~= 200) and tostring(item.id or ""):match("^rb%-") then
+        local alt_url = string.format("%s/thumbnails/%s.%s", BASE_IMAGE_URL, tostring(item.id), item.ext or "png")
+        if alt_url ~= fetch_url and alt_url ~= item.thumbnailUrl then
+            ok, code = requestWithRedirects(alt_url, sink_fn)
+        end
+    end
 
     if ok and code == 200 then
         local raw_bytes = table.concat(img_data)
-        -- Strict guard: thumbnails from CDN should be < 250 KB. Never save large wallpaper downloads as thumbnails!
-        if #raw_bytes > 0 and #raw_bytes <= 250 * 1024 then
+        -- Strict guard: thumbnails from CDN should be <= 512 KB. Never save large wallpaper downloads as thumbnails!
+        if #raw_bytes > 0 and #raw_bytes <= 512 * 1024 then
             local tmp_path = thumb_path .. ".tmp"
             local file = io.open(tmp_path, "wb")
             if file then
@@ -876,9 +910,15 @@ function StorefrontScreensavers.fetchThumbnailAsync(item)
             if (not ok_req or code ~= 200) and is_transparent and item.pluginThumbnailUrl and item.thumbnailUrl and item.thumbnailUrl ~= fetch_url then
                 ok_req, code = requestWithRedirects(item.thumbnailUrl, sink_fn)
             end
+            if (not ok_req or code ~= 200) and tostring(item.id or ""):match("^rb%-") then
+                local alt_url = string.format("%s/thumbnails/%s.%s", BASE_IMAGE_URL, tostring(item.id), item.ext or "png")
+                if alt_url ~= fetch_url and alt_url ~= item.thumbnailUrl then
+                    ok_req, code = requestWithRedirects(alt_url, sink_fn)
+                end
+            end
             if ok_req and code == 200 then
                 local raw_bytes = table.concat(img_data)
-                if #raw_bytes > 0 and #raw_bytes <= 250 * 1024 then
+                if #raw_bytes > 0 and #raw_bytes <= 512 * 1024 then
                     local tmp_path = thumb_path .. ".tmp"
                     local file = io.open(tmp_path, "wb")
                     if file then
@@ -1092,24 +1132,29 @@ function StorefrontScreensavers.showDetails(item, parent_storefront)
     UIManager:show(dialog)
 end
 
-function StorefrontScreensavers.createCoverImageWidget(file_path, target_w, target_h)
+function StorefrontScreensavers.createCoverImageWidget(file_path, target_w, target_h, opts)
     local ImageWidget = require("ui/widget/imagewidget")
     local RenderImage = require("ui/renderimage")
     local Blitbuffer  = require("ffi/blitbuffer")
 
     if not file_path or not target_w or not target_h then return nil end
+    local max_bytes = (opts and opts.max_file_bytes) or (512 * 1024)
 
     local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
     if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
     if ok_lfs and lfs and lfs.attributes then
         local attr = lfs.attributes(file_path)
-        if not attr or attr.mode ~= "file" or (attr.size or 0) <= 0 or (attr.size or 0) > 300 * 1024 then
+        if not attr or attr.mode ~= "file" or (attr.size or 0) <= 0 or (attr.size or 0) > max_bytes then
             return nil
         end
     end
 
     local ok, orig_bb = pcall(function()
-        return RenderImage:renderImageFile(file_path, false)
+        local bb = RenderImage:renderImageFile(file_path, false, target_w * 2, target_h * 2)
+        if not bb then
+            bb = RenderImage:renderImageFile(file_path, false)
+        end
+        return bb
     end)
 
     if not ok or not orig_bb then

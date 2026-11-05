@@ -26,6 +26,21 @@ local function getAssetPath(filename)
     return dir .. "assets/" .. filename
 end
 
+local function nowSeconds()
+    if UIManager and UIManager.getTime then
+        local ok, t = pcall(UIManager.getTime, UIManager)
+        if ok and t and type(t) == "number" then return t end
+    end
+    local ok_sock, socket = pcall(require, "socket")
+    if ok_sock and socket and socket.gettime then
+        local ok, t = pcall(socket.gettime)
+        if ok and t and type(t) == "number" then return t end
+    end
+    return os.time()
+end
+
+local _active_toast = nil
+
 local StorefrontToastWidget = InputContainer:extend{
     text = "",
     timeout = 3,
@@ -33,6 +48,8 @@ local StorefrontToastWidget = InputContainer:extend{
     show_cancel = false,
     cancel_text = nil,
     cancel_callback = nil,
+    passthrough = false,
+    position = "center",
 }
 
 function StorefrontToastWidget:buildCard()
@@ -130,31 +147,69 @@ function StorefrontToastWidget:buildCard()
     self.card = card
 
     local size = card:getSize()
-    card.dimen = Geom:new{
-        x = math.floor((sw - size.w) / 2),
-        y = math.floor((sh - size.h) / 2),
-        w = size.w,
-        h = size.h,
-    }
+    if self.position == "bottom" then
+        local pad_bottom = sc(48)
+        card.dimen = Geom:new{
+            x = math.floor((sw - size.w) / 2),
+            y = sh - size.h - pad_bottom,
+            w = size.w,
+            h = size.h,
+        }
+        if cancel_btn then
+            local cb_sz = cancel_btn:getSize()
+            local cb_w = cb_sz and cb_sz.w or sc(70)
+            local cb_h = cb_sz and cb_sz.h or sc(30)
+            local cb_x = card.dimen.x + card.dimen.w - sc(16) - cb_w
+            local cb_y = card.dimen.y + math.floor((card.dimen.h - cb_h) / 2)
+            cancel_btn.dimen = Geom:new{
+                x = cb_x,
+                y = cb_y,
+                w = cb_w,
+                h = cb_h,
+            }
+        end
+        local BottomContainer = require("ui/widget/container/bottomcontainer")
+        self[1] = FrameContainer:new{
+            bordersize = 0,
+            padding = 0,
+            padding_bottom = pad_bottom,
+            width = sw,
+            height = sh,
+            BottomContainer:new{
+                dimen = Geom:new{ w = sw, h = sh },
+                CenterContainer:new{
+                    dimen = Geom:new{ w = sw, h = size.h },
+                    card,
+                }
+            }
+        }
+    else
+        card.dimen = Geom:new{
+            x = math.floor((sw - size.w) / 2),
+            y = math.floor((sh - size.h) / 2),
+            w = size.w,
+            h = size.h,
+        }
 
-    if cancel_btn then
-        local cb_sz = cancel_btn:getSize()
-        local cb_w = cb_sz and cb_sz.w or sc(70)
-        local cb_h = cb_sz and cb_sz.h or sc(30)
-        local cb_x = card.dimen.x + card.dimen.w - sc(16) - cb_w
-        local cb_y = card.dimen.y + math.floor((card.dimen.h - cb_h) / 2)
-        cancel_btn.dimen = Geom:new{
-            x = cb_x,
-            y = cb_y,
-            w = cb_w,
-            h = cb_h,
+        if cancel_btn then
+            local cb_sz = cancel_btn:getSize()
+            local cb_w = cb_sz and cb_sz.w or sc(70)
+            local cb_h = cb_sz and cb_sz.h or sc(30)
+            local cb_x = card.dimen.x + card.dimen.w - sc(16) - cb_w
+            local cb_y = card.dimen.y + math.floor((card.dimen.h - cb_h) / 2)
+            cancel_btn.dimen = Geom:new{
+                x = cb_x,
+                y = cb_y,
+                w = cb_w,
+                h = cb_h,
+            }
+        end
+
+        self[1] = CenterContainer:new{
+            dimen = Geom:new{ w = sw, h = sh },
+            card,
         }
     end
-
-    self[1] = CenterContainer:new{
-        dimen = Geom:new{ w = sw, h = sh },
-        card,
-    }
 
     return card
 end
@@ -200,7 +255,7 @@ function StorefrontToastWidget:init()
             self:close()
         end)
     end
-    self._created_at = os.clock()
+    self._created_at = nowSeconds()
 end
 
 function StorefrontToastWidget:onShow()
@@ -264,14 +319,17 @@ end
 
 function StorefrontToastWidget:onTapDismiss()
     if self.dismissable ~= false then
-        if self._created_at and (os.clock() - self._created_at) < 0.5 then
+        if not self.passthrough and self._created_at and (nowSeconds() - self._created_at) < 0.15 then
             return true
         end
-        if self._closing then return true end
+        if self._closing then return not self.passthrough end
         self._closing = true
         self:close()
         if self.dismiss_callback then
             self.dismiss_callback()
+        end
+        if self.passthrough then
+            return false
         end
         return true
     end
@@ -279,11 +337,14 @@ end
 
 function StorefrontToastWidget:onAnyKeyPressed()
     if self.dismissable ~= false then
-        if self._closing then return true end
+        if self._closing then return not self.passthrough end
         self._closing = true
         self:close()
         if self.dismiss_callback then
             self.dismiss_callback()
+        end
+        if self.passthrough then
+            return false
         end
         return true
     end
@@ -294,10 +355,14 @@ function StorefrontToastWidget:onTap()
 end
 
 function StorefrontToastWidget:close()
+    if self == _active_toast then
+        _active_toast = nil
+    end
     if self._timer then
         UIManager:unschedule(self._timer)
         self._timer = nil
     end
+    self._closing = true
     UIManager:close(self)
 end
 
@@ -370,6 +435,14 @@ function StorefrontToast.show(text, timeout, opts)
     if opts.dismissable == false then
         dismissable = false
     end
+
+    if _active_toast and not _active_toast.show_cancel then
+        pcall(function()
+            _active_toast:close()
+        end)
+        _active_toast = nil
+    end
+
     local toast = StorefrontToastWidget:new{
         text = text or "",
         timeout = timeout or 3,
@@ -378,7 +451,10 @@ function StorefrontToast.show(text, timeout, opts)
         show_cancel = opts.show_cancel == true,
         cancel_text = opts.cancel_text or _("Cancel"),
         cancel_callback = opts.cancel_callback,
+        passthrough = opts.passthrough == true,
+        position = opts.position or "center",
     }
+    _active_toast = toast
     UIManager:show(toast)
     if type(UIManager.forceRePaint) == "function" then
         UIManager:forceRePaint()

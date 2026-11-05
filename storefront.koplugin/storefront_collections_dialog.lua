@@ -42,8 +42,19 @@ function StorefrontCollectionsDialog.show(Storefront, on_close_callback)
     local current_page = 1
     local ITEMS_PER_PAGE = 2
     local active_collections = {}
+    local active_cover_widgets = {}
+
+    local function freeActiveCoverWidgets()
+        for _, w in ipairs(active_cover_widgets) do
+            if w and w.free then
+                pcall(function() w:free() end)
+            end
+        end
+        active_cover_widgets = {}
+    end
 
     local function closeDialog()
+        freeActiveCoverWidgets()
         if overlay then
             local ov = overlay
             overlay = nil
@@ -293,6 +304,7 @@ function StorefrontCollectionsDialog.show(Storefront, on_close_callback)
     local downloadAllInCollection = StorefrontCollectionsDialog.downloadAllInCollection
 
     local function renderDialog()
+        freeActiveCoverWidgets()
         if overlay then
             local ov = overlay
             overlay = nil
@@ -337,6 +349,7 @@ function StorefrontCollectionsDialog.show(Storefront, on_close_callback)
             padding = sc(8),
             padding_h = sc(14),
             background = Blitbuffer.COLOR_WHITE,
+            allow_flash = false,
             callback = closeDialog,
         }
 
@@ -405,13 +418,17 @@ function StorefrontCollectionsDialog.show(Storefront, on_close_callback)
 
             for i = start_idx, end_idx do
                 local col = collections[i]
-                local cover_path = StorefrontScreensavers.fetchCollectionCover(col)
+                local cover_path = StorefrontScreensavers.getLocalCollectionCover and StorefrontScreensavers.getLocalCollectionCover(col)
+                if not cover_path then
+                    cover_path = StorefrontScreensavers.fetchCollectionCover(col)
+                end
 
                 local cover_widget
                 if cover_path then
                     local ok_cov, res_cov = pcall(StorefrontScreensavers.createCoverImageWidget, cover_path, thumb_w, thumb_h)
                     if ok_cov and res_cov then
                         cover_widget = res_cov
+                        table.insert(active_cover_widgets, res_cov)
                     end
                 end
 
@@ -421,18 +438,25 @@ function StorefrontCollectionsDialog.show(Storefront, on_close_callback)
                     local src = (info and info.source) and info.source:gsub("^@", "") or ""
                     local dir = src:match("^(.*[/\\])") or ""
                     local layers_path = dir .. "assets/layers.svg"
+                    local ok_img, icon_w = pcall(function()
+                        return ImageWidget:new{
+                            file = layers_path,
+                            width = sc(48),
+                            height = sc(48),
+                            scale_factor = 0,
+                            is_icon = true,
+                        }
+                    end)
+                    if ok_img and icon_w then
+                        table.insert(active_cover_widgets, icon_w)
+                    end
                     cover_widget = FrameContainer:new{
                         bordersize = 0,
                         background = Blitbuffer.Color8(235),
                         padding = 0,
                         CenterContainer:new{
                             dimen = Geom:new{ w = thumb_w, h = thumb_h },
-                            ImageWidget:new{
-                                file = layers_path,
-                                width = sc(48),
-                                height = sc(48),
-                                is_icon = true,
-                            }
+                            (ok_img and icon_w) or TextWidget:new{ text = _("Collection"), face = Font:getFace("cfont", 14) },
                         }
                     }
                 end
@@ -706,6 +730,7 @@ function StorefrontCollectionsDialog.show(Storefront, on_close_callback)
         end
 
         overlay.onClose = function()
+            freeActiveCoverWidgets()
             overlay = nil
             if on_close_callback then
                 on_close_callback()
@@ -719,14 +744,17 @@ function StorefrontCollectionsDialog.show(Storefront, on_close_callback)
     -- Render immediately from local cache / bundled collections
     renderDialog()
 
-    -- Asynchronously fetch latest feed in background and update dialog if changed
-    UIManager:nextTick(function()
-        StorefrontScreensavers.fetchCollections(function(ok, updated_data)
-            if ok and overlay then
-                renderDialog()
-            end
+    -- Asynchronously fetch latest feed in background and update dialog only if changed
+    local is_low_mem = StorefrontUtils and StorefrontUtils.isLowMemory and StorefrontUtils.isLowMemory()
+    if not is_low_mem then
+        UIManager:nextTick(function()
+            StorefrontScreensavers.fetchCollections(function(ok, updated_data, changed)
+                if ok and changed and overlay then
+                    renderDialog()
+                end
+            end)
         end)
-    end)
+    end
 end
 
 return StorefrontCollectionsDialog

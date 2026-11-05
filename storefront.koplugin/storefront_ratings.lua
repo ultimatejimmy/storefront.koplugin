@@ -428,7 +428,7 @@ function StorefrontRatings.fetchRatings(callback, force_refresh)
                     return
                 end
 
-                if ffiutil.isSubProcessDone(pid) then
+                if ffiutil.isSubProcessDone(pid, true) then
                     is_fetching = false
                     untrackActiveRequest(req)
                     local read_func = ffiutil.readAllFromFD or ffiutil.readFromFD
@@ -439,7 +439,6 @@ function StorefrontRatings.fetchRatings(callback, force_refresh)
                             return read_func(pid)
                         end
                     end)
-                    terminateAndCleanupSubProcess(nil, parent_read_fd)
                     if ok_read and type(raw_msg) == "string" and raw_msg ~= "" then
                         local ok_dec, res_data = pcall(json.decode, raw_msg)
                         if ok_dec and res_data and res_data.ok and type(res_data.result) == "table" then
@@ -962,7 +961,6 @@ function StorefrontRatings.submitVote(item_or_id, direction, item_kind, callback
                                 return read_func(pid)
                             end
                         end)
-                        terminateAndCleanupSubProcess(nil, parent_read_fd)
                         if ok_read and type(raw_msg) == "string" and raw_msg ~= "" then
                             local ok_dec, res_data = pcall(json.decode, raw_msg)
                             if ok_dec and res_data and res_data.ok then
@@ -1184,7 +1182,6 @@ function StorefrontRatings.trackDownload(item_or_id, item_kind, callback)
                                 return read_func(pid)
                             end
                         end)
-                        terminateAndCleanupSubProcess(nil, parent_read_fd)
                         if ok_read and type(raw_msg) == "string" and raw_msg ~= "" then
                             local ok_dec, res_data = pcall(json.decode, raw_msg)
                             if ok_dec and res_data and res_data.ok then
