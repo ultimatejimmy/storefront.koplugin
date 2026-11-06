@@ -1804,6 +1804,43 @@ if ok_browser then
             check("collectUpdateSummary rejects non-semver scoped release tag (#5088)", sum_sake_test.updates, 0)
         end
 
+        do
+            -- Test that when installed version is 1.0.0 and catalog has 1.0.4, update is detected (#5088)
+            local mock_sake_plugin = { dirname = "sake.koplugin", path = "/dummy/sake.koplugin", version = "1.0.0" }
+            MainStorefront.listInstalledPlugins = function() return { mock_sake_plugin } end
+            MainStorefront.updates_state = { remote_info = {} }
+            local orig_getRepoByName = Cache.getRepoByName
+            Cache.getRepoByName = function(owner, repo)
+                if owner == "Sudashiii" and repo == "Sake" then
+                    return {
+                        owner = "Sudashiii",
+                        repo = "Sake",
+                        version = "1.0.4",
+                        latest_release = {
+                            tag_name = "webapp/v2026.07.10.1",
+                            version = "1.0.4"
+                        }
+                    }
+                end
+                return orig_getRepoByName and orig_getRepoByName(owner, repo)
+            end
+            InstallStore.list = function()
+                return {
+                    ["sake.koplugin"] = {
+                        owner = "Sudashiii",
+                        repo = "Sake",
+                        version = "1.0.0",
+                        installed_version = "1.0.0",
+                        tag_name = "webapp/v2026.07.10.1"
+                    }
+                }
+            end
+            MainStorefront._cached_plugin_summary = nil
+            local sum_sake_update = MainStorefront:collectUpdateSummary()
+            check("collectUpdateSummary detects 1.0.0 -> 1.0.4 update via catalog fallback (#5088)", sum_sake_update.updates, 1)
+            Cache.getRepoByName = orig_getRepoByName
+        end
+
         -- Test promptPluginInstallOptions with release_override and multiple assets
         local test_repo = { name = "multi_asset_plugin", owner = "testowner" }
         local test_release_override = {

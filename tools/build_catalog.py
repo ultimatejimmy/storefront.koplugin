@@ -313,13 +313,21 @@ def process_single_repo(repo_item, is_patch):
             if not is_valid_version_tag(parsed_stable.get("tag_name")):
                 meta_ver = fetch_plugin_meta_version(owner, repo_name, default_branch)
                 if meta_ver:
+                    parsed_stable["release_tag_name"] = parsed_stable["tag_name"]
                     parsed_stable["version"] = meta_ver
+                    parsed_stable["tag_name"] = f"v{meta_ver}"
                     record["version"] = meta_ver
             record["latest_release"] = parsed_stable
 
     if prerelease_rel:
         parsed_pre = parse_release_dict(prerelease_rel)
         if parsed_pre and (not parsed_stable or parsed_pre.get("tag_name") != parsed_stable.get("tag_name")):
+            if not is_valid_version_tag(parsed_pre.get("tag_name")):
+                meta_ver = fetch_plugin_meta_version(owner, repo_name, default_branch)
+                if meta_ver:
+                    parsed_pre["release_tag_name"] = parsed_pre["tag_name"]
+                    parsed_pre["version"] = meta_ver
+                    parsed_pre["tag_name"] = f"v{meta_ver}"
             record["latest_prerelease"] = parsed_pre
 
     if is_patch:

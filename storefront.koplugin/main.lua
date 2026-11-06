@@ -1815,9 +1815,18 @@ function Storefront:populateRemoteInfoFromCatalog()
                         cat_rel = pre_rel
                     end
                 end
-                local cat_tag = (cat_rel and cat_rel.tag_name)
-                    or cached_repo.version
-                    or (cached_repo.data and (cached_repo.data.version or cached_repo.data.tag_name or cached_repo.data.latest_version))
+                local cat_tag
+                if cat_rel then
+                    if cat_rel.version and parseVersionFromTag(cat_rel.version) then
+                        cat_tag = cat_rel.version
+                    elseif cat_rel.tag_name and parseVersionFromTag(cat_rel.tag_name) then
+                        cat_tag = cat_rel.tag_name
+                    end
+                end
+                if not cat_tag then
+                    cat_tag = cached_repo.version
+                        or (cached_repo.data and (cached_repo.data.version or cached_repo.data.tag_name or cached_repo.data.latest_version))
+                end
                 local cat_published = cat_rel and cat_rel.published_at
 
                 if cat_tag and isPreReleaseTag(cat_tag) and not allow_prerelease then
@@ -2152,9 +2161,18 @@ function Storefront:collectUpdateSummary()
                         cat_rel = pre_rel
                     end
                 end
-                local cat_tag = (cat_rel and cat_rel.tag_name)
-                    or cached_repo.version
-                    or (cached_repo.data and (cached_repo.data.version or cached_repo.data.tag_name or cached_repo.data.latest_version))
+                local cat_tag
+                if cat_rel then
+                    if cat_rel.version and parseVersionFromTag(cat_rel.version) then
+                        cat_tag = cat_rel.version
+                    elseif cat_rel.tag_name and parseVersionFromTag(cat_rel.tag_name) then
+                        cat_tag = cat_rel.tag_name
+                    end
+                end
+                if not cat_tag then
+                    cat_tag = cached_repo.version
+                        or (cached_repo.data and (cached_repo.data.version or cached_repo.data.tag_name or cached_repo.data.latest_version))
+                end
                 local cat_published = cat_rel and cat_rel.published_at
 
                 local pushed_at_str = (cached_repo.data and (cached_repo.data.pushed_at or cached_repo.data.updated_at))
@@ -3938,8 +3956,10 @@ local function fetchRemoteVersionCore(record)
 
     if latest_release and latest_release.tag_name then
         local release_version = parseVersionFromTag(latest_release.tag_name)
-        local release_ts = parseGitHubTimestamp(latest_release.published_at)
-        return release_version, release_ts, nil, latest_release.tag_name
+        if release_version then
+            local release_ts = parseGitHubTimestamp(latest_release.published_at)
+            return release_version, release_ts, nil, latest_release.tag_name
+        end
     end
 
     local meta_candidates = buildMetaPathCandidates(record)

@@ -364,16 +364,24 @@ function StorefrontDetailsDialog:init()
     end
 
     if not version_str and self.repo then
-        version_str = self.repo.latest_version or self.repo.version or self.repo.tag_name or self.repo.release_tag
+        local function getValidTag(tag)
+            if tag and StorefrontUtils and StorefrontUtils.isValidVersion and not StorefrontUtils.isValidVersion(tag) then
+                return nil
+            end
+            return tag
+        end
+        local rel_tag = self.repo.latest_release and getValidTag(self.repo.latest_release.tag_name)
+        version_str = self.repo.version or self.repo.latest_version or rel_tag or self.repo.tag_name or self.repo.release_tag
         if not version_str and self.repo.latest_release and type(self.repo.latest_release) == "table" then
-            version_str = self.repo.latest_release.tag_name or self.repo.latest_release.release_tag_name or self.repo.latest_release.name or self.repo.latest_release.version
+            version_str = self.repo.latest_release.version or rel_tag or self.repo.latest_release.release_tag_name or self.repo.latest_release.name
         end
         if not version_str and self.repo.data then
             if type(self.repo.data.latest_release) == "table" then
-                version_str = self.repo.data.latest_release.tag_name or self.repo.data.latest_release.release_tag_name or self.repo.data.latest_release.name or self.repo.data.latest_release.version
+                local data_rel_tag = getValidTag(self.repo.data.latest_release.tag_name)
+                version_str = self.repo.data.latest_release.version or data_rel_tag or self.repo.data.latest_release.release_tag_name or self.repo.data.latest_release.name
             end
             if not version_str then
-                version_str = self.repo.data.tag_name or self.repo.data.latest_version or self.repo.data.version
+                version_str = self.repo.data.version or self.repo.data.latest_version or getValidTag(self.repo.data.tag_name)
             end
         end
     end

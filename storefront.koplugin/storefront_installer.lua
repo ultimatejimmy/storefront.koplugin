@@ -1682,11 +1682,13 @@ function M:init(Storefront)
                     return
                 end
 
-                local tag_name = (release and release.tag_name and release.tag_name ~= "") and release.tag_name or nil
+                local tag_name = (release and release.release_tag_name and release.release_tag_name ~= "") and release.release_tag_name
+                    or ((release and release.tag_name and release.tag_name ~= "") and release.tag_name or nil)
                 local download_url = (release and release.zipball_url) or (tag_name and string.format("https://github.com/%s/%s/archive/refs/tags/%s.zip", owner, repo.name, tag_name))
                 
                 if download_url then
-                    local source_code_name = string.format("Source code (%s.zip)", tag_name or "latest")
+                    local display_tag = (release and (release.version or release.tag_name)) or tag_name or "latest"
+                    local source_code_name = string.format("Source code (%s.zip)", display_tag)
                     self.pending_install_context = saved_ctx
                     self:installPluginFromReleaseAsset(repo, release or { tag_name = tag_name }, {
                         name = source_code_name,
