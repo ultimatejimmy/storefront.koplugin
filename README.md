@@ -20,7 +20,8 @@ Storefront surfaces a curated list of plugins and patches from GitHub with filte
 - **Per-entry README viewer** that fetches `README.md` directly from GitHub and displays it in the plugin.
 - **Install/update pipeline** that handles `.koplugin` archives, verifies metadata, and copies files to the correct locations.
 - **Update tracking** for installed plugins and numbered patch files, complete with SHA comparisons and refreshable summaries.
-- **Versions tab** showing all published releases for any plugin or patch, with per-version installation, ignoring, and pre-release filtering.
+- **Versions tab & Git branch tracking** showing all published releases with per-version installation, pre-release filtering, and direct installation/tracking from Git branches.
+- **Storefront Blueprints** to export, share via 6-character cloud codes, and replicate complete setups across devices.
 - **Multilingual**: Available in English, German, French, Spanish, Brazilian Portuguese, Russian, Ukrainian, Turkish, Simplified Chinese, Dutch, Hungarian, Polish, Indonesian, Arabic, Italian, Serbian, Slovak, Korean, and Japanese.
 - **Optional authentication** through a GitHub Personal Access Token (PAT) to increase API rate limits.
 
@@ -58,6 +59,7 @@ Detailed guides available on the wiki:
 * [5. Troubleshooting](https://github.com/ultimatejimmy/storefront.koplugin/wiki/5.-Troubleshooting)
 * [6. Settings Guide](https://github.com/ultimatejimmy/storefront.koplugin/wiki/6.-Settings)
 * [7. Advanced Configuration (GitHub PAT setup)](https://github.com/ultimatejimmy/storefront.koplugin/wiki/7.-Advanced-Configuration)
+* [8. Blueprints (Export, Share & Backup)](https://github.com/ultimatejimmy/storefront.koplugin/wiki/8.-Blueprints)
 
 
 ## Support me

@@ -68,20 +68,20 @@ function storefront_utils.firstNonEmpty(...)
 end
 
 local function parseVersionDescriptor(v_str)
-    v_str = tostring(v_str):gsub("^[vV]", "")
-    local main_str, pre_str = v_str:match("^([%d%.]+)%-?(.*)$")
-    if not main_str or main_str == "" then
-        main_str = v_str
-        pre_str = ""
+    if not v_str then
+        return { nums = {}, pre = nil }
     end
-
+    v_str = tostring(v_str):gsub("^release%-?", ""):gsub("^version%-?", ""):gsub("^plugin%-?", ""):gsub("^[vV]%-?", "")
+    local main_str, pre_str = v_str:match("^([%d%.]+)%-?(.*)$")
     local nums = {}
-    for part in main_str:gmatch("%d+") do
-        table.insert(nums, tonumber(part) or 0)
+    if main_str and main_str ~= "" then
+        for part in main_str:gmatch("%d+") do
+            table.insert(nums, tonumber(part) or 0)
+        end
     end
 
     local pre_info = nil
-    if pre_str and pre_str ~= "" then
+    if main_str and pre_str and pre_str ~= "" then
         local pre_type, pre_num = pre_str:match("^([a-zA-Z]+)(%d*)$")
         if not pre_type then
             pre_type = pre_str
@@ -107,6 +107,16 @@ local function parseVersionDescriptor(v_str)
     }
 end
 
+storefront_utils.parseVersionDescriptor = parseVersionDescriptor
+
+function storefront_utils.isValidVersion(v_str)
+    if not v_str or v_str == "" then
+        return false
+    end
+    local d = parseVersionDescriptor(v_str)
+    return #d.nums > 0
+end
+
 --- Compares two git commit/blob SHAs to determine if they refer to different commits.
 -- Handles short SHAs (7+ hex chars), case insensitivity, and surrounding whitespace.
 -- If either SHA is missing or empty, returns false (cannot determine difference).
@@ -130,14 +140,18 @@ function storefront_utils.isVersionNewer(v1_str, v2_str)
     if not v1_str or not v2_str then
         return false
     end
-    v1_str = tostring(v1_str):gsub("^[vV]", "")
-    v2_str = tostring(v2_str):gsub("^[vV]", "")
+    v1_str = tostring(v1_str)
+    v2_str = tostring(v2_str)
     if v1_str == v2_str then
         return false
     end
 
     local d1 = parseVersionDescriptor(v1_str)
     local d2 = parseVersionDescriptor(v2_str)
+
+    if #d1.nums == 0 or #d2.nums == 0 then
+        return false
+    end
 
     local max_len = math.max(#d1.nums, #d2.nums)
     for i = 1, max_len do

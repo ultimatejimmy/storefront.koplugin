@@ -11,6 +11,7 @@ import os
 import sys
 import json
 import time
+import re
 import urllib.request
 import urllib.parse
 from datetime import datetime, timezone
@@ -110,6 +111,42 @@ def is_prerelease_tag(tag):
         if kw in tag_lower:
             return True
     return False
+
+def is_valid_version_tag(tag):
+    if not tag or not isinstance(tag, str):
+        return False
+    cleaned = tag.strip()
+    for prefix in ["release-", "release_", "version-", "version_", "plugin-", "plugin_"]:
+        if cleaned.lower().startswith(prefix):
+            cleaned = cleaned[len(prefix):]
+    if cleaned.lower().startswith("v") and len(cleaned) > 1 and cleaned[1].isdigit():
+        cleaned = cleaned[1:]
+    return bool(cleaned and cleaned[0].isdigit())
+
+def fetch_plugin_meta_version(owner, repo, default_branch="main"):
+    branches = [default_branch]
+    for b in ["main", "master", "HEAD"]:
+        if b not in branches:
+            branches.append(b)
+
+    for branch in branches:
+        url = f"{BASE_URL}/repos/{owner}/{repo}/git/trees/{branch}?recursive=1"
+        res = make_request(url)
+        if res and "tree" in res and isinstance(res["tree"], list):
+            for item in res["tree"]:
+                path = item.get("path", "")
+                if path.endswith("_meta.lua"):
+                    raw_url = f"https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}"
+                    try:
+                        req = urllib.request.Request(raw_url, headers={"User-Agent": USER_AGENT})
+                        with urllib.request.urlopen(req, timeout=5) as resp:
+                            body = resp.read().decode("utf-8", errors="replace")
+                            m = re.search(r'version\s*=\s*["\']([^"\']+)["\']', body)
+                            if m:
+                                return m.group(1).strip()
+                    except Exception:
+                        pass
+    return None
 
 def parse_release_dict(rel):
     if not rel or not isinstance(rel, dict) or "tag_name" not in rel:
@@ -237,7 +274,10 @@ def process_single_repo(repo_item, is_patch):
         for r in releases:
             if not r or not isinstance(r, dict) or r.get("draft"):
                 continue
-            is_pre = r.get("prerelease") or is_prerelease_tag(r.get("tag_name"))
+            tag = r.get("tag_name")
+            if not is_valid_version_tag(tag):
+                continue
+            is_pre = r.get("prerelease") or is_prerelease_tag(tag)
             if is_pre:
                 if not prerelease_rel:
                     prerelease_rel = r
@@ -247,16 +287,34 @@ def process_single_repo(repo_item, is_patch):
             if stable_rel and prerelease_rel:
                 break
 
-    # Fall back to latest release endpoint if no stable release was found in releases list
+    # Fall back to latest release endpoint if no stable release with valid version tag was found
     if not stable_rel:
         latest = get_latest_release(owner, repo_name)
-        if latest and not latest.get("draft") and not latest.get("prerelease") and not is_prerelease_tag(latest.get("tag_name")):
-            stable_rel = latest
+        if latest and not latest.get("draft") and not latest.get("prerelease"):
+            tag = latest.get("tag_name")
+            if not is_prerelease_tag(tag) and is_valid_version_tag(tag):
+                stable_rel = latest
+
+    # Fall back to non-version scoped tags for download capability (e.g. monorepo webapp tags)
+    if not stable_rel and not prerelease_rel and releases and isinstance(releases, list) and len(releases) > 0:
+        for r in releases:
+            if r and isinstance(r, dict) and not r.get("draft"):
+                stable_rel = r
+                break
+        if not stable_rel:
+            latest = get_latest_release(owner, repo_name)
+            if latest and not latest.get("draft"):
+                stable_rel = latest
 
     parsed_stable = None
     if stable_rel:
         parsed_stable = parse_release_dict(stable_rel)
         if parsed_stable:
+            if not is_valid_version_tag(parsed_stable.get("tag_name")):
+                meta_ver = fetch_plugin_meta_version(owner, repo_name, default_branch)
+                if meta_ver:
+                    parsed_stable["version"] = meta_ver
+                    record["version"] = meta_ver
             record["latest_release"] = parsed_stable
 
     if prerelease_rel:

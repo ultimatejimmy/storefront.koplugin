@@ -1783,6 +1783,27 @@ if ok_browser then
         local sum_date_test = MainStorefront:collectUpdateSummary()
         check("collectUpdateSummary detects update for date-based versions", sum_date_test.updates, 1)
 
+        do
+            -- Test non-semver scoped release tag (e.g. webapp/vYYYY.MM.DD.N) does NOT trigger false update (#5088)
+            local mock_sake_plugin = { dirname = "sake.koplugin", path = "/dummy/sake.koplugin", version = "1.0.4" }
+            MainStorefront.listInstalledPlugins = function() return { mock_sake_plugin } end
+            MainStorefront.updates_state = { remote_info = { ["sake.koplugin"] = { release_tag_name = "webapp/v2026.07.10.1" } } }
+            InstallStore.list = function()
+                return {
+                    ["sake.koplugin"] = {
+                        owner = "Sudashiii",
+                        repo = "Sake",
+                        version = "1.0.4",
+                        installed_version = "1.0.4",
+                        tag_name = "webapp/v2026.07.10.1"
+                    }
+                }
+            end
+            MainStorefront._cached_plugin_summary = nil
+            local sum_sake_test = MainStorefront:collectUpdateSummary()
+            check("collectUpdateSummary rejects non-semver scoped release tag (#5088)", sum_sake_test.updates, 0)
+        end
+
         -- Test promptPluginInstallOptions with release_override and multiple assets
         local test_repo = { name = "multi_asset_plugin", owner = "testowner" }
         local test_release_override = {

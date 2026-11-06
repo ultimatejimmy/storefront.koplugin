@@ -1824,6 +1824,10 @@ function Storefront:populateRemoteInfoFromCatalog()
                     cat_tag = nil
                 end
 
+                if cat_tag and not parseVersionFromTag(cat_tag) then
+                    cat_tag = nil
+                end
+
                 if cat_tag then
                     local existing = remote_info[plugin.dirname]
                     local should_set = not existing
@@ -2162,7 +2166,8 @@ function Storefront:collectUpdateSummary()
                     -- unless the plugin explicitly allows prereleases.
                     local existing_tag = remote and remote.release_tag_name
                     local cat_is_prerelease = isPreReleaseTag(cat_tag)
-                    local catalog_tag_is_usable = not cat_is_prerelease or allow_pre_for_plugin
+                    local cat_is_valid = parseVersionFromTag(cat_tag) ~= nil
+                    local catalog_tag_is_usable = cat_is_valid and (not cat_is_prerelease or allow_pre_for_plugin)
 
                     local should_use_catalog = catalog_tag_is_usable and (
                         not existing_tag
@@ -2257,7 +2262,7 @@ function Storefront:collectUpdateSummary()
                         else
                             has_update = isVersionNewer(raw_tag, raw_local)
                         end
-                    elseif release_ts > 0 and local_latest_ts > 0 then
+                    elseif release_ts > 0 and local_latest_ts > 0 and StorefrontUtils.isValidVersion(release_tag) then
                         has_update = release_ts > local_latest_ts
                     end
                 end
