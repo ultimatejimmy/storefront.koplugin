@@ -12,6 +12,7 @@ import sys
 import json
 import time
 import re
+import argparse
 import urllib.request
 import urllib.parse
 from datetime import datetime, timezone
@@ -35,10 +36,14 @@ PATCH_QUERIES = [
 
 rate_limit_errors = 0
 MAX_RATE_LIMIT_ERRORS = 3
+rate_limit_remaining = None
 
 def make_request(url):
-    global rate_limit_errors
+    global rate_limit_errors, rate_limit_remaining
     if rate_limit_errors >= MAX_RATE_LIMIT_ERRORS:
+        return None
+    if rate_limit_remaining is not None and rate_limit_remaining < 20:
+        print(f"Notice: GitHub API rate limit critically low ({rate_limit_remaining} left). Halting new API queries.", file=sys.stderr)
         return None
         
     req = urllib.request.Request(url)
@@ -49,14 +54,25 @@ def make_request(url):
     
     try:
         with urllib.request.urlopen(req) as resp:
+            rem = resp.headers.get("x-ratelimit-remaining")
+            if rem is not None:
+                try:
+                    rate_limit_remaining = int(rem)
+                    if rate_limit_remaining < 100 and rate_limit_remaining % 25 == 0:
+                        print(f"Notice: GitHub API rate limit low: {rate_limit_remaining} requests remaining.", file=sys.stderr)
+                except (ValueError, TypeError):
+                    pass
             data = resp.read().decode("utf-8")
             rate_limit_errors = 0  # reset on success
             return json.loads(data)
     except urllib.error.HTTPError as e:
         if e.code in (403, 429):
             rate_limit_errors += 1
+            rem = e.headers.get("x-ratelimit-remaining")
+            reset_ts = e.headers.get("x-ratelimit-reset")
+            print(f"Rate limit reached ({e.code}, remaining={rem}, reset={reset_ts}).", file=sys.stderr)
             if rate_limit_errors >= MAX_RATE_LIMIT_ERRORS:
-                print(f"Rate limit reached ({e.code}). Skipping further API calls in this run.", file=sys.stderr)
+                print("Skipping further API calls in this run.", file=sys.stderr)
             return None
         if e.code == 401 and GITHUB_TOKEN:
             req2 = urllib.request.Request(url)
@@ -228,7 +244,7 @@ def check_wiki_content(owner, repo):
             continue
     return False
 
-def process_single_repo(repo_item, is_patch):
+def process_single_repo(repo_item, is_patch, existing_record=None):
     owner = repo_item.get("owner", {}).get("login", "")
     repo_name = repo_item.get("name", "")
     full_name = repo_item.get("full_name", f"{owner}/{repo_name}")
@@ -239,7 +255,7 @@ def process_single_repo(repo_item, is_patch):
 
     # Exclude 0-star forks completely
     if is_fork and stars == 0:
-        return None
+        return None, False
 
     # Check wiki content
     has_wiki_feature = repo_item.get("has_wiki", False)
@@ -266,6 +282,22 @@ def process_single_repo(repo_item, is_patch):
         "html_url": repo_item.get("html_url") or f"https://github.com/{full_name}",
     }
 
+    # Incremental cache check: if repo git refs haven't been pushed since cached run,
+    # reuse existing releases/patches (0 API requests)
+    curr_pushed = record["pushed_at"]
+    if existing_record and curr_pushed and existing_record.get("pushed_at") == curr_pushed:
+        if is_patch and existing_record.get("patch_files"):
+            record["patch_files"] = existing_record["patch_files"]
+            return record, True
+        elif not is_patch and ("latest_release" in existing_record or "latest_prerelease" in existing_record):
+            if "latest_release" in existing_record:
+                record["latest_release"] = existing_record["latest_release"]
+            if "latest_prerelease" in existing_record:
+                record["latest_prerelease"] = existing_record["latest_prerelease"]
+            if "version" in existing_record:
+                record["version"] = existing_record["version"]
+            return record, True
+
     releases = get_releases(owner, repo_name)
     stable_rel = None
     prerelease_rel = None
@@ -287,8 +319,9 @@ def process_single_repo(repo_item, is_patch):
             if stable_rel and prerelease_rel:
                 break
 
-    # Fall back to latest release endpoint if no stable release with valid version tag was found
-    if not stable_rel:
+    # Fall back to latest release endpoint only if releases query was not fetched/failed,
+    # NOT if releases was fetched and legitimately empty ([])
+    if not stable_rel and releases is None:
         latest = get_latest_release(owner, repo_name)
         if latest and not latest.get("draft") and not latest.get("prerelease"):
             tag = latest.get("tag_name")
@@ -301,7 +334,7 @@ def process_single_repo(repo_item, is_patch):
             if r and isinstance(r, dict) and not r.get("draft"):
                 stable_rel = r
                 break
-        if not stable_rel:
+        if not stable_rel and releases is None:
             latest = get_latest_release(owner, repo_name)
             if latest and not latest.get("draft"):
                 stable_rel = latest
@@ -333,16 +366,30 @@ def process_single_repo(repo_item, is_patch):
     if is_patch:
         patch_files = fetch_patch_files(owner, repo_name, default_branch)
         if not patch_files:
-            return None  # Drop empty patch repos
+            if existing_record and existing_record.get("patch_files"):
+                record["patch_files"] = existing_record["patch_files"]
+                return record, True
+            return None, False  # Drop empty patch repos
         record["patch_files"] = patch_files
     else:
         # Require plugins to have at least one usable release or pre-release
         if "latest_release" not in record and "latest_prerelease" not in record:
-            return None
+            if existing_record and ("latest_release" in existing_record or "latest_prerelease" in existing_record):
+                # Fall back to existing cached record if transient API error/rate-limit hit
+                if "latest_release" in existing_record:
+                    record["latest_release"] = existing_record["latest_release"]
+                if "latest_prerelease" in existing_record:
+                    record["latest_prerelease"] = existing_record["latest_prerelease"]
+                if "version" in existing_record:
+                    record["version"] = existing_record["version"]
+                return record, True
+            return None, False
 
-    return record
+    return record, False
 
-def process_repos(queries, is_patch=False):
+def process_repos(queries, is_patch=False, existing_by_id=None):
+    if existing_by_id is None:
+        existing_by_id = {}
     repo_map = {}
     for q in queries:
         items = search_repositories(q)
@@ -353,27 +400,78 @@ def process_repos(queries, is_patch=False):
     
     print(f"Fetching details for {len(repo_map)} repositories (parallel)...")
     processed = []
+    cached_hits = 0
+    fresh_fetches = 0
     with ThreadPoolExecutor(max_workers=10) as executor:
-        futures = [executor.submit(process_single_repo, repo, is_patch) for repo in repo_map.values()]
+        futures = {
+            executor.submit(process_single_repo, repo, is_patch, existing_by_id.get(repo.get("id"))): repo
+            for repo in repo_map.values()
+        }
         for future in as_completed(futures):
             try:
-                res = future.result()
+                res, from_cache = future.result()
                 if res:
                     processed.append(res)
+                    if from_cache:
+                        cached_hits += 1
+                    else:
+                        fresh_fetches += 1
             except Exception as e:
-                print(f"Error processing repo: {e}", file=sys.stderr)
+                repo = futures[future]
+                existing = existing_by_id.get(repo.get("id"))
+                if existing:
+                    processed.append(existing)
+                    cached_hits += 1
+                else:
+                    print(f"Error processing repo: {e}", file=sys.stderr)
                 
     # Sort deterministically by stars desc, then name
     processed.sort(key=lambda r: (-r.get("stars", 0), r.get("name", "").lower()))
+    print(f"Processed {len(processed)} repositories ({cached_hits} reused from cache, {fresh_fetches} fetched remotely)")
     return processed
 
 def main():
+    parser = argparse.ArgumentParser(description="Build KOReader Storefront catalog")
+    parser.add_argument("--force", action="store_true", help="Force full rebuild ignoring cached pushed_at")
+    args, _ = parser.parse_known_args()
+    force_refresh = args.force or os.environ.get("FORCE_REFRESH") == "1"
+
     print("=== KOReader Storefront Catalog Builder ===")
+    if force_refresh:
+        print("Notice: Full rebuild forced (--force / FORCE_REFRESH=1)")
     start_time = time.time()
-    
-    plugins = process_repos(PLUGIN_QUERIES, is_patch=False)
-    patches = process_repos(PATCH_QUERIES, is_patch=True)
-    
+
+    script_dir = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() else os.getcwd()
+    output_path = os.path.abspath(os.path.join(script_dir, "..", "catalog.json"))
+
+    existing_plugins_by_id = {}
+    existing_patches_by_id = {}
+    existing_fonts = []
+
+    if os.path.exists(output_path):
+        try:
+            with open(output_path, "r", encoding="utf-8") as f:
+                old_catalog = json.load(f)
+                if not force_refresh:
+                    if "plugins" in old_catalog:
+                        for p in old_catalog["plugins"]:
+                            p_id = p.get("id") or p.get("repo_id")
+                            if p_id:
+                                existing_plugins_by_id[p_id] = p
+                    if "patches" in old_catalog:
+                        for p in old_catalog["patches"]:
+                            p_id = p.get("id") or p.get("repo_id")
+                            if p_id:
+                                existing_patches_by_id[p_id] = p
+                    print(f"Loaded existing catalog cache ({len(existing_plugins_by_id)} plugins, {len(existing_patches_by_id)} patches)")
+                if "fonts" in old_catalog:
+                    existing_fonts = old_catalog["fonts"]
+        except Exception as e:
+            print(f"Warning: could not read existing catalog cache: {e}")
+
+    plugins = process_repos(PLUGIN_QUERIES, is_patch=False, existing_by_id=existing_plugins_by_id)
+    patches = process_repos(PATCH_QUERIES, is_patch=True, existing_by_id=existing_patches_by_id)
+
     try:
         from ratings_tally import fetch_all_ratings
         ratings_data = fetch_all_ratings() or {}
@@ -412,18 +510,6 @@ def main():
         item["downloads"] = int(r_info.get("downloads", 0))
 
     now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    script_dir = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() else os.getcwd()
-    output_path = os.path.abspath(os.path.join(script_dir, "..", "catalog.json"))
-    
-    existing_fonts = []
-    if os.path.exists(output_path):
-        try:
-            with open(output_path, "r", encoding="utf-8") as f:
-                old_catalog = json.load(f)
-                if "fonts" in old_catalog:
-                    existing_fonts = old_catalog["fonts"]
-        except Exception as e:
-            print(f"Warning: could not read existing catalog to preserve fonts: {e}")
 
     for font_item in existing_fonts:
         r_info = get_rating_for_item(font_item)

@@ -1843,6 +1843,7 @@ function Storefront:populateRemoteInfoFromCatalog()
                         or existing.is_cached_fallback
                         or existing.error ~= nil
                         or not existing.release_tag_name
+                        or (StorefrontUtils.isValidVersion and not StorefrontUtils.isValidVersion(existing.release_tag_name))
                         or isVersionNewer(cat_tag, existing.release_tag_name)
 
                     if should_set then
@@ -2189,6 +2190,7 @@ function Storefront:collectUpdateSummary()
 
                     local should_use_catalog = catalog_tag_is_usable and (
                         not existing_tag
+                        or (StorefrontUtils.isValidVersion and not StorefrontUtils.isValidVersion(existing_tag))
                         or (remote and remote.error ~= nil)
                         or isVersionNewer(cat_tag, existing_tag)
                     )
@@ -2201,7 +2203,7 @@ function Storefront:collectUpdateSummary()
                             ))
                         end
                         remote = {
-                            remote_version = remote and remote.remote_version,
+                            remote_version = cat_tag:gsub("^[vV]", ""),
                             remote_repo_ts = remote_repo_ts,
                             release_tag_name = cat_tag,
                             release_published_at = cat_published and parseGitHubTimestamp(cat_published) or 0,
