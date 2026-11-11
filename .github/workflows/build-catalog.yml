@@ -27,13 +27,27 @@ jobs:
         with:
           python-version: '3.x'
 
+      - name: Cache Catalog Baseline
+        uses: actions/cache@v4
+        with:
+          path: .cache/catalog_baseline.json
+          key: storefront-catalog-baseline-${{ github.run_id }}
+          restore-keys: |
+            storefront-catalog-baseline-
+
       - name: Fetch, Package Fonts & Build Catalog
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          mkdir -p .cache
+          if [ -f .cache/catalog_baseline.json ]; then
+            cp .cache/catalog_baseline.json catalog.json
+          fi
           python tools/fetch_new_fonts.py
           python tools/package_fonts.py
           python tools/build_catalog.py
+          python tools/verify_catalog.py
+          cp catalog.json .cache/catalog_baseline.json
 
       - name: Upload artifact for GitHub Pages
         uses: actions/upload-pages-artifact@v3
