@@ -111,6 +111,46 @@ local FALLBACK_COLLECTIONS_CATALOG_URL = "https://raw.githubusercontent.com/ulti
 local COLLECTIONS_CATALOG_ETAG_KEY = "collections_catalog_etag"
 local COLLECTIONS_CATALOG_LAST_FETCHED_KEY = "collections_catalog_last_fetched"
 
+local DEFAULT_FONTS_CATALOG_URL = "https://ultimatejimmy.github.io/storefront-fonts/fonts.lite.json"
+local FALLBACK_FONTS_CATALOG_URL = "https://raw.githubusercontent.com/ultimatejimmy/storefront-fonts/main/fonts.lite.json"
+local FONTS_CATALOG_ETAG_KEY = "fonts_catalog_etag"
+local FONTS_CATALOG_LAST_FETCHED_KEY = "fonts_catalog_last_fetched"
+
+local DEFAULT_FONT_PREVIEWS_URL = "https://ultimatejimmy.github.io/storefront-fonts/previews/font_previews.zip"
+local FALLBACK_FONT_PREVIEWS_URL = "https://raw.githubusercontent.com/ultimatejimmy/storefront-fonts/main/previews/font_previews.zip"
+local FONT_PREVIEWS_ETAG_KEY = "font_previews_etag"
+
+function CatalogClient.getStoredFontsCatalogEtag()
+    local saved = StorefrontSettings:readSetting(FONTS_CATALOG_ETAG_KEY)
+    if type(saved) == "string" and saved ~= "" then
+        return saved
+    end
+    return nil
+end
+
+function CatalogClient.setStoredFontsCatalogEtag(etag)
+    saveEtag(FONTS_CATALOG_ETAG_KEY, etag)
+end
+
+function CatalogClient.getStoredFontPreviewsEtag()
+    local saved = StorefrontSettings:readSetting(FONT_PREVIEWS_ETAG_KEY)
+    if type(saved) == "string" and saved ~= "" then
+        return saved
+    end
+    return nil
+end
+
+function CatalogClient.setStoredFontPreviewsEtag(etag)
+    saveEtag(FONT_PREVIEWS_ETAG_KEY, etag)
+end
+
+function CatalogClient.clearStoredFontsEtag()
+    StorefrontSettings:delSetting(FONTS_CATALOG_ETAG_KEY)
+    StorefrontSettings:delSetting(FONTS_CATALOG_LAST_FETCHED_KEY)
+    StorefrontSettings:delSetting(FONT_PREVIEWS_ETAG_KEY)
+    StorefrontSettings:flush()
+end
+
 function CatalogClient.getStoredCollectionsEtag()
     local saved = StorefrontSettings:readSetting(COLLECTIONS_CATALOG_ETAG_KEY)
     if type(saved) == "string" and saved ~= "" then
@@ -683,6 +723,127 @@ function CatalogClient.fetchCollectionsCatalogToFile(dest_path)
     return false, last_err
 end
 
+function CatalogClient.fetchFontsCatalogToFile(dest_path)
+    local urls_to_try = {
+        DEFAULT_FONTS_CATALOG_URL,
+        FALLBACK_FONTS_CATALOG_URL,
+    }
+
+    local final_cat_path = DataStorage:getDataDir() .. "/cache/Storefront/storefront_fonts.json"
+    local etag = nil
+    local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
+    if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
+    if ok_lfs and lfs and lfs.attributes and lfs.attributes(final_cat_path, "mode") == "file" then
+        etag = CatalogClient.getStoredFontsCatalogEtag()
+    end
+
+    local last_err = "No fonts catalog URLs attempted"
+    for _, target_url in ipairs(urls_to_try) do
+        local extra_headers = nil
+        if etag and etag ~= "" and target_url == DEFAULT_FONTS_CATALOG_URL then
+            extra_headers = { ["If-None-Match"] = etag }
+        end
+
+        logger.info("Storefront: fetching fonts catalog to file from", target_url)
+        if StorefrontLogger then
+            StorefrontLogger.info("Storefront: fetching fonts catalog from " .. tostring(target_url) .. (extra_headers and " (with ETag)" or ""))
+        end
+        local current_file = nil
+        local sink_fn = function()
+            if current_file then pcall(function() current_file:close() end) end
+            os.remove(dest_path)
+            local f, err = io.open(dest_path, "wb")
+            if not f then
+                logger.err("Storefront: failed to open dest_path for fonts catalog writing", err)
+                if StorefrontLogger then StorefrontLogger.err("Storefront: failed to open dest_path for fonts writing: " .. tostring(err)) end
+                return nil
+            end
+            current_file = f
+            return require("socketutil").file_sink(f)
+        end
+
+        local ok, res_code, res_headers = requestWithRedirects(target_url, sink_fn, extra_headers)
+        if current_file then pcall(function() current_file:close() end); current_file = nil end
+
+        local code = tonumber(res_code) or 0
+        if ok and code == 304 then
+            os.remove(dest_path)
+            logger.info("Storefront: fonts catalog unchanged (HTTP 304 Not Modified) from", target_url)
+            if StorefrontLogger then StorefrontLogger.info("Storefront: fonts catalog unchanged (HTTP 304 Not Modified)") end
+            return true, "not_modified"
+        elseif ok and code == 200 then
+            local new_etag = res_headers and (res_headers.etag or res_headers.ETag or res_headers["etag"])
+            if type(new_etag) == "string" and new_etag ~= "" then
+                CatalogClient.setStoredFontsCatalogEtag(new_etag)
+            end
+            if StorefrontLogger then StorefrontLogger.info("Storefront: fonts catalog downloaded successfully (HTTP 200)") end
+            return true, "updated"
+        else
+            os.remove(dest_path)
+            local err_str = tonumber(res_code) and ("HTTP " .. tostring(res_code)) or tostring(res_code)
+            logger.warn("Storefront: fonts catalog fetch error from", target_url, err_str)
+            if StorefrontLogger then StorefrontLogger.warn("Storefront: fonts catalog fetch error from " .. tostring(target_url) .. ": " .. tostring(err_str)) end
+            last_err = err_str
+        end
+    end
+
+    return false, last_err
+end
+
+function CatalogClient.fetchFontPreviewsBundleToFile(dest_path)
+    local urls_to_try = {
+        DEFAULT_FONT_PREVIEWS_URL,
+        FALLBACK_FONT_PREVIEWS_URL,
+    }
+
+    local etag = CatalogClient.getStoredFontPreviewsEtag()
+    local last_err = "No font previews URLs attempted"
+
+    for _, target_url in ipairs(urls_to_try) do
+        local extra_headers = nil
+        if etag and etag ~= "" and target_url == DEFAULT_FONT_PREVIEWS_URL then
+            extra_headers = { ["If-None-Match"] = etag }
+        end
+
+        logger.info("Storefront: fetching font previews bundle from", target_url)
+        if StorefrontLogger then
+            StorefrontLogger.info("Storefront: fetching font previews bundle from " .. tostring(target_url) .. (extra_headers and " (with ETag)" or ""))
+        end
+        local current_file = nil
+        local sink_fn = function()
+            if current_file then pcall(function() current_file:close() end) end
+            os.remove(dest_path)
+            local f, err = io.open(dest_path, "wb")
+            if not f then
+                return nil
+            end
+            current_file = f
+            return require("socketutil").file_sink(f)
+        end
+
+        local ok, res_code, res_headers = requestWithRedirects(target_url, sink_fn, extra_headers)
+        if current_file then pcall(function() current_file:close() end); current_file = nil end
+
+        local code = tonumber(res_code) or 0
+        if ok and code == 304 then
+            os.remove(dest_path)
+            return true, "not_modified"
+        elseif ok and code == 200 then
+            local new_etag = res_headers and (res_headers.etag or res_headers.ETag or res_headers["etag"])
+            if type(new_etag) == "string" and new_etag ~= "" then
+                CatalogClient.setStoredFontPreviewsEtag(new_etag)
+            end
+            return true, "updated"
+        else
+            os.remove(dest_path)
+            local err_str = tonumber(res_code) and ("HTTP " .. tostring(res_code)) or tostring(res_code)
+            last_err = err_str
+        end
+    end
+
+    return false, last_err
+end
+
 function CatalogClient.fetchCollectionsCatalog(url_to_fetch)
     local urls_to_try = {
         url_to_fetch or DEFAULT_COLLECTIONS_CATALOG_URL,
@@ -1033,23 +1194,25 @@ function CatalogClient.processCatalogDataToStaging(catalog_data, staging_plugins
 
     -- 3. Fonts Stage: process and write third, then release
     local fonts = {}
-    local bundled_path = CatalogClient.getBundledCatalogPath()
-    if bundled_path then
-        local bf = io.open(bundled_path, "rb")
-        if bf then
-            local bc = bf:read("*all")
-            bf:close()
-            local ok_b, bundled = pcall(json.decode, bc)
-            bc = nil
-            if ok_b and type(bundled) == "table" and type(bundled.fonts) == "table" then
-                fonts = bundled.fonts
-            end
-            bundled = nil
-            collectgarbage("collect")
-        end
+    if catalog_data.fonts and type(catalog_data.fonts) == "table" and #catalog_data.fonts > 0 then
+        fonts = catalog_data.fonts
     end
     if #fonts == 0 then
-        fonts = catalog_data.fonts or {}
+        local bundled_path = CatalogClient.getBundledCatalogPath()
+        if bundled_path then
+            local bf = io.open(bundled_path, "rb")
+            if bf then
+                local bc = bf:read("*all")
+                bf:close()
+                local ok_b, bundled = pcall(json.decode, bc)
+                bc = nil
+                if ok_b and type(bundled) == "table" and type(bundled.fonts) == "table" then
+                    fonts = bundled.fonts
+                end
+                bundled = nil
+                collectgarbage("collect")
+            end
+        end
     end
     catalog_data.fonts = nil
 
@@ -1150,6 +1313,7 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback, is_backg
     local staging_screensavers_file = cache_dir .. "/storefront_screensavers_catalog.json.tmp"
     local staging_rb_file = cache_dir .. "/storefront_readerbackdrop_catalog.json.tmp"
     local staging_collections_file = cache_dir .. "/storefront_collections_catalog.json.tmp"
+    local staging_previews_bundle = cache_dir .. "/font_previews.zip.tmp"
 
     local final_plugins_file = cache_dir .. "/storefront_plugins.json"
     local final_patches_file = cache_dir .. "/storefront_patches.json"
@@ -1165,6 +1329,7 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback, is_backg
     os.remove(staging_screensavers_file)
     os.remove(staging_rb_file)
     os.remove(staging_collections_file)
+    os.remove(staging_previews_bundle)
 
     if not (ok_ffi and ffiutil and ffiutil.runInSubProcess) then
         logger.warn("Storefront: ffiutil.runInSubProcess unavailable, falling back to sync catalog fetch")
@@ -1249,6 +1414,7 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback, is_backg
             local ok_ss, ss_status_or_err = CatalogClient.fetchScreensaverCatalogToFile(staging_screensavers_file)
             local ok_rb, rb_status_or_err = CatalogClient.fetchReaderBackdropCatalogToFile(staging_rb_file)
             local ok_col, col_status_or_err = CatalogClient.fetchCollectionsCatalogToFile(staging_collections_file)
+            local ok_fp, fp_status_or_err = CatalogClient.fetchFontPreviewsBundleToFile(staging_previews_bundle)
 
             local main_not_mod = (ok_dl and dl_status_or_err == "not_modified")
             local ss_not_mod = (ok_ss and ss_status_or_err == "not_modified")
@@ -1372,20 +1538,50 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback, is_backg
                 end
             end
 
+            -- Unpack font previews bundle if updated
+            local fp_proc_ok = false
+            if ok_fp and fp_status_or_err == "updated" then
+                local ok_arch, Archiver = pcall(require, "ffi/archiver")
+                if ok_arch and Archiver and Archiver.Reader then
+                    pcall(function()
+                        local reader = Archiver.Reader:new()
+                        if reader and reader:open(staging_previews_bundle) then
+                            local previews_target_dir = DataStorage:getDataDir() .. "/cache/Storefront/font_previews"
+                            util.makePath(previews_target_dir)
+                            for entry in reader:iterate() do
+                                if entry.mode == "file" then
+                                    local f_path = entry.path
+                                    if f_path:match("%.ttf$") or f_path:match("%.otf$") then
+                                        local dst_sub = previews_target_dir .. "/" .. f_path
+                                        local parent = dst_sub:match("^(.*)/")
+                                        if parent and parent ~= "" then util.makePath(parent) end
+                                        reader:extractToPath(entry.path, dst_sub)
+                                        fp_proc_ok = true
+                                    end
+                                end
+                            end
+                            reader:close()
+                        end
+                    end)
+                end
+                os.remove(staging_previews_bundle)
+            end
+
             collectgarbage("collect")
 
             local res_main = main_proc_ok and (used_bundled and "bundled" or "updated") or (main_not_mod and "not_modified" or ("err:" .. tostring(dl_status_or_err)))
             local res_ss = ss_proc_ok and "updated" or (ss_not_mod and "not_modified" or ("err:" .. tostring(ss_status_or_err)))
             local res_rb = rb_proc_ok and "updated" or (rb_not_mod and "not_modified" or ("err:" .. tostring(rb_status_or_err)))
             local res_col = col_proc_ok and "updated" or (col_not_mod and "not_modified" or ("err:" .. tostring(col_status_or_err)))
+            local res_fp = fp_proc_ok and "updated" or (fp_status_or_err == "not_modified" and "not_modified" or ("err:" .. tostring(fp_status_or_err)))
 
             local result_msg
-            if main_not_mod and ss_not_mod and rb_not_mod and col_not_mod then
+            if main_not_mod and ss_not_mod and rb_not_mod and col_not_mod and (fp_status_or_err == "not_modified") then
                 result_msg = "OK_NOT_MODIFIED"
-            elseif main_proc_ok or ss_proc_ok or rb_proc_ok or col_proc_ok or (main_not_mod and ss_proc_ok) or (main_proc_ok and ss_not_mod) then
-                result_msg = string.format("OK:main=%s,ss=%s,rb=%s,col=%s", res_main, res_ss, res_rb, res_col)
-            elseif main_not_mod or ss_not_mod or rb_not_mod or col_not_mod then
-                result_msg = string.format("OK_NOT_MODIFIED:main=%s,ss=%s,rb=%s,col=%s", res_main, res_ss, res_rb, res_col)
+            elseif main_proc_ok or ss_proc_ok or rb_proc_ok or col_proc_ok or fp_proc_ok or (main_not_mod and ss_proc_ok) or (main_proc_ok and ss_not_mod) then
+                result_msg = string.format("OK:main=%s,ss=%s,rb=%s,col=%s,fp=%s", res_main, res_ss, res_rb, res_col, res_fp)
+            elseif main_not_mod or ss_not_mod or rb_not_mod or col_not_mod or (fp_status_or_err == "not_modified") then
+                result_msg = string.format("OK_NOT_MODIFIED:main=%s,ss=%s,rb=%s,col=%s,fp=%s", res_main, res_ss, res_rb, res_col, res_fp)
             else
                 result_msg = "ERR_DOWNLOAD: " .. tostring(dl_status_or_err)
             end
@@ -1539,6 +1735,16 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback, is_backg
                         Cache.touchLastFetched(os.time())
                     end
                     if StorefrontLogger then StorefrontLogger.info("Storefront: main catalog unchanged (HTTP 304 Not Modified)") end
+                end
+
+                if child_msg:find("fp=updated") then
+                    pcall(function()
+                        local ok_sli, StorefrontListItem = pcall(require, "storefront_list_item")
+                        if ok_sli and StorefrontListItem and StorefrontListItem.clearFontFacePathCache then
+                            StorefrontListItem.clearFontFacePathCache()
+                        end
+                    end)
+                    if StorefrontLogger then StorefrontLogger.info("Storefront: font previews bundle updated and extracted to cache") end
                 end
 
                 if ok_swap_ss or ok_swap_rb then

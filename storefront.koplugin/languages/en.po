@@ -401,6 +401,9 @@ msgstr "Clear All Caches?"
 msgid "Clear Cache"
 msgstr "Clear Cache"
 
+msgid "Clear Font Previews?"
+msgstr "Clear Font Previews?"
+
 msgid "Clear README Cache?"
 msgstr "Clear README Cache?"
 
@@ -433,6 +436,9 @@ msgstr "Cleared all caches (%s freed, %d files)."
 
 msgid "Cleared all caches (%s freed, %d files, %d active thumbnails preserved)."
 msgstr "Cleared all caches (%s freed, %d files, %d active thumbnails preserved)."
+
+msgid "Cleared font preview typefaces (%s freed)."
+msgstr "Cleared font preview typefaces (%s freed)."
 
 msgid "Cleared ratings cache (%s freed)."
 msgstr "Cleared ratings cache (%s freed)."
@@ -910,6 +916,9 @@ msgstr "Font '%s' deleted."
 
 msgid "Font files not found for %s."
 msgstr "Font files not found for %s."
+
+msgid "Font preview typefaces"
+msgstr "Font preview typefaces"
 
 msgid "Font style"
 msgstr "Font style"
@@ -2065,6 +2074,9 @@ msgstr "This will delete cached README markdown files and downloaded images (%s)
 
 msgid "This will delete cached community ratings and download counts (%s)."
 msgstr "This will delete cached community ratings and download counts (%s)."
+
+msgid "This will delete cached font preview typefaces (%s). They will re-download when viewing the Fonts catalog."
+msgstr "This will delete cached font preview typefaces (%s). They will re-download when viewing the Fonts catalog."
 
 msgid "This will delete cached screensaver thumbnail previews (%s)."
 msgstr "This will delete cached screensaver thumbnail previews (%s)."

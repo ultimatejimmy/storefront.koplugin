@@ -26,12 +26,6 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Fetch & Package Fonts
-        run: |
-          python tools/fetch_new_fonts.py
-          python tools/package_fonts.py
-          python tools/prune_plugin_fonts.py
-
       - name: Create Plugin Archive
         run: |
           # Package the plugin directory into a zip file

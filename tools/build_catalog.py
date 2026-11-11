@@ -472,6 +472,28 @@ def main():
     plugins = process_repos(PLUGIN_QUERIES, is_patch=False, existing_by_id=existing_plugins_by_id)
     patches = process_repos(PATCH_QUERIES, is_patch=True, existing_by_id=existing_patches_by_id)
 
+    # Fetch latest fonts from storefront-fonts repo / local cache
+    try:
+        fonts_req = urllib.request.Request("https://ultimatejimmy.github.io/storefront-fonts/fonts.lite.json", headers={"User-Agent": USER_AGENT})
+        with urllib.request.urlopen(fonts_req, timeout=5) as f_resp:
+            remote_fonts_data = json.loads(f_resp.read().decode("utf-8"))
+            if isinstance(remote_fonts_data, dict) and "fonts" in remote_fonts_data:
+                existing_fonts = remote_fonts_data["fonts"]
+                print(f"Synced {len(existing_fonts)} fonts from storefront-fonts remote feed")
+    except Exception as e:
+        local_sf_fonts = os.path.abspath(os.path.join(script_dir, "..", "..", "storefront-fonts", "fonts.lite.json"))
+        if os.path.exists(local_sf_fonts):
+            try:
+                with open(local_sf_fonts, "r", encoding="utf-8") as lf:
+                    lf_data = json.load(lf)
+                    if isinstance(lf_data, dict) and "fonts" in lf_data:
+                        existing_fonts = lf_data["fonts"]
+                        print(f"Synced {len(existing_fonts)} fonts from local storefront-fonts")
+            except Exception:
+                pass
+        if not existing_fonts:
+            print(f"Notice: Using existing catalog fonts ({len(existing_fonts)}) ({e})")
+
     try:
         from ratings_tally import fetch_all_ratings
         ratings_data = fetch_all_ratings() or {}

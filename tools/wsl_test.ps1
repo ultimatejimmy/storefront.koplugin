@@ -21,6 +21,8 @@ foreach ($item in $EnvList) {
 }
 
 $WslHome = (wsl sh -c "echo -n ~").Trim()
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$RepoRoot = Split-Path $ScriptDir -Parent
 $PluginDir = "storefront.koplugin"
 $WSLDest = "$WslHome/.config/koreader/plugins/storefront.koplugin"
 
@@ -29,40 +31,54 @@ $AppDir = "/usr/lib/koreader"
 Write-Host "Using KOReader installation path: $AppDir" -ForegroundColor Yellow
 
 function Run-Workflow {
-    Write-Host "`n--- Starting Verification Workflow ---" -ForegroundColor Cyan
-    
-    # 1. Sync
-    Write-Host "Syncing to WSL..." -NoNewline
-    wsl mkdir -p (Split-Path $WSLDest -Parent)
-    
-    wsl rsync -rv --delete --exclude=".git" --exclude="*.log" --exclude="storefront_config.lua" --exclude="storefront_configuration.lua" "./storefront.koplugin/" "$WSLDest/"
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host " FAILED" -ForegroundColor Red
-        return $false
-    }
+    Push-Location $RepoRoot
+    try {
+        Write-Host "`n--- Starting Verification Workflow ---" -ForegroundColor Cyan
+        
+        # 1. Sync
+        Write-Host "Syncing to WSL..." -NoNewline
+        wsl mkdir -p (Split-Path $WSLDest -Parent)
+        
+        wsl rsync -rv --delete --exclude=".git" --exclude="*.log" --exclude="storefront_config.lua" --exclude="storefront_configuration.lua" "./storefront.koplugin/" "$WSLDest/"
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host " FAILED" -ForegroundColor Red
+            return $false
+        }
 
-    # The config is intentionally excluded above so a local WSL token is not
-    # overwritten. Bootstrap it only when the destination does not have one.
-    Write-Host "Ensuring WSL config module..." -NoNewline
-    wsl rsync -av --ignore-existing "./storefront.koplugin/storefront_config.lua" "$WSLDest/storefront_config.lua"
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host " FAILED (config sync)" -ForegroundColor Red
-        return $false
-    }
-    Write-Host " SUCCESS" -ForegroundColor Green
+        # The config is intentionally excluded above so a local WSL token is not
+        # overwritten. Bootstrap it only when the destination does not have one.
+        Write-Host "Ensuring WSL config module..." -NoNewline
+        if (Test-Path "./storefront.koplugin/storefront_config.lua") {
+            wsl rsync -av --ignore-existing "./storefront.koplugin/storefront_config.lua" "$WSLDest/storefront_config.lua"
+        } elseif (Test-Path "./storefront_config.lua") {
+            wsl rsync -av --ignore-existing "./storefront_config.lua" "$WSLDest/storefront_config.lua"
+        }
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host " FAILED (config sync)" -ForegroundColor Red
+            return $false
+        }
+        Write-Host " SUCCESS" -ForegroundColor Green
 
-    wsl rsync -rv --delete "./tests/" "$WSLDest/tests/"
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host " FAILED" -ForegroundColor Red
-        return $false
-    }
-    # Sync assets folder (fonts, icons, etc.) separately since it lives outside PluginDir
-    wsl rsync -av --delete "./storefront.koplugin/assets/" "$WSLDest/assets/"
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host " FAILED (assets sync)" -ForegroundColor Red
-        return $false
-    }
-    Write-Host " SUCCESS" -ForegroundColor Green
+        if (Test-Path "./tests/") {
+            wsl rsync -rv --delete "./tests/" "$WSLDest/tests/"
+        } elseif (Test-Path "./storefront.koplugin/tests/") {
+            wsl rsync -rv --delete "./storefront.koplugin/tests/" "$WSLDest/tests/"
+        }
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host " FAILED" -ForegroundColor Red
+            return $false
+        }
+        # Sync assets folder (icons, etc.) separately if present
+        if (Test-Path "./storefront.koplugin/assets/") {
+            wsl rsync -av --delete "./storefront.koplugin/assets/" "$WSLDest/assets/"
+        } elseif (Test-Path "./assets/") {
+            wsl rsync -av --delete "./assets/" "$WSLDest/assets/"
+        }
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host " FAILED (assets sync)" -ForegroundColor Red
+            return $false
+        }
+        Write-Host " SUCCESS" -ForegroundColor Green
 
     # 2. Unit Tests
     Write-Host "Running unit tests (Bundled LuaJIT in WSL)..."
@@ -214,8 +230,12 @@ function Run-Workflow {
     $cmdLine = "/c start `"`" $StartCmd"
     Start-Process cmd.exe -ArgumentList $cmdLine -WindowStyle Hidden
 
-    Write-Host "`nReady!" -ForegroundColor Green
-    return $true
+        Write-Host "`nReady!" -ForegroundColor Green
+        return $true
+    }
+    finally {
+        Pop-Location
+    }
 }
 
 if ($Watch) {

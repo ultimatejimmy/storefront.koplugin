@@ -102,9 +102,11 @@ function StorefrontClearCacheDialog.show(Storefront, on_close_callback)
         local wiki_stats = RepoContent.getWikiCacheStats()
         local thumb_stats = StorefrontScreensavers.getThumbnailsCacheStats()
         local ratings_stats = StorefrontRatings.getCacheStats and StorefrontRatings.getCacheStats() or { files = 0, bytes = 0 }
+        local font_mgr = require("storefront_font_mgr")
+        local font_preview_stats = font_mgr.getFontPreviewsCacheStats and font_mgr.getFontPreviewsCacheStats() or { files = 0, bytes = 0 }
 
-        local total_files = readme_stats.files + wiki_stats.files + thumb_stats.files + ratings_stats.files
-        local total_bytes = readme_stats.bytes + wiki_stats.bytes + thumb_stats.bytes + ratings_stats.bytes
+        local total_files = readme_stats.files + wiki_stats.files + thumb_stats.files + ratings_stats.files + font_preview_stats.files
+        local total_bytes = readme_stats.bytes + wiki_stats.bytes + thumb_stats.bytes + ratings_stats.bytes + font_preview_stats.bytes
         local total_stats = { files = total_files, bytes = total_bytes }
 
         -- Title Widget
@@ -354,14 +356,15 @@ function StorefrontClearCacheDialog.show(Storefront, on_close_callback)
                         local r2 = RepoContent.clearWikiCache()
                         local r3 = StorefrontScreensavers.clearThumbnailsCache()
                         local r4 = StorefrontRatings.clearCache and StorefrontRatings.clearCache() or { removed = 0, bytes = 0 }
+                        local r5 = font_mgr.clearFontPreviewsCache and font_mgr.clearFontPreviewsCache()
                         if StorefrontScreensavers.clearCachedCatalog then
                             StorefrontScreensavers.clearCachedCatalog()
                         end
                         if Storefront then
                             Storefront.screensavers_cache = nil
                         end
-                        local freed_bytes = (r1.bytes or 0) + (r2.bytes or 0) + (r3.bytes or 0) + (r4.bytes or 0)
-                        local freed_files = (r1.removed or 0) + (r2.removed or 0) + (r3.removed or 0) + (r4.removed or 0)
+                        local freed_bytes = (r1.bytes or 0) + (r2.bytes or 0) + (r3.bytes or 0) + (r4.bytes or 0) + (font_preview_stats.bytes or 0)
+                        local freed_files = (r1.removed or 0) + (r2.removed or 0) + (r3.removed or 0) + (r4.removed or 0) + (font_preview_stats.files or 0)
                         refresh()
                         if r3 and r3.protected and r3.protected > 0 then
                             StorefrontToast.show(string.format(_("Cleared all caches (%s freed, %d files, %d active thumbnails preserved)."), formatSize(freed_bytes), freed_files, r3.protected), 4)
@@ -446,7 +449,26 @@ function StorefrontClearCacheDialog.show(Storefront, on_close_callback)
             false
         ))
 
-        -- ROW 4: COMMUNITY RATINGS CACHE
+        -- ROW 4: FONT PREVIEWS CACHE
+        table.insert(content_vg, create_cache_row(
+            _("Font preview typefaces"),
+            font_preview_stats,
+            function()
+                showCustomConfirm(
+                    _("Clear Font Previews?"),
+                    string.format(_("This will delete cached font preview typefaces (%s). They will re-download when viewing the Fonts catalog."), formatSize(font_preview_stats.bytes)),
+                    _("Clear"),
+                    function()
+                        font_mgr.clearFontPreviewsCache()
+                        refresh()
+                        StorefrontToast.show(string.format(_("Cleared font preview typefaces (%s freed)."), formatSize(font_preview_stats.bytes or 0)), 3)
+                    end
+                )
+            end,
+            false
+        ))
+
+        -- ROW 5: COMMUNITY RATINGS CACHE
         table.insert(content_vg, create_cache_row(
             _("Community ratings & stats"),
             ratings_stats,

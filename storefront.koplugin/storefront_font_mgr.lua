@@ -1325,6 +1325,82 @@ function M:init(Storefront)
     end
 end
 
+local function getFontPreviewsCacheDir()
+    local ok_ds, DataStorage = pcall(require, "datastorage")
+    local data_dir = (ok_ds and DataStorage and DataStorage.getDataDir) and DataStorage:getDataDir() or "/tmp"
+    return data_dir .. "/cache/Storefront/font_previews"
+end
+
+local function getFontPreviewsCacheStats()
+    local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
+    if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
+    local cache_dir = getFontPreviewsCacheDir()
+    local stats = { files = 0, bytes = 0 }
+    if ok_lfs and lfs and lfs.attributes and lfs.attributes(cache_dir, "mode") == "directory" then
+        local function scan(dir)
+            for entry in lfs.dir(dir) do
+                if entry ~= "." and entry ~= ".." then
+                    local p = dir .. "/" .. entry
+                    local attr = lfs.attributes(p)
+                    if attr then
+                        if attr.mode == "file" then
+                            stats.files = stats.files + 1
+                            stats.bytes = stats.bytes + (attr.size or 0)
+                        elseif attr.mode == "directory" then
+                            scan(p)
+                        end
+                    end
+                end
+            end
+        end
+        scan(cache_dir)
+    end
+    return stats
+end
+
+local function clearFontPreviewsCache()
+    local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
+    if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
+    local ok_ffi, ffiutil = pcall(require, "ffi/util")
+    local cache_dir = getFontPreviewsCacheDir()
+    if ok_lfs and lfs and lfs.attributes and lfs.attributes(cache_dir, "mode") == "directory" then
+        if ok_ffi and ffiutil and type(ffiutil.purgeDir) == "function" then
+            pcall(ffiutil.purgeDir, cache_dir)
+        else
+            local function purge(dir)
+                for entry in lfs.dir(dir) do
+                    if entry ~= "." and entry ~= ".." then
+                        local p = dir .. "/" .. entry
+                        local mode = lfs.attributes(p, "mode")
+                        if mode == "file" then
+                            pcall(os.remove, p)
+                        elseif mode == "directory" then
+                            purge(p)
+                            pcall(lfs.rmdir, p)
+                        end
+                    end
+                end
+            end
+            purge(cache_dir)
+        end
+    end
+    pcall(function()
+        local ok_net, CatalogClient = pcall(require, "storefront_net_catalog")
+        if ok_net and CatalogClient and CatalogClient.clearStoredFontsEtag then
+            CatalogClient.clearStoredFontsEtag()
+        end
+        local ok_sli, StorefrontListItem = pcall(require, "storefront_list_item")
+        if ok_sli and StorefrontListItem and StorefrontListItem.clearFontFacePathCache then
+            StorefrontListItem.clearFontFacePathCache()
+        end
+    end)
+    return true
+end
+
+M.getFontPreviewsCacheDir = getFontPreviewsCacheDir
+M.getFontPreviewsCacheStats = getFontPreviewsCacheStats
+M.clearFontPreviewsCache = clearFontPreviewsCache
+
 M.downloadFileToPath = downloadFileToPath
 M.purgeFontCacheFiles = purgeFontCacheFiles
 M.listInstalledFonts = listInstalledFonts

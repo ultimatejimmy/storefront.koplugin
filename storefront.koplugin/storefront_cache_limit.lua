@@ -119,6 +119,7 @@ function StorefrontCacheLimit.getCacheRoots()
         data_dir .. "/cache/Storefront/readme",
         data_dir .. "/cache/Storefront/wiki",
         data_dir .. "/cache/Storefront/release_notes",
+        data_dir .. "/cache/Storefront/font_previews",
         data_dir .. "/cache/storefront_thumbs",
     }
 end

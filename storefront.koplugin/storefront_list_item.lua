@@ -94,6 +94,12 @@ local function resolveFontItemFace(e, size)
 
         local search_dirs = {}
         for _, f_name in ipairs(folder_candidates) do
+            local safe_f_name = f_name:gsub("%s+", "-")
+            if data_dir ~= "" then
+                table.insert(search_dirs, data_dir .. "/cache/Storefront/font_previews/" .. f_name)
+                table.insert(search_dirs, data_dir .. "/cache/Storefront/font_previews/" .. safe_f_name)
+                table.insert(search_dirs, data_dir .. "/fonts/" .. f_name)
+            end
             if script_dir ~= "" then
                 table.insert(search_dirs, script_dir .. "/assets/bundled_fonts/" .. f_name)
                 table.insert(search_dirs, script_dir .. "/assets/fonts/" .. f_name)
@@ -105,7 +111,6 @@ local function resolveFontItemFace(e, size)
             table.insert(search_dirs, "plugins/storefront.koplugin/assets/bundled_fonts/" .. f_name)
             table.insert(search_dirs, "plugins/storefront.koplugin/assets/fonts/" .. f_name)
             if data_dir ~= "" then
-                table.insert(search_dirs, data_dir .. "/fonts/" .. f_name)
                 table.insert(search_dirs, data_dir .. "/plugins/storefront.koplugin/assets/bundled_fonts/" .. f_name)
                 table.insert(search_dirs, data_dir .. "/plugins/storefront.koplugin/assets/fonts/" .. f_name)
                 table.insert(search_dirs, data_dir .. "/plugins/storefront.koplugin/storefront.koplugin/assets/bundled_fonts/" .. f_name)
@@ -698,5 +703,8 @@ function StorefrontListItem:onHoldSelect()
 end
 
 StorefrontListItem.resolveFontItemFace = resolveFontItemFace
+StorefrontListItem.clearFontFacePathCache = function()
+    _font_face_path_cache = {}
+end
 
 return StorefrontListItem

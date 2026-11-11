@@ -1916,7 +1916,10 @@ tr:nth-child(even) td { background-color: #f5f5f5 !important; }
             local cur_font_size = self.preview_font_size
             local is_default_sz = (cur_font_size == reader_default)
 
+            local safe_font_folder = (self.repo.name or ""):gsub("%s+", "-")
             local search_dirs = {
+                DataStorage:getDataDir() .. "/cache/Storefront/font_previews/" .. (self.repo.name or ""),
+                DataStorage:getDataDir() .. "/cache/Storefront/font_previews/" .. safe_font_folder,
                 DataStorage:getDataDir() .. "/fonts/" .. (self.repo.name or ""),
                 "assets/fonts/" .. (self.repo.name or ""),
                 "plugins/storefront.koplugin/assets/fonts/" .. (self.repo.name or ""),
