@@ -1940,6 +1940,9 @@ msgstr "Sort mode"
 msgid "Sort: A-Z"
 msgstr "Sort: A-Z"
 
+msgid "Sort: Most Downloaded"
+msgstr "Sort: Most Downloaded"
+
 msgid "Sort: Most Liked"
 msgstr "Sort: Most Liked"
 

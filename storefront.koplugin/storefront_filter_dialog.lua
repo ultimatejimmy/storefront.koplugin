@@ -765,7 +765,7 @@ function StorefrontFilterDialog.showCatalogFilter(arg1, arg2)
             state.owner = ""
             state.font_category = "all"
             state.min_stars = 0
-            state.sort_mode = "stars_desc"
+            state.sort_mode = (state.tab == "Fonts" or state.kind == "font") and "downloads_desc" or "stars_desc"
             state.page = 1
             Storefront:saveBrowserState()
             refresh()

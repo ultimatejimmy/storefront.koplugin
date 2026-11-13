@@ -1349,6 +1349,7 @@ function CatalogClient.processFontsDataToStaging(fonts, staging_fonts_file, fetc
             category = tostring(repo.category or "Serif"),
             license = tostring(repo.license or "OFL"),
             stars = tonumber(repo.stargazers_count) or tonumber(repo.stars) or 0,
+            downloads = tonumber(repo.downloads) or 0,
             download_url = tostring(repo.download_url or ""),
             html_url = tostring(repo.html_url or ""),
             fetched_at = fetched_at,

@@ -6320,6 +6320,23 @@ local function comparePatchWilsonScoreDesc(a, b)
     return comparePatchStarsDesc(a, b)
 end
 
+local function compareRepoDownloadsDesc(a, b)
+    local StorefrontRatings = require("storefront_ratings")
+    local r_a = a and StorefrontRatings.getRating(a, a)
+    local r_b = b and StorefrontRatings.getRating(b, b)
+    local da = (r_a and tonumber(r_a.downloads)) or tonumber(a and (a.downloads or (a.data and a.data.downloads))) or 0
+    local db = (r_b and tonumber(r_b.downloads)) or tonumber(b and (b.downloads or (b.data and b.data.downloads))) or 0
+    if da ~= db then
+        return da > db
+    end
+    local sa = r_a and r_a.wilson or 0
+    local sb = r_b and r_b.wilson or 0
+    if sa ~= sb then
+        return sa > sb
+    end
+    return compareRepoNameAsc(a, b)
+end
+
 local SORT_OPTIONS = {
     {
         id = "rating_desc",
@@ -6353,12 +6370,47 @@ local SORT_OPTIONS = {
     },
 }
 
+local FONT_SORT_OPTIONS = {
+    {
+        id = "downloads_desc",
+        summary = _("Sort: Most Downloaded"),
+        repo_comparator = compareRepoDownloadsDesc,
+    },
+    {
+        id = "rating_desc",
+        summary = _("Sort: Most Liked"),
+        repo_comparator = compareRepoWilsonScoreDesc,
+    },
+    {
+        id = "name_asc",
+        summary = _("Sort: Name (A → Z)"),
+        repo_comparator = compareRepoNameAsc,
+    },
+    {
+        id = "name_desc",
+        summary = _("Sort: Name (Z → A)"),
+        repo_comparator = compareRepoNameDesc,
+    },
+}
+
 local SORT_OPTION_LOOKUP = {}
 for _, option in ipairs(SORT_OPTIONS) do
     SORT_OPTION_LOOKUP[option.id] = option
 end
+for _, option in ipairs(FONT_SORT_OPTIONS) do
+    SORT_OPTION_LOOKUP[option.id] = option
+end
 
-function Storefront:getSortOption(mode)
+local FONT_SORT_OPTION_LOOKUP = {}
+for _, option in ipairs(FONT_SORT_OPTIONS) do
+    FONT_SORT_OPTION_LOOKUP[option.id] = option
+end
+
+function Storefront:getSortOption(mode, kind)
+    local is_font = (kind == "font") or (not kind and self.browser_state and (self.browser_state.tab == "Fonts" or self.browser_state.kind == "font"))
+    if is_font then
+        return FONT_SORT_OPTION_LOOKUP[mode] or FONT_SORT_OPTION_LOOKUP["downloads_desc"]
+    end
     return SORT_OPTION_LOOKUP[mode] or SORT_OPTION_LOOKUP[DEFAULT_SORT_MODE]
 end
 
@@ -6368,15 +6420,18 @@ function Storefront:getSortSummary()
 end
 
 function Storefront:advanceSortMode()
-    local current = self.browser_state.sort_mode or DEFAULT_SORT_MODE
+    local is_font = self.browser_state and (self.browser_state.tab == "Fonts" or self.browser_state.kind == "font")
+    local options = is_font and FONT_SORT_OPTIONS or SORT_OPTIONS
+    local default_id = is_font and "downloads_desc" or DEFAULT_SORT_MODE
+    local current = self.browser_state.sort_mode or default_id
     local next_index = 1
-    for idx, option in ipairs(SORT_OPTIONS) do
+    for idx, option in ipairs(options) do
         if option.id == current then
-            next_index = idx % #SORT_OPTIONS + 1
+            next_index = idx % #options + 1
             break
         end
     end
-    self.browser_state.sort_mode = SORT_OPTIONS[next_index].id
+    self.browser_state.sort_mode = options[next_index].id
     self.browser_state.page = 1
     self.browser_state.scroll_offset = nil
     self:saveBrowserState()
@@ -7925,8 +7980,9 @@ function Storefront:hasActiveFilters(tab)
         local ow = util.trim(self.browser_state.owner or "")
         local ms = tonumber(self.browser_state.min_stars) or 0
         local fc = self.browser_state.font_category or "all"
-        local sm = self.browser_state.sort_mode or "stars_desc"
-        return st ~= "" or ow ~= "" or ms > 0 or (tab == "Fonts" and fc ~= "all") or sm ~= "stars_desc"
+        local default_sm = (tab == "Fonts") and "downloads_desc" or "stars_desc"
+        local sm = self.browser_state.sort_mode or default_sm
+        return st ~= "" or ow ~= "" or ms > 0 or (tab == "Fonts" and fc ~= "all") or sm ~= default_sm
     end
 end
 
@@ -7950,7 +8006,8 @@ function Storefront:clearSearchAndFilters()
     self.browser_state.owner = ""
     self.browser_state.min_stars = 0
     self.browser_state.font_category = "all"
-    self.browser_state.sort_mode = "stars_desc"
+    local tab = self.browser_state.tab or "Plugins"
+    self.browser_state.sort_mode = (tab == "Fonts") and "downloads_desc" or "stars_desc"
     self.browser_state.screensaver_category = ""
     self.browser_state.screensaver_categories = nil
     self.browser_state.screensaver_collection = nil
@@ -10770,6 +10827,7 @@ function Storefront:getRepoDescriptors(kind)
             full_name = repo.full_name or (repo.data and repo.data.full_name),
             owner = owner,
             stars = (repo.stars and repo.stars > 0) and repo.stars or (repo.data and tonumber(repo.data.stargazers_count) or 0),
+            downloads = tonumber(repo.downloads or (repo.data and repo.data.downloads)) or 0,
             language = repo.language or (repo.data and repo.data.language),
             description = repo.description or (repo.data and repo.data.description),
             homepage = repo.homepage or (repo.data and repo.data.homepage),
