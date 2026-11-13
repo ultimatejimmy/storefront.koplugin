@@ -425,10 +425,25 @@ function CatalogClient.updateCacheFromCatalog(catalog_data, is_bundled)
     local patches = catalog_data.patches or {}
     local fonts   = catalog_data.fonts or {}
     
+    if #plugins == 0 or (not is_bundled and #plugins < 100 and Cache.countRepos("plugin") >= 100) then
+        local existing_plugins = Cache.listRepos("plugin")
+        if existing_plugins and #existing_plugins > 0 then
+            logger.warn("Storefront: catalog update has incomplete plugins (#=" .. tostring(#plugins) .. "), preserving " .. tostring(#existing_plugins) .. " cached plugins")
+            plugins = existing_plugins
+        end
+    end
+
     if #patches == 0 then
         local existing_patches = Cache.listRepos("patch")
         if existing_patches and #existing_patches > 0 then
             patches = existing_patches
+        end
+    end
+
+    if #fonts == 0 then
+        local existing_fonts = Cache.listRepos("font")
+        if existing_fonts and #existing_fonts > 0 then
+            fonts = existing_fonts
         end
     end
 
@@ -1057,6 +1072,41 @@ function CatalogClient.processCatalogDataToStaging(catalog_data, staging_plugins
 
     -- 1. Plugins Stage: process and write first, then release
     local plugins = catalog_data.plugins or {}
+    if #plugins == 0 or (not is_bundled and #plugins < 100) then
+        local bundled_path = CatalogClient.getBundledCatalogPath()
+        if bundled_path then
+            local bf = io.open(bundled_path, "rb")
+            if bf then
+                local bc = bf:read("*all")
+                bf:close()
+                local ok_b, bundled = pcall(json.decode, bc)
+                bc = nil
+                if ok_b and type(bundled) == "table" and type(bundled.plugins) == "table" and #bundled.plugins > #plugins then
+                    logger.warn("Storefront: incoming plugins (#=" .. tostring(#plugins) .. ") low, falling back to bundled plugins (" .. tostring(#bundled.plugins) .. ")")
+                    plugins = bundled.plugins
+                end
+                bundled = nil
+                collectgarbage("collect")
+            end
+        end
+        if #plugins == 0 or (not is_bundled and #plugins < 100) then
+            local cache_dir = DataStorage:getDataDir() .. "/cache/Storefront"
+            local existing_plugins_file = cache_dir .. "/storefront_plugins.json"
+            local ef = io.open(existing_plugins_file, "rb")
+            if ef then
+                local ec = ef:read("*all")
+                ef:close()
+                local ok_e, existing = pcall(json.decode, ec)
+                ec = nil
+                if ok_e and type(existing) == "table" and type(existing.repos) == "table" and #existing.repos > #plugins then
+                    logger.warn("Storefront: incoming plugins (#=" .. tostring(#plugins) .. ") low, preserving existing cached plugins (" .. tostring(#existing.repos) .. ")")
+                    plugins = existing.repos
+                end
+                existing = nil
+                collectgarbage("collect")
+            end
+        end
+    end
     local plugin_list = {}
     for _, repo in ipairs(plugins) do
         local version = repo.version or (repo.latest_release and repo.latest_release.tag_name) or repo.release_tag_name or repo.tag_name
@@ -1196,6 +1246,22 @@ function CatalogClient.processCatalogDataToStaging(catalog_data, staging_plugins
     local fonts = {}
     if catalog_data.fonts and type(catalog_data.fonts) == "table" and #catalog_data.fonts > 0 then
         fonts = catalog_data.fonts
+    end
+    if #fonts == 0 then
+        local cache_dir = DataStorage:getDataDir() .. "/cache/Storefront"
+        local existing_fonts_file = cache_dir .. "/storefront_fonts.json"
+        local ef = io.open(existing_fonts_file, "rb")
+        if ef then
+            local ec = ef:read("*all")
+            ef:close()
+            local ok_e, existing = pcall(json.decode, ec)
+            ec = nil
+            if ok_e and type(existing) == "table" and type(existing.repos) == "table" and #existing.repos > 0 then
+                fonts = existing.repos
+            end
+            existing = nil
+            collectgarbage("collect")
+        end
     end
     if #fonts == 0 then
         local bundled_path = CatalogClient.getBundledCatalogPath()

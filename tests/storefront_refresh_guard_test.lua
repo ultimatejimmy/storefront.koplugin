@@ -296,6 +296,63 @@ do
     end
 end
 
+-- Test: Partial catalog protection preserves cached plugins and fonts when remote catalog is truncated/empty
+do
+    local Cache = require("storefront_cache")
+    local orig_storeRepos = Cache.storeRepos
+    local orig_listRepos = Cache.listRepos
+    local orig_countRepos = Cache.countRepos
+
+    local stored_data = {}
+    Cache.storeRepos = function(kind, repos, custom_fetched_at)
+        stored_data[kind] = repos
+    end
+
+    local dummy_plugins = {}
+    for i = 1, 150 do
+        table.insert(dummy_plugins, { id = i, name = "plugin_" .. i, full_name = "user/plugin_" .. i })
+    end
+    local dummy_fonts = {
+        { id = 1, name = "font_1", download_url = "http://example.com/1.ttf" },
+        { id = 2, name = "font_2", download_url = "http://example.com/2.ttf" },
+    }
+
+    Cache.listRepos = function(kind)
+        if kind == "plugin" then return dummy_plugins
+        elseif kind == "font" then return dummy_fonts
+        elseif kind == "patch" then return { { id = 10, name = "patch_1" } }
+        end
+        return {}
+    end
+
+    Cache.countRepos = function(kind)
+        if kind == "plugin" then return #dummy_plugins
+        elseif kind == "font" then return #dummy_fonts
+        elseif kind == "patch" then return 1
+        end
+        return 0
+    end
+
+    -- 1. Incomplete catalog with only 5 plugins (# < 100), 0 patches, 0 fonts
+    local partial_catalog = {
+        plugins = { { id = 999, name = "only_one" } },
+        patches = {},
+        fonts = {},
+    }
+
+    stored_data = {}
+    CatalogClient.updateCacheFromCatalog(partial_catalog, false)
+
+    check("partial catalog does not overwrite cached plugins with < 100 entries", #stored_data["plugin"] == 150)
+    check("partial catalog preserves cached patches when #patches == 0", #stored_data["patch"] == 1)
+    check("partial catalog preserves cached fonts when #fonts == 0", #stored_data["font"] == 2)
+
+    -- Restore
+    Cache.storeRepos = orig_storeRepos
+    Cache.listRepos = orig_listRepos
+    Cache.countRepos = orig_countRepos
+end
+
 print("=== Refresh Guard Unit Tests Summary ===")
 print(string.format("Total Failures: %d", failures))
 if failures > 0 then
