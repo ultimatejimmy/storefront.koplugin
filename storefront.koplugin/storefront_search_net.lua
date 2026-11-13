@@ -311,6 +311,12 @@ function SearchNet:init(Storefront)
             logger.info("Storefront: refreshing via static catalog feed (async)")
             CatalogClient.fetchAndUpdateCacheAsync(nil, function(catalog_ok, catalog_err)
                 if catalog_ok then
+                    pcall(function()
+                        local ok_sli, StorefrontListItem = pcall(require, "storefront_list_item")
+                        if ok_sli and StorefrontListItem and StorefrontListItem.clearFontFacePathCache then
+                            StorefrontListItem.clearFontFacePathCache()
+                        end
+                    end)
                     local p_count = Cache.countRepos("plugin")
                     local pt_count = Cache.countRepos("patch")
                     local f_count = Cache.countRepos("font")

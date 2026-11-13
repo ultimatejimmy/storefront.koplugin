@@ -9646,6 +9646,14 @@ function Storefront:updateBrowserTabInPlace(tab_name, target_page, initial_focus
 
     if tab_name ~= prev_tab then
         self:resetFiltersForRefresh()
+        if tab_name == "Fonts" then
+            local ok_cc, CatalogClient = pcall(require, "storefront_net_catalog")
+            if ok_cc and CatalogClient and CatalogClient.hasExtractedFontPreviews and not CatalogClient.hasExtractedFontPreviews() then
+                UIManager:nextTick(function()
+                    pcall(function() self:maybeCheckCatalogBackground() end)
+                end)
+            end
+        end
         -- Purge screensavers cache on tab leave ONLY if memory is critically low (< 6MB)
         local StorefrontUtils = require("storefront_utils")
         if prev_tab == "Screensavers" and StorefrontUtils.isLowMemory and StorefrontUtils.isLowMemory(6 * 1024) then
@@ -9888,8 +9896,12 @@ function Storefront:maybeCheckCatalogBackground()
     end
 
     local Cache = require("storefront_cache")
+    local CatalogClient = require("storefront_net_catalog")
     local current_tab = (self.browser_state and self.browser_state.tab) or "Plugins"
-    local check_kind = (current_tab == "Patches") and "patch" or (current_tab == "Screensavers" and "screensaver" or "plugin")
+    local check_kind = (current_tab == "Patches") and "patch"
+        or (current_tab == "Fonts" and "font")
+        or (current_tab == "Screensavers" and "screensaver")
+        or "plugin"
     local repo_count = 0
     local last_fetched = 0
     if check_kind == "screensaver" then
@@ -9907,7 +9919,8 @@ function Storefront:maybeCheckCatalogBackground()
     end
     local age = (last_fetched > 0) and (now - last_fetched) or 999999
 
-    local needs_fetch = (last_fetched == 0 or repo_count == 0 or age > 3600)
+    local missing_font_previews = (CatalogClient.hasExtractedFontPreviews ~= nil) and (not CatalogClient.hasExtractedFontPreviews())
+    local needs_fetch = (last_fetched == 0 or repo_count == 0 or age > 3600 or missing_font_previews)
     if not needs_fetch and self._last_catalog_check_time and (now - self._last_catalog_check_time) < MIN_CATALOG_CHECK_INTERVAL then
         return
     end

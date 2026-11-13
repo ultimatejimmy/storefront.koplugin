@@ -692,7 +692,7 @@ function StorefrontFilterDialog.showCatalogFilter(arg1, arg2)
         table.insert(content_vg, create_section_header(_("Filters")))
 
         if state.tab == "Fonts" or state.kind == "font" then
-            local cat_presets = { "all", "serif", "sans-serif", "dyslexia", "slab serif" }
+            local cat_presets = { "all", "serif", "sans-serif", "display", "dyslexia", "slab serif" }
             local cur_cat = state.font_category or "all"
             local cat_label = (cur_cat == "all") and _("All") or cur_cat:lower()
             local cat_widget = TextWidget:new{

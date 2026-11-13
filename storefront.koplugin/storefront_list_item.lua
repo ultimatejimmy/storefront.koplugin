@@ -165,7 +165,9 @@ local function resolveFontItemFace(e, size)
             end
         end
 
-        _font_face_path_cache[font_cache_key] = loaded_font_path or false
+        if loaded_font_path then
+            _font_face_path_cache[font_cache_key] = loaded_font_path
+        end
     elseif loaded_font_path == false then
         loaded_font_path = nil
     end

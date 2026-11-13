@@ -307,6 +307,62 @@ if ok_fm and FontMgr then
     check("isFontInstalled matches 'Libron R' when 'libronr' is in installed map", FontMgr.isFontInstalled("Libron R", mock_libron_r_map) == true)
 end
 
+-- Test 14: Font Previews Cache Detection & Staging Normalization
+do
+    local DataStorage = require("datastorage")
+    local CatalogClient = require("storefront_net_catalog")
+    local base_dir = DataStorage:getDataDir() .. "/cache/Storefront"
+    local previews_dir = base_dir .. "/font_previews"
+    local orig_lfs = package.loaded["libs/libkoreader-lfs"]
+    local mock_entries = {}
+    package.loaded["libs/libkoreader-lfs"] = {
+        attributes = function(p, key)
+            if p == previews_dir then return mock_entries.root_mode end
+            if p == previews_dir .. "/Libron" then return mock_entries.sub_mode end
+            if p == previews_dir .. "/Libron/Libron-Regular.ttf" then return mock_entries.file_mode end
+            return nil
+        end,
+        dir = function(p)
+            local list = {}
+            if p == previews_dir and mock_entries.root_mode == "directory" then
+                list = { ".", "..", "Libron" }
+            elseif p == previews_dir .. "/Libron" and mock_entries.sub_mode == "directory" then
+                list = mock_entries.file_mode == "file" and { ".", "..", "Libron-Regular.ttf" } or { ".", ".." }
+            end
+            local i = 0
+            return function() i = i + 1; return list[i] end
+        end,
+    }
+    check("hasExtractedFontPreviews is false when directory missing", CatalogClient.hasExtractedFontPreviews() == false)
+
+    mock_entries.root_mode = "directory"
+    mock_entries.sub_mode = "directory"
+    check("hasExtractedFontPreviews is false when directory has no font files", CatalogClient.hasExtractedFontPreviews() == false)
+
+    mock_entries.file_mode = "file"
+    check("hasExtractedFontPreviews is true when a .ttf preview exists", CatalogClient.hasExtractedFontPreviews() == true)
+    package.loaded["libs/libkoreader-lfs"] = orig_lfs
+
+    local tmp_fonts_out = "/tmp/sf_test_fonts_staging.json"
+    os.remove(tmp_fonts_out)
+    local ok_stage = CatalogClient.processFontsDataToStaging({
+        {
+            id = 900101,
+            name = "Libron",
+            font_family = "Libron",
+            font_file = "Libron-Regular.ttf",
+            owner = "nicoverbruggen",
+            download_url = "https://ultimatejimmy.github.io/storefront-fonts/packages/Libron.zip",
+        },
+    }, tmp_fonts_out, 1794600000)
+    check("processFontsDataToStaging succeeds", ok_stage == true)
+    local rf = io.open(tmp_fonts_out, "rb")
+    local content = rf and rf:read("*all") or ""
+    if rf then rf:close() end
+    os.remove(tmp_fonts_out)
+    check("staged fonts json contains repos array and storefront-fonts URL", content:find('"repos"', 1, true) ~= nil and content:find("storefront-fonts/packages/Libron.zip", 1, true) ~= nil)
+end
+
 print("=== Font System Unit Tests Summary ===")
 print(string.format("Total Failures: %d", failures))
 if failures > 0 then
