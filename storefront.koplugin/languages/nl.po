@@ -17,6 +17,10 @@ msgstr "%d Categorieën"
 msgid "%d Curated Collections"
 msgstr "%d samengestelde collecties"
 
+# en-hash: a6e06f13b6fa8fce37535ae7705ccdfd
+msgid "%d downloads"
+msgstr "%d downloads"
+
 # en-hash: 430ab9ecc3e885b5ef157014db4d22f9
 msgid "%d missing · %d updates · %d installed"
 msgstr "%d ontbrekend · %d updates · %d geïnstalleerd"
@@ -60,6 +64,10 @@ msgstr "%d achtergronden ›"
 # en-hash: 15fd4d0b221f644846168f217c6f9f9b
 msgid "%s and %s"
 msgstr "%s en %s"
+
+# en-hash: fa2773a0479ca52b89b827ffd0cc83c6
+msgid "%s downloads"
+msgstr "%s downloads"
 
 # en-hash: 77e9779a1de07d854ee4db9ffbd7c854
 msgid "%s is up to date (version %s)."
@@ -139,7 +147,7 @@ msgstr "1 patch"
 
 # en-hash: 8848b53275f0757ec5174d00d36fa107
 msgid "1 plugin"
-msgstr "1 plugin"
+msgstr "1 plug-in"
 
 # en-hash: 51ab5b23d368b5115021548ef958818b
 msgid "1 update available"
@@ -3363,7 +3371,7 @@ msgstr "patch"
 
 # en-hash: a24bcf2198b1b13ad985304483f7f324
 msgid "plugin"
-msgstr "plugin"
+msgstr "plug-in"
 
 # en-hash: c360639f51cb2625a9439974e865a683
 msgid "progress_please_wait"
@@ -3443,7 +3451,7 @@ msgstr "Patches"
 
 # en-hash: bb38096ab39160dc20d44f3ea6b44507
 msgid "tab_plugins"
-msgstr "Plugins"
+msgstr "Plug-ins"
 
 # en-hash: c47c7c7383225ab55ff591cb59c41e6b
 msgid "tab_readme"

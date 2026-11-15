@@ -6825,8 +6825,14 @@ local function formatRepoEntry(repo, opts)
     local include_updated = opts.include_updated ~= false
     local lines = {}
     local title = repo.full_name or repo.name or _("Repository")
-    local stars = tonumber(repo.stars) or 0
-    local meta = string.format("⭐ %d", stars)
+    local meta
+    if repo.kind == "font" then
+        local dl = tonumber(repo.downloads) or (repo.data and tonumber(repo.data.downloads)) or 0
+        meta = string.format(_("%d downloads"), dl)
+    else
+        local stars = tonumber(repo.stars) or 0
+        meta = string.format("⭐ %d", stars)
+    end
     if repoIsFork(repo) then
         -- Keep the badge short; the browser list has limited horizontal room.
         meta = meta .. " · " .. _("(fork)")
@@ -7094,8 +7100,11 @@ function Storefront:makeRepoMenuItem(repo, installed_lookup, installed_fonts_map
             installed_rec = recs[repo.name] or recs[low_name] or recs[base_name]
         end
     end
+    local item_kind = repo.kind or (self.browser_state and self.browser_state.kind)
+    local is_font = (item_kind == "font")
     local stars = repoStarsValue(repo)
-    local stars_fmt = stars >= 1000 and string.format("%.1fk", stars / 1000):gsub("%.0k", "k") or tostring(stars)
+    local stars_fmt = is_font and nil or (stars >= 1000 and string.format("%.1fk", stars / 1000):gsub("%.0k", "k") or tostring(stars))
+    local downloads = tonumber(repo.downloads) or (repo.data and tonumber(repo.data.downloads)) or 0
     local is_branch_inst = installed_rec and type(installed_rec) == "table" and installed_rec.source == "branch" and installed_rec.branch
     local badge
     if is_installed then
@@ -7132,6 +7141,7 @@ function Storefront:makeRepoMenuItem(repo, installed_lookup, installed_fonts_map
         download_url = repo.download_url,
         owner = owner,
         stars_fmt = stars_fmt,
+        downloads = downloads,
         user_thumbs_up = user_thumbs_up,
         user_thumbs_down = user_thumbs_down,
         updated = updated,
@@ -7362,6 +7372,18 @@ function Storefront:paginateEntries(items, tab_name, available_list_height)
                     item_h = samples.thumb
                 elseif entry.is_update_item then
                     item_h = samples.update
+                elseif entry.kind == "font" or entry.is_font then
+                    local ok_m, w_m = pcall(function()
+                        return StorefrontListItem:new{ entry = entry, width = item_w }
+                    end)
+                    local measured = ok_m and w_m and w_m.getSize and w_m:getSize().h
+                    if measured and measured > 0 then
+                        item_h = measured
+                    elseif entry.description and entry.description ~= "" then
+                        item_h = samples.three_line
+                    else
+                        item_h = samples.two_line
+                    end
                 elseif entry.description and entry.description ~= "" then
                     item_h = samples.three_line
                 else
@@ -9977,7 +9999,9 @@ function Storefront:maybeCheckCatalogBackground()
     local age = (last_fetched > 0) and (now - last_fetched) or 999999
 
     local missing_font_previews = (CatalogClient.hasExtractedFontPreviews ~= nil) and (not CatalogClient.hasExtractedFontPreviews())
-    local needs_fetch = (last_fetched == 0 or repo_count == 0 or age > 3600 or missing_font_previews)
+    local missing_fonts_catalog = (CatalogClient.hasDedicatedFontsCatalog ~= nil) and (not CatalogClient.hasDedicatedFontsCatalog())
+    local missing_fonts_etag = (CatalogClient.getStoredFontsCatalogEtag ~= nil) and (not CatalogClient.getStoredFontsCatalogEtag())
+    local needs_fetch = (last_fetched == 0 or repo_count == 0 or age > 3600 or missing_font_previews or missing_fonts_catalog or missing_fonts_etag)
     if not needs_fetch and self._last_catalog_check_time and (now - self._last_catalog_check_time) < MIN_CATALOG_CHECK_INTERVAL then
         return
     end
@@ -10849,7 +10873,9 @@ function Storefront:renderRepoLines(descriptors)
     end
     local lines = {}
     for _, repo in ipairs(descriptors) do
-        local badge = string.format("⭐ %s", tostring(repo.stars or 0))
+        local badge = repo.kind == "font"
+            and string.format(_("%s downloads"), tostring(repo.downloads or 0))
+            or string.format("⭐ %s", tostring(repo.stars or 0))
         local fullname = repo.full_name or (repo.owner and repo.name and (repo.owner .. "/" .. repo.name)) or (repo.name or _("Unknown"))
         local raw_description = normalizeDescription(repo.description)
         local desc = truncateText(raw_description)

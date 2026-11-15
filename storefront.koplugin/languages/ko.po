@@ -17,6 +17,10 @@ msgstr "%d개 카테고리"
 msgid "%d Curated Collections"
 msgstr "큐레이션된 컬렉션 %d개"
 
+# en-hash: a6e06f13b6fa8fce37535ae7705ccdfd
+msgid "%d downloads"
+msgstr "%d회 다운로드"
+
 # en-hash: 430ab9ecc3e885b5ef157014db4d22f9
 msgid "%d missing · %d updates · %d installed"
 msgstr "누락 %d개 · 업데이트 %d개 · 설치됨 %d개"
@@ -60,6 +64,10 @@ msgstr "배경화면 %d개 ›"
 # en-hash: 15fd4d0b221f644846168f217c6f9f9b
 msgid "%s and %s"
 msgstr "%s 및 %s"
+
+# en-hash: fa2773a0479ca52b89b827ffd0cc83c6
+msgid "%s downloads"
+msgstr "%s회 다운로드"
 
 # en-hash: 77e9779a1de07d854ee4db9ffbd7c854
 msgid "%s is up to date (version %s)."

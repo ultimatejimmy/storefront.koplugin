@@ -460,7 +460,16 @@ function StorefrontDetailsDialog:init()
             or _("Repository")
         local meta_parts = {}
         if owner and owner ~= "" then table.insert(meta_parts, owner) end
-        if stars > 0 then table.insert(meta_parts, "★ " .. stars_fmt) end
+        if is_font then
+            local ok_r, StorefrontRatings = pcall(require, "storefront_ratings")
+            local dl = (ok_r and StorefrontRatings and StorefrontRatings.getDownloads)
+                and StorefrontRatings.getDownloads(self.repo or self.update_item or repo_id)
+                or (tonumber(self.repo and self.repo.downloads) or 0)
+            local dl_fmt = dl >= 1000 and string.format("%.1fk", dl / 1000):gsub("%.0k", "k") or tostring(dl)
+            table.insert(meta_parts, string.format(_("%s downloads"), dl_fmt))
+        elseif stars > 0 then
+            table.insert(meta_parts, "★ " .. stars_fmt)
+        end
         if updated ~= "" and version_str and not is_branch_tracked then
             table.insert(meta_parts, string.format(_("updated %s (%s)"), updated, version_str))
         elseif updated ~= "" then
@@ -606,7 +615,34 @@ function StorefrontDetailsDialog:init()
         end
     end
 
-    if stars > 0 then
+    if is_font then
+        local ok_r, StorefrontRatings = pcall(require, "storefront_ratings")
+        local dl = (ok_r and StorefrontRatings and StorefrontRatings.getDownloads)
+            and StorefrontRatings.getDownloads(self.repo or self.update_item or repo_id)
+            or (tonumber(self.repo and self.repo.downloads) or 0)
+        local dl_fmt = dl >= 1000 and string.format("%.1fk", dl / 1000):gsub("%.0k", "k") or tostring(dl)
+        if #meta_group_items > 0 then
+            table.insert(meta_group_items, TextWidget:new{
+                text = "  ·  ",
+                face = Font:getFace("cfont", 16),
+                fgcolor = Blitbuffer.COLOR_BLACK,
+            })
+        end
+        table.insert(meta_group_items, ImageWidget:new{
+            file = getAssetPath("download.svg"),
+            width = sc(14),
+            height = sc(14),
+            scale_factor = 0,
+            is_icon = true,
+            alpha = true,
+        })
+        table.insert(meta_group_items, HorizontalSpan:new{ width = sc(3) })
+        table.insert(meta_group_items, TextWidget:new{
+            text = dl_fmt,
+            face = Font:getFace("cfont", 16),
+            fgcolor = Blitbuffer.COLOR_BLACK,
+        })
+    elseif stars > 0 then
         if #meta_group_items > 0 then
             table.insert(meta_group_items, TextWidget:new{
                 text = "  ·  ",

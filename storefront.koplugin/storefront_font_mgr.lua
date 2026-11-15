@@ -1088,6 +1088,7 @@ function M:init(Storefront)
         purgeFontCacheFiles()
 
         InstallStore.upsertFont(font_name, {
+            repo_id = repo.id or repo.repo_id,
             font_name = font_name,
             owner = repo.owner,
             repo = repo.name,
@@ -1098,6 +1099,13 @@ function M:init(Storefront)
             installed_at = os.time(),
             version = repo.version or "1.0",
         })
+
+        pcall(function()
+            local ok_r, StorefrontRatings = pcall(require, "storefront_ratings")
+            if ok_r and StorefrontRatings and StorefrontRatings.trackDownload then
+                StorefrontRatings.trackDownload(repo, "font")
+            end
+        end)
 
         local msg
         if is_full then

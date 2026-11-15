@@ -17,6 +17,10 @@ msgstr "%d kategorii"
 msgid "%d Curated Collections"
 msgstr "%d wyselekcjonowane kolekcje"
 
+# en-hash: a6e06f13b6fa8fce37535ae7705ccdfd
+msgid "%d downloads"
+msgstr "%d pobrań"
+
 # en-hash: 430ab9ecc3e885b5ef157014db4d22f9
 msgid "%d missing · %d updates · %d installed"
 msgstr "%d brakujące · %d aktualizacje · %d zainstalowane"
@@ -60,6 +64,10 @@ msgstr "%d tapet ›"
 # en-hash: 15fd4d0b221f644846168f217c6f9f9b
 msgid "%s and %s"
 msgstr "%s i %s"
+
+# en-hash: fa2773a0479ca52b89b827ffd0cc83c6
+msgid "%s downloads"
+msgstr "Liczba pobrań: %s"
 
 # en-hash: 77e9779a1de07d854ee4db9ffbd7c854
 msgid "%s is up to date (version %s)."

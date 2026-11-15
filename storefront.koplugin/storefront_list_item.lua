@@ -434,12 +434,28 @@ function StorefrontListItem:init()
                 table.insert(meta_items, TextWidget:new{ text = owner_text, face = meta_face, fgcolor = Blitbuffer.COLOR_BLACK })
             end
 
-            if stars_text ~= "" and stars_text ~= "0" then
+            local ok_ratings, StorefrontRatings = pcall(require, "storefront_ratings")
+            if is_font_item then
+                local dl_count = (ok_ratings and StorefrontRatings and StorefrontRatings.getDownloads)
+                    and StorefrontRatings.getDownloads(entry, entry)
+                    or (tonumber(entry.downloads) or (entry.repo and tonumber(entry.repo.downloads)) or 0)
+                local dl_str = dl_count >= 1000 and string.format("%.1fk", dl_count / 1000):gsub("%.0k", "k") or tostring(dl_count)
+                add_sep()
+                table.insert(meta_items, ImageWidget:new{
+                    file = getAssetPath("download.svg"),
+                    width = sc(14),
+                    height = sc(14),
+                    scale_factor = 0,
+                    is_icon = true,
+                    alpha = true,
+                })
+                table.insert(meta_items, HorizontalSpan:new{ width = sc(3) })
+                table.insert(meta_items, TextWidget:new{ text = dl_str, face = meta_face, fgcolor = Blitbuffer.COLOR_BLACK })
+            elseif stars_text ~= "" and stars_text ~= "0" then
                 add_sep()
                 table.insert(meta_items, TextWidget:new{ text = "★ " .. stars_text, face = meta_face, fgcolor = Blitbuffer.COLOR_BLACK })
             end
 
-            local ok_ratings, StorefrontRatings = pcall(require, "storefront_ratings")
             local current_vote = (ok_ratings and StorefrontRatings) and StorefrontRatings.getUserVote(entry) or nil
             local is_up_active = (current_vote == "up")
             local is_down_active = (current_vote == "down")
@@ -450,13 +466,13 @@ function StorefrontListItem:init()
             local net_score = user_up - user_down
             local has_ratings = (net_score ~= 0 or user_up > 0 or user_down > 0)
 
-            if not has_ratings then
+            if not has_ratings and not is_font_item then
                 local parts = {}
                 if owner_text ~= "" then table.insert(parts, owner_text) end
                 if stars_text ~= "" and stars_text ~= "0" then table.insert(parts, "★ " .. stars_text) end
                 if updated_text ~= "" then table.insert(parts, updated_text) end
                 if entry.kind_label then
-                    local label_txt = (entry.kind == "font" or entry.is_font) and entry.kind_label:lower() or entry.kind_label
+                    local label_txt = entry.kind_label
                     table.insert(parts, label_txt)
                 end
                 if #parts > 0 then
@@ -468,24 +484,26 @@ function StorefrontListItem:init()
                     }
                 end
             else
-                local icon_file = is_up_active and getAssetPath("thumbs-up-filled.svg") or getAssetPath("thumbs-up.svg")
-                add_sep()
-                table.insert(meta_items, ImageWidget:new{
-                    file = icon_file,
-                    width = sc(14),
-                    height = sc(14),
-                    scale_factor = 0,
-                    is_icon = true,
-                    alpha = true,
-                })
-                table.insert(meta_items, HorizontalSpan:new{ width = sc(3) })
-                local score_fmt = math.abs(net_score) >= 1000 and string.format("%.1fk", net_score / 1000):gsub("%.0k", "k") or tostring(net_score)
-                table.insert(meta_items, TextWidget:new{
-                    text = score_fmt,
-                    face = meta_face,
-                    bold = is_up_active or is_down_active,
-                    fgcolor = Blitbuffer.COLOR_BLACK,
-                })
+                if has_ratings then
+                    local icon_file = is_up_active and getAssetPath("thumbs-up-filled.svg") or getAssetPath("thumbs-up.svg")
+                    add_sep()
+                    table.insert(meta_items, ImageWidget:new{
+                        file = icon_file,
+                        width = sc(14),
+                        height = sc(14),
+                        scale_factor = 0,
+                        is_icon = true,
+                        alpha = true,
+                    })
+                    table.insert(meta_items, HorizontalSpan:new{ width = sc(3) })
+                    local score_fmt = math.abs(net_score) >= 1000 and string.format("%.1fk", net_score / 1000):gsub("%.0k", "k") or tostring(net_score)
+                    table.insert(meta_items, TextWidget:new{
+                        text = score_fmt,
+                        face = meta_face,
+                        bold = is_up_active or is_down_active,
+                        fgcolor = Blitbuffer.COLOR_BLACK,
+                    })
+                end
 
                 if updated_text ~= "" then
                     add_sep()

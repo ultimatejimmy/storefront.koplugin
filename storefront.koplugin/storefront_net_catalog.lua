@@ -738,17 +738,30 @@ function CatalogClient.fetchCollectionsCatalogToFile(dest_path)
     return false, last_err
 end
 
+function CatalogClient.hasDedicatedFontsCatalog()
+    local final_cat_path = DataStorage:getDataDir() .. "/cache/Storefront/storefront_fonts.json"
+    local f = io.open(final_cat_path, "rb")
+    if not f then return false end
+    local head = f:read(256) or ""
+    local size = f:seek("end") or 0
+    local tail = ""
+    if size > 128 then
+        f:seek("set", size - 128)
+        tail = f:read("*all") or ""
+    end
+    f:close()
+    return (head:find('"source"%s*:%s*"fonts_lite"') ~= nil)
+        or (tail:find('"source"%s*:%s*"fonts_lite"') ~= nil)
+end
+
 function CatalogClient.fetchFontsCatalogToFile(dest_path)
     local urls_to_try = {
         DEFAULT_FONTS_CATALOG_URL,
         FALLBACK_FONTS_CATALOG_URL,
     }
 
-    local final_cat_path = DataStorage:getDataDir() .. "/cache/Storefront/storefront_fonts.json"
     local etag = nil
-    local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
-    if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
-    if ok_lfs and lfs and lfs.attributes and lfs.attributes(final_cat_path, "mode") == "file" then
+    if CatalogClient.hasDedicatedFontsCatalog() then
         etag = CatalogClient.getStoredFontsCatalogEtag()
     end
 
@@ -1360,7 +1373,7 @@ function CatalogClient.processFontsDataToStaging(fonts, staging_fonts_file, fetc
     if CatalogClient._count_sink then
         CatalogClient._count_sink["cached_font_count"] = #font_list
     end
-    local font_data = { fetched_at = fetched_at, repos = font_list }
+    local font_data = { fetched_at = fetched_at, source = "fonts_lite", repos = font_list }
     local ok_f, ser_f = pcall(json.encode, font_data)
     font_list = nil
     font_data = nil
@@ -1675,7 +1688,13 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback, is_backg
                     collectgarbage("collect")
 
                     if ok_dec and type(parsed) == "table" then
-                        local fonts_target = (not fonts_proc_ok) and staging_fonts_file or nil
+                        local has_existing_fonts = false
+                        local ok_lfs_f, lfs_f = pcall(require, "libs/libkoreader-lfs")
+                        if not ok_lfs_f then ok_lfs_f, lfs_f = pcall(require, "lfs") end
+                        if ok_lfs_f and lfs_f and lfs_f.attributes and lfs_f.attributes(final_fonts_file, "mode") == "file" then
+                            has_existing_fonts = true
+                        end
+                        local fonts_target = (not fonts_proc_ok and not fonts_not_mod and not has_existing_fonts) and staging_fonts_file or nil
                         local ok_proc, proc_err = CatalogClient.processCatalogDataToStaging(parsed, staging_plugins_file, staging_patches_file, fonts_target, used_bundled)
                         parsed = nil
                         collectgarbage("collect")

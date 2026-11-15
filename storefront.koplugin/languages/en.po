@@ -14,6 +14,9 @@ msgstr "%d Categories"
 msgid "%d Curated Collections"
 msgstr "%d Curated Collections"
 
+msgid "%d downloads"
+msgstr "%d downloads"
+
 msgid "%d missing · %d updates · %d installed"
 msgstr "%d missing · %d updates · %d installed"
 
@@ -46,6 +49,9 @@ msgstr "%d wallpapers ›"
 
 msgid "%s and %s"
 msgstr "%s and %s"
+
+msgid "%s downloads"
+msgstr "%s downloads"
 
 msgid "%s is up to date (version %s)."
 msgstr "%s is up to date (version %s)."
