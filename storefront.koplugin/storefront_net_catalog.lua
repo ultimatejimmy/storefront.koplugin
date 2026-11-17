@@ -144,11 +144,24 @@ function CatalogClient.setStoredFontPreviewsEtag(etag)
     saveEtag(FONT_PREVIEWS_ETAG_KEY, etag)
 end
 
+local _has_extracted_previews_cache = nil
+local _has_dedicated_fonts_cache = nil
+
+function CatalogClient.invalidateFontStatusCache()
+    _has_extracted_previews_cache = nil
+    _has_dedicated_fonts_cache = nil
+end
+
+function CatalogClient.isAsyncFetchInProgress()
+    return CatalogClient._async_pid ~= nil
+end
+
 function CatalogClient.clearStoredFontsEtag()
     StorefrontSettings:delSetting(FONTS_CATALOG_ETAG_KEY)
     StorefrontSettings:delSetting(FONTS_CATALOG_LAST_FETCHED_KEY)
     StorefrontSettings:delSetting(FONT_PREVIEWS_ETAG_KEY)
     StorefrontSettings:flush()
+    CatalogClient.invalidateFontStatusCache()
 end
 
 function CatalogClient.getStoredCollectionsEtag()
@@ -739,9 +752,14 @@ function CatalogClient.fetchCollectionsCatalogToFile(dest_path)
 end
 
 function CatalogClient.hasDedicatedFontsCatalog()
+    if _has_dedicated_fonts_cache == true then
+        return true
+    end
     local final_cat_path = DataStorage:getDataDir() .. "/cache/Storefront/storefront_fonts.json"
     local f = io.open(final_cat_path, "rb")
-    if not f then return false end
+    if not f then
+        return false
+    end
     local head = f:read(256) or ""
     local size = f:seek("end") or 0
     local tail = ""
@@ -750,8 +768,12 @@ function CatalogClient.hasDedicatedFontsCatalog()
         tail = f:read("*all") or ""
     end
     f:close()
-    return (head:find('"source"%s*:%s*"fonts_lite"') ~= nil)
+    local res = (head:find('"source"%s*:%s*"fonts_lite"') ~= nil)
         or (tail:find('"source"%s*:%s*"fonts_lite"') ~= nil)
+    if res then
+        _has_dedicated_fonts_cache = true
+    end
+    return res
 end
 
 function CatalogClient.fetchFontsCatalogToFile(dest_path)
@@ -819,6 +841,9 @@ function CatalogClient.fetchFontsCatalogToFile(dest_path)
 end
 
 function CatalogClient.hasExtractedFontPreviews()
+    if _has_extracted_previews_cache == true then
+        return true
+    end
     local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
     if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
     if not (ok_lfs and lfs and lfs.attributes and lfs.dir) then
@@ -833,11 +858,13 @@ function CatalogClient.hasExtractedFontPreviews()
             local sub = previews_dir .. "/" .. entry
             local mode = lfs.attributes(sub, "mode")
             if mode == "file" and (entry:match("%.ttf$") or entry:match("%.otf$")) then
+                _has_extracted_previews_cache = true
                 return true
             elseif mode == "directory" then
                 for f in lfs.dir(sub) do
                     if f ~= "." and f ~= ".." and (f:match("%.ttf$") or f:match("%.otf$")) then
                         if lfs.attributes(sub .. "/" .. f, "mode") == "file" then
+                            _has_extracted_previews_cache = true
                             return true
                         end
                     end
@@ -1416,6 +1443,9 @@ function CatalogClient.extractFontPreviewsArchive(bundle_path, target_dir)
             reader:close()
         end
     end)
+    if extracted_any then
+        _has_extracted_previews_cache = true
+    end
     return extracted_any
 end
 
@@ -1575,6 +1605,7 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback, is_backg
                         os.remove(final_fonts_file)
                         if os.rename(staging_fonts_file, final_fonts_file) then
                             updated = true
+                            _has_dedicated_fonts_cache = true
                             Cache.invalidate()
                         end
                     end
@@ -1944,6 +1975,9 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback, is_backg
                 if callback then callback(true, "not_modified") end
             elseif is_ok and (ok_swap_p or ok_swap_pt or ok_swap_f or ok_swap_ss or ok_swap_rb or ok_swap_col or child_msg:find("fp=updated", 1, true) ~= nil or is_ok_not_modified) then
                 if ok_swap_p or ok_swap_pt or ok_swap_f then
+                    if ok_swap_f then
+                        _has_dedicated_fonts_cache = nil
+                    end
                     Cache.invalidate()
                     if StorefrontLogger then StorefrontLogger.info("Storefront: main catalog cache updated and swapped into place") end
                 elseif child_msg:find("main=not_modified") or is_ok_not_modified then
@@ -1955,6 +1989,7 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback, is_backg
                 end
 
                 if child_msg:find("fp=updated") then
+                    _has_extracted_previews_cache = true
                     pcall(function()
                         local ok_sli, StorefrontListItem = pcall(require, "storefront_list_item")
                         if ok_sli and StorefrontListItem and StorefrontListItem.clearFontFacePathCache then

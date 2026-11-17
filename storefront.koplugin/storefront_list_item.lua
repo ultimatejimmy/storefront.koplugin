@@ -59,6 +59,7 @@ local function ensureBundledFontsRegistered()
 end
 
 local _font_face_path_cache = {}
+local _font_face_registered = {}
 
 local function resolveFontItemFace(e, size)
     size = size or 22
@@ -92,6 +93,9 @@ local function resolveFontItemFace(e, size)
             script_dir = script_dir:sub(1, -2)
         end
 
+        local ok_mgr, font_mgr = pcall(require, "storefront_font_mgr")
+        local udirs = (ok_mgr and font_mgr and font_mgr.getUserFontDirs) and font_mgr.getUserFontDirs() or nil
+
         local search_dirs = {}
         for _, f_name in ipairs(folder_candidates) do
             local safe_f_name = f_name:gsub("%s+", "-")
@@ -101,24 +105,14 @@ local function resolveFontItemFace(e, size)
                 table.insert(search_dirs, data_dir .. "/fonts/" .. f_name)
             end
             if script_dir ~= "" then
-                table.insert(search_dirs, script_dir .. "/assets/bundled_fonts/" .. f_name)
                 table.insert(search_dirs, script_dir .. "/assets/fonts/" .. f_name)
-                table.insert(search_dirs, script_dir .. "/../assets/bundled_fonts/" .. f_name)
-                table.insert(search_dirs, script_dir .. "/../assets/fonts/" .. f_name)
             end
-            table.insert(search_dirs, "assets/bundled_fonts/" .. f_name)
             table.insert(search_dirs, "assets/fonts/" .. f_name)
-            table.insert(search_dirs, "plugins/storefront.koplugin/assets/bundled_fonts/" .. f_name)
             table.insert(search_dirs, "plugins/storefront.koplugin/assets/fonts/" .. f_name)
             if data_dir ~= "" then
-                table.insert(search_dirs, data_dir .. "/plugins/storefront.koplugin/assets/bundled_fonts/" .. f_name)
                 table.insert(search_dirs, data_dir .. "/plugins/storefront.koplugin/assets/fonts/" .. f_name)
-                table.insert(search_dirs, data_dir .. "/plugins/storefront.koplugin/storefront.koplugin/assets/bundled_fonts/" .. f_name)
-                table.insert(search_dirs, data_dir .. "/plugins/storefront.koplugin/storefront.koplugin/assets/fonts/" .. f_name)
             end
-            local ok_mgr, font_mgr = pcall(require, "storefront_font_mgr")
-            if ok_mgr and font_mgr and font_mgr.getUserFontDirs then
-                local udirs = font_mgr.getUserFontDirs()
+            if udirs then
                 for _, udir in ipairs(udirs) do
                     table.insert(search_dirs, udir .. "/" .. f_name)
                 end
@@ -165,15 +159,13 @@ local function resolveFontItemFace(e, size)
             end
         end
 
-        if loaded_font_path then
-            _font_face_path_cache[font_cache_key] = loaded_font_path
-        end
+        _font_face_path_cache[font_cache_key] = loaded_font_path or false
     elseif loaded_font_path == false then
         loaded_font_path = nil
     end
 
     if loaded_font_path then
-        if ok_lfs and lfs and lfs.attributes and lfs.attributes(loaded_font_path, "mode") == "file" then
+        if not _font_face_registered[loaded_font_path] then
             local ok_fl, FontList = pcall(require, "fontlist")
             if ok_fl and FontList and FontList.getFontList then
                 local fl = FontList:getFontList()
@@ -187,31 +179,13 @@ local function resolveFontItemFace(e, size)
                     end
                 end
             end
-            local ok, f = pcall(Font.getFace, Font, loaded_font_path, size)
-            if ok and f then face = f end
+            _font_face_registered[loaded_font_path] = true
         end
-    end
-
-    if not face and font_file ~= "" then
-        for _, f_name in ipairs(folder_candidates) do
-            local candidate = data_dir .. "/fonts/" .. f_name .. "/" .. font_file
-            if ok_lfs and lfs and lfs.attributes and lfs.attributes(candidate, "mode") == "file" then
-                local ok_fl, FontList = pcall(require, "fontlist")
-                if ok_fl and FontList and FontList.getFontList then
-                    local fl = FontList:getFontList()
-                    if fl then
-                        local found = false
-                        for _, p in ipairs(fl) do
-                            if p == candidate then found = true; break end
-                        end
-                        if not found then
-                            table.insert(fl, candidate)
-                        end
-                    end
-                end
-                local ok, f = pcall(Font.getFace, Font, candidate, size)
-                if ok and f then face = f; break end
-            end
+        local ok, f = pcall(Font.getFace, Font, loaded_font_path, size)
+        if ok and f then
+            face = f
+        else
+            _font_face_path_cache[font_cache_key] = nil
         end
     end
 
@@ -725,6 +699,7 @@ end
 StorefrontListItem.resolveFontItemFace = resolveFontItemFace
 StorefrontListItem.clearFontFacePathCache = function()
     _font_face_path_cache = {}
+    _font_face_registered = {}
 end
 
 return StorefrontListItem

@@ -2507,6 +2507,78 @@ do
     end
 end
 
+    -- Test Installed tab version vs date display
+    do
+        local MainStorefront = require("main")
+        local InstallStore = require("storefront_installs")
+        local sample_mtime = 1794700000
+        local expected_date = os.date("%Y-%m-%d", sample_mtime)
+
+        local orig_list_plugins = MainStorefront.listInstalledPlugins
+        local orig_list_patches = MainStorefront.listInstalledPatches
+        local orig_collect_updates = MainStorefront.collectUpdateSummary
+        local orig_collect_patch_updates = MainStorefront.collectPatchUpdateSummary
+        local orig_installed_state = MainStorefront.installed_state
+        local orig_install_list = InstallStore.list
+
+        MainStorefront.installed_state = {
+            filter_type = "plugin",
+            filter_default = "all",
+            filter_status = "all",
+            search_text = "",
+            sort_mode = "name_asc",
+        }
+        MainStorefront.listInstalledPlugins = function()
+            return {
+                { dirname = "ver_noprefix.koplugin", name = "Alpha", version = "1.4.0", latest_mtime = sample_mtime },
+                { dirname = "ver_withv.koplugin", name = "Beta", version = "v2.1.0", latest_mtime = sample_mtime },
+                { dirname = "ver_none.koplugin", name = "Gamma", version = nil, latest_mtime = sample_mtime },
+                { dirname = "ver_branch.koplugin", name = "Delta", version = "1.0.0", latest_mtime = sample_mtime },
+                { dirname = "ver_record.koplugin", name = "Epsilon", version = nil, latest_mtime = sample_mtime },
+            }
+        end
+        MainStorefront.listInstalledPatches = function() return {} end
+        MainStorefront.collectUpdateSummary = function() return { data = {} } end
+        MainStorefront.collectPatchUpdateSummary = function() return { data = {} } end
+        InstallStore.list = function()
+            return {
+                ["ver_branch.koplugin"] = {
+                    owner = "tester",
+                    repo = "delta",
+                    source = "branch",
+                    branch = "dev",
+                    sha = "abcdef1234567",
+                },
+                ["ver_record.koplugin"] = {
+                    owner = "tester",
+                    repo = "epsilon",
+                    installed_version = "3.2.1",
+                },
+            }
+        end
+
+        MainStorefront._installed_tab_items_cache = nil
+        local page_items = MainStorefront:buildInstalledEntries(2000)
+        local by_dir = {}
+        for _, item in ipairs(page_items or {}) do
+            if item.dirname then by_dir[item.dirname] = item end
+        end
+
+        check("Installed plugin without v prefix gets v prefix", by_dir["ver_noprefix.koplugin"] and by_dir["ver_noprefix.koplugin"].updated, "v1.4.0")
+        check("Installed plugin with v prefix keeps v prefix", by_dir["ver_withv.koplugin"] and by_dir["ver_withv.koplugin"].updated, "v2.1.0")
+        check("Installed plugin without version falls back to date", by_dir["ver_none.koplugin"] and by_dir["ver_none.koplugin"].updated, expected_date)
+        check("Installed branch plugin falls back to date", by_dir["ver_branch.koplugin"] and by_dir["ver_branch.koplugin"].updated, expected_date)
+        check("Installed plugin falls back to record installed_version", by_dir["ver_record.koplugin"] and by_dir["ver_record.koplugin"].updated, "v3.2.1")
+
+        InstallStore.list = orig_install_list
+        MainStorefront.listInstalledPlugins = orig_list_plugins
+        MainStorefront.listInstalledPatches = orig_list_patches
+        MainStorefront.collectUpdateSummary = orig_collect_updates
+        MainStorefront.collectPatchUpdateSummary = orig_collect_patch_updates
+        MainStorefront.installed_state = orig_installed_state
+        MainStorefront._installed_tab_items_cache = nil
+    end
+
 if failures > 0 then
     print(string.format("UI TESTS FAILED: %d errors", failures))
     os.exit(1)

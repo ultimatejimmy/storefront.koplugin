@@ -327,7 +327,12 @@ local function getFontStems(font_name)
     return stems
 end
 
+local G_user_font_dirs_cache = nil
+
 local function getUserFontDirs()
+    if G_user_font_dirs_cache then
+        return G_user_font_dirs_cache
+    end
     local ok_ds, DataStorage = pcall(require, "datastorage")
     local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
     if not (ok_ds and DataStorage and ok_lfs and lfs) then
@@ -403,6 +408,7 @@ local function getUserFontDirs()
         addDir(home .. "/.config/koreader/fonts")
     end
 
+    G_user_font_dirs_cache = dirs
     return dirs
 end
 
@@ -412,6 +418,7 @@ local G_fonts_map_cache = nil
 local function invalidateInstalledFontsCache()
     G_fonts_map_cache = nil
     G_installed_fonts_cache = nil
+    G_user_font_dirs_cache = nil
 end
 
 local function getInstalledFontsMap()
@@ -901,6 +908,13 @@ function M:init(Storefront)
 
         if synced_count > 0 then
             purgeFontCacheFiles()
+            invalidateInstalledFontsCache()
+            pcall(function()
+                local ok_sli, StorefrontListItem = pcall(require, "storefront_list_item")
+                if ok_sli and StorefrontListItem and StorefrontListItem.clearFontFacePathCache then
+                    StorefrontListItem.clearFontFacePathCache()
+                end
+            end)
             StorefrontLogger.info(string.format("Synced %d pending font downloads in background", synced_count))
         end
     end
@@ -1086,6 +1100,13 @@ function M:init(Storefront)
         end
 
         purgeFontCacheFiles()
+        invalidateInstalledFontsCache()
+        pcall(function()
+            local ok_sli, StorefrontListItem = pcall(require, "storefront_list_item")
+            if ok_sli and StorefrontListItem and StorefrontListItem.clearFontFacePathCache then
+                StorefrontListItem.clearFontFacePathCache()
+            end
+        end)
 
         InstallStore.upsertFont(font_name, {
             repo_id = repo.id or repo.repo_id,

@@ -1556,7 +1556,7 @@ local G_installed_plugins_cache = nil
 local G_installed_patches_cache = nil
 local G_installed_fonts_cache = nil
 
-local function invalidateInstalledPluginsCache()
+local function invalidateInstalledPluginsCache(opts)
     G_installed_plugins_cache = nil
     G_installed_patches_cache = nil
     G_installed_fonts_cache = nil
@@ -1565,9 +1565,11 @@ local function invalidateInstalledPluginsCache()
         Storefront._installed_tab_items_cache = nil
         Storefront._installed_lookup_cache = nil
     end
-    local ok_fm, font_mgr = pcall(require, "storefront_font_mgr")
-    if ok_fm and font_mgr and type(font_mgr.invalidateInstalledFontsCache) == "function" then
-        font_mgr.invalidateInstalledFontsCache()
+    if not (opts and opts.keep_fonts_cache) then
+        local ok_fm, font_mgr = pcall(require, "storefront_font_mgr")
+        if ok_fm and font_mgr and type(font_mgr.invalidateInstalledFontsCache) == "function" then
+            font_mgr.invalidateInstalledFontsCache()
+        end
     end
     local ok_pm, patch_mgr = pcall(require, "storefront_patch_mgr")
     if ok_pm and patch_mgr and type(patch_mgr.invalidateInstalledPatchesCache) == "function" then
@@ -7038,6 +7040,17 @@ function Storefront:collectPatchEntries(repos)
     return result
 end
 
+local function versionOrDate(version, mtime)
+    local ver = type(version) == "string" and version:match("^%s*(.-)%s*$") or nil
+    if ver and ver ~= "" then
+        if not ver:match("^[vV]") and ver:match("^%d") then
+            return "v" .. ver
+        end
+        return ver
+    end
+    return formatTimestamp(mtime)
+end
+
 local function getRepoVersionOrDate(repo, installed_lookup)
     local ver = repo.latest_version or repo.version or repo.tag_name or repo.release_tag
     if not ver and repo.data then
@@ -7293,11 +7306,14 @@ local function getSampleHeights(item_w)
     end)
     clear_h = (ok_c and widget_c and widget_c.getSize) and widget_c:getSize().h or sc(36)
 
+    local font_pad = sc(6)
     cached = {
         thumb = thumb_h,
         update = update_h,
         three_line = desc_3line_h,
         two_line = desc_2line_h,
+        font_three_line = desc_3line_h + font_pad,
+        font_two_line = desc_2line_h + font_pad,
         clear = clear_h,
     }
     _sample_height_cache[item_w] = cached
@@ -7373,16 +7389,10 @@ function Storefront:paginateEntries(items, tab_name, available_list_height)
                 elseif entry.is_update_item then
                     item_h = samples.update
                 elseif entry.kind == "font" or entry.is_font then
-                    local ok_m, w_m = pcall(function()
-                        return StorefrontListItem:new{ entry = entry, width = item_w }
-                    end)
-                    local measured = ok_m and w_m and w_m.getSize and w_m:getSize().h
-                    if measured and measured > 0 then
-                        item_h = measured
-                    elseif entry.description and entry.description ~= "" then
-                        item_h = samples.three_line
+                    if entry.description and entry.description ~= "" then
+                        item_h = samples.font_three_line or samples.three_line
                     else
-                        item_h = samples.two_line
+                        item_h = samples.font_two_line or samples.two_line
                     end
                 elseif entry.description and entry.description ~= "" then
                     item_h = samples.three_line
@@ -7595,7 +7605,10 @@ function Storefront:buildInstalledEntries(available_list_height)
                     name = display_name,
                     owner = record and record.owner or "",
                     stars_fmt = (record and record.stars) and tostring(record.stars) or "0",
-                    updated = formatTimestamp(plugin.latest_mtime),
+                    updated = versionOrDate(
+                        (not is_branch) and (plugin.version or (record and (record.installed_version or record.installed_tag))) or nil,
+                        plugin.latest_mtime
+                    ),
                     mtime = plugin.latest_mtime or 0,
                     kind_label = meta_kind,
                     description = record and record.repo_description or "",
@@ -9727,7 +9740,8 @@ function Storefront:updateBrowserTabInPlace(tab_name, target_page, initial_focus
         self:resetFiltersForRefresh()
         if tab_name == "Fonts" then
             local ok_cc, CatalogClient = pcall(require, "storefront_net_catalog")
-            if ok_cc and CatalogClient and CatalogClient.hasExtractedFontPreviews and not CatalogClient.hasExtractedFontPreviews() then
+            local in_progress = ok_cc and CatalogClient and CatalogClient.isAsyncFetchInProgress and CatalogClient.isAsyncFetchInProgress()
+            if ok_cc and CatalogClient and not in_progress and CatalogClient.hasExtractedFontPreviews and not CatalogClient.hasExtractedFontPreviews() then
                 UIManager:nextTick(function()
                     pcall(function() self:maybeCheckCatalogBackground() end)
                 end)
@@ -9906,7 +9920,7 @@ function Storefront:browserAdvanceSort()
 end
 
 function Storefront:softRefreshCurrentBrowserView()
-    invalidateInstalledPluginsCache()
+    invalidateInstalledPluginsCache({ keep_fonts_cache = true })
     self._cached_plugin_summary = nil
     self._cached_patch_summary = nil
     self._merged_updates_cache = nil
@@ -9976,6 +9990,9 @@ function Storefront:maybeCheckCatalogBackground()
 
     local Cache = require("storefront_cache")
     local CatalogClient = require("storefront_net_catalog")
+    if CatalogClient.isAsyncFetchInProgress and CatalogClient.isAsyncFetchInProgress() then
+        return
+    end
     local current_tab = (self.browser_state and self.browser_state.tab) or "Plugins"
     local check_kind = (current_tab == "Patches") and "patch"
         or (current_tab == "Fonts" and "font")
@@ -10001,10 +10018,12 @@ function Storefront:maybeCheckCatalogBackground()
     local missing_font_previews = (CatalogClient.hasExtractedFontPreviews ~= nil) and (not CatalogClient.hasExtractedFontPreviews())
     local missing_fonts_catalog = (CatalogClient.hasDedicatedFontsCatalog ~= nil) and (not CatalogClient.hasDedicatedFontsCatalog())
     local missing_fonts_etag = (CatalogClient.getStoredFontsCatalogEtag ~= nil) and (not CatalogClient.getStoredFontsCatalogEtag())
-    local needs_fetch = (last_fetched == 0 or repo_count == 0 or age > 3600 or missing_font_previews or missing_fonts_catalog or missing_fonts_etag)
-    if not needs_fetch and self._last_catalog_check_time and (now - self._last_catalog_check_time) < MIN_CATALOG_CHECK_INTERVAL then
+    local needs_core_fetch = (last_fetched == 0 or repo_count == 0 or age > 3600)
+    local needs_font_fetch = (missing_font_previews or missing_fonts_catalog or missing_fonts_etag)
+    if not needs_core_fetch and self._last_catalog_check_time and (now - self._last_catalog_check_time) < MIN_CATALOG_CHECK_INTERVAL then
         return
     end
+    local needs_fetch = needs_core_fetch or needs_font_fetch
 
     pcall(function() self:syncPendingFontDownloads() end)
 
