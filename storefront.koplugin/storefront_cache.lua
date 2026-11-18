@@ -184,11 +184,12 @@ function Cache.purgeMem()
     _loaded = false
 end
 
-function Cache.storeRepos(kind, repos, custom_fetched_at)
+function Cache.storeRepos(kind, repos, custom_fetched_at, custom_generated_ts)
     if not kind or type(repos) ~= "table" then return end
     Cache.init()
     
     local fetched_at = tonumber(custom_fetched_at) or os.time()
+    local generated_ts = tonumber(custom_generated_ts) or fetched_at
     local list = {}
     
     local existing_patches = {}
@@ -271,6 +272,7 @@ function Cache.storeRepos(kind, repos, custom_fetched_at)
     
     _data[kind] = {
         fetched_at = fetched_at,
+        generated_timestamp = generated_ts,
         repos = list,
     }
     saveCachedCount(kind, #list)
@@ -367,6 +369,14 @@ function Cache.getLastFetched(kind)
     kind = kind or "plugin"
     Cache.init()
     return _data[kind] and _data[kind].fetched_at or 0
+end
+
+function Cache.getGeneratedTimestamp(kind)
+    kind = kind or "plugin"
+    Cache.init()
+    local d = _data[kind]
+    if not d then return 0 end
+    return tonumber(d.generated_timestamp) or tonumber(d.fetched_at) or 0
 end
 
 function Cache.setLastFetched(kind, timestamp)

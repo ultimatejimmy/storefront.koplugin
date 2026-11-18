@@ -133,19 +133,22 @@ function StorefrontUpdatesUi:init(StorefrontClass)
                     callback = function()
                         local DetailsDialog = require("storefront_details_dialog")
                         local cached_repo
-                        if record then
-                            if record.repo_id then
-                                cached_repo = Cache.getRepo(record.repo_id)
-                            end
-                            if not cached_repo and record.owner and record.repo then
-                                cached_repo = Cache.getRepoByName(record.owner, record.repo)
-                            end
+                        local fallback_id = record and record.repo_id or nil
+                        if not fallback_id and plugin and (plugin.dirname == "storefront.koplugin" or plugin.dirname == "storefront") then
+                            fallback_id = 1304319884
+                        end
+                        if fallback_id then
+                            cached_repo = Cache.getRepo(fallback_id)
+                        end
+                        if not cached_repo and record and record.owner and record.repo then
+                            cached_repo = Cache.getRepoByName(record.owner, record.repo)
                         end
                         local repo = cached_repo or {
                             name = record and record.repo or (plugin and plugin.dirname or ""),
                             owner = record and record.owner or "",
                             full_name = record and record.repo_full_name or "",
-                            id = record and record.repo_id or nil,
+                            id = fallback_id,
+                            repo_id = fallback_id,
                             description = record and record.repo_description or "",
                             stars = 0,
                             data = {

@@ -127,5 +127,31 @@ class TestVerifyCatalogCLI(unittest.TestCase):
         self.assertFalse(verify_catalog.verify_catalog_file(unminified_path, min_plugins=650, min_patches=50, min_fonts=20))
 
 
+class TestStorefrontForkIsolation(unittest.TestCase):
+    def test_storefront_and_fork_ratings_stay_isolated(self):
+        ratings_data = {
+            "1304319884": {"up": 102, "down": 0, "wilson": 0.96, "downloads": 120},
+            "storefront.koplugin": {"up": 2, "down": 0, "wilson": 0.34, "downloads": 10},
+        }
+        canonical_item = {"id": 1304319884, "owner": "ultimatejimmy", "name": "storefront.koplugin", "full_name": "ultimatejimmy/storefront.koplugin"}
+        fork_item = {"id": 1349827230, "owner": "xu-wentao", "name": "storefront.koplugin", "full_name": "xu-wentao/storefront.koplugin"}
+
+        def lookup(item):
+            r_id = item.get("id") or item.get("repo_id")
+            full_name = item.get("full_name") or ""
+            owner = item.get("owner") or ""
+            name = item.get("name") or ""
+            author_key = f"{owner}/{name}" if owner and name else ""
+            return (
+                ratings_data.get(str(r_id))
+                or ratings_data.get(full_name)
+                or ratings_data.get(author_key)
+                or {}
+            )
+
+        self.assertEqual(lookup(canonical_item).get("up"), 102)
+        self.assertEqual(lookup(fork_item).get("up", 0), 0)
+
+
 if __name__ == "__main__":
     unittest.main()

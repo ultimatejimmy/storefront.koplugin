@@ -461,17 +461,18 @@ function CatalogClient.updateCacheFromCatalog(catalog_data, is_bundled)
     end
 
     local custom_fetched_at = is_bundled and 0 or nil
+    local catalog_gen_ts = tonumber(catalog_data.generated_timestamp) or (is_bundled and 0 or os.time())
     logger.info("Storefront: updating cache from static catalog", "plugins:", #plugins, "patches:", #patches, "fonts:", #fonts, "is_bundled:", tostring(is_bundled))
 
     
     -- Store plugin repositories
-    Cache.storeRepos("plugin", plugins, custom_fetched_at)
+    Cache.storeRepos("plugin", plugins, custom_fetched_at, catalog_gen_ts)
     
     -- Store patch repositories
-    Cache.storeRepos("patch", patches, custom_fetched_at)
+    Cache.storeRepos("patch", patches, custom_fetched_at, catalog_gen_ts)
     
     -- Store font repositories
-    Cache.storeRepos("font", fonts, custom_fetched_at)
+    Cache.storeRepos("font", fonts, custom_fetched_at, catalog_gen_ts)
     
     -- Store patch file metadata for patch repositories
     local has_patch_files = false
@@ -1209,7 +1210,8 @@ function CatalogClient.processCatalogDataToStaging(catalog_data, staging_plugins
     if CatalogClient._count_sink then
         CatalogClient._count_sink["cached_plugin_count"] = #plugin_list
     end
-    local plugin_data = { fetched_at = fetched_at, repos = plugin_list }
+    local catalog_gen_ts = tonumber(catalog_data.generated_timestamp) or fetched_at
+    local plugin_data = { fetched_at = fetched_at, generated_timestamp = catalog_gen_ts, repos = plugin_list }
     local ok_p, ser_p = pcall(json.encode, plugin_data)
     plugin_list = nil
     plugin_data = nil

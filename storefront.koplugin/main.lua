@@ -7601,17 +7601,50 @@ function Storefront:buildInstalledEntries(available_list_height)
                     item_repo_id = 1304319884
                 end
 
+                local cached_repo = nil
+                if item_repo_id then
+                    cached_repo = Cache.getRepo(item_repo_id)
+                end
+                if not cached_repo and record and record.owner and record.repo then
+                    cached_repo = Cache.getRepoByName(record.owner, record.repo)
+                end
+                if not cached_repo and plugin.dirname and plugin.dirname ~= "storefront.koplugin" and plugin.dirname ~= "storefront" and Cache.getRepoByPluginName then
+                    cached_repo = Cache.getRepoByPluginName(plugin.dirname)
+                end
+                if not item_repo_id and cached_repo then
+                    item_repo_id = cached_repo.repo_id or cached_repo.id
+                end
+
+                local resolved_stars = (record and tonumber(record.stars))
+                    or (cached_repo and tonumber(cached_repo.stars))
+                    or 0
+                local resolved_owner = (record and record.owner and record.owner ~= "" and record.owner)
+                    or (cached_repo and cached_repo.owner)
+                    or ""
+                local resolved_full_name = (record and record.repo_full_name and record.repo_full_name ~= "" and record.repo_full_name)
+                    or (cached_repo and cached_repo.full_name)
+                    or (resolved_owner ~= "" and (resolved_owner .. "/" .. plugin.dirname))
+                    or nil
+                local resolved_desc = (record and record.repo_description and record.repo_description ~= "" and record.repo_description)
+                    or (cached_repo and cached_repo.description)
+                    or ""
+
                 table.insert(items, {
                     name = display_name,
-                    owner = record and record.owner or "",
-                    stars_fmt = (record and record.stars) and tostring(record.stars) or "0",
+                    owner = resolved_owner,
+                    stars = resolved_stars,
+                    stars_fmt = tostring(resolved_stars),
+                    user_thumbs_up = (cached_repo and tonumber(cached_repo.user_thumbs_up)) or (record and tonumber(record.user_thumbs_up)) or nil,
+                    user_thumbs_down = (cached_repo and tonumber(cached_repo.user_thumbs_down)) or (record and tonumber(record.user_thumbs_down)) or nil,
+                    wilson_score = (cached_repo and tonumber(cached_repo.wilson_score)) or (record and tonumber(record.wilson_score)) or nil,
+                    downloads = (cached_repo and tonumber(cached_repo.downloads)) or (record and tonumber(record.downloads)) or nil,
                     updated = versionOrDate(
                         (not is_branch) and (plugin.version or (record and (record.installed_version or record.installed_tag))) or nil,
                         plugin.latest_mtime
                     ),
                     mtime = plugin.latest_mtime or 0,
                     kind_label = meta_kind,
-                    description = record and record.repo_description or "",
+                    description = resolved_desc,
                     badge_icon = getAssetPath(disabled and "square.svg" or "check-square.svg"),
                     badge = badge_text,
                     is_entry = true,
@@ -7622,31 +7655,34 @@ function Storefront:buildInstalledEntries(available_list_height)
                     dirname = plugin.dirname,
                     id = item_repo_id,
                     repo_id = item_repo_id,
-                    full_name = record and record.repo_full_name or (record and record.owner and (record.owner .. "/" .. plugin.dirname)) or nil,
-                    repo = record and {
+                    full_name = resolved_full_name,
+                    repo = (cached_repo or record) and {
                         id = item_repo_id,
                         repo_id = item_repo_id,
-                        name = record.repo or plugin.dirname,
-                        owner = record.owner or "",
-                        full_name = record.repo_full_name,
+                        name = (record and record.repo) or (cached_repo and cached_repo.name) or plugin.dirname,
+                        owner = resolved_owner,
+                        full_name = resolved_full_name,
                     } or nil,
                     on_badge_tap = function()
                         self:togglePluginDisabled(plugin.dirname)
                     end,
                     callback = function()
                         local DetailsDialog = require("storefront_details_dialog")
-                        local cached_repo
-                        if record then
-                            if record.repo_id then cached_repo = Cache.getRepo(record.repo_id) end
-                            if not cached_repo and record.owner and record.repo then cached_repo = Cache.getRepoByName(record.owner, record.repo) end
+                        local live_cached = cached_repo
+                        if not live_cached then
+                            if item_repo_id then live_cached = Cache.getRepo(item_repo_id) end
+                            if not live_cached and record and record.owner and record.repo then
+                                live_cached = Cache.getRepoByName(record.owner, record.repo)
+                            end
                         end
-                        local repo = cached_repo or {
+                        local repo = live_cached or {
                             name = record and record.repo or plugin.dirname,
-                            owner = record and record.owner or "",
-                            full_name = record and record.repo_full_name or "",
-                            id = record and record.repo_id or nil,
-                            description = record and record.repo_description or "",
-                            stars = 0,
+                            owner = resolved_owner,
+                            full_name = resolved_full_name or "",
+                            id = item_repo_id,
+                            repo_id = item_repo_id,
+                            description = resolved_desc,
+                            stars = resolved_stars,
                         }
                         local details_dialog = DetailsDialog:new{
                             Storefront = self,
@@ -8103,10 +8139,6 @@ function Storefront:filterAndSortScreensavers(catalog, opts)
     local both_sources_active = (active_sources.storefront ~= false and active_sources.readerbackdrop ~= false)
     local is_category_empty = (not ss_cat or ss_cat == "" or ss_cat == "all") and (not ss_cats or ss_cats["all"] == true or not next(ss_cats))
 
-    local ok_ratings, StorefrontRatings = pcall(require, "storefront_ratings")
-    local liveRatings = (ok_ratings and StorefrontRatings and StorefrontRatings.liveRatings) or nil
-    local has_live = liveRatings and (next(liveRatings) ~= nil)
-
     if not col_item_order and ss_sort == "featured" and both_sources_active and is_category_empty and (not search_terms or #search_terms == 0) and owner_term == "" then
         local copy = {}
         for idx, entry in ipairs(catalog) do
@@ -8255,16 +8287,15 @@ function Storefront:filterAndSortScreensavers(catalog, opts)
     end
 
     local ok_ratings, StorefrontRatings = pcall(require, "storefront_ratings")
-    local liveRatings = (ok_ratings and StorefrontRatings and StorefrontRatings.liveRatings) or nil
-    local has_live = liveRatings and (next(liveRatings) ~= nil)
 
     local function getSortMetadata(list)
         local dl_scores = {}
         local scores = {}
         local titles = {}
         for _, entry in ipairs(list) do
-            dl_scores[entry] = (live_r and live_r.downloads) or entry.downloads or entry.download_count or entry.downloads_count or entry.installs or 0
-            scores[entry] = (live_r and (live_r.up - live_r.down)) or entry.likes or 0
+            local r = (ok_ratings and StorefrontRatings and StorefrontRatings.getRating) and StorefrontRatings.getRating(entry) or nil
+            dl_scores[entry] = (r and r.downloads) or entry.downloads or entry.download_count or entry.downloads_count or entry.installs or 0
+            scores[entry] = (r and (r.up - r.down)) or entry.likes or 0
             titles[entry] = entry._title_lower or (entry.title or entry.name or ""):lower()
             entry._title_lower = titles[entry]
         end

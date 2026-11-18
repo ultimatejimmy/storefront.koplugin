@@ -27,6 +27,16 @@ jobs:
           python-version: '3.x'
 
 
+      - name: Fetch Latest Catalog Snapshot
+        run: |
+          TMP_CATALOG="/tmp/latest_catalog.json"
+          if curl -fsSL --retry 3 --max-time 30 "https://ultimatejimmy.github.io/storefront.koplugin/catalog.json" -o "$TMP_CATALOG" && python tools/verify_catalog.py "$TMP_CATALOG"; then
+            cp "$TMP_CATALOG" storefront.koplugin/catalog.json
+            echo "Bundled fresh gh-pages catalog.json into release workspace."
+          else
+            echo "Warning: failed to fetch/verify gh-pages catalog.json; keeping repository snapshot."
+          fi
+
       - name: Create Plugin Archive
         run: |
           # Package the plugin directory into a zip file

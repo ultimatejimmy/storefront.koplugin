@@ -1049,6 +1049,57 @@ if ok_browser then
         local meta_entries = MainStorefront:buildInstalledEntries()
         check("buildInstalledEntries uses meta.fullname for display name", meta_entries[1] and meta_entries[1].name, "Neo Quick Settings")
 
+        -- Test Installed tab hydrates Storefront (1304319884) catalog metrics even without InstallStore record
+        do
+            local Cache = require("storefront_cache")
+            local orig_get_repo = Cache.getRepo
+            Cache.getRepo = function(id)
+                if tonumber(id) == 1304319884 then
+                    return {
+                        id = 1304319884,
+                        repo_id = 1304319884,
+                        name = "storefront.koplugin",
+                        owner = "ultimatejimmy",
+                        full_name = "ultimatejimmy/storefront.koplugin",
+                        stars = 393,
+                        user_thumbs_up = 102,
+                        user_thumbs_down = 0,
+                        wilson_score = 0.96,
+                        downloads = 120,
+                        description = "Storefront plugin browser",
+                    }
+                end
+                return orig_get_repo and orig_get_repo(id) or nil
+            end
+            local sf_plugin = {
+                dirname = "storefront.koplugin",
+                meta = { name = "storefront", fullname = "Storefront" },
+                name = "Storefront",
+                fullname = "Storefront",
+                root = "plugins",
+                latest_mtime = os.time(),
+            }
+            MainStorefront.listInstalledPlugins = function() return { sf_plugin } end
+            MainStorefront.listInstalledPatches = function() return {} end
+            local orig_list_fonts_sf = MainStorefront.listInstalledFonts
+            MainStorefront.listInstalledFonts = function() return {} end
+            MainStorefront._installed_tab_items_cache = nil
+            local sf_entries = MainStorefront:buildInstalledEntries()
+            Cache.getRepo = orig_get_repo
+            MainStorefront.listInstalledFonts = orig_list_fonts_sf
+            local sf_entry = nil
+            for _, item in ipairs(sf_entries or {}) do
+                if item.dirname == "storefront.koplugin" then
+                    sf_entry = item
+                    break
+                end
+            end
+            check("buildInstalledEntries hydrates Storefront id 1304319884", sf_entry and sf_entry.id, 1304319884)
+            check("buildInstalledEntries hydrates Storefront user_thumbs_up", sf_entry and sf_entry.user_thumbs_up, 102)
+            check("buildInstalledEntries hydrates Storefront downloads", sf_entry and sf_entry.downloads, 120)
+            check("buildInstalledEntries hydrates Storefront stars_fmt", sf_entry and sf_entry.stars_fmt, "393")
+        end
+
         -- Test Font Origin Filtering on Installed Tab (Issue: default fonts listed as user installed)
         local orig_list_fonts = MainStorefront.listInstalledFonts
         local mock_fonts = {

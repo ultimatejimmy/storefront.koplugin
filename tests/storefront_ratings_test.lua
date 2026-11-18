@@ -137,102 +137,166 @@ describe("storefront_ratings", function()
             downloads = 50,
         }
 
-        -- With no live ratings cached, catalog fallback is used
-        StorefrontRatings.liveRatings = {}
+        -- Catalog metrics are authoritative baseline
         local r1 = StorefrontRatings.getRating(item)
         assert.equals(100, r1.up)
         assert.equals(2, r1.down)
         assert.equals(50, r1.downloads)
-
-        -- When live server ratings are available, they override catalog even if lower
-        StorefrontRatings.liveRatings["555555"] = {
-            up = 6,
-            down = 0,
-            wilson = 0.61,
-            downloads = 5,
-        }
-        local r2 = StorefrontRatings.getRating(item)
-        assert.equals(6, r2.up)
-        assert.equals(0, r2.down)
-        assert.equals(5, r2.downloads)
     end)
 
-    it("should clear cache and report stats correctly", function()
-        assert.is_table(StorefrontRatings.getCacheStats())
-        local stats_before = StorefrontRatings.getCacheStats()
-        assert.is_number(stats_before.files)
-        assert.is_number(stats_before.bytes)
+    it("should delete legacy storefront_ratings_cache.json on startup and never let stale cache override catalog", function()
+        local DataStorage = require("datastorage")
+        local json = require("json")
+        local settings_dir = DataStorage:getSettingsDir()
+        os.execute(string.format('mkdir -p "%s"', settings_dir))
+        local cache_file = settings_dir .. "/storefront_ratings_cache.json"
+        local f = io.open(cache_file, "w")
+        assert.is_not_nil(f)
+        f:write(json.encode({
+            ["storefront.koplugin"] = { up = 2, down = 0, wilson = 0.34, downloads = 10 },
+            ["1304319884"] = { up = 2, down = 0, wilson = 0.34, downloads = 10 },
+        }))
+        f:close()
 
-        StorefrontRatings.liveRatings["test_repo"] = { up = 1, down = 0 }
-        assert.is_not_nil(StorefrontRatings.liveRatings["test_repo"])
+        -- Reload module to trigger startup cleanup
+        package.loaded["storefront_ratings"] = nil
+        local SR = require("storefront_ratings")
 
-        local res = StorefrontRatings.clearCache()
-        assert.is_table(res)
-        assert.is_number(res.removed)
-        assert.is_number(res.bytes)
-        assert.is_nil(StorefrontRatings.liveRatings["test_repo"])
-    end)
+        local stats = SR.getCacheStats()
+        assert.equals(0, stats.files)
+        assert.equals(0, stats.bytes)
 
-    it("should resolve Storefront aliases to canonical ID and pick best live rating", function()
-        StorefrontRatings.liveRatings["1304319884"] = {
-            up = 73,
-            down = 0,
-            wilson = 0.95,
+        local sf_item = {
+            id = 1304319884,
+            repo_id = 1304319884,
+            name = "storefront.koplugin",
+            full_name = "ultimatejimmy/storefront.koplugin",
+            user_thumbs_up = 102,
+            user_thumbs_down = 0,
             downloads = 120,
         }
-        StorefrontRatings.liveRatings["storefront.koplugin"] = {
-            up = 2,
-            down = 0,
-            wilson = 0.34,
-            downloads = 10,
-        }
-
-        local installed_sf = {
-            name = "Storefront",
-            dirname = "storefront.koplugin",
-        }
-        local r = StorefrontRatings.getRating(installed_sf)
-        assert.equals(73, r.up)
+        local r = SR.getRating(sf_item)
+        assert.equals(102, r.up)
         assert.equals(0, r.down)
         assert.equals(120, r.downloads)
-
-        local string_sf = "storefront.koplugin"
-        local r_str = StorefrontRatings.getRating(string_sf)
-        assert.equals(73, r_str.up)
     end)
 
-    it("should normalize ratings sparsely and omit all-zero entries", function()
-        local raw_backend_response = {
-            ["item_active"] = { up = 5, down = 1, wilson = 0.5, downloads = 12 },
-            ["item_download_only"] = { up = 0, down = 0, wilson = 0, downloads = 4 },
-            ["item_zero_1"] = { up = 0, down = 0, wilson = 0, downloads = 0 },
-            ["item_zero_2"] = { up = "0", down = "0", wilson = "0", downloads = "0" },
+    it("should keep Storefront (1304319884) and forks (1349827230) strictly isolated", function()
+        local StorefrontSettings = require("storefront_settings")
+        StorefrontSettings:saveSetting("user_votes", {
+            [1304319884] = "up",
+            ["1304319884.koplugin"] = "up",
+            ["storefront.koplugin"] = "up",
+            ["ultimatejimmy/storefront"] = "up",
+            ["ultimatejimmy/storefront.koplugin"] = "up",
+        })
+
+        package.loaded["storefront_ratings"] = nil
+        local SR = require("storefront_ratings")
+
+        -- Legacy Storefront votes migrate cleanly to "1304319884" and do NOT double-count catalog
+        local sf_item = {
+            id = 1304319884,
+            repo_id = 1304319884,
+            name = "storefront.koplugin",
+            owner = "ultimatejimmy",
+            full_name = "ultimatejimmy/storefront.koplugin",
+            user_thumbs_up = 102,
+            user_thumbs_down = 0,
+            downloads = 120,
         }
+        assert.equals("up", SR.getUserVote(sf_item))
+        assert.equals(102, SR.getRating(sf_item).up)
 
-        -- Call clearCache to start fresh
-        StorefrontRatings.clearCache()
-        StorefrontRatings.liveRatings = {}
-
-        -- Test that saving & loading normalizes sparsely
-        local ok_ffi, ffiutil = pcall(require, "ffi/util")
-        -- Call fetchRatings fallback or direct normalization test
-        local item_active = { id = "item_active" }
-        local item_zero = { id = "item_zero_1" }
-
-        StorefrontRatings.liveRatings["item_active"] = { up = 5, down = 1, wilson = 0.5, downloads = 12 }
-        -- All-zero entries should not exist in sparse liveRatings
-        local r_active = StorefrontRatings.getRating(item_active)
-        assert.equals(5, r_active.up)
-        assert.equals(1, r_active.down)
-        assert.equals(12, r_active.downloads)
-
-        local r_zero = StorefrontRatings.getRating(item_zero)
-        assert.equals(0, r_zero.up)
-        assert.equals(0, r_zero.down)
-        assert.equals(0, r_zero.downloads)
+        -- Fork with identical dirname/name must NOT inherit Storefront's vote or ratings
+        local fork_item = {
+            id = 1349827230,
+            repo_id = 1349827230,
+            name = "storefront.koplugin",
+            owner = "xu-wentao",
+            full_name = "xu-wentao/storefront.koplugin",
+            user_thumbs_up = 0,
+            user_thumbs_down = 0,
+            downloads = 0,
+        }
+        assert.is_nil(SR.getUserVote(fork_item))
+        assert.equals(0, SR.getRating(fork_item).up)
     end)
 
-    it("should terminate subprocess and clean up FD on timeout", function()
+    it("should apply pending vote delta on new votes and expire it when a newer catalog loads", function()
+        local StorefrontSettings = require("storefront_settings")
+        StorefrontSettings:saveSetting("user_votes", {})
+        local orig_http = package.loaded["socket.http"]
+        local orig_cache = package.loaded["storefront_cache"]
+        local orig_utils = package.loaded["storefront_utils"]
+        local ts = 1795024997
+        package.loaded["storefront_cache"] = {
+            isLoaded = function() return true end,
+            getGeneratedTimestamp = function() return ts end,
+            getRepo = function(id)
+                if tonumber(id) == 1304319884 then
+                    return { id = 1304319884, repo_id = 1304319884, user_thumbs_up = 102, user_thumbs_down = 0, downloads = 120 }
+                end
+            end,
+        }
+        package.loaded["socket.http"] = {
+            request = function(opts)
+                if opts and opts.sink then opts.sink('{"success":true,"up":103,"down":0,"wilson":0.96}') end
+                return 1, 200, {}
+            end
+        }
+        package.loaded["storefront_utils"] = { isLowMemory = function() return true end }
+
+        package.loaded["storefront_ratings"] = nil
+        local SR = require("storefront_ratings")
+        local UIManager = require("ui/uimanager")
+
+        local sf = { id = 1304319884, name = "storefront.koplugin", full_name = "ultimatejimmy/storefront.koplugin", user_thumbs_up = 102, user_thumbs_down = 0 }
+        assert.equals(102, SR.getRating(sf).up)
+
+        SR.submitVote(sf, "up", "plugin")
+        for _ = 1, 10 do
+            if UIManager._scheduled and #UIManager._scheduled > 0 then
+                local task = table.remove(UIManager._scheduled, 1)
+                if task and task.action then task.action() end
+            end
+        end
+
+        -- Pending +1 applies immediately
+        assert.equals(103, SR.getRating(sf).up)
+
+        -- Persists across module reload while catalog timestamp is unchanged
+        package.loaded["storefront_ratings"] = nil
+        SR = require("storefront_ratings")
+        assert.equals(103, SR.getRating(sf).up)
+
+        -- Once a newer hourly catalog arrives (with 103 already baked in), pending delta expires
+        ts = ts + 3600
+        sf.user_thumbs_up = 103
+        assert.equals(103, SR.getRating(sf).up)
+
+        package.loaded["storefront_cache"] = orig_cache
+        package.loaded["socket.http"] = orig_http
+        package.loaded["storefront_utils"] = orig_utils
+    end)
+
+    it("should bump downloads in-session only without writing storefront_ratings_cache.json or altering likes", function()
+        local DataStorage = require("datastorage")
+        local settings_dir = DataStorage:getSettingsDir()
+        os.execute(string.format('mkdir -p "%s"', settings_dir))
+        local cache_file = settings_dir .. "/storefront_ratings_cache.json"
+        os.remove(cache_file)
+
+        local item = { id = 1304319884, full_name = "ultimatejimmy/storefront.koplugin", user_thumbs_up = 102, user_thumbs_down = 0, downloads = 120 }
+        StorefrontRatings.trackDownload(item, "plugin")
+
+        local r = StorefrontRatings.getRating(item)
+        assert.equals(102, r.up)
+        assert.equals(121, r.downloads)
+        assert.equals(0, StorefrontRatings.getCacheStats().files)
+    end)
+
+    it("should terminate subprocess and clean up FD on submitVote timeout and roll back pending delta", function()
         local UIManager = require("ui/uimanager")
         local terminated_pid = nil
         local drained_fd = nil
@@ -260,12 +324,13 @@ describe("storefront_ratings", function()
         package.loaded["storefront_ratings"] = nil
         local SR = require("storefront_ratings")
 
+        local item = { id = 777888, user_thumbs_up = 10, user_thumbs_down = 0 }
         local callback_called = false
         local callback_success = nil
-        SR.fetchRatings(function(ok, res)
+        SR.submitVote(item, "up", "plugin", function(ok, res)
             callback_called = true
             callback_success = ok
-        end, true)
+        end)
 
         -- Advance scheduled poll calls until timeout
         for _ = 1, 65 do
@@ -279,6 +344,7 @@ describe("storefront_ratings", function()
         assert.equals(false, callback_success)
         assert.equals(4488, terminated_pid)
         assert.equals(99, drained_fd)
+        assert.equals(10, SR.getRating(item).up)
 
         -- Clean up mock
         package.loaded["ffi/util"] = nil
