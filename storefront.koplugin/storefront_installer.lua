@@ -1929,7 +1929,20 @@ function M:init(Storefront)
             end
 
             if self.pending_install_context and self.pending_install_context.mode == "update" then
-                proceedWithInstall(self.pending_install_context.plugin.root)
+                local ctx_plugin = self.pending_install_context.plugin
+                local update_root = ctx_plugin and ctx_plugin.root
+                if (not update_root or update_root == "") and ctx_plugin and ctx_plugin.dirname and type(self.listInstalledPlugins) == "function" then
+                    for _, p in ipairs(self:listInstalledPlugins() or {}) do
+                        if p.dirname == ctx_plugin.dirname and p.root then
+                            update_root = p.root
+                            break
+                        end
+                    end
+                end
+                if (not update_root or update_root == "") and info and info.plugin_dirname == "storefront.koplugin" and self.path then
+                    update_root = self.path:match("^(.*)[/\\]storefront%.koplugin/?$")
+                end
+                proceedWithInstall(update_root or PluginPaths.getDefaultPluginsRoot())
             else
                 self:resolveNewInstallDestination(proceedWithInstall, function()
                     reader:close()
@@ -2146,7 +2159,20 @@ function M:init(Storefront)
             end
 
             if self.pending_install_context and self.pending_install_context.mode == "update" then
-                proceedWithInstall(self.pending_install_context.plugin.root)
+                local ctx_plugin = self.pending_install_context.plugin
+                local update_root = ctx_plugin and ctx_plugin.root
+                if (not update_root or update_root == "") and ctx_plugin and ctx_plugin.dirname and type(self.listInstalledPlugins) == "function" then
+                    for _, p in ipairs(self:listInstalledPlugins() or {}) do
+                        if p.dirname == ctx_plugin.dirname and p.root then
+                            update_root = p.root
+                            break
+                        end
+                    end
+                end
+                if (not update_root or update_root == "") and info and info.plugin_dirname == "storefront.koplugin" and self.path then
+                    update_root = self.path:match("^(.*)[/\\]storefront%.koplugin/?$")
+                end
+                proceedWithInstall(update_root or PluginPaths.getDefaultPluginsRoot())
             else
                 self:resolveNewInstallDestination(proceedWithInstall, function()
                     reader:close()

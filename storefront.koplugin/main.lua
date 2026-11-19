@@ -7193,9 +7193,14 @@ function Storefront:makePatchMenuItem(repo, patch)
         id = extracted_patch_id,
         repo_id = extracted_patch_id,
         repo = repo,
+        repo_name = repo.name,
         name = patch.filename,
         owner = getRepoOwner(repo) or "",
         stars_fmt = stars_fmt,
+        user_thumbs_up = tonumber(repo.user_thumbs_up or (repo.data and repo.data.user_thumbs_up)) or 0,
+        user_thumbs_down = tonumber(repo.user_thumbs_down or (repo.data and repo.data.user_thumbs_down)) or 0,
+        wilson_score = tonumber(repo.wilson_score or (repo.data and repo.data.wilson_score)) or 0,
+        downloads = tonumber(repo.downloads or (repo.data and repo.data.downloads)) or 0,
         updated = "",
         description = patch.display_path or "",
         badge = nil,
@@ -7601,14 +7606,25 @@ function Storefront:buildInstalledEntries(available_list_height)
                     item_repo_id = 1304319884
                 end
 
+                local record_owner = record and record.owner
+                if (not record_owner or record_owner == "") and record and type(record.repo_full_name) == "string" then
+                    record_owner = record.repo_full_name:match("^([^/]+)/")
+                end
+                local record_repo_name = record and record.repo
+                if (not record_repo_name or record_repo_name == "") and record and type(record.repo_full_name) == "string" then
+                    record_repo_name = record.repo_full_name:match("^[^/]+/(.+)$")
+                end
+
                 local cached_repo = nil
                 if item_repo_id then
                     cached_repo = Cache.getRepo(item_repo_id)
                 end
-                if not cached_repo and record and record.owner and record.repo then
-                    cached_repo = Cache.getRepoByName(record.owner, record.repo)
+                if not cached_repo and record_owner and record_owner ~= "" then
+                    cached_repo = Cache.getRepoByName(record_owner, record_repo_name or plugin.dirname)
                 end
-                if not cached_repo and plugin.dirname and plugin.dirname ~= "storefront.koplugin" and plugin.dirname ~= "storefront" and Cache.getRepoByPluginName then
+                -- Only fall back to bare plugin-name lookup when the install record has no owner/full_name
+                if not cached_repo and (not record_owner or record_owner == "") and (not record or not record.repo_full_name or record.repo_full_name == "")
+                    and plugin.dirname and plugin.dirname ~= "storefront.koplugin" and plugin.dirname ~= "storefront" and Cache.getRepoByPluginName then
                     cached_repo = Cache.getRepoByPluginName(plugin.dirname)
                 end
                 if not item_repo_id and cached_repo then
@@ -10891,6 +10907,7 @@ function Storefront:getRepoDescriptors(kind)
         local is_font_kind = (kind == "font")
         local descriptor = {
             id = repo.repo_id,
+            repo_id = repo.repo_id,
             kind = kind,
             name = repo.name or (repo.data and repo.data.name),
             font_family = repo.font_family or (repo.data and repo.data.font_family) or (is_font_kind and (repo.data and repo.data.name or repo.name) or nil),
@@ -10901,6 +10918,9 @@ function Storefront:getRepoDescriptors(kind)
             full_name = repo.full_name or (repo.data and repo.data.full_name),
             owner = owner,
             stars = (repo.stars and repo.stars > 0) and repo.stars or (repo.data and tonumber(repo.data.stargazers_count) or 0),
+            user_thumbs_up = tonumber(repo.user_thumbs_up or (repo.data and repo.data.user_thumbs_up)) or 0,
+            user_thumbs_down = tonumber(repo.user_thumbs_down or (repo.data and repo.data.user_thumbs_down)) or 0,
+            wilson_score = tonumber(repo.wilson_score or (repo.data and repo.data.wilson_score)) or 0,
             downloads = tonumber(repo.downloads or (repo.data and repo.data.downloads)) or 0,
             language = repo.language or (repo.data and repo.data.language),
             description = repo.description or (repo.data and repo.data.description),

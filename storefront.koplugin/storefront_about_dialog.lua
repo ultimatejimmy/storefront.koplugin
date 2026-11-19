@@ -187,12 +187,21 @@ function StorefrontAboutDialog.checkForUpdates(Storefront)
 
             if clean_latest ~= "" and clean_latest ~= clean_current then
                 local DetailsDialog = require("storefront_details_dialog")
+                local active_root = Storefront and Storefront.path and Storefront.path:match("^(.*)[/\\]storefront%.koplugin/?$")
+                if not active_root and Storefront and type(Storefront.listInstalledPlugins) == "function" then
+                    for _, p in ipairs(Storefront:listInstalledPlugins() or {}) do
+                        if p.dirname == "storefront.koplugin" and p.root then
+                            active_root = p.root
+                            break
+                        end
+                    end
+                end
                 local details_dialog = DetailsDialog:new{
                     Storefront = Storefront,
                     repo = repo_desc,
                     kind = "update",
                     update_item = {
-                        plugin = { dirname = "storefront.koplugin", version = clean_current },
+                        plugin = { dirname = "storefront.koplugin", version = clean_current, root = active_root },
                         remote = target_release,
                         needs_update = true,
                     },

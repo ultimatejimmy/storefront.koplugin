@@ -1057,6 +1057,20 @@ function StorefrontDetailsDialog:init()
     end
     self.refreshDetailsDialog = refreshDetailsDialog
 
+    local function preparePendingUpdateContext(dialog_self, rec_item)
+        if not dialog_self.Storefront then return end
+        local ctx_plugin = (dialog_self.update_item and dialog_self.update_item.plugin) or (rec_item and {
+            dirname = rec_item.dirname or (dialog_self.repo and dialog_self.repo.name),
+            root = rec_item.root,
+        })
+        if ctx_plugin then
+            dialog_self.Storefront.pending_install_context = {
+                mode = "update",
+                plugin = ctx_plugin,
+            }
+        end
+    end
+
     if has_update then
         local is_item_disabled = false
         if self.patch and self.patch.filename then
@@ -1133,6 +1147,7 @@ function StorefrontDetailsDialog:init()
                         self.Storefront:installPluginFromBranch(self.repo, record_item.branch)
                     else
                         local rel = (self.update_item and (self.update_item.remote or self.update_item.remote_entry)) or (self.repo and (self.repo.latest_release or (self.repo.data and self.repo.data.latest_release)))
+                        preparePendingUpdateContext(self, record_item)
                         if self.Storefront and type(self.Storefront.promptPluginInstallOptions) == "function" then
                             self.Storefront:promptPluginInstallOptions(self.repo, rel, false)
                         else
@@ -1372,6 +1387,7 @@ function StorefrontDetailsDialog:init()
                             }
                             self.Storefront:installPluginFromBranch(self.repo, record_item.branch)
                         else
+                            preparePendingUpdateContext(self, record_item)
                             self.Storefront:installPluginFromRepo(self.repo)
                         end
                     end)

@@ -420,4 +420,76 @@ describe("storefront_ratings", function()
         assert.equals("NoLikesHighStars", list[3].name)
         assert.equals("NoLikesLowStars", list[4].name)
     end)
+
+    it("should scope primary keys by repo_id and owner/name and isolate simpleui forks (#5092)", function()
+        local StorefrontSettings = require("storefront_settings")
+        local InstallStore = require("storefront_installs")
+
+        -- Legacy bare string & table votes in Storefront.lua must be migrated/purged, never leaking to forks
+        StorefrontSettings:saveSetting("user_votes", {
+            ["simpleui.koplugin"] = "up",
+            ["simpleui"] = { direction = "up", catalog_up_at_vote = 10, catalog_down_at_vote = 0 },
+        })
+        local orig_list = InstallStore.list
+        InstallStore.list = function()
+            return {
+                ["simpleui.koplugin"] = {
+                    dirname = "simpleui.koplugin",
+                    owner = "doctorhetfield-cmd",
+                    repo = "simpleui.koplugin",
+                    repo_full_name = "doctorhetfield-cmd/simpleui.koplugin",
+                    repo_id = 1180804216,
+                },
+            }
+        end
+
+        package.loaded["storefront_ratings"] = nil
+        local SR = require("storefront_ratings")
+
+        -- String input resolves InstallStore's repo_id as primary key, never bare dirname
+        assert.equals("1180804216", SR.getPrimaryKey("simpleui.koplugin"))
+
+        local orig = {
+            id = 1180804216,
+            repo_id = 1180804216,
+            name = "simpleui.koplugin",
+            owner = "doctorhetfield-cmd",
+            full_name = "doctorhetfield-cmd/simpleui.koplugin",
+            user_thumbs_up = 54,
+            user_thumbs_down = 2,
+        }
+        assert.equals("1180804216", SR.getPrimaryKey(orig))
+        assert.equals("up", SR.getUserVote(orig))
+        assert.equals(54, SR.getRating(orig).up)
+
+        -- Every fork of simpleui.koplugin must resolve strictly to its own repo_id and 0 likes/nil vote
+        local forks = {
+            { id = 1212997215, owner = "SeriousHornet", name = "simpleui.koplugin", full_name = "SeriousHornet/simpleui.koplugin", user_thumbs_up = 0, user_thumbs_down = 0 },
+            { id = 1196010666, owner = "SH4DOWSIX", name = "simpleui.koplugin", full_name = "SH4DOWSIX/simpleui.koplugin", user_thumbs_up = 0, user_thumbs_down = 0 },
+            { id = 1263673993, owner = "gytwo", name = "simpleui.koplugin", full_name = "gytwo/simpleui.koplugin", user_thumbs_up = 0, user_thumbs_down = 0 },
+            { id = 1333159811, owner = "YunshuangXiao", name = "simpleui.koplugin", full_name = "YunshuangXiao/simpleui.koplugin", user_thumbs_up = 0, user_thumbs_down = 0 },
+            { id = 1213093965, owner = "xrishox", name = "simpleui.koplugin", full_name = "xrishox/simpleui.koplugin", user_thumbs_up = 0, user_thumbs_down = 0 },
+        }
+        for _, fork in ipairs(forks) do
+            assert.equals(tostring(fork.id), SR.getPrimaryKey(fork))
+            assert.is_nil(SR.getUserVote(fork))
+            assert.equals(0, SR.getRating(fork).up)
+        end
+
+        -- Patch menu item uses repo_id / owner+repo_name rather than owner+patch.filename
+        local patch_item = {
+            id = 990712269,
+            repo_id = 990712269,
+            name = "2-custom-patch.lua",
+            repo_name = "koreader.patches",
+            owner = "sebdelsol",
+            kind = "patch",
+            repo = { id = 990712269, repo_id = 990712269, name = "koreader.patches", owner = "sebdelsol", full_name = "sebdelsol/koreader.patches" },
+        }
+        assert.equals("990712269", SR.getPrimaryKey(patch_item))
+        SR.saveUserVote(patch_item, "up")
+        assert.equals("up", SR.getUserVote({ id = 990712269, owner = "sebdelsol", name = "koreader.patches" }))
+
+        InstallStore.list = orig_list
+    end)
 end)

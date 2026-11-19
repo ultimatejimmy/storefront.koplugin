@@ -1100,6 +1100,112 @@ if ok_browser then
             check("buildInstalledEntries hydrates Storefront stars_fmt", sf_entry and sf_entry.stars_fmt, "393")
         end
 
+        -- Test Installed tab does not let Cache.getRepoByPluginName hijack an installed fork (#5092)
+        do
+            local Cache = require("storefront_cache")
+            local InstallStore = require("storefront_installs")
+            local orig_get_repo = Cache.getRepo
+            local orig_get_by_name = Cache.getRepoByName
+            local orig_get_by_plugin = Cache.getRepoByPluginName
+            local orig_install_list = InstallStore.list
+
+            Cache.getRepo = function(id)
+                if tonumber(id) == 1263673993 then
+                    return { id = 1263673993, repo_id = 1263673993, name = "simpleui.koplugin", owner = "gytwo", full_name = "gytwo/simpleui.koplugin", stars = 1, user_thumbs_up = 0, user_thumbs_down = 0, downloads = 0 }
+                end
+                return nil
+            end
+            Cache.getRepoByName = function(owner, name)
+                if owner and owner:lower() == "gytwo" and name and name:lower():find("simpleui", 1, true) then
+                    return { id = 1263673993, repo_id = 1263673993, name = "simpleui.koplugin", owner = "gytwo", full_name = "gytwo/simpleui.koplugin", stars = 1, user_thumbs_up = 0, user_thumbs_down = 0, downloads = 0 }
+                end
+                return nil
+            end
+            Cache.getRepoByPluginName = function(name)
+                return { id = 1180804216, repo_id = 1180804216, name = "simpleui.koplugin", owner = "doctorhetfield-cmd", full_name = "doctorhetfield-cmd/simpleui.koplugin", stars = 2112, user_thumbs_up = 54, user_thumbs_down = 2, downloads = 0 }
+            end
+            InstallStore.list = function()
+                return {
+                    ["simpleui.koplugin"] = {
+                        dirname = "simpleui.koplugin",
+                        owner = "gytwo",
+                        repo_full_name = "gytwo/simpleui.koplugin",
+                    },
+                }
+            end
+
+            MainStorefront.listInstalledPlugins = function()
+                return {{ dirname = "simpleui.koplugin", name = "Simple UI", root = "custom_plugins", latest_mtime = os.time() }}
+            end
+            MainStorefront.listInstalledPatches = function() return {} end
+            local orig_fonts_fork = MainStorefront.listInstalledFonts
+            MainStorefront.listInstalledFonts = function() return {} end
+            MainStorefront._installed_tab_items_cache = nil
+
+            local fork_entries = MainStorefront:buildInstalledEntries()
+            Cache.getRepo = orig_get_repo
+            Cache.getRepoByName = orig_get_by_name
+            Cache.getRepoByPluginName = orig_get_by_plugin
+            InstallStore.list = orig_install_list
+            MainStorefront.listInstalledFonts = orig_fonts_fork
+
+            local fork_entry
+            for _, item in ipairs(fork_entries or {}) do
+                if item.dirname == "simpleui.koplugin" then
+                    fork_entry = item
+                    break
+                end
+            end
+            check("buildInstalledEntries isolates fork owner gytwo (#5092)", fork_entry and fork_entry.owner, "gytwo")
+            check("buildInstalledEntries isolates fork id 1263673993 (#5092)", fork_entry and fork_entry.id, 1263673993)
+            check("buildInstalledEntries isolates fork user_thumbs_up=0 (#5092)", fork_entry and fork_entry.user_thumbs_up, 0)
+        end
+
+        -- Test DetailsDialog release update sets pending_install_context in-place (#5092)
+        do
+            local DetailsDialog = require("storefront_details_dialog")
+            local Button = require("ui/widget/button")
+            local captured_ctx = nil
+            local update_cb = nil
+            local orig_btn_new = Button.new
+            Button.new = function(a, b)
+                local args = b or a or {}
+                if args.text == "Update" and args.callback then
+                    update_cb = args.callback
+                end
+                return orig_btn_new(a, b)
+            end
+            local orig_prompt = MainStorefront.promptPluginInstallOptions
+            MainStorefront.promptPluginInstallOptions = function(sf, repo, rel, is_new)
+                captured_ctx = sf.pending_install_context
+            end
+            MainStorefront.pending_install_context = nil
+            local dlg = DetailsDialog:new{
+                Storefront = MainStorefront,
+                repo = { id = 1304319884, repo_id = 1304319884, name = "storefront.koplugin", owner = "ultimatejimmy", full_name = "ultimatejimmy/storefront.koplugin", stars = 395, user_thumbs_up = 103 },
+                kind = "update",
+                update_item = {
+                    plugin = { dirname = "storefront.koplugin", version = "26.11.17-beta", root = "/mnt/us/koreader/plugins" },
+                    remote = { tag_name = "26.11.18-beta" },
+                    needs_update = true,
+                },
+            }
+            dlg:init()
+            Button.new = orig_btn_new
+            if update_cb then update_cb() end
+            local UIManager = require("ui/uimanager")
+            for _ = 1, 5 do
+                if UIManager._scheduled and #UIManager._scheduled > 0 then
+                    local task = table.remove(UIManager._scheduled, 1)
+                    if task and task.action then task.action() end
+                end
+            end
+            MainStorefront.promptPluginInstallOptions = orig_prompt
+            MainStorefront.pending_install_context = nil
+            check("DetailsDialog release update sets mode=update (#5092)", captured_ctx and captured_ctx.mode, "update")
+            check("DetailsDialog release update preserves plugin root (#5092)", captured_ctx and captured_ctx.plugin and captured_ctx.plugin.root, "/mnt/us/koreader/plugins")
+        end
+
         -- Test Font Origin Filtering on Installed Tab (Issue: default fonts listed as user installed)
         local orig_list_fonts = MainStorefront.listInstalledFonts
         local mock_fonts = {

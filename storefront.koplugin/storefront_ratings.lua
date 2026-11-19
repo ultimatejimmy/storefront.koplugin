@@ -28,6 +28,7 @@ local StorefrontSettings = require("storefront_settings")
 local UUID_KEY = "device_uuid"
 local VOTES_KEY = "user_votes"
 local RATINGS_CACHE_FILE = DataStorage:getSettingsDir() .. "/storefront_ratings_cache.json"
+local LEGACY_CACHE_DIR_FILE = DataStorage:getDataDir() .. "/cache/Storefront/storefront_ratings_cache.json"
 local VOTES_BACKUP_FILE = DataStorage:getSettingsDir() .. "/storefront_votes_backup.json"
 local CANONICAL_STOREFRONT_ID = "1304319884"
 
@@ -42,6 +43,8 @@ local STOREFRONT_LEGACY_ALIASES = {
 local function cleanupLegacyCacheFile()
     pcall(os.remove, RATINGS_CACHE_FILE)
     pcall(os.remove, RATINGS_CACHE_FILE .. ".tmp")
+    pcall(os.remove, LEGACY_CACHE_DIR_FILE)
+    pcall(os.remove, LEGACY_CACHE_DIR_FILE .. ".tmp")
 end
 
 cleanupLegacyCacheFile()
@@ -110,27 +113,48 @@ local function loadVotesCache()
                     if target_k ~= str_k or type(k) == "number" then
                         migrated = true
                     end
-                elseif not str_k:find("/") and not str_k:match("^%d+$") and type(v) == "table" then
-                    -- Detect legacy bare keys (no '/' and not numeric) and migrate them if matched
+                elseif not str_k:find("/") and not str_k:match("^%d+$") and (type(v) == "table" or type(v) == "string") then
+                    -- Migrate legacy bare keys (both string and table votes) via InstallStore or Cache, and purge bare plugin keys
+                    local migrated_this = false
                     local ok_inst, InstallStore = pcall(require, "storefront_installs")
-                    local resolved = false
                     if ok_inst and InstallStore and InstallStore.list then
                         local installs = InstallStore.list() or {}
                         local rec = installs[str_k] or installs[str_k .. ".koplugin"] or installs[str_k:gsub("%.koplugin$", "")]
-                        if rec and rec.owner and rec.owner ~= "" then
-                            local name = rec.repo or str_k
-                            local auth_key = rec.owner .. "/" .. name
-                            user_votes_cache[auth_key] = v
-                            user_votes_cache[auth_key:lower()] = v
+                        if rec and (rec.repo_id or (rec.owner and rec.owner ~= "")) then
+                            if rec.owner and rec.owner ~= "" then
+                                local name = rec.repo or str_k
+                                local auth_key = rec.owner .. "/" .. name
+                                user_votes_cache[auth_key] = v
+                                user_votes_cache[auth_key:lower()] = v
+                            end
                             if rec.repo_id then
                                 user_votes_cache[tostring(rec.repo_id)] = v
                             end
                             migrated = true
-                            resolved = true
+                            migrated_this = true
                         end
                     end
-                    if not resolved then
-                        user_votes_cache[str_k] = v
+                    if not migrated_this and lower_k:match("%.koplugin$") then
+                        local ok_c, Cache = pcall(require, "storefront_cache")
+                        if ok_c and Cache and Cache.isLoaded and Cache.isLoaded() and Cache.getRepoByPluginName then
+                            local matched = Cache.getRepoByPluginName(str_k)
+                            if matched and matched.repo_id then
+                                user_votes_cache[tostring(matched.repo_id)] = v
+                                if matched.owner and matched.name then
+                                    user_votes_cache[(matched.owner .. "/" .. matched.name):lower()] = v
+                                end
+                                migrated = true
+                                migrated_this = true
+                            end
+                        end
+                    end
+                    if not migrated_this then
+                        -- Retain non-plugin bare keys (e.g. screensaver slugs/tests) while dropping orphaned bare plugin keys
+                        if lower_k:match("%.koplugin$") or lower_k:match("%.lua$") then
+                            migrated = true
+                        else
+                            user_votes_cache[str_k] = v
+                        end
                     end
                 else
                     user_votes_cache[str_k] = v
@@ -284,18 +308,28 @@ local function getCandidateKeys(item_or_id)
             local val_lower = val:lower()
             if STOREFRONT_LEGACY_ALIASES[val_lower] or val_lower == CANONICAL_STOREFRONT_ID then
                 add_key_variants(CANONICAL_STOREFRONT_ID)
-            else
-                add_key_variants(val)
-            end
-            if not val:find("/") and not val:match("^%d+$") and not STOREFRONT_LEGACY_ALIASES[val_lower] then
+            elseif not val:find("/") and not val:match("^%d+$") then
                 local ok_inst, InstallStore = pcall(require, "storefront_installs")
                 if ok_inst and InstallStore and InstallStore.list then
                     local installs = InstallStore.list() or {}
                     local rec = installs[val] or installs[val .. ".koplugin"] or installs[val:gsub("%.koplugin$", "")]
-                    if rec and rec.owner and rec.owner ~= "" then
-                        item_or_id = { owner = rec.owner, name = val, id = rec.repo_id or rec.id, repo_full_name = rec.repo_full_name }
+                    if rec and (rec.repo_id or (rec.owner and rec.owner ~= "")) then
+                        item_or_id = {
+                            owner = rec.owner,
+                            name = rec.repo or val,
+                            id = rec.repo_id or rec.id,
+                            repo_full_name = rec.repo_full_name,
+                            dirname = rec.dirname or val,
+                        }
                     end
                 end
+                if type(item_or_id) ~= "table" then
+                    if not (val_lower:match("%.koplugin$") or val_lower:match("%.lua$")) then
+                        add_key_variants(val)
+                    end
+                end
+            else
+                add_key_variants(val)
             end
         end
     end
@@ -308,27 +342,31 @@ local function getCandidateKeys(item_or_id)
 
     local primary_id = item.id
         or item.repo_id
+        or (item.data and (item.data.repo_id or item.data.id))
         or (item.repo and (item.repo.repo_id or item.repo.id))
         or (item.record and (item.record.repo_id or item.record.id))
-        or (item.plugin and item.plugin.id)
+        or (item.plugin and (item.plugin.repo_id or item.plugin.id))
+        or (item.patch and (item.patch.repo_id or item.patch.id))
 
     local owner = item.owner
         or (type(item.full_name) == "string" and item.full_name:match("^([^/]+)/"))
         or (type(item.repo_full_name) == "string" and item.repo_full_name:match("^([^/]+)/"))
+        or (item.data and (type(item.data.owner) == "string" and item.data.owner or (type(item.data.owner) == "table" and (item.data.owner.login or item.data.owner.name))))
         or (item.repo and (type(item.repo.owner) == "string" and item.repo.owner or (type(item.repo.owner) == "table" and (item.repo.owner.login or item.repo.owner.name))))
         or (item.record and (item.record.owner or (type(item.record.repo_full_name) == "string" and item.record.repo_full_name:match("^([^/]+)/"))))
         or (item.plugin and item.plugin.owner)
+        or (item.patch and item.patch.owner)
 
     if type(owner) == "table" then owner = owner.login or owner.name end
 
-    local name = item.name
-        or item.dirname
+    local repo_name = item.repo_name
+        or (item.repo and item.repo.name)
+        or (item.record and item.record.repo)
         or (type(item.full_name) == "string" and item.full_name:match("^[^/]+/(.+)$"))
         or (type(item.repo_full_name) == "string" and item.repo_full_name:match("^[^/]+/(.+)$"))
-        or (item.repo and item.repo.name)
-        or (item.record and (item.record.name or item.record.repo))
+        or item.name
+        or item.dirname
         or (item.plugin and (item.plugin.dirname or item.plugin.name))
-        or (item.patch and item.patch.filename)
 
     local item_name = tostring(item.name or ""):lower()
     local item_dirname = tostring(item.dirname or ""):lower()
@@ -347,27 +385,48 @@ local function getCandidateKeys(item_or_id)
         primary_id = tonumber(CANONICAL_STOREFRONT_ID)
     end
 
+    if not primary_id and (not owner or owner == "") and (item.dirname or item.is_plugin) then
+        local lookup_dir = item.dirname or item.name
+        if lookup_dir and lookup_dir ~= "" then
+            local ok_inst, InstallStore = pcall(require, "storefront_installs")
+            if ok_inst and InstallStore and InstallStore.list then
+                local installs = InstallStore.list() or {}
+                local rec = installs[lookup_dir] or installs[lookup_dir .. ".koplugin"] or installs[lookup_dir:gsub("%.koplugin$", "")]
+                if rec then
+                    primary_id = rec.repo_id or rec.id
+                    if rec.owner and rec.owner ~= "" then owner = rec.owner end
+                    if rec.repo and rec.repo ~= "" then repo_name = rec.repo end
+                end
+            end
+        end
+    end
+
     if primary_id then
         add_key_variants(primary_id)
     end
 
     local has_scoped = (primary_id ~= nil)
-    if owner and type(owner) == "string" and owner ~= "" and name and type(name) == "string" and name ~= "" then
+    if owner and type(owner) == "string" and owner ~= "" and repo_name and type(repo_name) == "string" and repo_name ~= "" then
         has_scoped = true
-        add_key_variants(owner .. "/" .. name)
-        local clean_name = name:gsub("%.koplugin$", "")
+        add_key_variants(owner .. "/" .. repo_name)
+        local clean_name = repo_name:gsub("%.koplugin$", "")
         add_key_variants(owner .. "/" .. clean_name)
     end
 
     add_key_variants(item.full_name)
-    if type(item.full_name) == "string" and item.full_name:find("/") then
+    add_key_variants(item.repo_full_name)
+    if (type(item.full_name) == "string" and item.full_name:find("/"))
+        or (type(item.repo_full_name) == "string" and item.repo_full_name:find("/")) then
         has_scoped = true
     end
 
-    -- Only emit bare name/dirname keys when no canonical repo_id or owner/name scope exists
-    if not has_scoped then
-        add_key_variants(name)
-        add_key_variants(item.dirname)
+    local is_plugin_or_patch = (item.kind == "plugin" or item.kind == "patch" or item.is_plugin == true
+        or item.dirname ~= nil or item.patch ~= nil or item.repo ~= nil
+        or item_name:match("%.koplugin$") ~= nil or item_name:match("%.lua$") ~= nil)
+
+    -- Never emit bare name/dirname keys for plugins or patches; restrict bare fallback to non-plugin/patch items (e.g. screensavers/fonts)
+    if not has_scoped and not is_plugin_or_patch then
+        add_key_variants(repo_name)
         add_key_variants(item.filename)
         add_key_variants(item.font_name)
     end
@@ -377,6 +436,15 @@ local function getCandidateKeys(item_or_id)
     end
 
     return keys
+end
+
+--- Returns the canonical scoped primary key for an item ("<repo_id>" or "<owner>/<repo>").
+--- Never returns an unscoped bare plugin or patch dirname.
+--- @param item_or_id table|number|string
+--- @return string|nil
+function StorefrontRatings.getPrimaryKey(item_or_id)
+    local keys = getCandidateKeys(item_or_id)
+    return keys[1]
 end
 
 local function getCatalogTimestamp()
@@ -638,7 +706,11 @@ function StorefrontRatings.submitVote(item_or_id, direction, item_kind, callback
     end
 
     local candidate_keys = getCandidateKeys(item_or_id)
-    local repo_id = candidate_keys[1] or tostring(item_or_id)
+    local repo_id = candidate_keys[1]
+    if not repo_id or repo_id == "" then
+        if callback then callback(false, "Missing scoped repo_id or owner/name") end
+        return
+    end
 
     local dev_uuid = StorefrontRatings.getDeviceUUID()
     item_kind = item_kind or "plugin"
@@ -836,7 +908,11 @@ function StorefrontRatings.trackDownload(item_or_id, item_kind, callback)
     end
 
     local candidate_keys = getCandidateKeys(item_or_id)
-    local repo_id = candidate_keys[1] or tostring(item_or_id)
+    local repo_id = candidate_keys[1]
+    if not repo_id or repo_id == "" then
+        if callback then callback(false, "Missing scoped repo_id or owner/name") end
+        return
+    end
     item_kind = item_kind or "screensaver"
 
     -- Optimistically bump local in-session downloads count only
