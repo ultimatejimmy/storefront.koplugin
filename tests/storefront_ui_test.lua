@@ -660,6 +660,42 @@ if ok_browser then
             print("Versions tab fetch with pre-release test error was:", prerelease_fetch_err)
         end
 
+        -- Test monorepo non-KOReader releases (e.g. calibre-26.11.20) are excluded from Versions tab
+        local monorepo_filter_ok, monorepo_filter_err = pcall(function()
+            local monorepo_repo = {
+                name = "nimbus",
+                owner = "ultimatejimmy",
+            }
+            local details = StorefrontDetailsDialog:new{
+                Storefront = full_dummy_storefront,
+                repo = monorepo_repo,
+                kind = "plugin",
+            }
+            details:init()
+            local GitHubClient = require("storefront_net_github")
+            local orig_fetch = GitHubClient.fetchReleases
+            GitHubClient.fetchReleases = function()
+                return {
+                    { tag_name = "26.11.20.1", name = "26.11.20.1", prerelease = false, assets = { { name = "nimbus.koplugin.zip" } } },
+                    { tag_name = "26.11.20", name = "26.11.20", prerelease = false, assets = { { name = "nimbus.koplugin.zip" } } },
+                    { tag_name = "calibre-26.11.20", name = "calibre-26.11.20", prerelease = false, assets = { { name = "nimbus-calibre.zip" } } },
+                }
+            end
+
+            details.active_tab = "versions"
+            details.loadContent("versions")
+
+            check("Monorepo Versions tab excludes non-KOReader releases", details.cached_releases and #details.cached_releases == 2, true)
+            check("Monorepo Versions tab keeps first KOReader release", details.cached_releases and details.cached_releases[1] and details.cached_releases[1].tag_name == "26.11.20.1", true)
+            check("Monorepo Versions tab keeps second KOReader release", details.cached_releases and details.cached_releases[2] and details.cached_releases[2].tag_name == "26.11.20", true)
+
+            GitHubClient.fetchReleases = orig_fetch
+        end)
+        check("Monorepo Versions tab filter test executed without error", monorepo_filter_ok, true)
+        if not monorepo_filter_ok then
+            print("Monorepo Versions tab filter test error was:", monorepo_filter_err)
+        end
+
         -- Test version list item instantiates cleanly with version entry
         local version_item_spacing_ok, version_item_spacing_err = pcall(function()
             local StorefrontListItem = require("storefront_list_item")

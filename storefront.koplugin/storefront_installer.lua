@@ -23,6 +23,7 @@ local LineWidget = require("ui/widget/linewidget")
 local NetworkMgr = require("ui/network/manager")
 local PluginPaths = require("storefront_plugin_paths")
 local StorefrontLogger = require("storefront_logger")
+local StorefrontUtils = require("storefront_utils")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
@@ -1610,7 +1611,8 @@ function M:init(Storefront)
                         if allow_prerelease then
                             local rels, err = GitHub.fetchReleases(owner, repo.name, { per_page = 10, max_pages = 1 })
                             if rels and #rels > 0 then
-                                for _, rel in ipairs(rels) do
+                                local filtered = StorefrontUtils.filterPluginReleases(rels)
+                                for _, rel in ipairs(filtered) do
                                     if not rel.draft then
                                         release = rel
                                         break
@@ -1626,6 +1628,22 @@ function M:init(Storefront)
                         end
                         if not release then
                             release, release_err = GitHub.fetchLatestRelease(owner, repo.name)
+                            if release and not StorefrontUtils.isPluginRelease(release) then
+                                local rels, _rel_err = GitHub.fetchReleases(owner, repo.name, { per_page = 10, max_pages = 1 })
+                                if rels and #rels > 0 then
+                                    local filtered = StorefrontUtils.filterPluginReleases(rels)
+                                    local matched_stable
+                                    for _, rel in ipairs(filtered) do
+                                        if not rel.draft and not rel.prerelease then
+                                            matched_stable = rel
+                                            break
+                                        end
+                                    end
+                                    if matched_stable then
+                                        release = matched_stable
+                                    end
+                                end
+                            end
                         end
                         if progress and progress.close then
                             progress.close()

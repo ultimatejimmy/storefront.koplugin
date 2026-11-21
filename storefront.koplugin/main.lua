@@ -3514,7 +3514,8 @@ function Storefront:_scanUpdatesForDirectApi(tracked, tracked_patches)
                             max_pages = 1,
                         })
                         if releases and #releases > 0 then
-                            for _, release in ipairs(releases) do
+                            local filtered_releases = StorefrontUtils.filterPluginReleases(releases)
+                            for _, release in ipairs(filtered_releases) do
                                 if not release.draft then
                                     release_tag_name = release.tag_name
                                     release_published_at = parseGitHubTimestampWorker(release.published_at)
@@ -3532,7 +3533,7 @@ function Storefront:_scanUpdatesForDirectApi(tracked, tracked_patches)
                         if not is_releaseless then
                             local latest_release, release_err = GitHub.fetchLatestRelease(owner, repo_name)
                             if latest_release and latest_release.tag_name then
-                                if not latest_release.prerelease and not latest_release.draft and not isPreReleaseTag(latest_release.tag_name) then
+                                if not latest_release.prerelease and not latest_release.draft and not isPreReleaseTag(latest_release.tag_name) and StorefrontUtils.isPluginRelease(latest_release) then
                                     release_tag_name = latest_release.tag_name
                                     release_published_at = parseGitHubTimestampWorker(latest_release.published_at)
                                 else
@@ -3541,7 +3542,8 @@ function Storefront:_scanUpdatesForDirectApi(tracked, tracked_patches)
                                         max_pages = 1,
                                     })
                                     if releases and #releases > 0 then
-                                        for _, rel in ipairs(releases) do
+                                        local filtered_releases = StorefrontUtils.filterPluginReleases(releases)
+                                        for _, rel in ipairs(filtered_releases) do
                                             if not rel.draft and not rel.prerelease and not isPreReleaseTag(rel.tag_name) then
                                                 release_tag_name = rel.tag_name
                                                 release_published_at = parseGitHubTimestampWorker(rel.published_at)
@@ -3888,7 +3890,7 @@ local function findLatestRelease(owner, repo, allow_prerelease)
             max_pages = 1,
         })
         if releases and #releases > 0 then
-            for _, release in ipairs(releases) do
+            for _, release in ipairs(StorefrontUtils.filterPluginReleases(releases)) do
                 if not release.draft then
                     return release, nil
                 end
@@ -3901,7 +3903,7 @@ local function findLatestRelease(owner, repo, allow_prerelease)
 
     if latest and latest.tag_name then
         if not latest.prerelease and not latest.draft then
-            if not isPreReleaseTag(latest.tag_name) then
+            if not isPreReleaseTag(latest.tag_name) and StorefrontUtils.isPluginRelease(latest) then
                 return latest, nil
             end
         end
@@ -3911,7 +3913,7 @@ local function findLatestRelease(owner, repo, allow_prerelease)
             max_pages = 1,
         })
         if releases and #releases > 0 then
-            for _, release in ipairs(releases) do
+            for _, release in ipairs(StorefrontUtils.filterPluginReleases(releases)) do
                 if not release.draft and not release.prerelease then
                     if not isPreReleaseTag(release.tag_name) then
                         return release, nil
@@ -5448,6 +5450,7 @@ function Storefront:showFullChangelog(owner, repo_desc, installed_version, targe
             })
             return
         end
+        releases = StorefrontUtils.filterPluginReleases(releases)
 
         local target_tag = target_release and target_release.tag_name
         local sections   = {}
@@ -5751,6 +5754,8 @@ end
 function Storefront:renderReleaseListPage(repo, releases, page, current_release, filter_pre_releases)
     if filter_pre_releases == nil then filter_pre_releases = true end
     page = page or 1
+
+    releases = StorefrontUtils.filterPluginReleases(releases)
 
     -- Apply pre-release filter, keeping the original list for toggling
     local visible_releases = releases

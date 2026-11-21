@@ -235,12 +235,60 @@ def is_valid_version_tag(tag):
     if not tag or not isinstance(tag, str):
         return False
     cleaned = tag.strip()
-    for prefix in ["release-", "release_", "version-", "version_", "plugin-", "plugin_"]:
+    for prefix in [
+        "release-", "release_", "version-", "version_", "plugin-", "plugin_",
+        "koreader-", "koreader_", "koreader/", "koplugin-", "koplugin_", "koplugin/",
+    ]:
         if cleaned.lower().startswith(prefix):
             cleaned = cleaned[len(prefix):]
     if cleaned.lower().startswith("v") and len(cleaned) > 1 and cleaned[1].isdigit():
         cleaned = cleaned[1:]
     return bool(cleaned and cleaned[0].isdigit())
+
+
+def has_koplugin_zip_asset(rel):
+    if not rel or not isinstance(rel, dict):
+        return False
+    assets = rel.get("assets")
+    if not isinstance(assets, list):
+        return False
+    for asset in assets:
+        if not isinstance(asset, dict):
+            continue
+        name = asset.get("name", "")
+        if isinstance(name, str):
+            lower = name.lower()
+            if lower.endswith(".zip") and "koplugin" in lower:
+                return True
+    return False
+
+
+def filter_plugin_releases(releases):
+    """Filter GitHub releases to KOReader plugin releases using a 3-tier rule:
+    1. Exclude drafts.
+    2. If any non-draft release has a *koplugin*.zip asset, keep only those.
+    3. Otherwise keep releases with valid KOReader version tags.
+    4. Fall back to all non-draft releases if none match.
+    """
+    if not isinstance(releases, list):
+        return []
+    non_draft = []
+    asset_matched = []
+    tag_matched = []
+    for rel in releases:
+        if not rel or not isinstance(rel, dict) or rel.get("draft"):
+            continue
+        non_draft.append(rel)
+        if has_koplugin_zip_asset(rel):
+            asset_matched.append(rel)
+        tag = rel.get("tag_name") or rel.get("name") or ""
+        if is_valid_version_tag(tag):
+            tag_matched.append(rel)
+    if asset_matched:
+        return asset_matched
+    if tag_matched:
+        return tag_matched
+    return non_draft
 
 
 def fetch_plugin_meta_version(owner, repo, default_branch="main"):
@@ -514,13 +562,10 @@ def process_single_repo(repo_item, is_patch, existing_record=None, prefetch_map=
         stable_rel = None
         prerelease_rel = None
 
-        if releases and isinstance(releases, list) and len(releases) > 0:
-            for r in releases:
-                if not r or not isinstance(r, dict) or r.get("draft"):
-                    continue
-                tag = r.get("tag_name")
-                if not is_valid_version_tag(tag):
-                    continue
+        filtered_releases = filter_plugin_releases(releases)
+        if filtered_releases:
+            for r in filtered_releases:
+                tag = r.get("tag_name") or ""
                 is_pre = r.get("prerelease") or is_prerelease_tag(tag)
                 if is_pre:
                     if not prerelease_rel:
@@ -529,13 +574,6 @@ def process_single_repo(repo_item, is_patch, existing_record=None, prefetch_map=
                     if not stable_rel:
                         stable_rel = r
                 if stable_rel and prerelease_rel:
-                    break
-
-        # Fall back to non-version scoped tags for download capability (e.g. monorepo webapp tags)
-        if not stable_rel and not prerelease_rel and releases and isinstance(releases, list) and len(releases) > 0:
-            for r in releases:
-                if r and isinstance(r, dict) and not r.get("draft"):
-                    stable_rel = r
                     break
 
         parsed_stable = None

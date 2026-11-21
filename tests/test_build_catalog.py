@@ -153,5 +153,42 @@ class TestStorefrontForkIsolation(unittest.TestCase):
         self.assertEqual(lookup(fork_item).get("up", 0), 0)
 
 
+class TestMonorepoReleaseFiltering(unittest.TestCase):
+    def test_is_valid_version_tag_prefixes(self):
+        self.assertTrue(build_catalog.is_valid_version_tag("26.11.20"))
+        self.assertTrue(build_catalog.is_valid_version_tag("koreader-v1.0.0"))
+        self.assertTrue(build_catalog.is_valid_version_tag("koplugin/26.11.20"))
+        self.assertFalse(build_catalog.is_valid_version_tag("calibre-26.11.20"))
+        self.assertFalse(build_catalog.is_valid_version_tag("webapp/v2026.07.10.1"))
+
+    def test_strict_koplugin_asset_filtering(self):
+        releases = [
+            {"tag_name": "26.11.20.1", "assets": [{"name": "nimbus.koplugin.zip"}]},
+            {"tag_name": "26.11.20", "assets": [{"name": "nimbus.koplugin.zip"}]},
+            {"tag_name": "calibre-26.11.20", "assets": [{"name": "nimbus-calibre.zip"}]},
+            {"tag_name": "26.11.19", "assets": [{"name": "desktop.zip"}]},
+            {"tag_name": "26.11.18", "draft": True, "assets": [{"name": "nimbus.koplugin.zip"}]},
+        ]
+        filtered = build_catalog.filter_plugin_releases(releases)
+        self.assertEqual([r["tag_name"] for r in filtered], ["26.11.20.1", "26.11.20"])
+
+    def test_tag_filtering_when_no_koplugin_assets(self):
+        releases = [
+            {"tag_name": "26.11.20.1", "assets": []},
+            {"tag_name": "calibre-26.11.20", "assets": []},
+            {"tag_name": "26.11.20", "assets": []},
+        ]
+        filtered = build_catalog.filter_plugin_releases(releases)
+        self.assertEqual([r["tag_name"] for r in filtered], ["26.11.20.1", "26.11.20"])
+
+    def test_fallback_for_scoped_only_repos(self):
+        releases = [
+            {"tag_name": "webapp/v2026.07.10.1", "assets": []},
+            {"tag_name": "webapp/v2026.07.09.1", "draft": True, "assets": []},
+        ]
+        filtered = build_catalog.filter_plugin_releases(releases)
+        self.assertEqual([r["tag_name"] for r in filtered], ["webapp/v2026.07.10.1"])
+
+
 if __name__ == "__main__":
     unittest.main()

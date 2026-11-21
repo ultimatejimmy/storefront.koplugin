@@ -71,7 +71,14 @@ local function parseVersionDescriptor(v_str)
     if not v_str then
         return { nums = {}, pre = nil }
     end
-    v_str = tostring(v_str):gsub("^release%-?", ""):gsub("^version%-?", ""):gsub("^plugin%-?", ""):gsub("^[vV]%-?", "")
+    v_str = tostring(v_str):match("^%s*(.-)%s*$"):lower()
+    v_str = v_str
+        :gsub("^release[-_]?", "")
+        :gsub("^version[-_]?", "")
+        :gsub("^plugin[-_]?", "")
+        :gsub("^koreader[-_/]", "")
+        :gsub("^koplugin[-_/]", "")
+        :gsub("^v%-?", "")
     local main_str, pre_str = v_str:match("^([%d%.]+)%-?(.*)$")
     local nums = {}
     if main_str and main_str ~= "" then
@@ -115,6 +122,76 @@ function storefront_utils.isValidVersion(v_str)
     end
     local d = parseVersionDescriptor(v_str)
     return #d.nums > 0
+end
+
+--- Checks whether a GitHub release attaches at least one `.zip` asset whose
+-- filename contains `"koplugin"` (case-insensitive).
+---@param release table|nil GitHub release object
+---@return boolean
+function storefront_utils.hasKopluginZipAsset(release)
+    if type(release) ~= "table" or type(release.assets) ~= "table" then
+        return false
+    end
+    for _, asset in ipairs(release.assets) do
+        local name = type(asset) == "table" and asset.name
+        if type(name) == "string" then
+            local lower = name:lower()
+            if lower:match("%.zip$") and lower:find("koplugin", 1, true) then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+--- Returns true if a single non-draft release appears to be a KOReader plugin release
+-- (either it attaches a `*koplugin*.zip` asset or has a valid version tag).
+---@param release table|nil GitHub release object
+---@return boolean
+function storefront_utils.isPluginRelease(release)
+    if type(release) ~= "table" or release.draft == true then
+        return false
+    end
+    if storefront_utils.hasKopluginZipAsset(release) then
+        return true
+    end
+    local tag = release.tag_name or release.name
+    return storefront_utils.isValidVersion(tag)
+end
+
+--- Filters a list of GitHub releases to those belonging to the KOReader plugin:
+-- 1. Excludes drafts.
+-- 2. If any non-draft release has a `*koplugin*.zip` asset, keeps only those releases.
+-- 3. Otherwise, keeps releases with valid KOReader version tags.
+-- 4. Falls back to all non-draft releases if none match (e.g. repos with only scoped tags).
+---@param releases table|nil Array of GitHub release objects
+---@return table Filtered array of non-draft releases
+function storefront_utils.filterPluginReleases(releases)
+    if type(releases) ~= "table" then
+        return {}
+    end
+    local non_draft = {}
+    local asset_matched = {}
+    local tag_matched = {}
+    for _, rel in ipairs(releases) do
+        if type(rel) == "table" and rel.draft ~= true then
+            table.insert(non_draft, rel)
+            if storefront_utils.hasKopluginZipAsset(rel) then
+                table.insert(asset_matched, rel)
+            end
+            local tag = rel.tag_name or rel.name
+            if storefront_utils.isValidVersion(tag) then
+                table.insert(tag_matched, rel)
+            end
+        end
+    end
+    if #asset_matched > 0 then
+        return asset_matched
+    end
+    if #tag_matched > 0 then
+        return tag_matched
+    end
+    return non_draft
 end
 
 --- Compares two git commit/blob SHAs to determine if they refer to different commits.

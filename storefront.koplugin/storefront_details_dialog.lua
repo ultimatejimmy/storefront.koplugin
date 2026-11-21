@@ -2154,28 +2154,31 @@ tr:nth-child(even) td { background-color: #f5f5f5 !important; }
                 local allow_pre = item_key and InstallStore.isPreReleaseAllowed(item_key) or false
 
                 local raw_releases = self.cached_releases
+                local filterReleases = (StorefrontUtils and StorefrontUtils.filterPluginReleases) or function(r) return r or {} end
                 if not raw_releases or force_refresh then
                     local explicit_releases = (self.repo and self.repo.releases and type(self.repo.releases) == "table" and #self.repo.releases > 0 and self.repo.releases)
                         or (self.repo and self.repo.data and type(self.repo.data) == "table" and self.repo.data.releases and type(self.repo.data.releases) == "table" and #self.repo.data.releases > 0 and self.repo.data.releases)
 
                     if explicit_releases then
-                        self.cached_releases = explicit_releases
-                        raw_releases = explicit_releases
+                        local filtered = filterReleases(explicit_releases)
+                        self.cached_releases = filtered
+                        raw_releases = filtered
                     elseif owner and owner ~= "" and repo_name and repo_name ~= "" then
                         local fetched, err = GitHubClient.fetchReleases(owner, repo_name)
                         if fetched and #fetched > 0 then
-                            self.cached_releases = fetched
-                            raw_releases = fetched
+                            local filtered = filterReleases(fetched)
+                            self.cached_releases = filtered
+                            raw_releases = filtered
                         else
                             -- Fall back to cached release for display without poisoning self.cached_releases permanently
-                            raw_releases = getReleasesFromCache(self.repo)
+                            raw_releases = filterReleases(getReleasesFromCache(self.repo))
                         end
                     else
-                        raw_releases = getReleasesFromCache(self.repo)
+                        raw_releases = filterReleases(getReleasesFromCache(self.repo))
                     end
                 end
 
-                raw_releases = raw_releases or {}
+                raw_releases = filterReleases(raw_releases or {})
                 local releases = {}
                 for _, rel in ipairs(raw_releases) do
                     local tag = rel.tag_name or rel.name or ""

@@ -81,14 +81,84 @@ describe("storefront_utils", function()
             assert.is_true(storefront_utils.isValidVersion("v2026.07.28"))
             assert.is_true(storefront_utils.isValidVersion("2026.05.10"))
             assert.is_true(storefront_utils.isValidVersion("1.0.0-beta1"))
+            assert.is_true(storefront_utils.isValidVersion("koreader-v1.0.0"))
+            assert.is_true(storefront_utils.isValidVersion("koplugin/26.11.20"))
+            assert.is_true(storefront_utils.isValidVersion("release_1.2.3"))
         end)
 
         it("rejects non-version strings and scoped component tags", function()
             assert.is_false(storefront_utils.isValidVersion("webapp/v2026.07.10.1"))
+            assert.is_false(storefront_utils.isValidVersion("calibre-26.11.20"))
             assert.is_false(storefront_utils.isValidVersion("docker/v1.0"))
             assert.is_false(storefront_utils.isValidVersion("invalid"))
             assert.is_false(storefront_utils.isValidVersion(""))
             assert.is_false(storefront_utils.isValidVersion(nil))
+        end)
+    end)
+
+    describe("hasKopluginZipAsset and isPluginRelease", function()
+        it("detects .zip assets containing koplugin", function()
+            assert.is_true(storefront_utils.hasKopluginZipAsset({
+                tag_name = "custom-tag",
+                assets = { { name = "nimbus.koplugin.zip" } },
+            }))
+            assert.is_false(storefront_utils.hasKopluginZipAsset({
+                tag_name = "calibre-26.11.20",
+                assets = { { name = "nimbus-calibre-26.11.20.zip" } },
+            }))
+            assert.is_false(storefront_utils.hasKopluginZipAsset({
+                tag_name = "26.11.20",
+                assets = { { name = "nimbus.koplugin.tar.gz" } },
+            }))
+        end)
+
+        it("validates single releases via asset or tag and rejects drafts", function()
+            assert.is_true(storefront_utils.isPluginRelease({ tag_name = "26.11.20" }))
+            assert.is_true(storefront_utils.isPluginRelease({
+                tag_name = "custom-release",
+                assets = { { name = "MyPlugin.koplugin.zip" } },
+            }))
+            assert.is_false(storefront_utils.isPluginRelease({ tag_name = "calibre-26.11.20" }))
+            assert.is_false(storefront_utils.isPluginRelease({ tag_name = "26.11.20", draft = true }))
+            assert.is_false(storefront_utils.isPluginRelease(nil))
+        end)
+    end)
+
+    describe("filterPluginReleases", function()
+        it("uses strict *koplugin*.zip asset filtering when any release has one", function()
+            local input = {
+                { tag_name = "26.11.20.1", assets = { { name = "nimbus.koplugin.zip" } } },
+                { tag_name = "26.11.20", assets = { { name = "nimbus.koplugin.zip" } } },
+                { tag_name = "calibre-26.11.20", assets = { { name = "nimbus-calibre.zip" } } },
+                { tag_name = "26.11.19", assets = { { name = "desktop-companion.zip" } } },
+                { tag_name = "26.11.18", draft = true, assets = { { name = "nimbus.koplugin.zip" } } },
+            }
+            local out = storefront_utils.filterPluginReleases(input)
+            assert.are.same(2, #out)
+            assert.are.same("26.11.20.1", out[1].tag_name)
+            assert.are.same("26.11.20", out[2].tag_name)
+        end)
+
+        it("filters by valid version tag when no release has a *koplugin*.zip asset", function()
+            local input = {
+                { tag_name = "26.11.20.1", assets = {} },
+                { tag_name = "calibre-26.11.20", assets = {} },
+                { tag_name = "26.11.20", assets = {} },
+            }
+            local out = storefront_utils.filterPluginReleases(input)
+            assert.are.same(2, #out)
+            assert.are.same("26.11.20.1", out[1].tag_name)
+            assert.are.same("26.11.20", out[2].tag_name)
+        end)
+
+        it("falls back to all non-draft releases when no release has *koplugin*.zip or valid version tag", function()
+            local input = {
+                { tag_name = "webapp/v2026.07.10.1", assets = {} },
+                { tag_name = "webapp/v2026.07.09.1", draft = true, assets = {} },
+            }
+            local out = storefront_utils.filterPluginReleases(input)
+            assert.are.same(1, #out)
+            assert.are.same("webapp/v2026.07.10.1", out[1].tag_name)
         end)
     end)
 
