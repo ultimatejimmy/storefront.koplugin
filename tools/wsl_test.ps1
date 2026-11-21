@@ -207,6 +207,20 @@ function Run-Workflow {
         Write-Host "Delete & Stale Record Tests FAILED." -ForegroundColor Red
         return $false
     }
+    Write-Host "Running Low-Memory Guard & Catalog Staging unit tests..."
+    $LowMemTestCmd = "cd $AppDir && LUA_PATH='{0}/?.lua;./?.lua;./?/init.lua;frontend/?.lua;frontend/?/init.lua;libs/?.lua;common/?.lua;common/?/init.lua;;' ./luajit {0}/tests/storefront_low_memory_guard_test.lua" -f $WSLDest
+    wsl bash -c `"$LowMemTestCmd`"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Low-Memory Guard Tests FAILED." -ForegroundColor Red
+        return $false
+    }
+    Write-Host "Running Storefront Memory Conductor unit tests..."
+    $ConductorTestCmd = "cd $AppDir && LUA_PATH='{0}/?.lua;./?.lua;./?/init.lua;frontend/?.lua;frontend/?/init.lua;libs/?.lua;common/?.lua;common/?/init.lua;;' ./luajit {0}/tests/storefront_conductor_test.lua" -f $WSLDest
+    wsl bash -c `"$ConductorTestCmd`"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Memory Conductor Tests FAILED." -ForegroundColor Red
+        return $false
+    }
     Write-Host "Running Translation Audit..."
     $AuditScript = if (Test-Path "./tools/audit_translations.py") { "./tools/audit_translations.py" } else { "./audit_translations.py" }
     wsl python3 $AuditScript

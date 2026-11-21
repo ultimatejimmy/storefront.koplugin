@@ -11532,6 +11532,51 @@ function Storefront:onReaderReady(ui)
         self.ui._sf_module_registered = true
         pcall(self.ui.registerModule, self.ui, "storefront", self, true)
     end
+    pcall(function()
+        local ok_cond, Conductor = pcall(require, "storefront_conductor")
+        if ok_cond and Conductor then
+            Conductor.installHooks()
+            Conductor.registerPlugin({
+                plugin = "storefront",
+                is_foreground = function()
+                    local inst = Storefront.instance or Storefront
+                    return inst and inst.browser_menu ~= nil
+                end,
+                on_reclaim = function(level)
+                    local inst = Storefront.instance or Storefront
+                    if inst and inst.browser_menu ~= nil then
+                        return
+                    end
+                    pcall(function()
+                        local ok_ss, StorefrontScreensavers = pcall(require, "storefront_screensavers_ui")
+                        if ok_ss and StorefrontScreensavers and StorefrontScreensavers.invalidateMemCache then
+                            StorefrontScreensavers.invalidateMemCache()
+                        end
+                    end)
+                    pcall(function()
+                        local ok_c, CacheMod = pcall(require, "storefront_cache")
+                        if ok_c and CacheMod and CacheMod.purgeMem then
+                            CacheMod.purgeMem()
+                        end
+                    end)
+                end,
+                on_cancel_bg = function()
+                    pcall(function()
+                        local ok_cat, CatalogClient = pcall(require, "storefront_net_catalog")
+                        if ok_cat and CatalogClient and CatalogClient.cancelCatalogFetch then
+                            CatalogClient.cancelCatalogFetch()
+                        end
+                    end)
+                    pcall(function()
+                        local ok_rat, StorefrontRatings = pcall(require, "storefront_ratings")
+                        if ok_rat and StorefrontRatings and StorefrontRatings.cancelPendingRequests then
+                            StorefrontRatings.cancelPendingRequests()
+                        end
+                    end)
+                end,
+            })
+        end
+    end)
 end
 
 function Storefront:init()
@@ -11571,6 +11616,51 @@ function Storefront:init()
         self.ui._sf_module_registered = true
         pcall(self.ui.registerModule, self.ui, "storefront", self, true)
     end
+    pcall(function()
+        local ok_cond, Conductor = pcall(require, "storefront_conductor")
+        if ok_cond and Conductor then
+            Conductor.installHooks()
+            Conductor.registerPlugin({
+                plugin = "storefront",
+                is_foreground = function()
+                    local inst = Storefront.instance or Storefront
+                    return inst and inst.browser_menu ~= nil
+                end,
+                on_reclaim = function(level)
+                    local inst = Storefront.instance or Storefront
+                    if inst and inst.browser_menu ~= nil then
+                        return
+                    end
+                    pcall(function()
+                        local ok_ss, StorefrontScreensavers = pcall(require, "storefront_screensavers_ui")
+                        if ok_ss and StorefrontScreensavers and StorefrontScreensavers.invalidateMemCache then
+                            StorefrontScreensavers.invalidateMemCache()
+                        end
+                    end)
+                    pcall(function()
+                        local ok_c, CacheMod = pcall(require, "storefront_cache")
+                        if ok_c and CacheMod and CacheMod.purgeMem then
+                            CacheMod.purgeMem()
+                        end
+                    end)
+                end,
+                on_cancel_bg = function()
+                    pcall(function()
+                        local ok_cat, CatalogClient = pcall(require, "storefront_net_catalog")
+                        if ok_cat and CatalogClient and CatalogClient.cancelCatalogFetch then
+                            CatalogClient.cancelCatalogFetch()
+                        end
+                    end)
+                    pcall(function()
+                        local ok_rat, StorefrontRatings = pcall(require, "storefront_ratings")
+                        if ok_rat and StorefrontRatings and StorefrontRatings.cancelPendingRequests then
+                            StorefrontRatings.cancelPendingRequests()
+                        end
+                    end)
+                end,
+            })
+        end
+    end)
     pcall(function()
         local UIManager = require("ui/uimanager")
         if UIManager and UIManager.event_hook and UIManager.event_hook.registerWidget and not UIManager._sf_event_hooked then
@@ -11747,9 +11837,23 @@ function Storefront:init()
         local UIManager = require("ui/uimanager")
         if UIManager and UIManager.scheduleIn then
             UIManager:scheduleIn(5, function()
-                local ok_cl, StorefrontCacheLimit = pcall(require, "storefront_cache_limit")
-                if ok_cl and StorefrontCacheLimit and StorefrontCacheLimit.enforce then
-                    StorefrontCacheLimit.enforce()
+                local ok_cond, Conductor = pcall(require, "storefront_conductor")
+                local run_enforce = function()
+                    local ok_cl, StorefrontCacheLimit = pcall(require, "storefront_cache_limit")
+                    if ok_cl and StorefrontCacheLimit and StorefrontCacheLimit.enforce then
+                        StorefrontCacheLimit.enforce()
+                    end
+                end
+                if ok_cond and Conductor and Conductor.requestSlot then
+                    Conductor.requestSlot({
+                        plugin = "storefront",
+                        task = "cache_limit_enforce",
+                        priority = "idle_bg",
+                        sync = true,
+                        run = run_enforce,
+                    })
+                else
+                    run_enforce()
                 end
             end)
         end
@@ -11829,69 +11933,89 @@ function Storefront:init()
             logger.info(msg)
             StorefrontLogger.info(msg)
             local CatalogClient = require("storefront_net_catalog")
-            CatalogClient.fetchAndUpdateCacheAsync(nil, function(ok, status_or_err)
-                if ok then
-                    logger.info("Storefront init: background catalog update finished (" .. tostring(status_or_err) .. ")")
-                    StorefrontLogger.info("Storefront init: background catalog update finished (" .. tostring(status_or_err) .. ")")
-                    if status_or_err == "updated" and Storefront.instance then
-                        pcall(function() Storefront.instance:populateRemoteInfoFromCatalog() end)
-                        if Storefront.instance.browser_menu then
-                            Storefront.instance:refreshCurrentBrowserTab()
+            local run_bg_catalog = function(done)
+                CatalogClient.fetchAndUpdateCacheAsync(nil, function(ok, status_or_err)
+                    if done then done() end
+                    if ok then
+                        logger.info("Storefront init: background catalog update finished (" .. tostring(status_or_err) .. ")")
+                        StorefrontLogger.info("Storefront init: background catalog update finished (" .. tostring(status_or_err) .. ")")
+                        if status_or_err == "updated" and Storefront.instance then
+                            pcall(function() Storefront.instance:populateRemoteInfoFromCatalog() end)
+                            if Storefront.instance.browser_menu then
+                                Storefront.instance:refreshCurrentBrowserTab()
+                            end
                         end
-                    end
-                    pcall(function()
-                        if Storefront.checkStartupNotifications then
-                            Storefront:checkStartupNotifications(true)
+                        pcall(function()
+                            if Storefront.checkStartupNotifications then
+                                Storefront:checkStartupNotifications(true)
+                            end
+                        end)
+                    else
+                        logger.warn("Storefront init: background catalog update failed: " .. tostring(status_or_err))
+                        StorefrontLogger.warn("Storefront init: background catalog update failed: " .. tostring(status_or_err))
+                        if Cache.countRepos("plugin") == 0 then
+                            logger.info("Storefront init: catalog cache empty after fetch error, loading bundled catalog fallback")
+                            CatalogClient.loadBundledCatalog()
+                            if Storefront.instance and Storefront.instance.browser_menu then
+                                Storefront.instance:reopenBrowser()
+                            end
                         end
-                    end)
-                else
-                    logger.warn("Storefront init: background catalog update failed: " .. tostring(status_or_err))
-                    StorefrontLogger.warn("Storefront init: background catalog update failed: " .. tostring(status_or_err))
-                    if Cache.countRepos("plugin") == 0 then
-                        logger.info("Storefront init: catalog cache empty after fetch error, loading bundled catalog fallback")
-                        CatalogClient.loadBundledCatalog()
-                        if Storefront.instance and Storefront.instance.browser_menu then
-                            Storefront.instance:reopenBrowser()
-                        end
-                    end
-                    if Storefront.instance and not Storefront.instance._init_catalog_retried then
-                        Storefront.instance._init_catalog_retried = true
-                        local UIManager = require("ui/uimanager")
-                        if _catalog_retry_timer_fn then
-                            UIManager:unschedule(_catalog_retry_timer_fn)
-                        end
-                        _catalog_retry_timer_fn = function()
-                            _catalog_retry_timer_fn = nil
-                            logger.info("Storefront init: retrying background catalog update after delay...")
-                            if StorefrontLogger then StorefrontLogger.info("Storefront init: retrying background catalog update after delay...") end
-                            CatalogClient.fetchAndUpdateCacheAsync(nil, function(retry_ok, retry_status_or_err)
-                                if retry_ok then
-                                    logger.info("Storefront init: background catalog update retry succeeded (" .. tostring(retry_status_or_err) .. ")")
-                                    if StorefrontLogger then StorefrontLogger.info("Storefront init: background catalog update retry succeeded (" .. tostring(retry_status_or_err) .. ")") end
-                                    if retry_status_or_err == "updated" and Storefront.instance then
-                                        pcall(function() Storefront.instance:populateRemoteInfoFromCatalog() end)
-                                        if Storefront.instance.browser_menu then
-                                            Storefront.instance:refreshCurrentBrowserTab()
+                        if Storefront.instance and not Storefront.instance._init_catalog_retried then
+                            Storefront.instance._init_catalog_retried = true
+                            local UIManager = require("ui/uimanager")
+                            if _catalog_retry_timer_fn then
+                                UIManager:unschedule(_catalog_retry_timer_fn)
+                            end
+                            _catalog_retry_timer_fn = function()
+                                _catalog_retry_timer_fn = nil
+                                logger.info("Storefront init: retrying background catalog update after delay...")
+                                if StorefrontLogger then StorefrontLogger.info("Storefront init: retrying background catalog update after delay...") end
+                                CatalogClient.fetchAndUpdateCacheAsync(nil, function(retry_ok, retry_status_or_err)
+                                    if retry_ok then
+                                        logger.info("Storefront init: background catalog update retry succeeded (" .. tostring(retry_status_or_err) .. ")")
+                                        if StorefrontLogger then StorefrontLogger.info("Storefront init: background catalog update retry succeeded (" .. tostring(retry_status_or_err) .. ")") end
+                                        if retry_status_or_err == "updated" and Storefront.instance then
+                                            pcall(function() Storefront.instance:populateRemoteInfoFromCatalog() end)
+                                            if Storefront.instance.browser_menu then
+                                                Storefront.instance:refreshCurrentBrowserTab()
+                                            end
+                                        end
+                                        pcall(function()
+                                            if Storefront.checkStartupNotifications then
+                                                Storefront:checkStartupNotifications(true)
+                                            end
+                                        end)
+                                    else
+                                        logger.warn("Storefront init: background catalog update retry failed: " .. tostring(retry_status_or_err))
+                                        if StorefrontLogger then StorefrontLogger.warn("Storefront init: background catalog update retry failed: " .. tostring(retry_status_or_err)) end
+                                        if Cache.countRepos("plugin") == 0 then
+                                            CatalogClient.loadBundledCatalog()
                                         end
                                     end
-                                    pcall(function()
-                                        if Storefront.checkStartupNotifications then
-                                            Storefront:checkStartupNotifications(true)
-                                        end
-                                    end)
-                                else
-                                    logger.warn("Storefront init: background catalog update retry failed: " .. tostring(retry_status_or_err))
-                                    if StorefrontLogger then StorefrontLogger.warn("Storefront init: background catalog update retry failed: " .. tostring(retry_status_or_err)) end
-                                    if Cache.countRepos("plugin") == 0 then
-                                        CatalogClient.loadBundledCatalog()
-                                    end
-                                end
-                            end, true)
+                                end, true)
+                            end
+                            UIManager:scheduleIn(60, _catalog_retry_timer_fn)
                         end
-                        UIManager:scheduleIn(60, _catalog_retry_timer_fn)
                     end
-                end
-            end, true)
+                end, true)
+            end
+            local ok_cond, Conductor = pcall(require, "storefront_conductor")
+            if ok_cond and Conductor and Conductor.requestSlot then
+                Conductor.requestSlot({
+                    plugin = "storefront",
+                    task = "bg_catalog_init",
+                    priority = "idle_bg",
+                    subprocess = true,
+                    run = run_bg_catalog,
+                    cancel = function()
+                        if CatalogClient.cancelCatalogFetch then
+                            CatalogClient.cancelCatalogFetch()
+                        end
+                    end,
+                })
+            else
+                run_bg_catalog()
+            end
         else
             local msg = string.format("Storefront init: catalog cache is fresh (plugins/patches: %ds old, screensavers: %ds old <= 3600s), skipping background fetch", age, ss_age)
             logger.info(msg)
@@ -11913,6 +12037,42 @@ function Storefront:init()
     end
 
     pcall(function() self:scheduleNotificationTimer() end)
+end
+
+local function runConductedCatalogSync(task_name)
+    local CatalogClient = require("storefront_net_catalog")
+    local run_sync = function(done)
+        CatalogClient.fetchAndUpdateCacheAsync(nil, function(ok, status)
+            if done then done() end
+            if ok then
+                if status == "updated" and Storefront.instance and Storefront.instance.browser_menu then
+                    Storefront.instance:refreshCurrentBrowserTab()
+                end
+                pcall(function()
+                    if Storefront.checkStartupNotifications then
+                        Storefront:checkStartupNotifications(true)
+                    end
+                end)
+            end
+        end, true)
+    end
+    local ok_cond, Conductor = pcall(require, "storefront_conductor")
+    if ok_cond and Conductor and Conductor.requestSlot then
+        Conductor.requestSlot({
+            plugin = "storefront",
+            task = task_name or "catalog_sync",
+            priority = "idle_bg",
+            subprocess = true,
+            run = run_sync,
+            cancel = function()
+                if CatalogClient.cancelCatalogFetch then
+                    CatalogClient.cancelCatalogFetch()
+                end
+            end,
+        })
+    else
+        run_sync()
+    end
 end
 
 function Storefront:scheduleNotificationTimer()
@@ -11955,19 +12115,7 @@ function Storefront:scheduleNotificationTimer()
             if not NotificationMgr.isEnabled() then return end
             local is_online = NotificationMgr.isNetworkConnected()
             if is_online and NotificationMgr.shouldCheckNow() then
-                local CatalogClient = require("storefront_net_catalog")
-                CatalogClient.fetchAndUpdateCacheAsync(nil, function(ok, status)
-                    if ok then
-                        if status == "updated" and Storefront.instance and Storefront.instance.browser_menu then
-                            Storefront.instance:refreshCurrentBrowserTab()
-                        end
-                        pcall(function()
-                            if Storefront.checkStartupNotifications then
-                                Storefront:checkStartupNotifications(true)
-                            end
-                        end)
-                    end
-                end, true)
+                runConductedCatalogSync("notification_catalog_sync")
             end
         end)
         if Storefront.instance and Storefront.instance.scheduleNotificationTimer then
@@ -11986,19 +12134,7 @@ function Storefront:onNetworkConnected()
     end
     local ok_nm, NotificationMgr = pcall(require, "storefront_notification_mgr")
     if ok_nm and NotificationMgr and NotificationMgr.isEnabled() and NotificationMgr.shouldCheckNow(nil, true) then
-        local CatalogClient = require("storefront_net_catalog")
-        CatalogClient.fetchAndUpdateCacheAsync(nil, function(ok, status)
-            if ok then
-                if status == "updated" and Storefront.instance and Storefront.instance.browser_menu then
-                    Storefront.instance:refreshCurrentBrowserTab()
-                end
-                pcall(function()
-                    if Storefront.checkStartupNotifications then
-                        Storefront:checkStartupNotifications(true)
-                    end
-                end)
-            end
-        end, true)
+        runConductedCatalogSync("network_connected_sync")
     end
 end
 
@@ -12165,6 +12301,14 @@ function Storefront:onSuspend(is_widget_close)
 
     -- 6. Perform a single incremental GC step instead of blocking sleep with a full heap sweep
     collectgarbage("step", 200)
+
+    -- 7. Notify Memory Conductor of suspend
+    pcall(function()
+        local ok_cond, Conductor = pcall(require, "storefront_conductor")
+        if ok_cond and Conductor and Conductor.onSuspend then
+            Conductor.onSuspend()
+        end
+    end)
 end
 
 function Storefront:onResume()
@@ -12175,10 +12319,35 @@ function Storefront:onResume()
     logger.info("Storefront: onResume received")
     if StorefrontLogger then StorefrontLogger.info("Storefront: onResume received") end
     pcall(function()
+        local ok_cond, Conductor = pcall(require, "storefront_conductor")
+        if ok_cond and Conductor and Conductor.onResume then
+            Conductor.onResume()
+        end
+    end)
+    pcall(function()
         if self.scheduleNotificationTimer then
             self:scheduleNotificationTimer()
         end
     end)
+end
+
+function Storefront:onMemoryReclaim(level)
+    if self.browser_menu ~= nil then
+        return false
+    end
+    pcall(function()
+        local ok_ss, StorefrontScreensavers = pcall(require, "storefront_screensavers_ui")
+        if ok_ss and StorefrontScreensavers and StorefrontScreensavers.invalidateMemCache then
+            StorefrontScreensavers.invalidateMemCache()
+        end
+    end)
+    pcall(function()
+        local ok_c, CacheMod = pcall(require, "storefront_cache")
+        if ok_c and CacheMod and CacheMod.purgeMem then
+            CacheMod.purgeMem()
+        end
+    end)
+    return false
 end
 
 function Storefront:onCloseWidget()

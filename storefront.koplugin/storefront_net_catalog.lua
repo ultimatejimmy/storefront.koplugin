@@ -1463,6 +1463,13 @@ function CatalogClient.fetchAndUpdateCacheAsync(url_to_fetch, callback, is_backg
         local StorefrontUtils = require("storefront_utils")
         local is_low, avail_kb = StorefrontUtils.isLowMemory()
         if is_low then
+            local ok_cond, Conductor = pcall(require, "storefront_conductor")
+            if ok_cond and Conductor and Conductor.reclaimMemory then
+                Conductor.reclaimMemory("soft", "storefront")
+                is_low, avail_kb = StorefrontUtils.isLowMemory()
+            end
+        end
+        if is_low then
             local msg = string.format("Storefront: available memory is critically low (%d KB), skipping background catalog fetch to prevent OOM", avail_kb or 0)
             logger.warn(msg)
             if StorefrontLogger then StorefrontLogger.warn(msg) end
