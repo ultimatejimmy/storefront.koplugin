@@ -5,8 +5,8 @@
 ---      ffiutil.runInSubProcess / isSubProcessDone / terminateSubProcess.
 ---   2. Serializing background plugin work into a priority-ordered single lane.
 ---   3. Stabilizing LuaJIT heap before fork() to minimize Copy-On-Write RAM spikes.
----   4. Broadcasting Event("MemoryReclaim", level) and invoking registered
----      plugin reclaim callbacks when available RAM drops below safe thresholds.
+---   4. Broadcasting Event("MemoryReclaim", level) and fanning out onMemoryReclaim
+---      across active containers when available RAM drops below safe thresholds.
 
 local logger = require("logger")
 
@@ -32,8 +32,12 @@ local DEFAULT_STD_SOFT_KB         = 30 * 1024
 local DEFAULT_STD_CRITICAL_KB     = 18 * 1024
 local DEFAULT_COOLDOWN_S          = 1.5
 local DEFAULT_SLOT_LEASE_S        = 45
-local STALE_SUBPROCESS_TTL_S      = 120
+local SUBPROCESS_PROBE_AFTER_S    = 5
+local HARD_SUBPROCESS_CEILING_S   = 600
 local MICRO_TIMER_THRESHOLD_S     = 0.25
+local STABILIZE_COOLDOWN_S        = 2.0
+local RECLAIM_SOFT_COOLDOWN_S     = 5.0
+local RECLAIM_CRITICAL_COOLDOWN_S = 10.0
 
 local KNOWN_PREFIXES = {
     "storefront",
@@ -45,28 +49,68 @@ local KNOWN_PREFIXES = {
 }
 
 local _enabled = true
-local _hooks_installed = false
 local _is_suspended = false
 local _is_conductor_internal = false
 local _meminfo_path_override = nil
+local _clock_fn = nil
 local _cooldown_s = DEFAULT_COOLDOWN_S
 local _slot_lease_s = DEFAULT_SLOT_LEASE_S
 local _last_bg_finish_ts = 0
+local _last_stabilize_ts = -999
+local _last_soft_reclaim_ts = -999
+local _last_critical_reclaim_ts = -999
 
 local _seq = 0
 local _queue = {}
 local _active_task = nil
+local _active_fg_count = 0
 local _pump_scheduled = false
 local _registered_plugins = {}
 local _active_subprocesses = {}
 local _action_map = setmetatable({}, { __mode = "k" })
-local _queued_by_action = setmetatable({}, { __mode = "k" })
 
 local _orig_scheduleIn = nil
-local _orig_unschedule = nil
-local _orig_runInSubProcess = nil
 local _orig_isSubProcessDone = nil
-local _orig_terminateSubProcess = nil
+
+local function newStats()
+    return {
+        slots_requested = 0,
+        slots_completed = 0,
+        slots_deduplicated = 0,
+        slots_rejected_low_mem = 0,
+        slots_rejected_suspended = 0,
+        slots_preempted = 0,
+        lease_expirations = 0,
+        reclaims_soft = 0,
+        reclaims_critical = 0,
+        subprocesses_tracked = 0,
+    }
+end
+
+local _stats = newStats()
+
+--- Returns monotonic seconds (immune to wall-clock NTP jumps on Wi-Fi reconnect).
+---@return number
+local function nowSeconds()
+    if _clock_fn then
+        return _clock_fn()
+    end
+    local ok_t, ktime = pcall(require, "ui/time")
+    if ok_t and ktime and ktime.now and ktime.to_ms then
+        local ok_now, ms = pcall(function() return ktime.to_ms(ktime.now()) end)
+        if ok_now and type(ms) == "number" then
+            return ms / 1000
+        end
+    end
+    local ok_s, socket = pcall(require, "socket")
+    if ok_s and socket and type(socket.gettime) == "function" then
+        local ok_gt, gt = pcall(socket.gettime)
+        if ok_gt and type(gt) == "number" then
+            return gt
+        end
+    end
+    return os.time()
+end
 
 local function logInfo(msg)
     logger.info("StorefrontConductor: " .. tostring(msg))
@@ -138,6 +182,12 @@ function Conductor.setMeminfoPath(path)
     _meminfo_path_override = path
 end
 
+--- Overrides the monotonic clock function (primarily for unit tests).
+---@param fn function|nil Returns seconds as a number
+function Conductor.setClock(fn)
+    _clock_fn = fn
+end
+
 --- Sets the cooldown delay in seconds between background tasks (useful for testing).
 ---@param seconds number
 function Conductor.setCooldown(seconds)
@@ -148,6 +198,16 @@ end
 ---@param seconds number
 function Conductor.setSlotLease(seconds)
     _slot_lease_s = tonumber(seconds) or DEFAULT_SLOT_LEASE_S
+end
+
+--- Returns a snapshot of lightweight session intervention counters.
+---@return table
+function Conductor.getStats()
+    local copy = {}
+    for k, v in pairs(_stats) do
+        copy[k] = v
+    end
+    return copy
 end
 
 --- Returns memory thresholds (in KB) appropriate for the current device.
@@ -175,12 +235,23 @@ function Conductor.getThresholds(meminfo_path)
     }
 end
 
---- Prunes stale subprocess entries whose owners never polled completion.
+--- Probes and prunes finished or hard-expired subprocesses without prematurely
+--- dropping active multi-minute transfers.
 local function pruneStaleSubprocesses()
-    local now = os.time()
+    local now = nowSeconds()
     for pid, info in pairs(_active_subprocesses) do
-        if info and info.started_at and (now - info.started_at) > STALE_SUBPROCESS_TTL_S then
-            _active_subprocesses[pid] = nil
+        if info and info.started_at then
+            local age = now - info.started_at
+            if age > HARD_SUBPROCESS_CEILING_S then
+                logWarn(string.format("subprocess pid=%s (%s) exceeded %ds hard ceiling, releasing lock",
+                    tostring(pid), tostring(info.plugin), HARD_SUBPROCESS_CEILING_S))
+                _active_subprocesses[pid] = nil
+            elseif age >= SUBPROCESS_PROBE_AFTER_S and type(_orig_isSubProcessDone) == "function" then
+                local ok_p, done = pcall(_orig_isSubProcessDone, pid, false)
+                if ok_p and done == true then
+                    _active_subprocesses[pid] = nil
+                end
+            end
         end
     end
 end
@@ -236,8 +307,10 @@ function Conductor.getMemoryStatus(meminfo_path)
         is_low_memory_device = thresholds.is_low_memory_device,
         thresholds = thresholds,
         active_subprocesses = active_subs,
+        active_foreground = _active_fg_count,
         queue_depth = #_queue,
-        is_busy = (_active_task ~= nil) or (active_subs > 0),
+        is_busy = (_active_task ~= nil) or (active_subs > 0) or (_active_fg_count > 0),
+        stats = Conductor.getStats(),
     }
 end
 
@@ -369,15 +442,77 @@ local function reclaimBuiltInProfiles(level, exclude_plugin)
     end
 end
 
+--- Directly invokes onMemoryReclaim(level) on all child widgets inside _window_stack containers
+--- so a single plugin returning `true` cannot short-circuit WidgetContainer:propagateEvent.
+---@param UIManager table|nil
+---@param level string
+local function fanOutWindowStackReclaim(UIManager, level)
+    if not UIManager or type(UIManager._window_stack) ~= "table" then
+        return
+    end
+    local visited = {}
+    local function visit(node, depth)
+        if type(node) ~= "table" or visited[node] or depth > 3 then
+            return
+        end
+        visited[node] = true
+        if type(node.onMemoryReclaim) == "function" then
+            pcall(node.onMemoryReclaim, node, level)
+        end
+        for i = 1, #node do
+            local child = node[i]
+            if type(child) == "table" then
+                visit(child, depth + 1)
+            end
+        end
+    end
+    for _, entry in ipairs(UIManager._window_stack) do
+        local widget = type(entry) == "table" and (entry.widget or entry) or nil
+        if type(widget) == "table" then
+            visit(widget, 1)
+        end
+    end
+end
+
 --- Evicts non-essential caches across plugins and runs LuaJIT garbage collection.
---- Broadcasts KOReader Event("MemoryReclaim", level) so any plugin can respond without importing Storefront.
+--- Broadcasts KOReader Event("MemoryReclaim", level) and fans out directly to all container children.
 ---@param level string|nil "soft"|"critical" (defaults to "soft")
 ---@param exclude_plugin string|nil Plugin ID to skip during reclaim
----@return table { level: string, before_avail_kb: number|nil, after_avail_kb: number|nil }
-function Conductor.reclaimMemory(level, exclude_plugin)
+---@param force boolean|nil Bypass cooldown checks
+---@return table { level: string, skipped?: boolean, before_avail_kb: number|nil, after_avail_kb: number|nil }
+function Conductor.reclaimMemory(level, exclude_plugin, force)
     level = (level == "critical") and "critical" or "soft"
-    local exclude_lower = exclude_plugin and tostring(exclude_plugin):lower() or nil
+    local now = nowSeconds()
 
+    if not force then
+        if level == "soft" and (now - _last_soft_reclaim_ts) < RECLAIM_SOFT_COOLDOWN_S then
+            local status = Conductor.getMemoryStatus()
+            return {
+                level = level,
+                skipped = true,
+                before_avail_kb = status.available_kb,
+                after_avail_kb = status.available_kb,
+            }
+        elseif level == "critical" and (now - _last_critical_reclaim_ts) < RECLAIM_CRITICAL_COOLDOWN_S then
+            local status = Conductor.getMemoryStatus()
+            return {
+                level = level,
+                skipped = true,
+                before_avail_kb = status.available_kb,
+                after_avail_kb = status.available_kb,
+            }
+        end
+    end
+
+    if level == "critical" then
+        _last_critical_reclaim_ts = now
+        _stats.reclaims_critical = _stats.reclaims_critical + 1
+    else
+        _last_soft_reclaim_ts = now
+        _stats.reclaims_soft = _stats.reclaims_soft + 1
+    end
+
+    local exclude_lower = exclude_plugin and tostring(exclude_plugin):lower() or nil
     local before = Conductor.getMemoryStatus()
     logInfo(string.format("reclaimMemory(%s) triggered (avail=%s KB, heap=%d KB)",
         level, tostring(before.available_kb), before.luajit_heap_kb))
@@ -395,8 +530,11 @@ function Conductor.reclaimMemory(level, exclude_plugin)
     -- 2. Run built-in safe profiles for known plugins
     reclaimBuiltInProfiles(level, exclude_lower)
 
-    -- 3. Broadcast standard KOReader MemoryReclaim event to all WidgetContainers
+    -- 3. Fan out directly to all container children (immune to propagateEvent short-circuiting)
     local UIManager = getUIManager()
+    fanOutWindowStackReclaim(UIManager, level)
+
+    -- 4. Broadcast standard KOReader MemoryReclaim event for custom handleEvent listeners
     local ok_ev, Event = pcall(require, "ui/event")
     if UIManager and type(UIManager.broadcastEvent) == "function" and ok_ev and Event and type(Event.new) == "function" then
         pcall(function()
@@ -404,7 +542,7 @@ function Conductor.reclaimMemory(level, exclude_plugin)
         end)
     end
 
-    -- 4. Reclaim unreferenced LuaJIT objects
+    -- 5. Reclaim unreferenced LuaJIT objects
     if level == "critical" then
         collectgarbage("collect")
     else
@@ -420,14 +558,24 @@ function Conductor.reclaimMemory(level, exclude_plugin)
 end
 
 --- Stabilizes parent LuaJIT heap before fork() to prevent Copy-On-Write RAM duplication.
+--- Debounced to avoid back-to-back full-heap GC sweeps when requestSlot({ subprocess = true })
+--- is immediately followed by ffiutil.runInSubProcess.
 ---@param caller_plugin string|nil
-function Conductor.stabilizeBeforeFork(caller_plugin)
+---@param force boolean|nil
+---@return boolean ran_stabilize
+function Conductor.stabilizeBeforeFork(caller_plugin, force)
+    local now = nowSeconds()
+    if not force and (now - _last_stabilize_ts) < STABILIZE_COOLDOWN_S then
+        return false
+    end
+    _last_stabilize_ts = now
     local status = Conductor.getMemoryStatus()
     if status.available_kb and status.available_kb < status.thresholds.soft_min_free_kb then
         Conductor.reclaimMemory("soft", caller_plugin)
     end
     -- Zero out parent GC debt before fork() so parent doesn't dirty pages during child run
     collectgarbage("collect")
+    return true
 end
 
 local function sortQueue()
@@ -456,6 +604,7 @@ end
 local function preemptIdleWork()
     if _active_task and _active_task.priority == "idle_bg" then
         local task = _active_task
+        _stats.slots_preempted = _stats.slots_preempted + 1
         if type(task.cancel) == "function" then
             pcall(task.cancel)
         end
@@ -495,6 +644,7 @@ local function executeTask(task)
             status = Conductor.getMemoryStatus()
         end
         if status.available_kb and status.available_kb < status.thresholds.critical_min_free_kb and task.priority == "idle_bg" then
+            _stats.slots_rejected_low_mem = _stats.slots_rejected_low_mem + 1
             logWarn(string.format("deferring/skipping %s:%s due to critical low memory (%d KB avail < %d KB)",
                 tostring(task.plugin), tostring(task.task), status.available_kb, status.thresholds.critical_min_free_kb))
             if type(task.on_rejected) == "function" then
@@ -510,16 +660,39 @@ local function executeTask(task)
     end
 
     if task.priority == "foreground" then
+        _active_fg_count = _active_fg_count + 1
+        local fg_done_called = false
+        local function fgDone()
+            if fg_done_called then return end
+            fg_done_called = true
+            _active_fg_count = math.max(0, _active_fg_count - 1)
+            _stats.slots_completed = _stats.slots_completed + 1
+            if _active_fg_count == 0 and #_queue > 0 then
+                schedulePump(math.max(0.05, _cooldown_s))
+            end
+        end
+        local fg_lease = tonumber(task.lease_s) or _slot_lease_s
+        if fg_lease > 0 then
+            scheduleInternal(fg_lease, function()
+                if not fg_done_called then
+                    fgDone()
+                end
+            end)
+        end
         local ok, err = xpcall(function()
-            task.run(function() end)
+            task.run(fgDone)
         end, debug.traceback)
         if not ok then
             logWarn("foreground task error: " .. tostring(err))
+            fgDone()
+        elseif task.sync then
+            fgDone()
         end
         return
     end
 
     _active_task = task
+    task.started_at = nowSeconds()
     local lease_expired = false
 
     local function done()
@@ -528,24 +701,34 @@ local function executeTask(task)
         if _active_task == task then
             _active_task = nil
         end
-        _last_bg_finish_ts = os.time()
+        _stats.slots_completed = _stats.slots_completed + 1
+        _last_bg_finish_ts = nowSeconds()
         collectgarbage("step", 100)
         if not lease_expired then
             schedulePump(math.max(0.05, _cooldown_s))
         end
     end
 
-    if _slot_lease_s > 0 then
-        scheduleInternal(_slot_lease_s, function()
-            if not task.finished and _active_task == task then
-                lease_expired = true
-                logWarn(string.format("slot lease expired for %s:%s, releasing lock",
-                    tostring(task.plugin), tostring(task.task)))
-                task.finished = true
-                _active_task = nil
-                schedulePump(0.1)
+    local lease_s = tonumber(task.lease_s) or _slot_lease_s
+    if lease_s > 0 then
+        local function checkLease()
+            if task.finished or _active_task ~= task then
+                return
             end
-        end)
+            local elapsed = nowSeconds() - (task.started_at or 0)
+            if Conductor.hasActiveSubprocessForPlugin(task.plugin) and elapsed < HARD_SUBPROCESS_CEILING_S then
+                scheduleInternal(lease_s, checkLease)
+                return
+            end
+            lease_expired = true
+            _stats.lease_expirations = _stats.lease_expirations + 1
+            logWarn(string.format("slot lease expired for %s:%s after %.1fs, releasing lock",
+                tostring(task.plugin), tostring(task.task), elapsed))
+            task.finished = true
+            _active_task = nil
+            schedulePump(0.1)
+        end
+        scheduleInternal(lease_s, checkLease)
     end
 
     local ok, err = xpcall(function()
@@ -562,13 +745,17 @@ end
 pumpQueue = function()
     if _is_suspended then return end
     if _active_task ~= nil then return end
+    if _active_fg_count > 0 then
+        schedulePump(0.25)
+        return
+    end
     if Conductor.getActiveSubprocessCount() > 0 then
         schedulePump(0.5)
         return
     end
     if #_queue == 0 then return end
 
-    local now = os.time()
+    local now = nowSeconds()
     local next_task = _queue[1]
     if next_task.priority == "idle_bg" and _cooldown_s > 0 and _last_bg_finish_ts > 0 then
         local elapsed = now - _last_bg_finish_ts
@@ -579,9 +766,6 @@ pumpQueue = function()
     end
 
     table.remove(_queue, 1)
-    if next_task.orig_action then
-        _queued_by_action[next_task.orig_action] = nil
-    end
 
     if next_task.cancelled then
         schedulePump(0)
@@ -591,38 +775,8 @@ pumpQueue = function()
     executeTask(next_task)
 end
 
---- Requests a managed execution slot from the Conductor.
----@param opts table { plugin?: string, task?: string, priority?: string, min_free_kb?: number, subprocess?: boolean, sync?: boolean, run: function(done), cancel?: function(), on_rejected?: function(reason) }
----@return table slot_handle { id: number, cancel: function() }
-function Conductor.requestSlot(opts)
-    assert(type(opts) == "table" and type(opts.run) == "function", "Conductor.requestSlot requires opts.run function")
-
-    local plugin_id = (opts.plugin and tostring(opts.plugin):lower()) or Conductor.identifyCallerPlugin() or "unknown"
-    local priority = opts.priority or "idle_bg"
-    if not PRIORITY_WEIGHT[priority] then
-        priority = "idle_bg"
-    end
-
-    _seq = _seq + 1
-    local task = {
-        id = _seq,
-        seq = _seq,
-        plugin = plugin_id,
-        task = opts.task or "task",
-        priority = priority,
-        weight = PRIORITY_WEIGHT[priority],
-        min_free_kb = opts.min_free_kb,
-        subprocess = (opts.subprocess == true),
-        sync = (opts.sync == true),
-        run = opts.run,
-        cancel = opts.cancel,
-        on_rejected = opts.on_rejected,
-        orig_action = opts._orig_action,
-        cancelled = false,
-        finished = false,
-    }
-
-    local handle = {
+local function makeHandle(task)
+    return {
         id = task.id,
         cancel = function()
             task.cancelled = true
@@ -636,18 +790,74 @@ function Conductor.requestSlot(opts)
             end
         end,
     }
+end
+
+--- Requests a managed execution slot from the Conductor.
+---@param opts table { plugin?: string, task?: string, priority?: string, min_free_kb?: number, lease_s?: number, dedupe_key?: string, subprocess?: boolean, sync?: boolean, run: function(done), cancel?: function(), on_rejected?: function(reason) }
+---@return table slot_handle { id: number, cancel: function() }
+function Conductor.requestSlot(opts)
+    assert(type(opts) == "table" and type(opts.run) == "function", "Conductor.requestSlot requires opts.run function")
+
+    local plugin_id = (opts.plugin and tostring(opts.plugin):lower()) or Conductor.identifyCallerPlugin() or "unknown"
+    local priority = opts.priority or "idle_bg"
+    if not PRIORITY_WEIGHT[priority] then
+        priority = "idle_bg"
+    end
+    local weight = PRIORITY_WEIGHT[priority]
+
+    _stats.slots_requested = _stats.slots_requested + 1
 
     if not _enabled then
-        task.run(function() end)
-        return handle
+        opts.run(function() end)
+        return { id = 0, cancel = function() end }
     end
 
     if _is_suspended and priority == "idle_bg" then
-        if type(task.on_rejected) == "function" then
-            pcall(task.on_rejected, "suspended")
+        _stats.slots_rejected_suspended = _stats.slots_rejected_suspended + 1
+        if type(opts.on_rejected) == "function" then
+            pcall(opts.on_rejected, "suspended")
         end
-        return handle
+        return { id = 0, cancel = function() end }
     end
+
+    -- Deduplicate identical pending tasks in the queue before allocating a new slot
+    local dedupe_key = opts.dedupe_key
+    if dedupe_key and priority ~= "foreground" then
+        for _, existing in ipairs(_queue) do
+            if not existing.cancelled and existing.dedupe_key == dedupe_key then
+                _stats.slots_deduplicated = _stats.slots_deduplicated + 1
+                if weight > existing.weight then
+                    existing.priority = priority
+                    existing.weight = weight
+                    sortQueue()
+                end
+                return makeHandle(existing)
+            end
+        end
+    end
+
+    _seq = _seq + 1
+    local task = {
+        id = _seq,
+        seq = _seq,
+        plugin = plugin_id,
+        task = opts.task or "task",
+        priority = priority,
+        weight = weight,
+        min_free_kb = opts.min_free_kb,
+        lease_s = opts.lease_s,
+        dedupe_key = dedupe_key,
+        subprocess = (opts.subprocess == true),
+        sync = (opts.sync == true),
+        run = opts.run,
+        cancel = opts.cancel,
+        on_rejected = opts.on_rejected,
+        orig_action = opts._orig_action,
+        cancelled = false,
+        finished = false,
+    }
+
+    local handle = makeHandle(task)
 
     if priority == "foreground" then
         local status = Conductor.getMemoryStatus()
@@ -660,12 +870,9 @@ function Conductor.requestSlot(opts)
     end
 
     table.insert(_queue, task)
-    if task.orig_action then
-        _queued_by_action[task.orig_action] = task
-    end
     sortQueue()
 
-    if _active_task == nil and Conductor.getActiveSubprocessCount() == 0 then
+    if _active_task == nil and _active_fg_count == 0 and Conductor.getActiveSubprocessCount() == 0 then
         pumpQueue()
     else
         schedulePump(0.25)
@@ -689,6 +896,7 @@ function Conductor.onSuspend()
         local t = _queue[i]
         if t.priority == "idle_bg" then
             t.cancelled = true
+            _stats.slots_rejected_suspended = _stats.slots_rejected_suspended + 1
             if type(t.on_rejected) == "function" then
                 pcall(t.on_rejected, "suspended")
             end
@@ -696,6 +904,15 @@ function Conductor.onSuspend()
         end
     end
     Conductor.reclaimMemory("soft")
+
+    local total_interventions = _stats.slots_requested + _stats.reclaims_soft + _stats.reclaims_critical + _stats.subprocesses_tracked
+    if total_interventions > 0 then
+        logInfo(string.format(
+            "session summary: slots=%d (done=%d, dedup=%d, low_mem=%d, preempt=%d), reclaims=%d/%d, forks=%d",
+            _stats.slots_requested, _stats.slots_completed, _stats.slots_deduplicated,
+            _stats.slots_rejected_low_mem, _stats.slots_preempted,
+            _stats.reclaims_soft, _stats.reclaims_critical, _stats.subprocesses_tracked))
+    end
 end
 
 --- Notifies the Conductor that the device has resumed from suspend.
@@ -707,21 +924,19 @@ function Conductor.onResume()
 end
 
 --- Installs transparent runtime wrappers on UIManager and ffi/util.
---- Safe and idempotent; subsequent calls are no-ops.
+--- Table-aware and idempotent: safe across module load, init(), and test mocks.
 ---@return boolean
 function Conductor.installHooks()
-    if _hooks_installed then
-        return true
-    end
-
     local UIManager = getUIManager()
-    if UIManager and type(UIManager.scheduleIn) == "function" then
-        _orig_scheduleIn = UIManager.scheduleIn
-        _orig_unschedule = UIManager.unschedule
+    if UIManager and type(UIManager.scheduleIn) == "function" and not UIManager._sf_conductor_hooked then
+        UIManager._sf_conductor_hooked = true
+        local orig_scheduleIn = UIManager.scheduleIn
+        local orig_unschedule = UIManager.unschedule
+        _orig_scheduleIn = orig_scheduleIn
 
         UIManager.scheduleIn = function(self_ui, delay, action, ...)
             if not _enabled or _is_conductor_internal or type(action) ~= "function" then
-                return _orig_scheduleIn(self_ui, delay, action, ...)
+                return orig_scheduleIn(self_ui, delay, action, ...)
             end
 
             local num_delay = tonumber(delay) or 0
@@ -733,13 +948,24 @@ function Conductor.installHooks()
                 or not caller_plugin
                 or Conductor.isPluginInForeground(caller_plugin)
                 or Conductor.hasActiveSubprocessForPlugin(caller_plugin) then
-                return _orig_scheduleIn(self_ui, delay, action, ...)
+                return orig_scheduleIn(self_ui, delay, action, ...)
             end
 
             local extra_args = { ... }
             local extra_n = select("#", ...)
             local wrapped_fn
             wrapped_fn = function()
+                local list = _action_map[action]
+                if type(list) == "table" then
+                    for i = #list, 1, -1 do
+                        if list[i] == wrapped_fn then
+                            table.remove(list, i)
+                        end
+                    end
+                    if #list == 0 then
+                        _action_map[action] = nil
+                    end
+                end
                 if not _enabled or Conductor.isPluginInForeground(caller_plugin) or Conductor.hasActiveSubprocessForPlugin(caller_plugin) then
                     action(unpack(extra_args, 1, extra_n))
                     return
@@ -749,6 +975,7 @@ function Conductor.installHooks()
                     task = "scheduled_timer",
                     priority = "idle_bg",
                     sync = true,
+                    dedupe_key = action,
                     _orig_action = action,
                     run = function()
                         action(unpack(extra_args, 1, extra_n))
@@ -756,78 +983,97 @@ function Conductor.installHooks()
                 })
             end
 
-            _action_map[action] = wrapped_fn
-            return _orig_scheduleIn(self_ui, delay, wrapped_fn)
+            if not _action_map[action] then
+                _action_map[action] = {}
+            end
+            table.insert(_action_map[action], wrapped_fn)
+            return orig_scheduleIn(self_ui, delay, wrapped_fn)
         end
 
-        if type(_orig_unschedule) == "function" then
+        if type(orig_unschedule) == "function" then
             UIManager.unschedule = function(self_ui, action, ...)
+                local removed_queued = false
+                local removed_wrapped = false
                 if type(action) == "function" then
-                    local queued_task = _queued_by_action[action]
-                    if queued_task then
-                        queued_task.cancelled = true
-                        _queued_by_action[action] = nil
+                    for i = #_queue, 1, -1 do
+                        if _queue[i].orig_action == action and not _queue[i].cancelled then
+                            _queue[i].cancelled = true
+                            removed_queued = true
+                        end
                     end
-                    local wrapped = _action_map[action]
-                    if wrapped then
+                    local wrappers = _action_map[action]
+                    if type(wrappers) == "table" then
                         _action_map[action] = nil
-                        _orig_unschedule(self_ui, wrapped, ...)
+                        for _, wrapped in ipairs(wrappers) do
+                            local ok_u, res = pcall(orig_unschedule, self_ui, wrapped, ...)
+                            if ok_u and res then
+                                removed_wrapped = true
+                            end
+                        end
                     end
                 end
-                return _orig_unschedule(self_ui, action, ...)
+                local removed_orig = orig_unschedule(self_ui, action, ...)
+                return (removed_wrapped or removed_orig or removed_queued) == true
             end
         end
     end
 
     local ok_ffi, ffiutil = pcall(require, "ffi/util")
-    if ok_ffi and type(ffiutil) == "table" and type(ffiutil.runInSubProcess) == "function" then
-        _orig_runInSubProcess = ffiutil.runInSubProcess
-        _orig_isSubProcessDone = ffiutil.isSubProcessDone
-        _orig_terminateSubProcess = ffiutil.terminateSubProcess
+    if ok_ffi and type(ffiutil) == "table" and type(ffiutil.runInSubProcess) == "function" and not ffiutil._sf_conductor_hooked then
+        ffiutil._sf_conductor_hooked = true
+        local orig_runInSubProcess = ffiutil.runInSubProcess
+        local orig_isSubProcessDone = ffiutil.isSubProcessDone
+        local orig_terminateSubProcess = ffiutil.terminateSubProcess
+        _orig_isSubProcessDone = orig_isSubProcessDone
 
-        ffiutil.runInSubProcess = function(func, with_pipe, ...)
+        ffiutil.runInSubProcess = function(func, with_pipe, double_fork, ...)
             local caller_plugin = nil
             if _enabled then
                 caller_plugin = Conductor.identifyCallerPlugin()
                 Conductor.stabilizeBeforeFork(caller_plugin)
             end
-            local pid, fd = _orig_runInSubProcess(func, with_pipe, ...)
-            if _enabled and pid then
+            local pid, fd = orig_runInSubProcess(func, with_pipe, double_fork, ...)
+            if _enabled and pid and not double_fork then
+                _stats.subprocesses_tracked = _stats.subprocesses_tracked + 1
                 _active_subprocesses[pid] = {
                     plugin = caller_plugin or "unknown",
-                    started_at = os.time(),
+                    started_at = nowSeconds(),
                 }
             end
             return pid, fd
         end
 
-        if type(_orig_isSubProcessDone) == "function" then
-            ffiutil.isSubProcessDone = function(pid, ...)
-                local done = _orig_isSubProcessDone(pid, ...)
-                if done and pid and _active_subprocesses[pid] then
-                    _active_subprocesses[pid] = nil
+        local function onSubprocessFinished(pid)
+            if pid and _active_subprocesses[pid] then
+                _active_subprocesses[pid] = nil
+                if Conductor.getActiveSubprocessCount() == 0 then
+                    _last_bg_finish_ts = nowSeconds()
+                    collectgarbage("step", 100)
                     if #_queue > 0 then
-                        schedulePump(0.1)
+                        schedulePump(math.max(0.05, _cooldown_s))
                     end
+                end
+            end
+        end
+
+        if type(orig_isSubProcessDone) == "function" then
+            ffiutil.isSubProcessDone = function(pid, ...)
+                local done = orig_isSubProcessDone(pid, ...)
+                if done then
+                    onSubprocessFinished(pid)
                 end
                 return done
             end
         end
 
-        if type(_orig_terminateSubProcess) == "function" then
+        if type(orig_terminateSubProcess) == "function" then
             ffiutil.terminateSubProcess = function(pid, ...)
-                if pid and _active_subprocesses[pid] then
-                    _active_subprocesses[pid] = nil
-                    if #_queue > 0 then
-                        schedulePump(0.1)
-                    end
-                end
-                return _orig_terminateSubProcess(pid, ...)
+                onSubprocessFinished(pid)
+                return orig_terminateSubProcess(pid, ...)
             end
         end
     end
 
-    _hooks_installed = true
     logDbg("runtime hooks installed")
     return true
 end
@@ -838,15 +1084,22 @@ function Conductor._resetForTests()
     _is_suspended = false
     _is_conductor_internal = false
     _meminfo_path_override = nil
+    _clock_fn = nil
     _cooldown_s = 0
     _slot_lease_s = DEFAULT_SLOT_LEASE_S
     _last_bg_finish_ts = 0
+    _last_stabilize_ts = -999
+    _last_soft_reclaim_ts = -999
+    _last_critical_reclaim_ts = -999
     _seq = 0
     _queue = {}
     _active_task = nil
+    _active_fg_count = 0
     _pump_scheduled = false
     _registered_plugins = {}
     _active_subprocesses = {}
+    _action_map = setmetatable({}, { __mode = "k" })
+    _stats = newStats()
 end
 
 return Conductor

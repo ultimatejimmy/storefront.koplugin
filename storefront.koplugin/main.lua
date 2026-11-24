@@ -142,6 +142,15 @@ storefront_patch_mgr:init(Storefront)
 
 Storefront.instance = Storefront
 
+-- Install Memory Conductor hooks at module-load time so plugins alphabetically
+-- earlier than Storefront (backup, beeline, nimbus, sink) are also protected during :init().
+pcall(function()
+    local ok_cond, Conductor = pcall(require, "storefront_conductor")
+    if ok_cond and Conductor and Conductor.installHooks then
+        Conductor.installHooks()
+    end
+end)
+
 -- Ensure NotoSerif fallback alias in Font.fontmap so any unhandled or external calls
 -- to Font:getFace("NotoSerif-Regular.ttf", size) never return nil.
 local ok_font, FontModule = pcall(require, "ui/font")
