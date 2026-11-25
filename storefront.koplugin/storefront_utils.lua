@@ -530,7 +530,11 @@ function storefront_utils.createButton(opts)
 
     local btn_w = opts.width
     local btn_h = opts.height or sc(38)
-    local is_primary = (opts.background == Blitbuffer.COLOR_BLACK) or (opts.primary == true)
+    -- Use truthiness (not `~= nil`) before comparing against Blitbuffer cdata colors,
+    -- because LuaJIT invokes Blitbuffer's __eq metamethod on nil/cdata comparisons.
+    local is_primary = (opts.primary == true)
+        or (opts.background and Blitbuffer.COLOR_BLACK and opts.background == Blitbuffer.COLOR_BLACK)
+        or false
     local border_size = opts.bordersize or (storefront_theme.border_btn or sc(1))
     local border_color = opts.color or Blitbuffer.COLOR_BLACK
     local radius = opts.radius or (storefront_theme.radius_btn or sc(4))

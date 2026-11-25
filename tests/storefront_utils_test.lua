@@ -228,4 +228,86 @@ describe("storefront_utils", function()
             assert.are.same(total_w - gap, widths[1] + widths[2])
         end)
     end)
+
+    describe("createButton", function()
+        local orig_bb, orig_btn, orig_theme
+
+        local function makeStrictColor(val)
+            return setmetatable({ _v = val }, {
+                __eq = function(a, b)
+                    if a == nil or b == nil then
+                        error("attempt to index local 'color' (a nil value)")
+                    end
+                    return a._v == b._v
+                end,
+            })
+        end
+
+        before_each(function()
+            orig_bb = package.loaded["ffi/blitbuffer"]
+            orig_btn = package.loaded["ui/widget/button"]
+            orig_theme = package.loaded["storefront_theme"]
+
+            local COLOR_BLACK = makeStrictColor(0)
+            local COLOR_WHITE = makeStrictColor(255)
+            package.loaded["ffi/blitbuffer"] = {
+                COLOR_BLACK = COLOR_BLACK,
+                COLOR_WHITE = COLOR_WHITE,
+            }
+            package.loaded["storefront_theme"] = {
+                border_btn = 1,
+                radius_btn = 4,
+            }
+            package.loaded["ui/widget/button"] = {
+                new = function(_, opts)
+                    return {
+                        opts = opts,
+                        frame = { invert = false },
+                    }
+                end,
+            }
+        end)
+
+        after_each(function()
+            package.loaded["ffi/blitbuffer"] = orig_bb
+            package.loaded["ui/widget/button"] = orig_btn
+            package.loaded["storefront_theme"] = orig_theme
+        end)
+
+        it("handles omitted background without crashing on strict color equality", function()
+            local btn = storefront_utils.createButton{ text = "Next ›" }
+            assert.is_table(btn)
+            assert.is_false(btn.opts.preselect)
+            assert.is_false(btn.frame.invert)
+        end)
+
+        it("marks button as primary when background is COLOR_BLACK", function()
+            local bb = package.loaded["ffi/blitbuffer"]
+            local btn = storefront_utils.createButton{
+                text = "Save",
+                background = bb.COLOR_BLACK,
+            }
+            assert.is_true(btn.opts.preselect)
+            assert.is_true(btn.frame.invert)
+        end)
+
+        it("marks button as primary when primary = true with nil background", function()
+            local btn = storefront_utils.createButton{
+                text = "Save",
+                primary = true,
+            }
+            assert.is_true(btn.opts.preselect)
+            assert.is_true(btn.frame.invert)
+        end)
+
+        it("treats COLOR_WHITE background as non-primary", function()
+            local bb = package.loaded["ffi/blitbuffer"]
+            local btn = storefront_utils.createButton{
+                text = "Cancel",
+                background = bb.COLOR_WHITE,
+            }
+            assert.is_false(btn.opts.preselect)
+            assert.is_false(btn.frame.invert)
+        end)
+    end)
 end)
